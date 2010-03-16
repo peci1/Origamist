@@ -1,0 +1,30 @@
+\documentclass[11pt]{article}
+\usepackage[cp1250]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{a4wide}
+\usepackage{verbatim}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage
+	[pdftex,
+	pdfstartview=FitH,
+	unicode=true,
+	bookmarks=true,
+	pdfauthor={Martin Pecka},
+	pdftitle={Specifikace Rocnikoveho projektu}]
+	{hyperref}
+
+\title{Specifikace Roèníkového projektu - Origamist}
+\author{Martin Pecka}
+
+\begin{document}
+
+\maketitle
+
+Program {\textbf Origamist} si klade za cíl zjednodušit práci pøi vytváøení návodù na skládání origami modelù. Hlavní práci by mìl odvést pøi vytváøení diagramù. Na diagramu je zobrazen skládaný list papíru tak, jak vypadá po urèitých krocích. {\textbf Origamist} bude za tvùrce návodu hlídat geometrii papíru, takže tvùrce jen bude zadávat pøíkazy, kde a jak papír ohnout, a program tyto ohyby znázorní a vytvoøí z nich další diagram. Vytváøené diagramy budou obsahovat pomocné prvky pro lepší orientaci (rùzné stínování rùzných vrstev papíru, zvýraznìní oblasti èi zvìtšený výøez).
+
+Aplikace bude mít dvì èásti - tvùrèí a prohlížecí. Prohlížecí èást bude fungovat jako applet ve webovém prohlížeèi (nebo JNLP aplikace) a bude sloužit pøedevším ke snadnému prohlížení vytvoøených návodù.
+
+Tvùrèí èást bude samostatná JNLP aplikace, která nabídne potøebné ovládací prvky pro tvorbu návodù, jejich naèítání, ukládání a export. Návody by mìly jít exportovat do PDF, popø. do nìjakého obrazového formátu (nejspíše PNG). Pøi tvorbì diagramu se bude program snažit pomocí rùzných heuristik ulehèit práci (napø. autodetekce symetrie modelu a automatické nabízení provedení operace na odpovídajících místech).
+
+\end{document}
