@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" 
+	xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/"
+	xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/"
+	xmlns:jxb="http://java.sun.com/xml/ns/jaxb"	
+	jxb:version="2.0" 
+	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/">
+
+	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/" schemaLocation="common.xsd"/>
+
+	<annotation>
+		<appinfo>			
+			<jxb:schemaBindings>
+				<jxb:package name="cz.cuni.mff.peckam.java.origamist.model.jaxb"/>
+			</jxb:schemaBindings>
+		</appinfo>
+	</annotation>
+
+	<element name="origami" type="m:Origami">
+	</element>
+
+	<complexType name="Origami">
+		<sequence>
+			<element name="author" type="c:Author" />
+			<element name="name" type="c:LangString"
+				maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<appinfo>
+						<jxb:property 
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+					</appinfo>
+				</annotation>
+			</element>
+			<element name="year" type="gYear" />
+			<element name="shortdesc" type="c:LangString"
+				maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<appinfo>
+						<jxb:property 
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+					</appinfo>
+				</annotation>
+			</element>
+			<element name="description" type="c:LangString"
+				minOccurs="1" maxOccurs="unbounded">
+				<annotation>
+					<appinfo>
+						<jxb:property 
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+					</appinfo>
+				</annotation>
+			</element>
+			<element name="license" type="c:License" />
+			<element name="original" type="anyURI" maxOccurs="1"
+				minOccurs="0" />
+			<element name="thumbnail" type="c:Image" />
+
+			<element name="paper" type="m:DiagramPaper" />
+			<element name="model" type="m:Model" />
+		</sequence>
+		<attribute name="version" type="positiveInteger" use="required"></attribute>
+	</complexType>
+    
+    <complexType name="Paper" abstract="true"> 
+    	<sequence>
+    		<element name="size" type="m:UnitDimension"/>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="DiagramPaper">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DiagramPaper"/>
+    		</appinfo>
+    	</annotation>
+    	<complexContent>
+    		<extension base="m:Paper">
+    			<sequence>
+    				<element name="color" type="m:DiagramColors"/>
+    				<element name="cols" type="positiveInteger"/>
+    				<element name="rows" type="positiveInteger"/>
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+    
+    <complexType name="Model">
+    	<sequence>
+    		<element name="paper" type="m:ModelPaper"/>
+    		<element name="steps" type="m:Steps">
+    			<unique name="id">
+    				<selector xpath="step"/>
+    				<field xpath="@id"/>
+    			</unique>
+    		</element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="UnitDimension">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.UnitDimension"/>
+    		</appinfo>
+    	</annotation>
+    	<complexContent>
+    		<extension base="m:Dimension">
+    			<sequence>
+    				<element name="unit" type="m:Unit"/>
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+
+    <complexType name="Colors" abstract="true"/>
+    
+    <complexType name="Dimension">
+    	<sequence>
+    		<element name="width" type="double"/>
+    		<element name="height" type="double"/>
+    	</sequence>
+    </complexType>
+
+    <simpleType name="Unit">
+    	<restriction base="string">
+    		<enumeration value="mm"/>
+    		<enumeration value="cm"/>
+    		<enumeration value="m"/>
+    		<enumeration value="km"/>
+    		<enumeration value="inch"/>
+    		<enumeration value="foot"/>
+    		<enumeration value="mile"/>
+    		<enumeration value="rel"/>
+    	</restriction>
+    </simpleType>
+
+    <simpleType name="Color">
+    	<annotation>
+    		<appinfo>
+    			<jxb:javaType name="java.awt.Color"
+					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.ColorConverter.parse"
+					printMethod="cz.cuni.mff.peckam.java.origamist.utils.ColorConverter.print"/>
+    		</appinfo>
+    	</annotation>
+    	<restriction base="string">
+    		<pattern value="#[A-Fa-f0-9]{6}"/>
+    	</restriction>
+    </simpleType>
+
+    <complexType name="DiagramColors">
+    	<sequence>
+    		<element name="background" type="m:Color"/>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ModelPaper">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ModelPaper"/>
+    		</appinfo>
+    	</annotation>
+    	<complexContent>
+    		<extension base="m:Paper">
+    			<sequence>
+    				<element name="colors" type="m:ModelColors"/>
+    				<element name="weight" type="double"/>
+    				<element name="note" type="c:LangString" 
+    					maxOccurs="unbounded" minOccurs="1">
+    					<annotation>
+							<appinfo>
+								<jxb:property 
+									collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+							</appinfo>
+						</annotation>
+					</element>
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+
+    <complexType name="Steps">
+    	<sequence>
+    		<element name="step" type="m:Step" maxOccurs="unbounded" minOccurs="1"/>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="ModelColors">
+    	<sequence>
+    		<element name="background" type="m:Color"/>
+    		<element name="foreground" type="m:Color"/>
+    	</sequence>
+    </complexType>
+
+    <complexType name="Step">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Step"/>
+    		</appinfo>
+    	</annotation>
+    	<sequence>
+    		<element name="description" type="c:LangString"
+    			maxOccurs="unbounded" minOccurs="1">
+    			<annotation>
+					<appinfo>
+						<jxb:property 
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+					</appinfo>
+				</annotation>
+    		</element>
+    		<element name="colspan" type="positiveInteger"
+    			default="1">
+    		</element>
+    		<element name="rowspan" type="positiveInteger"
+    			default="1">
+    		</element>
+    		<element name="zoom" type="m:Percent"/>
+    		<choice>
+    			<element name="image" type="c:BinaryImage"/>
+    			<element name="operation" type="m:Operation" maxOccurs="unbounded" minOccurs="1"/>
+    		</choice>
+    	</sequence>
+    	<attribute name="id" type="string" use="required"/>
+    </complexType>
+
+    <simpleType name="Percent">
+    	<restriction base="double">
+    		<minInclusive value="1.0"/>
+    	</restriction>
+    </simpleType>
+
+    <complexType name="Operation">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Operation"/>
+    		</appinfo>
+    	</annotation>
+    	<sequence>
+    		<element name="foo" type="string"/>
+    	</sequence>
+    	<attribute name="type" type="m:Operations" use="required"/>
+    </complexType>
+    
+    <simpleType name="Operations">
+    	<restriction base="string">
+    		<enumeration value="VALLEY_FOLD"/>
+            <enumeration value="MOUNTAIN_FOLD"/>
+            <enumeration value="MOUNTAIN_VALLEY_FOLD_UNFOLD"/>
+            <enumeration value="VALLEY_MOUNTAIN_FOLD_UNFOLD"/>
+            <enumeration value="THUNDERBOLT_FOLD"/>
+            <enumeration value="TURN_OVER"/>
+            <enumeration value="ROTATE"/>
+            <enumeration value="PULL"/>
+            <enumeration value="INSIDE_CRIMP_FOLD"/>
+            <enumeration value="OUTSIDE_CRIMP_FOLD"/>
+            <enumeration value="OPEN"/>
+            <enumeration value="INSIDE_REVERSE_FOLD"/>
+            <enumeration value="OUTSIDE_REVERSE_FOLD"/>
+            <enumeration value="REPEAT_ACTION"/>
+            <enumeration value="RABBIT_FOLD"/>
+            <enumeration value="SQUASH_FOLD"/>
+    	</restriction>
+    </simpleType>
+    
+    <simpleType name="positiveInteger">
+    	<annotation>
+    		<appinfo>
+    			<jxb:javaType name="Integer" 
+					parseMethod="javax.xml.bind.DatatypeConverter.parseInt"
+					printMethod="javax.xml.bind.DatatypeConverter.printInt"/>
+    		</appinfo>
+    	</annotation>
+    	<restriction base="integer">
+    		<minExclusive value="0"/>    		
+    	</restriction>
+    </simpleType>
+
+</schema>

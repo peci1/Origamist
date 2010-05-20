@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<m:origami version="1" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/diagram.xsd">
+  <author>
+    <name>Kawasaki</name>
+    <homepage>http://www.mff.cuni.cz</homepage>
+  </author>
+  <name>Kawasaki rose</name>
+  <year>2010</year>
+  <shortdesc>A very nice, but hard rose model.</shortdesc>
+  <shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
+  <description>A very nice, but hard rose model. This has nothing to do with the czech film...</description>
+  <description lang="cs-CZ">Opravdu překrásná růže, ale složitá. Nemá nic společného s českým filmem...</description>
+  <license>
+    <name>BSD</name>
+    <content>You can do whatever you want except hiding or changing the authorship information.</content>
+    <permission>export</permission>
+    <permission>edit</permission>
+    <permission>distribute</permission>
+    
+  </license>
+  <thumbnail>
+    <image type="image/jpeg">0</image>
+  </thumbnail>
+  <paper>
+    <size>
+      <width>200</width>
+      <height>297</height>
+      <unit>mm</unit>
+    </size>
+    <color>
+      <background>#ffffff</background>
+    </color>
+    <cols>3</cols>
+    <rows>3</rows>
+  </paper>
+  <model>
+    <paper>
+      <size>
+        <width>20</width>
+        <height>20</height>
+        <unit>cm</unit>
+      </size>
+      <colors>
+        <background>#ff5555</background>
+        <foreground>#ff8888</foreground>
+      </colors>
+      <weight>80</weight>
+      <note>A common sheet of red A4 paper cut to square.</note>
+      <note lang="cs-CZ">Obyčejný červený list papíru A4 zmenšený na čtverec.</note>
+    </paper>
+    <steps>
+      <step id="1">
+        <description>Begin with a square. Make some folds.</description>
+        <description lang="cs-CZ">Začneme se čtvercem. Uděláme několik přehybů.</description>
+        <colspan>1</colspan>
+        <rowspan>1</rowspan>
+        <zoom>100</zoom>
+        <operation type="VALLEY_FOLD">
+        	<foo>foo</foo>
+        </operation>
+        
+      </step>
+    </steps>
+  </model>
+</m:origami>

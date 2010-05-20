@@ -1,0 +1,6 @@
+#Thu May 13 18:04:51 CEST 2010
+eclipse.preferences.version=1
+org.eclipse.jdt.core.compiler.doc.comment.support=disabled
+org.eclipse.jdt.core.compiler.problem.unnecessaryElse=ignore
+org.eclipse.jdt.core.compiler.problem.missingOverrideAnnotation=ignore
+org.eclipse.jdt.core.compiler.problem.unnecessaryTypeCheck=ignore

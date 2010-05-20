@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="origamist" default="default" basedir=".">
+    <description>
+            Origami diagram making application
+    </description>
+
+	<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+	  <classpath>
+	  	<fileset dir="lib" includes="*.jar"/>
+	  </classpath>
+	</taskdef>
+	
+    <path id="project.classpath">
+		<fileset dir="lib" includes="*.jar" />
+    </path>
+
+    <target depends="jaxb,compile" description="Build whole project and its documentation." name="default"/>
+
+    <!--target name="javadoc">
+        <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
+        	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
+        	doctitle="Thumbnailer" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" overview="E:\Programování\Java\Thumbnailer\overview.html" 
+        	packagenames="javax.swing,cz.cuni.mff.peckam.java.thumbnailer.dialogs,cz.cuni.mff.peckam.java.thumbnailer,cz.cuni.mff.peckam.java.thumbnailer.graphics,cz.cuni.mff.peckam.java.thumbnailer.utils,cz.cuni.mff.peckam.java.thumbnailer.ftp,cz.cuni.mff.peckam.java.thumbnailer.configurations,cz.cuni.mff.peckam.java.thumbnailer.sql" 
+        	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
+    </target-->
+
+	<target name="jaxb" description="Generates JAXB source files">
+		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/common.xsd" destdir="src" removeOldOutput="true">
+			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
+			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
+		</xjc>
+		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/files.xsd" destdir="src" removeOldOutput="true">
+			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
+		</xjc>
+		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/diagram.xsd" destdir="src" removeOldOutput="true">
+			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
+		</xjc>
+	</target>
+	
+    <target name="compile" depends="" description="Compiles the application">
+        <javac srcdir="src" destdir="bin" includes="**/*.java">
+        	<classpath>
+        		<pathelement path="src"/> 
+        		<fileset dir="lib">
+        			<include name="**/*.jar"/>
+        		</fileset> 
+        	</classpath>
+        </javac>
+    </target>
+
+    <!--target name="jar" depends="compile" description="Makes JAR and signs it">    	
+    	<exec executable="taskkill">
+    		<arg value="/F" />
+    		<arg value="/IM" />
+    		<arg value="java.exe" />
+    	</exec>
+
+        <pathconvert property="mf.classpath" pathsep=" ">
+            <path refid="project.classpath" />
+            <flattenmapper />
+        </pathconvert>        
+
+    	<unzip src="lib/forms-1.3.0.jar" dest="bin" />
+    	<unzip src="lib/jvftp.jar" dest="bin" />
+    	<unzip src="lib/metadata-extractor-2.3.1.jar" dest="bin" />
+    	<unzip src="lib/skinlf.jar" dest="bin" />
+    	<delete dir="bin/META-INF" />
+    	
+        <jar destfile="Thumbnailer.jar">
+            <fileset dir="bin" includes="**/*.*" />
+        	<fileset file="LICENSE" />
+
+            <manifest>
+                <attribute name="Created-By" value="Martin Pecka" />
+                <attribute name="Main-Class" value="cz.cuni.mff.peckam.java.thumbnailer.Thumbnailer" />
+                <attribute name="Class-Path" value="${mf.classpath}" />
+            </manifest>
+
+        </jar>
+    	
+    	<exec executable="jarsigner" dir=".">
+    		<arg value="-storepass" />
+    		<arg value="keystore" />
+    		<arg value="-keypass" />
+    		<arg value="pecikey" />
+    		<arg value="Thumbnailer.jar" />
+    		<arg value="peci1" />
+    	</exec>    	
+    </target-->
+
+</project>
