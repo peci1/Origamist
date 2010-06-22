@@ -3,14 +3,20 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.geom.Point2D;
 import java.util.Locale;
 
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
+import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
@@ -39,6 +45,19 @@ public class StepRenderer extends JPanel
     protected Color           backgroundColor  = null;
 
     /**
+     * The label that shows the descripton of the shown step.
+     */
+    protected JTextArea       descLabel        = new JTextArea();
+
+    public StepRenderer()
+    {
+        this.setLayout(new BorderLayout());
+        this.add(descLabel, BorderLayout.SOUTH);
+        descLabel.setEditable(false);
+        descLabel.setOpaque(false);
+    }
+
+    /**
      * @return the origami
      */
     public Origami getOrigami()
@@ -55,6 +74,27 @@ public class StepRenderer extends JPanel
         this.backgroundColor = origami.getPaper().getColor().getBackground();
     }
 
+    @Override
+    public void setPreferredSize(Dimension preferredSize)
+    {
+        super.setPreferredSize(preferredSize);
+        this.descLabel.setMaximumSize(preferredSize);
+    }
+
+    @Override
+    public void setSize(Dimension size)
+    {
+        super.setSize(size);
+        this.descLabel.setMaximumSize(size);
+    }
+
+    @Override
+    public void setSize(int width, int height)
+    {
+        super.setSize(width, height);
+        this.descLabel.setMaximumSize(new Dimension(width, height));
+    }
+
     /**
      * @return the step
      */
@@ -68,15 +108,15 @@ public class StepRenderer extends JPanel
      */
     public void setStep(Step step)
     {
+        Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
+
         this.step = step;
+        this.descLabel.setText(step.getDescription(l));
     }
 
     @Override
     protected void paintComponent(Graphics g)
     {
-        Locale l = ServiceLocator.get(ConfigurationManager.class).get()
-                .getDiagramLocale();
-
         super.paintComponent(g);
 
         g.setColor(backgroundColor);
@@ -85,20 +125,48 @@ public class StepRenderer extends JPanel
         if (step == null)
             return;
 
-        // TODO
+        Dimension renderAreaSize = new Dimension(getWidth(), getHeight() - descLabel.getHeight());
+
+        // TODO step rendering code
+
+        ModelState state = step.getModelState();
 
         try {
-            g.setColor(Color.BLACK);
-            g.drawString(((Step) step).getDescription(l), 10, 30);
+            // g.setColor(origami.getModel().getPaper().getColors().getForeground());
+            // g.fillRect(30, 30, 100, 100);
 
-            g.setColor(origami.getModel().getPaper().getColors()
-                    .getForeground());
-            g.fillRect(30, 30, 100, 100);
+            DoubleDimension relativePaperDimensions = origami.getModel().getPaper().getRelativeDimensions();
+
             g.setColor(Color.BLACK);
-            g.drawRect(30, 30, 100, 100);
+
+            Point2D point1 = new Point2D.Double(0, 0);
+            Point2D point2 = new Point2D.Double(relativePaperDimensions.getWidth(), 0);
+            point1 = state.getPointProjection(point1, renderAreaSize);
+            point2 = state.getPointProjection(point2, renderAreaSize);
+            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+
+            point1 = new Point2D.Double(relativePaperDimensions.getWidth(), 0);
+            point2 = new Point2D.Double(relativePaperDimensions.getWidth(), relativePaperDimensions.getHeight());
+            point1 = state.getPointProjection(point1, renderAreaSize);
+            point2 = state.getPointProjection(point2, renderAreaSize);
+            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+
+            point1 = new Point2D.Double(relativePaperDimensions.getWidth(), relativePaperDimensions.getHeight());
+            point2 = new Point2D.Double(0, relativePaperDimensions.getHeight());
+            point1 = state.getPointProjection(point1, renderAreaSize);
+            point2 = state.getPointProjection(point2, renderAreaSize);
+            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+
+            point1 = new Point2D.Double(0, relativePaperDimensions.getHeight());
+            point2 = new Point2D.Double(0, 0);
+            point1 = state.getPointProjection(point1, renderAreaSize);
+            point2 = state.getPointProjection(point2, renderAreaSize);
+            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+
+            // g.setColor(Color.BLACK);
+            // g.drawRect(30, 30, 100, 100);
         } catch (NullPointerException e) {
             System.err.println(e);
         }
     }
-
 }

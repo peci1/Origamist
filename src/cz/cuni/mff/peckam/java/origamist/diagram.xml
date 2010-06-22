@@ -28,7 +28,7 @@
       <unit>mm</unit>
     </size>
     <color>
-      <background>#ffffff</background>
+      <background>#ffff22</background>
     </color>
     <cols>3</cols>
     <rows>3</rows>
@@ -37,7 +37,7 @@
     <paper>
       <size>
         <width>20</width>
-        <height>20</height>
+        <height>30</height>
         <unit>cm</unit>
       </size>
       <colors>
@@ -45,20 +45,22 @@
         <foreground>#ff8888</foreground>
       </colors>
       <weight>80</weight>
-      <note>A common sheet of red A4 paper cut to square.</note>
-      <note lang="cs-CZ">Obyčejný červený list papíru A4 zmenšený na čtverec.</note>
+      <note>A common sheet of red A4 paper.</note>
+      <note lang="cs-CZ">Obyčejný červený list papíru A4.</note>
     </paper>
     <steps>
       <step id="1">
-        <description>Begin with a square. Make some folds.</description>
-        <description lang="cs-CZ">Začneme se čtvercem. Uděláme několik přehybů.</description>
-        <colspan>1</colspan>
-        <rowspan>1</rowspan>
-        <zoom>100</zoom>
-        <operation type="VALLEY_FOLD">
-        	<foo>foo</foo>
-        </operation>
-        
+        <description>Begin with a square.</description>
+        <description lang="cs-CZ">Začneme se čtvercem.</description>      
+      </step>
+      <step id="2">
+      	<description>Rotate it 45° clockwise.</description>
+      	<description lang="cs-CZ">Otočte ho o 45° doprava.
+      		Tohle je šíleně dlouhý dvouřádkový popisek. Určitě se na jeden řádek nemůže vejít. Lorem ipsum
+      		Lorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum</description>
+      	<operation type="ROTATE">
+      		<angle>0.7853</angle>
+      	</operation>
       </step>
     </steps>
   </model>

@@ -53,9 +53,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public Step()
     {
-        ((ChangeNotifyingList<LangString>) description)
-                .addChangeListener(new HashtableChangeNotificationListener(
-                        descriptions));
+        ((ChangeNotifyingList<LangString>) description).addChangeListener(new HashtableChangeNotificationListener(
+                descriptions));
     }
 
     /**
@@ -86,16 +85,14 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void addDescription(Locale l, String desc)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.description.add(s);
     }
 
     /**
-     * Perform folding from the previous step's state to a new state by this
-     * step.
+     * Perform folding from the previous step's state to a new state by this step.
      * 
      * @return The state the model would have after performing this step.
      */
@@ -113,6 +110,9 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
             assert false : "ModelState does not support clone()";
             return null;
         }
+
+        if (operation == null)
+            return this.modelState;
 
         for (cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation o : operation)
             this.modelState = ((Operation) o).getModelState(this.modelState);
@@ -137,8 +137,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     }
 
     /**
-     * @param modelState The model state to be used as the previous for the
-     *            first step. Has no meaning for other steps than the first one.
+     * @param modelState The model state to be used as the previous for the first step. Has no meaning for other steps
+     *            than the first one.
      */
     public void setDefaultModelState(ModelState modelState)
     {
@@ -146,8 +146,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     }
 
     /**
-     * Causes this step (and all following steps) to recompute its modelState
-     * from the previous step.
+     * Causes this step (and all following steps) to recompute its modelState from the previous step.
      */
     public void invalidateModelState()
     {

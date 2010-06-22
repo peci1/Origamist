@@ -22,7 +22,7 @@ public class OperationsHelper
      */
     public static ImageIcon getIcon(Operations operation)
     {
-        // TODO
+        // TODO image icon code
         return null;
     }
 }

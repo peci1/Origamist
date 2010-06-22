@@ -25,24 +25,26 @@ public class JAXBOrigamiLoader implements OrigamiLoader
 
     @SuppressWarnings("unchecked")
     @Override
-    public Origami loadModel(String path) throws FileNotFoundException,
-            UnsupportedDataFormatException
+    public Origami loadModel(String path) throws FileNotFoundException, UnsupportedDataFormatException
     {
         try {
-            JAXBContext context = JAXBContext.newInstance(
-                    "cz.cuni.mff.peckam.java.origamist.model.jaxb", getClass()
-                            .getClassLoader());
+            JAXBContext context = JAXBContext.newInstance("cz.cuni.mff.peckam.java.origamist.model.jaxb", getClass()
+                    .getClassLoader());
             Unmarshaller u = context.createUnmarshaller();
-            u
-                    .setProperty(
-                            "com.sun.xml.internal.bind.ObjectFactory",
-                            new cz.cuni.mff.peckam.java.origamist.model.ObjectFactory());
+            u.setProperty("com.sun.xml.internal.bind.ObjectFactory",
+                    new cz.cuni.mff.peckam.java.origamist.model.ObjectFactory());
+
             // TODO handle older versions
-            Origami o = ((JAXBElement<Origami>) u
-                    .unmarshal(new FileInputStream(path))).getValue();
+            Origami o = ((JAXBElement<Origami>) u.unmarshal(new FileInputStream(path))).getValue();
+
+            // the following line is a fix for a (possible) bug in JAXB
+            // I think that the createOrigami method should have been called by unmarshal(),
+            // but for some odd reason it doesn't get called
             o = (Origami) new ObjectFactory().createOrigami(o).getValue();
+
             return o;
         } catch (JAXBException e) {
+            // TODO handle errors in data files
             throw new UnsupportedDataFormatException(e);
         }
     }

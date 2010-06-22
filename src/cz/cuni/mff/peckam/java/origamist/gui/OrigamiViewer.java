@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -28,20 +30,20 @@ public class OrigamiViewer extends CommonGui
     @Override
     protected void createComponents()
     {
-        String path = getClass().getPackage().getName().replaceAll("\\.", "/")
-                + "/../diagram.xml";
+        String path = getClass().getPackage().getName().replaceAll("\\.", "/") + "/../diagram.xml";
         try {
             Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path);
             StepRenderer r = new StepRenderer();
             r.setOrigami(o);
-            r.setStep((Step) o.getModel().getSteps().getStep().get(0));
-            getContentPane().add(r);
+            r.setStep((Step) o.getModel().getSteps().getStep().get(1));
+            r.setPreferredSize(new Dimension(200, 200));
+            getContentPane().add(r, BorderLayout.NORTH);
         } catch (FileNotFoundException e) {
-            System.err.println(e); // TODO
+            System.err.println(e); // TODO handle file not found exception
         } catch (UnsupportedDataFormatException e) {
-            System.err.println(e); // TODO
+            System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
-            System.err.println(e); // TODO
+            System.err.println(e); // TODO handle IO errors
         }
 
     }

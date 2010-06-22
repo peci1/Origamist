@@ -6,8 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.configuration;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 
 /**
- * A default implementation of a configuration manager that stores the
- * configuration in Preferences.
+ * A default implementation of a configuration manager that stores the configuration in Preferences.
  * 
  * @author Martin Pecka
  */
@@ -28,7 +27,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager
     @Override
     public void persist()
     {
-        // TODO Auto-generated method stub
+        // TODO save configuration to preferences
     }
 
 }

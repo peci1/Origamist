@@ -61,7 +61,12 @@
 		<attribute name="version" type="positiveInteger" use="required"></attribute>
 	</complexType>
     
-    <complexType name="Paper" abstract="true"> 
+    <complexType name="Paper" abstract="true">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Paper"/>
+    		</appinfo>
+    	</annotation> 
     	<sequence>
     		<element name="size" type="m:UnitDimension"/>
     	</sequence>
@@ -114,6 +119,11 @@
     <complexType name="Colors" abstract="true"/>
     
     <complexType name="Dimension">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DoubleDimension"/>
+    		</appinfo>
+    	</annotation> 
     	<sequence>
     		<element name="width" type="double"/>
     		<element name="height" type="double"/>
@@ -207,15 +217,14 @@
 				</annotation>
     		</element>
     		<element name="colspan" type="positiveInteger"
-    			default="1">
-    		</element>
+    			default="1" maxOccurs="1" minOccurs="0" />
     		<element name="rowspan" type="positiveInteger"
-    			default="1">
-    		</element>
-    		<element name="zoom" type="m:Percent"/>
+    			default="1" maxOccurs="1" minOccurs="0" />
+    		<element name="zoom" type="m:Percent" maxOccurs="1" 
+    			minOccurs="0" default="100" />
     		<choice>
     			<element name="image" type="c:BinaryImage"/>
-    			<element name="operation" type="m:Operation" maxOccurs="unbounded" minOccurs="1"/>
+    			<element name="operation" type="m:Operation" maxOccurs="unbounded" minOccurs="0"/>
     		</choice>
     	</sequence>
     	<attribute name="id" type="string" use="required"/>
@@ -230,16 +239,17 @@
     <complexType name="Operation">
     	<annotation>
     		<appinfo>
-    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Operation"/>
+    			<jxb:class
+    				implClass="cz.cuni.mff.peckam.java.origamist.model.Operation" />
     		</appinfo>
     	</annotation>
-    	<sequence>
-    		<element name="foo" type="string"/>
-    	</sequence>
-    	<attribute name="type" type="m:Operations" use="required"/>
+    	<choice>
+    		<element name="angle" type="double"></element>
+    	</choice>
+    	<attribute name="type" type="m:Operations" use="required" />
     </complexType>
-    
-    <simpleType name="Operations">
+
+    <simpleType name="Operations"> 
     	<restriction base="string">
     		<enumeration value="VALLEY_FOLD"/>
             <enumeration value="MOUNTAIN_FOLD"/>
