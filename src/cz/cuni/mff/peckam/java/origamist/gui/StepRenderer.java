@@ -6,14 +6,24 @@ package cz.cuni.mff.peckam.java.origamist.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.geom.Point2D;
+import java.awt.GraphicsConfiguration;
 import java.util.Locale;
 
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
+import javax.media.j3d.ColoringAttributes;
+import javax.media.j3d.PolygonAttributes;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.vecmath.Color3f;
+import javax.vecmath.Vector3d;
 
-import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
+import com.sun.j3d.utils.universe.SimpleUniverse;
+
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -49,9 +59,19 @@ public class StepRenderer extends JPanel
      */
     protected JTextArea       descLabel        = new JTextArea();
 
+    /**
+     * The canvas the model is rendered to.
+     */
+    protected Canvas3D        canvas;
+
     public StepRenderer()
     {
         this.setLayout(new BorderLayout());
+
+        GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
+        canvas = new Canvas3D(config);
+        this.add(canvas, BorderLayout.CENTER);
+
         this.add(descLabel, BorderLayout.SOUTH);
         descLabel.setEditable(false);
         descLabel.setOpaque(false);
@@ -112,61 +132,34 @@ public class StepRenderer extends JPanel
 
         this.step = step;
         this.descLabel.setText(step.getDescription(l));
-    }
-
-    @Override
-    protected void paintComponent(Graphics g)
-    {
-        super.paintComponent(g);
-
-        g.setColor(backgroundColor);
-        g.fillRect(0, 0, getWidth(), getHeight());
-
-        if (step == null)
-            return;
-
-        Dimension renderAreaSize = new Dimension(getWidth(), getHeight() - descLabel.getHeight());
-
-        // TODO step rendering code
 
         ModelState state = step.getModelState();
 
-        try {
-            // g.setColor(origami.getModel().getPaper().getColors().getForeground());
-            // g.fillRect(30, 30, 100, 100);
+        SimpleUniverse universe = new SimpleUniverse(canvas);
 
-            DoubleDimension relativePaperDimensions = origami.getModel().getPaper().getRelativeDimensions();
+        Appearance appearance = new Appearance();
 
-            g.setColor(Color.BLACK);
+        PolygonAttributes polyAttribs = new PolygonAttributes();
+        polyAttribs.setCullFace(PolygonAttributes.CULL_NONE);
+        polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_FILL);
+        appearance.setPolygonAttributes(polyAttribs);
 
-            Point2D point1 = new Point2D.Double(0, 0);
-            Point2D point2 = new Point2D.Double(relativePaperDimensions.getWidth(), 0);
-            point1 = state.getPointProjection(point1, renderAreaSize);
-            point2 = state.getPointProjection(point2, renderAreaSize);
-            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(0, 0, 255), ColoringAttributes.NICEST);
+        appearance.setColoringAttributes(colAttrs);
 
-            point1 = new Point2D.Double(relativePaperDimensions.getWidth(), 0);
-            point2 = new Point2D.Double(relativePaperDimensions.getWidth(), relativePaperDimensions.getHeight());
-            point1 = state.getPointProjection(point1, renderAreaSize);
-            point2 = state.getPointProjection(point2, renderAreaSize);
-            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+        Transform3D transform = new Transform3D();
+        transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
+        TransformGroup tGroup = new TransformGroup();
+        tGroup.setTransform(transform);
 
-            point1 = new Point2D.Double(relativePaperDimensions.getWidth(), relativePaperDimensions.getHeight());
-            point2 = new Point2D.Double(0, relativePaperDimensions.getHeight());
-            point1 = state.getPointProjection(point1, renderAreaSize);
-            point2 = state.getPointProjection(point2, renderAreaSize);
-            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+        tGroup.addChild(new Shape3D(state.getTriangleArray(), appearance));
+        // TODO need to generate a copy of the triangleArray with reversed faces to be able to give them different color
 
-            point1 = new Point2D.Double(0, relativePaperDimensions.getHeight());
-            point2 = new Point2D.Double(0, 0);
-            point1 = state.getPointProjection(point1, renderAreaSize);
-            point2 = state.getPointProjection(point2, renderAreaSize);
-            g.drawLine((int) point1.getX(), (int) point1.getY(), (int) point2.getX(), (int) point2.getY());
+        BranchGroup contents = new BranchGroup();
+        contents.addChild(tGroup);
 
-            // g.setColor(Color.BLACK);
-            // g.drawRect(30, 30, 100, 100);
-        } catch (NullPointerException e) {
-            System.err.println(e);
-        }
+        universe.getViewingPlatform().setNominalViewingTransform();
+        universe.addBranchGraph(contents);
     }
+
 }

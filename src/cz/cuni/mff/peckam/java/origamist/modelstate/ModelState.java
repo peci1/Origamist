@@ -3,10 +3,10 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
-import java.awt.Dimension;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.media.j3d.TriangleArray;
 
 /**
  * The internal state of the model after some steps.
@@ -15,24 +15,42 @@ import java.util.List;
  */
 public class ModelState implements Cloneable
 {
-    protected List<Fold> folds         = new ArrayList<Fold>();
+    /**
+     * Folds on this paper.
+     */
+    protected List<Fold>    folds         = new ArrayList<Fold>();
+
+    /**
+     * The triangles the model state consists of.
+     */
+    protected TriangleArray triangleArray = null;
 
     /**
      * Zoom for this state
      */
-    protected double     zoom          = 100;
+    protected double        zoom          = 100;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double     rotationAngle = 0;
+    protected double        rotationAngle = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double     viewingAngle  = Math.PI / 2.0;
+    protected double        viewingAngle  = Math.PI / 2.0;
+
+    /**
+     * Return the triangle array.
+     * 
+     * @return The triangle array.
+     */
+    public TriangleArray getTriangleArray()
+    {
+        return triangleArray;
+    }
 
     /**
      * Adds the given angle to the current angle of rotation.
@@ -116,23 +134,6 @@ public class ModelState implements Cloneable
         return viewingAngle;
     }
 
-    /**
-     * Given a (relatively defined) point on paper and the size of the rendering surface, returns the position of the
-     * point on the rendering surface.
-     * 
-     * @param point The point on paper
-     * @param renderSurfaceDimension The size of the surface we want to render to
-     * @return Position of the point on the render surface
-     */
-    public Point2D getPointProjection(Point2D point, Dimension renderSurfaceDimension)
-    {
-        // TODO apply rotation to the returned coordinates
-        // TODO write a fold-aware version
-        // this is only a testing version
-        return new Point2D.Double(point.getX() * renderSurfaceDimension.getWidth(), point.getY()
-                * renderSurfaceDimension.getHeight());
-    }
-
     @Override
     public Object clone() throws CloneNotSupportedException
     {
@@ -140,6 +141,11 @@ public class ModelState implements Cloneable
         result.folds = new ArrayList<Fold>(folds);
         for (int i = 0; i < folds.size(); i++)
             folds.set(i, (Fold) folds.get(i).clone());
+
+        if (triangleArray != null) {
+            result.triangleArray = new TriangleArray(triangleArray.getVertexCount(), triangleArray.getVertexFormat());
+            result.triangleArray.duplicateNodeComponent(triangleArray, true);
+        }
 
         return result;
     }

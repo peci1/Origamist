@@ -32,6 +32,7 @@ public class OrigamiViewer extends CommonGui
     {
         String path = getClass().getPackage().getName().replaceAll("\\.", "/") + "/../diagram.xml";
         try {
+            // TODO remove testing stuff and put some more meaningful code
             Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path);
             StepRenderer r = new StepRenderer();
             r.setOrigami(o);
