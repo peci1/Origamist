@@ -3,13 +3,14 @@
  */
 package cz.cuni.mff.peckam.java.origamist.common;
 
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.Permission;
+import java.security.Permission;
 
 /**
  * The license of the model.
  * 
  * @author Martin Pecka
  */
+
 public class License extends
         cz.cuni.mff.peckam.java.origamist.common.jaxb.License
 {

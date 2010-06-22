@@ -19,6 +19,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListen
  * 
  * @author Martin Pecka
  */
+@XmlTransient
 public class ModelPaper extends
         cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelPaper
 {

@@ -5,11 +5,14 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.awt.Color;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 /**
  * Represents the paper the diagram is made of.
  * 
  * @author Martin Pecka
  */
+@XmlTransient
 public class DiagramPaper extends
         cz.cuni.mff.peckam.java.origamist.model.jaxb.DiagramPaper
 {

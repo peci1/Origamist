@@ -35,8 +35,9 @@ public class JAXBOrigamiLoader implements OrigamiLoader
             Unmarshaller u = context.createUnmarshaller();
             u
                     .setProperty(
-                            com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallerImpl.FACTORY,
+                            "com.sun.xml.internal.bind.ObjectFactory",
                             new cz.cuni.mff.peckam.java.origamist.model.ObjectFactory());
+            // TODO handle older versions
             Origami o = ((JAXBElement<Origami>) u
                     .unmarshal(new FileInputStream(path))).getValue();
             o = (Origami) new ObjectFactory().createOrigami(o).getValue();

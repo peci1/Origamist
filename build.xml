@@ -46,6 +46,13 @@
         		</fileset> 
         	</classpath>
         </javac>
+    	<copy todir="bin">
+    		<fileset dir="src">
+    			<include name="**/*.properties"/>
+    			<include name="**/*.xml"/>
+    			<include name="**/*.xsd"/>
+    		</fileset>
+    	</copy>
     </target>
 
     <!--target name="jar" depends="compile" description="Makes JAR and signs it">    	

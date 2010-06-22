@@ -6,22 +6,22 @@
 //
 
 
-package org.w3._2001.xmlschema;
+package cz.cuni.mff.peckam.java.origamist.common.jaxb;
 
-import java.util.Locale;
+import java.security.Permission;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-public class Adapter3
-    extends XmlAdapter<String, Locale>
+public class Adapter1
+    extends XmlAdapter<String, Permission>
 {
 
 
-    public Locale unmarshal(String value) {
-        return (cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter.parse(value));
+    public Permission unmarshal(String value) {
+        return (cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.parse(value));
     }
 
-    public String marshal(Locale value) {
-        return (cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter.print(value));
+    public String marshal(Permission value) {
+        return (cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.print(value));
     }
 
 }

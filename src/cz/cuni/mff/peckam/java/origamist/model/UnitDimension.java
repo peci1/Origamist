@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 
 /**
@@ -10,6 +12,7 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
  * 
  * @author Martin Pecka
  */
+@XmlTransient
 public class UnitDimension extends
         cz.cuni.mff.peckam.java.origamist.model.jaxb.UnitDimension
 {

@@ -7,6 +7,8 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
 import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListener;
@@ -16,6 +18,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListen
  * 
  * @author Martin Pecka
  */
+@XmlTransient
 public class Origami extends
         cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami
 {

@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.common;
 
+
 /**
  * Represents the author of the model.
  * 

@@ -17,6 +17,9 @@
 				<jxb:javaType name="java.net.URI" xmlType="anyURI" 
 					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.URIConverter.parse"
 					printMethod="cz.cuni.mff.peckam.java.origamist.utils.URIConverter.print"/>
+				<jxb:javaType name="java.security.Permission" xmlType="s:Permission" 
+					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.parse"
+					printMethod="cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.print"/>
 			</jxb:globalBindings>
 			<jxb:schemaBindings>
 				<jxb:package name="cz.cuni.mff.peckam.java.origamist.common.jaxb"/>
