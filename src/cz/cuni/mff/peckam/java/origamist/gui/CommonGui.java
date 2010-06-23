@@ -27,14 +27,13 @@ public abstract class CommonGui extends JApplet
     private static final long serialVersionUID = -9021667515698972438L;
 
     /**
-     * The localized messages for the GUI classes. Normally this would be
-     * private, but we want to use this bundle also in the derived classes.
+     * The localized messages for the GUI classes. Normally this would be private, but we want to use this bundle also
+     * in the derived classes.
      */
     protected ResourceBundle  messages         = null;
 
     /**
-     * The common message formater that can be used over the GUI. It has its
-     * locale set to the configured one
+     * The common message formater that can be used over the GUI. It has its locale set to the configured one
      */
     protected MessageFormat   format           = null;
 
@@ -45,10 +44,12 @@ public abstract class CommonGui extends JApplet
     {
         // TODO get the configured locale; also listen to the configured locale
         // changes
-        messages = ResourceBundle
-                .getBundle("cz.cuni.mff.peckam.java.origamist.gui.Gui");
+        messages = ResourceBundle.getBundle("cz.cuni.mff.peckam.java.origamist.gui.Gui");
         // TODO also set the locale and listen for changes
         format = new MessageFormat("");
+
+        // to allow transparent JCanvas3D background
+        System.setProperty("j3d.transparentOffScreen", "true");
     }
 
     @Override
@@ -69,17 +70,13 @@ public abstract class CommonGui extends JApplet
             });
 
         } catch (InterruptedException e) {
-            System.err.println(messages
-                    .getString("guiInitializationInterrupted"));
-            throw new RuntimeException(messages.getString("runtimeException"),
-                    e);
+            System.err.println(messages.getString("guiInitializationInterrupted"));
+            throw new RuntimeException(messages.getString("runtimeException"), e);
         } catch (InvocationTargetException e) {
-            format.applyPattern(messages
-                    .getString("guiInitializationException"));
+            format.applyPattern(messages.getString("guiInitializationException"));
 
             System.err.println(format.format(new Object[] { e.getCause() }));
-            throw new RuntimeException(messages.getString("runtimeException"),
-                    e.getCause());
+            throw new RuntimeException(messages.getString("runtimeException"), e.getCause());
         }
     }
 
@@ -99,8 +96,7 @@ public abstract class CommonGui extends JApplet
     protected void registerServices()
     {
         ServiceLocator.add(OrigamiLoader.class, new JAXBOrigamiLoader());
-        ServiceLocator.add(ConfigurationManager.class,
-                new ConfigurationManagerImpl());
+        ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
     }
 
     @Override

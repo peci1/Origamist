@@ -26,11 +26,6 @@ public class ModelState implements Cloneable
     protected TriangleArray triangleArray = null;
 
     /**
-     * Zoom for this state
-     */
-    protected double        zoom          = 100;
-
-    /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
     protected double        rotationAngle = 0;

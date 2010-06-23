@@ -6,13 +6,12 @@ package cz.cuni.mff.peckam.java.origamist.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
 import java.util.Locale;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
+import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Transform3D;
@@ -22,6 +21,7 @@ import javax.swing.JTextArea;
 import javax.vecmath.Color3f;
 import javax.vecmath.Vector3d;
 
+import com.sun.j3d.exp.swing.JCanvas3D;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -62,15 +62,18 @@ public class StepRenderer extends JPanel
     /**
      * The canvas the model is rendered to.
      */
-    protected Canvas3D        canvas;
+    protected JCanvas3D       canvas;
 
     public StepRenderer()
     {
         this.setLayout(new BorderLayout());
 
-        GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
-        canvas = new Canvas3D(config);
+        canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
+        canvas.setOpaque(false);
+        canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
         this.add(canvas, BorderLayout.CENTER);
+        // just a workaround - the canvas needs to know its size before the size of its container can be determined
+        canvas.setSize(new Dimension(20, 20));
 
         this.add(descLabel, BorderLayout.SOUTH);
         descLabel.setEditable(false);
@@ -135,7 +138,9 @@ public class StepRenderer extends JPanel
 
         ModelState state = step.getModelState();
 
-        SimpleUniverse universe = new SimpleUniverse(canvas);
+        canvas.setSize(this.getWidth(), this.getHeight() - this.descLabel.getHeight());
+        canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
+        SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
 
         Appearance appearance = new Appearance();
 
@@ -144,11 +149,14 @@ public class StepRenderer extends JPanel
         polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_FILL);
         appearance.setPolygonAttributes(polyAttribs);
 
-        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(0, 0, 255), ColoringAttributes.NICEST);
+        Color3f paperFrontColor = new Color3f(origami.getModel().getPaper().getColors().getForeground());
+        ColoringAttributes colAttrs = new ColoringAttributes(paperFrontColor, ColoringAttributes.NICEST);
         appearance.setColoringAttributes(colAttrs);
 
         Transform3D transform = new Transform3D();
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
+        // TODO adjust zoom according to paper size and renderer size - this is placeholder code
+        transform.setScale(0.3 * step.getZoom() / 100.0);
         TransformGroup tGroup = new TransformGroup();
         tGroup.setTransform(transform);
 

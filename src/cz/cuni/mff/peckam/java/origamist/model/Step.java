@@ -55,6 +55,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     {
         ((ChangeNotifyingList<LangString>) description).addChangeListener(new HashtableChangeNotificationListener(
                 descriptions));
+        if (zoom == null)
+            zoom = 100.0;
     }
 
     /**
