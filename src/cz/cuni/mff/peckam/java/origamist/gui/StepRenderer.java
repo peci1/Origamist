@@ -156,15 +156,19 @@ public class StepRenderer extends JPanel
         Transform3D transform = new Transform3D();
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
         // TODO adjust zoom according to paper size and renderer size - this is placeholder code
-        transform.setScale(0.3 * step.getZoom() / 100.0);
+        transform.setScale(step.getZoom() / 100.0);
         TransformGroup tGroup = new TransformGroup();
         tGroup.setTransform(transform);
 
         tGroup.addChild(new Shape3D(state.getTriangleArray(), appearance));
+        tGroup.addChild(new Shape3D(state.getLineArray()));
         // TODO need to generate a copy of the triangleArray with reversed faces to be able to give them different color
 
         BranchGroup contents = new BranchGroup();
         contents.addChild(tGroup);
+
+        contents.compile(); // may cause unexpected problems - any consequent change of contents
+        // (or even reading of them) will produce an error
 
         universe.getViewingPlatform().setNominalViewingTransform();
         universe.addBranchGraph(contents);

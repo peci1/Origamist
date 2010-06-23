@@ -113,6 +113,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
             return null;
         }
 
+        this.modelState.setStep(this);
         if (operation == null)
             return this.modelState;
 

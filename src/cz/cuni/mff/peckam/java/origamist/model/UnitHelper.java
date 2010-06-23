@@ -10,8 +10,8 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 /**
  * This class provides additional functionality of the Unit enum.
  * 
- * In localization patterns you are given a number indicating which unit is to
- * be used. The given number is equal the unit's ordinal() value.
+ * In localization patterns you are given a number indicating which unit is to be used. The given number is equal the
+ * unit's ordinal() value.
  * 
  * @author Martin Pecka
  */
@@ -27,7 +27,7 @@ public class UnitHelper
         inMeters.put(Unit.CM, 0.01);
         inMeters.put(Unit.M, 1.0);
         inMeters.put(Unit.KM, 1000.0);
-        inMeters.put(Unit.REL, null);
+        inMeters.put(Unit.REL, Double.NaN);
         inMeters.put(Unit.INCH, 0.0254);
         inMeters.put(Unit.FOOT, 0.3048);
         inMeters.put(Unit.MILE, 1609.344);
@@ -36,8 +36,8 @@ public class UnitHelper
     /**
      * Convert the value given in unit from to a value in unit to.
      * 
-     * If any of the units is REL, return null. If you need to convert a
-     * relative value, use the overload with a reference Unit and dimension
+     * If any of the units is REL, return Double.NaN. If you need to convert a relative value, use the overload with a
+     * reference Unit and dimension
      * 
      * @param from The unit of the given value
      * @param to The unit we want result to be in
@@ -46,8 +46,8 @@ public class UnitHelper
      */
     public static Double convertTo(Unit from, Unit to, double value)
     {
-        if (inMeters.get(from) == null || inMeters.get(to) == null)
-            return null;
+        if (inMeters.get(from) == Double.NaN || inMeters.get(to) == Double.NaN)
+            return Double.NaN;
         return value * inMeters.get(from) / inMeters.get(to);
     }
 
@@ -63,11 +63,10 @@ public class UnitHelper
      * @param referenceLength The length of the reference unit
      * @return The corresponding value in the to unit
      */
-    public static Double convertTo(Unit from, Unit to, double value,
-            Unit referenceUnit, double referenceLength)
+    public static Double convertTo(Unit from, Unit to, double value, Unit referenceUnit, double referenceLength)
     {
         Double res = convertTo(from, to, value);
-        if (res != null)
+        if (res != Double.NaN)
             return res;
 
         if (from == Unit.REL) {

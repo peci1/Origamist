@@ -34,8 +34,8 @@ public class ChangeNotifyingList<T> extends ArrayList<T>
     }
 
     /**
-     * Constructs a list containing the elements of the specified collection, in
-     * the order they are returned by the collection's iterator.
+     * Constructs a list containing the elements of the specified collection, in the order they are returned by the
+     * collection's iterator.
      * 
      * @param c the collection whose elements are to be placed into this list
      * @throws NullPointerException if the specified collection is null
@@ -57,8 +57,7 @@ public class ChangeNotifyingList<T> extends ArrayList<T>
      * 
      * @param initialCapacity the initial capacity of the list
      * 
-     * @throws IllegalArgumentException if the specified initial capacity is
-     *             negative
+     * @throws IllegalArgumentException if the specified initial capacity is negative
      */
     public ChangeNotifyingList(int initialCapacity)
     {
@@ -140,9 +139,13 @@ public class ChangeNotifyingList<T> extends ArrayList<T>
         if (c.size() == 0)
             return false;
 
-        Iterator<? extends T> it = c.iterator();
-        for (T item = it.next(); it.hasNext(); item = it.next())
-            add(item);
+        if (c.size() == 1) {
+            add(c.iterator().next());
+        } else {
+            Iterator<? extends T> it = c.iterator();
+            for (T item = it.next(); it.hasNext(); item = it.next())
+                add(item);
+        }
 
         return true;
     }
@@ -154,9 +157,14 @@ public class ChangeNotifyingList<T> extends ArrayList<T>
             return false;
 
         int i = index;
-        Iterator<? extends T> it = c.iterator();
-        for (T item = it.next(); it.hasNext(); item = it.next())
-            add(i++, item);
+
+        if (c.size() == 1) {
+            add(i, c.iterator().next());
+        } else {
+            Iterator<? extends T> it = c.iterator();
+            for (T item = it.next(); it.hasNext(); item = it.next())
+                add(i++, item);
+        }
 
         return true;
     }

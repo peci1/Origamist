@@ -227,7 +227,7 @@
     			<element name="operation" type="m:Operation" maxOccurs="unbounded" minOccurs="0"/>
     		</choice>
     	</sequence>
-    	<attribute name="id" type="string" use="required"/>
+    	<attribute name="id" type="int" use="required"/>
     </complexType>
 
     <simpleType name="Percent">
