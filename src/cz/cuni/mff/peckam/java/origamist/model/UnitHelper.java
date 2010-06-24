@@ -46,7 +46,7 @@ public class UnitHelper
      */
     public static Double convertTo(Unit from, Unit to, double value)
     {
-        if (inMeters.get(from) == Double.NaN || inMeters.get(to) == Double.NaN)
+        if (Double.isNaN(inMeters.get(from)) || Double.isNaN(inMeters.get(to)))
             return Double.NaN;
         return value * inMeters.get(from) / inMeters.get(to);
     }
@@ -66,7 +66,7 @@ public class UnitHelper
     public static Double convertTo(Unit from, Unit to, double value, Unit referenceUnit, double referenceLength)
     {
         Double res = convertTo(from, to, value);
-        if (res != Double.NaN)
+        if (!Double.isNaN(res))
             return res;
 
         if (from == Unit.REL) {

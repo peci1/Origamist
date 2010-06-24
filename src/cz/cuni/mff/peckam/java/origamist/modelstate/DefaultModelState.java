@@ -5,14 +5,10 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import java.awt.geom.Line2D;
 
-import javax.media.j3d.TriangleArray;
 import javax.vecmath.Point2d;
-import javax.vecmath.Point3d;
 
+import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
-import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
-import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 
 /**
@@ -30,22 +26,19 @@ public class DefaultModelState extends ModelState
      */
     public DefaultModelState(Origami o)
     {
-        UnitDimension paperSize = (UnitDimension) o.getModel().getPaper().getSize();
-        double halfWidth = UnitHelper.convertTo(paperSize.getUnit(), Unit.M, paperSize.getWidth()) / 2.0;
-        double halfHeight = UnitHelper.convertTo(paperSize.getUnit(), Unit.M, paperSize.getHeight()) / 2.0;
+        this.origami = o;
 
-        Point2d ul = new Point2d(-halfWidth, halfHeight);
-        Point2d ur = new Point2d(halfWidth, halfHeight);
-        Point2d dl = new Point2d(-halfWidth, -halfHeight);
-        Point2d dr = new Point2d(halfWidth, -halfHeight);
+        DoubleDimension dim = o.getModel().getPaper().getRelativeDimensions();
+        double width = dim.getWidth();
+        double height = dim.getHeight();
 
-        triangleArray = new TriangleArray(6, TriangleArray.COORDINATES);
-        triangleArray.setCoordinate(0, new Point3d(dl.x, dl.y, 0));
-        triangleArray.setCoordinate(1, new Point3d(dr.x, dr.y, 0));
-        triangleArray.setCoordinate(2, new Point3d(ul.x, ul.y, 0));
-        triangleArray.setCoordinate(3, new Point3d(ur.x, ur.y, 0));
-        triangleArray.setCoordinate(4, new Point3d(ul.x, ul.y, 0));
-        triangleArray.setCoordinate(5, new Point3d(dr.x, dr.y, 0));
+        Point2d ul = new Point2d(0, height);
+        Point2d ur = new Point2d(width, height);
+        Point2d dl = new Point2d(0, 0);
+        Point2d dr = new Point2d(width, 0);
+
+        triangles.add(new Triangle(dl.x, dl.y, 0, dr.x, dr.y, 0, ul.x, ul.y, 0));
+        triangles.add(new Triangle(ur.x, ur.y, 0, ul.x, ul.y, 0, dr.x, dr.y, 0));
 
         Fold fold = new Fold();
 

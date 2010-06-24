@@ -10,23 +10,21 @@ package cz.cuni.mff.peckam.java.origamist.model.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 
 
 /**
- * <p>Java class for Dimension complex type.
+ * <p>Java class for Point2D complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="Dimension">
+ * &lt;complexType name="Point2D">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="width" type="{http://www.w3.org/2001/XMLSchema}double"/>
- *         &lt;element name="height" type="{http://www.w3.org/2001/XMLSchema}double"/>
+ *         &lt;element name="x" type="{http://www.w3.org/2001/XMLSchema}double"/>
+ *         &lt;element name="y" type="{http://www.w3.org/2001/XMLSchema}double"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -36,48 +34,45 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "Dimension", propOrder = {
-    "width",
-    "height"
+@XmlType(name = "Point2D", propOrder = {
+    "x",
+    "y"
 })
-@XmlSeeAlso({
-    UnitDimension.class
-})
-public class Dimension {
+public class Point2D {
 
-    protected double width;
-    protected double height;
+    protected double x;
+    protected double y;
 
     /**
-     * Gets the value of the width property.
+     * Gets the value of the x property.
      * 
      */
-    public double getWidth() {
-        return width;
+    public double getX() {
+        return x;
     }
 
     /**
-     * Sets the value of the width property.
+     * Sets the value of the x property.
      * 
      */
-    public void setWidth(double value) {
-        this.width = value;
+    public void setX(double value) {
+        this.x = value;
     }
 
     /**
-     * Gets the value of the height property.
+     * Gets the value of the y property.
      * 
      */
-    public double getHeight() {
-        return height;
+    public double getY() {
+        return y;
     }
 
     /**
-     * Sets the value of the height property.
+     * Sets the value of the y property.
      * 
      */
-    public void setHeight(double value) {
-        this.height = value;
+    public void setY(double value) {
+        this.y = value;
     }
 
 }

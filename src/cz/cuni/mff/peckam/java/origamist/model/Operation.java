@@ -86,6 +86,9 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
                 state.flipViewingAngle();
                 break;
             case VALLEY_FOLD:
+                // Triangulator can help here:
+                // http://www.javafaq.nu/java-example-code-790.html
+                // http://download.java.net/media/java3d/javadoc/1.3.2/com/sun/j3d/utils/geometry/GeometryInfo.html
                 break;
             case MOUNTAIN_FOLD:
                 break;

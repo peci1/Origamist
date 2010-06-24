@@ -13,8 +13,7 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
  * @author Martin Pecka
  */
 @XmlTransient
-public class UnitDimension extends
-        cz.cuni.mff.peckam.java.origamist.model.jaxb.UnitDimension
+public class UnitDimension extends cz.cuni.mff.peckam.java.origamist.model.jaxb.UnitDimension
 {
     /**
      * Convert this dimension to a dimension with the given unit
@@ -29,5 +28,15 @@ public class UnitDimension extends
         res.height = UnitHelper.convertTo(getUnit(), newUnit, height);
         res.setUnit(newUnit);
         return res;
+    }
+
+    /**
+     * Return the bigger dimension.
+     * 
+     * @return The bigger dimension.
+     */
+    public double getMax()
+    {
+        return Math.max(width, height);
     }
 }

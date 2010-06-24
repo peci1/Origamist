@@ -41,7 +41,7 @@
         <unit>cm</unit>
       </size>
       <colors>
-        <background>#ff5555</background>
+        <background>#5555ff</background>
         <foreground>#ff8888</foreground>
       </colors>
       <weight>80</weight>
@@ -60,6 +60,15 @@
       		Lorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum</description>
       	<operation type="ROTATE">
       		<angle>0.7853</angle>
+      	</operation>
+      </step>
+      <step id="3">
+      	<description>Make a diagonal valley fold.</description>
+      	<description lang="cs-CZ">Udělejte na úhlopříčce údolní přehyb.</description>
+      	<operation type="VALLEY_FOLD">
+      		<startPoint><x>0</x><y>0</y></startPoint>
+      		<endPoint><x>0.6666666</x><y>1</y></endPoint>
+      		<layer>1</layer>
       	</operation>
       </step>
     </steps>

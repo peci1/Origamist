@@ -36,7 +36,7 @@ public class OrigamiViewer extends CommonGui
             Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path);
             StepRenderer r = new StepRenderer();
             r.setOrigami(o);
-            r.setStep((Step) o.getModel().getSteps().getStep().get(1));
+            r.setStep((Step) o.getModel().getSteps().getStep().get(2));
             r.setPreferredSize(new Dimension(200, 200));
             getContentPane().add(r, BorderLayout.NORTH);
         } catch (FileNotFoundException e) {

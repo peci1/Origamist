@@ -244,7 +244,14 @@
     		</appinfo>
     	</annotation>
     	<choice>
-    		<element name="angle" type="double"></element>
+    		<element name="angle" type="double"/>
+    		<sequence>
+    			<element name="startPoint" type="m:Point2D"/>
+    			<element name="endPoint" type="m:Point2D"/>
+    			<element name="layer" type="int" maxOccurs="unbounded"
+    				minOccurs="1">
+    			</element>
+    		</sequence>
     	</choice>
     	<attribute name="type" type="m:Operations" use="required" />
     </complexType>
@@ -282,5 +289,11 @@
     		<minExclusive value="0"/>    		
     	</restriction>
     </simpleType>
-
+    
+    <complexType name="Point2D">
+    	<sequence>
+    		<element name="x" type="double"></element>
+    		<element name="y" type="double"></element>
+    	</sequence>
+    </complexType>
 </schema>

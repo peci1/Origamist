@@ -26,6 +26,9 @@ import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
+import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelColors;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -136,6 +139,8 @@ public class StepRenderer extends JPanel
         this.step = step;
         this.descLabel.setText(step.getDescription(l));
 
+        // TODO refactor from now on
+
         ModelState state = step.getModelState();
 
         canvas.setSize(this.getWidth(), this.getHeight() - this.descLabel.getHeight());
@@ -143,26 +148,33 @@ public class StepRenderer extends JPanel
         SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
 
         Appearance appearance = new Appearance();
+        Appearance appearance2 = new Appearance();
 
         PolygonAttributes polyAttribs = new PolygonAttributes();
-        polyAttribs.setCullFace(PolygonAttributes.CULL_NONE);
+        polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
         polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_FILL);
         appearance.setPolygonAttributes(polyAttribs);
+        appearance2.setPolygonAttributes(polyAttribs);
 
-        Color3f paperFrontColor = new Color3f(origami.getModel().getPaper().getColors().getForeground());
-        ColoringAttributes colAttrs = new ColoringAttributes(paperFrontColor, ColoringAttributes.NICEST);
+        ModelColors paperColors = origami.getModel().getPaper().getColors();
+        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getForeground()),
+                ColoringAttributes.NICEST);
         appearance.setColoringAttributes(colAttrs);
+        colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()), ColoringAttributes.NICEST);
+        appearance2.setColoringAttributes(colAttrs);
 
         Transform3D transform = new Transform3D();
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
         // TODO adjust zoom according to paper size and renderer size - this is placeholder code
         transform.setScale(step.getZoom() / 100.0);
+        UnitDimension paperSize = ((UnitDimension) origami.getModel().getPaper().getSize()).convertTo(Unit.M);
+        transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
         TransformGroup tGroup = new TransformGroup();
         tGroup.setTransform(transform);
 
-        tGroup.addChild(new Shape3D(state.getTriangleArray(), appearance));
+        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
+        tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
         tGroup.addChild(new Shape3D(state.getLineArray()));
-        // TODO need to generate a copy of the triangleArray with reversed faces to be able to give them different color
 
         BranchGroup contents = new BranchGroup();
         contents.addChild(tGroup);
