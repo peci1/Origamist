@@ -7,9 +7,12 @@ import javax.media.j3d.GeometryArray;
 import javax.media.j3d.LineArray;
 import javax.media.j3d.TriangleArray;
 import javax.vecmath.Color4b;
+import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point4d;
+import javax.vecmath.Vector3d;
 
+import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -31,65 +34,65 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ChangeNotifyingList<Fold>     folds                 = new ChangeNotifyingList<Fold>();
+    protected ChangeNotifyingList<Fold>          folds                 = new ChangeNotifyingList<Fold>();
 
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                     foldLineArray         = null;
+    protected LineArray                          foldLineArray         = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                       foldLineArrayDirty    = true;
+    protected boolean                            foldLineArrayDirty    = true;
 
     /**
      * The triangles this model state consists of.
      */
-    protected ChangeNotifyingList<Triangle> triangles             = new ChangeNotifyingList<Triangle>();
+    protected ChangeNotifyingList<ModelTriangle> triangles             = new ChangeNotifyingList<ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                 trianglesArray        = null;
+    protected TriangleArray                      trianglesArray        = null;
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D. The triangles face
      * the other side than the corresponding ones in trianglesArray.
      */
-    protected TriangleArray                 inverseTrianglesArray = null;
+    protected TriangleArray                      inverseTrianglesArray = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                       trianglesArrayDirty   = true;
+    protected boolean                            trianglesArrayDirty   = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                        rotationAngle         = 0;
+    protected double                             rotationAngle         = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                        viewingAngle          = Math.PI / 2.0;
+    protected double                             viewingAngle          = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
      */
-    protected Step                          step;
+    protected Step                               step;
 
     /**
      * The origami model which is this the state of.
      */
-    protected Origami                       origami;
+    protected Origami                            origami;
 
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                           stepBlendingTreshold  = 5;
+    protected int                                stepBlendingTreshold  = 5;
 
     public ModelState()
     {
@@ -111,9 +114,9 @@ public class ModelState implements Cloneable
             }
         });
 
-        triangles.addChangeListener(new ChangeNotificationListener<Triangle>() {
+        triangles.addChangeListener(new ChangeNotificationListener<ModelTriangle>() {
             @Override
-            public void changePerformed(ChangeNotification<Triangle> change)
+            public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
                 ModelState.this.trianglesArrayDirty = true;
             }
@@ -141,6 +144,35 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * Takes a point defined in the 2D paper relative coordinates and returns the position of the point in the 3D model
+     * state (also in relative coordinates).
+     * 
+     * @param point
+     * @return
+     */
+    protected Point3d locatePointFromPaperTo3D(Point2d point)
+    {
+        ModelTriangle containingTriangle = null;
+        // TODO possible performance loss, try to use some kind of Voronoi diagram??? But it seems that this section
+        // won't be preformance-bottle-neck
+        for (ModelTriangle t : triangles) {
+            if (t.getOriginalPosition().contains(point)) {
+                containingTriangle = t;
+                break;
+            }
+        }
+
+        if (containingTriangle == null) {
+            System.err.println("locatePointFromPaperTo3D: Couldn't locate point " + point);
+            return new Point3d();
+        }
+
+        Vector3d barycentric = containingTriangle.getOriginalPosition().getBarycentricCoords(point);
+
+        return containingTriangle.interpolatePointFromBarycentric(barycentric);
+    }
+
+    /**
      * Update the contents of the foldLineArray so that it corresponds to the actual contents of the folds variable.
      */
     protected synchronized void updateLineArray()
@@ -157,11 +189,17 @@ public class ModelState implements Cloneable
         int i = 0;
         for (Fold fold : folds) {
             for (FoldLine line : fold.lines) {
-                // TODO the lines need to be converted to their 3D coordinates
-                foldLineArray
-                        .setCoordinate(2 * i, new Point3d(line.line.getX1() * ratio, line.line.getY1() * ratio, 0));
-                foldLineArray.setCoordinate(2 * i + 1, new Point3d(line.line.getX2() * ratio,
-                        line.line.getY2() * ratio, 0));
+                Point2d startPoint = new Point2d(line.line.getX1(), line.line.getY1());
+                Point3d startPoint2 = locatePointFromPaperTo3D(startPoint);
+                startPoint2.scale(ratio);
+                foldLineArray.setCoordinate(2 * i, startPoint2);
+
+                Point2d endPoint = new Point2d(line.line.getX2(), line.line.getY2());
+                Point3d endPoint2 = locatePointFromPaperTo3D(endPoint);
+                endPoint2.scale(ratio);
+                foldLineArray.setCoordinate(2 * i + 1, endPoint2);
+
+                // TODO implement some more line thickness and style possibilities
                 byte alpha = (byte) 255;
                 if (line.direction != null) {
                     // TODO invent some more sophisticated way to determine the fold "age"
@@ -194,6 +232,10 @@ public class ModelState implements Cloneable
         return foldLineArray;
     }
 
+    /**
+     * Update the contents of the trianglesArray so that it corresponds to the actual contents of the triangles
+     * variable.
+     */
     protected synchronized void updateTrianglesArray()
     {
         trianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
@@ -204,7 +246,7 @@ public class ModelState implements Cloneable
 
         int i = 0;
         Point3d p1, p2, p3;
-        for (Triangle triangle : triangles) {
+        for (Triangle3d triangle : triangles) {
             p1 = (Point3d) triangle.getP1().clone();
             p1.project(new Point4d(p1.x, p1.y, p1.z, ratio));
 
@@ -352,8 +394,8 @@ public class ModelState implements Cloneable
         for (Fold fold : folds)
             result.folds.add((Fold) fold.clone());
 
-        for (Triangle t : triangles)
-            result.triangles.add((Triangle) t.clone());
+        for (Triangle3d t : triangles)
+            result.triangles.add((ModelTriangle) t.clone());
         result.trianglesArrayDirty = true;
 
         return result;
