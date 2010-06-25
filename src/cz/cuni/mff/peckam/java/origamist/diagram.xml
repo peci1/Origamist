@@ -50,26 +50,47 @@
     </paper>
     <steps>
       <step id="1">
-        <description>Begin with a square.</description>
-        <description lang="cs-CZ">Začneme se čtvercem.</description>      
+        <description>Begin with a rectangle.</description>
+        <description lang="cs-CZ">Začneme s obdélníkem.</description>      
       </step>
       <step id="2">
       	<description>Rotate it 45° clockwise.</description>
-      	<description lang="cs-CZ">Otočte ho o 45° doprava.
-      		Tohle je šíleně dlouhý dvouřádkový popisek. Určitě se na jeden řádek nemůže vejít. Lorem ipsum
-      		Lorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum</description>
+      	<description lang="cs-CZ">Otočte ho o 45° doprava.</description>
       	<operation type="ROTATE">
       		<angle>0.7853</angle>
       	</operation>
       </step>
       <step id="3">
-      	<description>Make a diagonal valley fold.</description>
-      	<description lang="cs-CZ">Udělejte na úhlopříčce údolní přehyb.</description>
+      	<description>Make a valley fold parallel to the bottom of the paper.</description>
+      	<description lang="cs-CZ">Rovnoběžně se spodní hranou papíru udělejte údolní přehyb.</description>
       	<operation type="VALLEY_FOLD">
-      		<startPoint><x>0</x><y>0</y></startPoint>
-      		<endPoint><x>0.6666666</x><y>1</y></endPoint>
+      		<startPoint><x>0</x><y>0.2</y></startPoint>
+      		<endPoint><x>0.666666666</x><y>0.2</y></endPoint>
       		<layer>1</layer>
+      		<angle>1</angle>
       	</operation>
+      </step>
+      <step id="4">
+      	<description>Make a mountain fold parallel to the top of the paper.</description>
+      	<description lang="cs-CZ">Rovnoběžně s horní hranou papíru udělejte horní přehyb.</description>
+      	<operation type="MOUNTAIN_FOLD">
+      		<startPoint><x>0</x><y>0.8</y></startPoint>
+      		<endPoint><x>0.666666666</x><y>0.8</y></endPoint>
+      		<layer>1</layer>
+      		<angle>2</angle>
+      	</operation>
+      </step>
+      <step id="5">
+      	<description>Rotate it 45° backwards.</description>
+      	<description lang="cs-CZ">Otočte ho zase o 45° zpět.</description>
+      	<operation type="ROTATE">
+      		<angle>-0.7853</angle>
+      	</operation>
+      </step>
+      <step id="6">
+      	<description>Turn the paper over.</description>
+      	<description lang="cs-CZ">Otočte papír vzhůru nohama.</description>
+      	<operation type="TURN_OVER"/>
       </step>
     </steps>
   </model>

@@ -140,6 +140,22 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     }
 
     /**
+     * @return the previous
+     */
+    public Step getPrevious()
+    {
+        return previous;
+    }
+
+    /**
+     * @return the next
+     */
+    public Step getNext()
+    {
+        return next;
+    }
+
+    /**
      * @param modelState The model state to be used as the previous for the first step. Has no meaning for other steps
      *            than the first one.
      */

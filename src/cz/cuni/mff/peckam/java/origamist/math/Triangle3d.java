@@ -3,6 +3,9 @@
  */
 package cz.cuni.mff.peckam.java.origamist.math;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
@@ -22,6 +25,10 @@ public class Triangle3d implements Cloneable
     protected HalfSpace3d hs3;
     protected Plane3d     plane;
 
+    protected Segment3d   s1;
+    protected Segment3d   s2;
+    protected Segment3d   s3;
+
     public Triangle3d(Point3d p1, Point3d p2, Point3d p3)
     {
         this.p1 = p1;
@@ -32,6 +39,10 @@ public class Triangle3d implements Cloneable
         hs1 = HalfSpace3d.createPerpendicularToTriangle(p1, p2, p3);
         hs2 = HalfSpace3d.createPerpendicularToTriangle(p2, p3, p1);
         hs3 = HalfSpace3d.createPerpendicularToTriangle(p3, p1, p2);
+
+        s1 = new Segment3d(p1, p2);
+        s2 = new Segment3d(p2, p3);
+        s3 = new Segment3d(p1, p3);
     }
 
     public Triangle3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
@@ -88,6 +99,30 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * @return The first side of the triangle.
+     */
+    public Segment3d getS1()
+    {
+        return s1;
+    }
+
+    /**
+     * @return The second side of the triangle.
+     */
+    public Segment3d getS2()
+    {
+        return s2;
+    }
+
+    /**
+     * @return The third side of the triangle.
+     */
+    public Segment3d getS3()
+    {
+        return s3;
+    }
+
+    /**
      * Returns true if this triangle contains the given point.
      * 
      * @param point The point to check.
@@ -113,10 +148,47 @@ public class Triangle3d implements Cloneable
         return result;
     }
 
+    public List<Point3d> getIntersection(Line3d line)
+    {
+        List<Point3d> result = new ArrayList<Point3d>(3);
+        if (line instanceof Segment3d) {
+            result.add(s1.getIntersection((Segment3d) line));
+            result.add(s2.getIntersection((Segment3d) line));
+            result.add(s3.getIntersection((Segment3d) line));
+        } else {
+            result.add(s1.getIntersection(line));
+            result.add(s2.getIntersection(line));
+            result.add(s3.getIntersection(line));
+        }
+
+        if (result.get(0) == null && result.get(1) == null && result.get(2) == null)
+            result.clear();
+
+        return result;
+    }
+
+    public Vector3d getNormal()
+    {
+        Vector3d normal = new Vector3d();
+        Vector3d foo1 = new Vector3d(p3);
+        Vector3d foo2 = new Vector3d(p2);
+        foo1.sub(p1);
+        foo2.sub(p1);
+        normal.cross(foo1, foo2);
+        normal.normalize();
+        return normal;
+    }
+
     @Override
     public Object clone()
     {
         return new Triangle3d(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Triangle3d [" + p1 + ", " + p2 + ", " + p3 + "]";
     }
 
 }

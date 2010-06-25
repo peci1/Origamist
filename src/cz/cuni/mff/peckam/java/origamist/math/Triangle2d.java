@@ -129,4 +129,10 @@ public class Triangle2d implements Cloneable
         return new Triangle2d(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
 
+    @Override
+    public String toString()
+    {
+        return "Triangle2d [" + p1 + ", " + p2 + ", " + p3 + "]";
+    }
+
 }

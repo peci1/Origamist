@@ -6,9 +6,11 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import java.util.Hashtable;
 
 import javax.swing.ImageIcon;
+import javax.vecmath.Point2d;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
+import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
 /**
@@ -80,17 +82,18 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
         // TODO model state transitioning stuff
         switch (this.type) {
             case ROTATE:
-                state.addRotation(this.angle);
+                state.addRotation(-this.angle);
                 break;
             case TURN_OVER:
                 state.flipViewingAngle();
                 break;
             case VALLEY_FOLD:
-                // Triangulator can help here:
-                // http://www.javafaq.nu/java-example-code-790.html
-                // http://download.java.net/media/java3d/javadoc/1.3.2/com/sun/j3d/utils/geometry/GeometryInfo.html
+                state.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()), new Point2d(
+                        endPoint.getX(), endPoint.getY()), layer, angle);
                 break;
             case MOUNTAIN_FOLD:
+                state.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()), new Point2d(
+                        endPoint.getX(), endPoint.getY()), layer, angle);
                 break;
             case INSIDE_CRIMP_FOLD:
                 break;

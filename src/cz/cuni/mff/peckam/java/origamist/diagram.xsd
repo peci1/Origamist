@@ -246,11 +246,12 @@
     	<choice>
     		<element name="angle" type="double"/>
     		<sequence>
-    			<element name="startPoint" type="m:Point2D"/>
-    			<element name="endPoint" type="m:Point2D"/>
+    			<element name="startPoint" type="m:Point2D" />
+    			<element name="endPoint" type="m:Point2D" />
     			<element name="layer" type="int" maxOccurs="unbounded"
     				minOccurs="1">
     			</element>
+    			<element name="angle" type="double"></element>
     		</sequence>
     	</choice>
     	<attribute name="type" type="m:Operations" use="required" />

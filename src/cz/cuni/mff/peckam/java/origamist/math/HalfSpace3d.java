@@ -126,4 +126,10 @@ public class HalfSpace3d
         return createPerpendicularToTriangle(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(rx,
                 ry, rz));
     }
+
+    @Override
+    public String toString()
+    {
+        return "HalfSpace3d [" + a + "x + " + b + "y + " + c + "z + " + d + " >= 0]";
+    }
 }

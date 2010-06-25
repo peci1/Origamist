@@ -74,4 +74,10 @@ public class Plane3d
         double res = a * point.x + b * point.y + c * point.z + d;
         return -EPSILON <= res && res <= EPSILON;
     }
+
+    @Override
+    public String toString()
+    {
+        return "Plane3d [" + a + "x + " + b + "y + " + c + "z + " + d + " = 0]";
+    }
 }

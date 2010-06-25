@@ -77,4 +77,11 @@ public class HalfPlane2d
     {
         return p.x * a + p.y * b + c >= 0 - EPSILON;
     }
+
+    @Override
+    public String toString()
+    {
+        return "HalfPlane2d [" + a + "x + " + b + "y + " + c + " >= 0]";
+    }
+
 }
