@@ -243,17 +243,12 @@
     				implClass="cz.cuni.mff.peckam.java.origamist.model.Operation" />
     		</appinfo>
     	</annotation>
-    	<choice>
-    		<element name="angle" type="double"/>
-    		<sequence>
-    			<element name="startPoint" type="m:Point2D" />
-    			<element name="endPoint" type="m:Point2D" />
-    			<element name="layer" type="int" maxOccurs="unbounded"
-    				minOccurs="1">
-    			</element>
-    			<element name="angle" type="double"></element>
-    		</sequence>
-    	</choice>
+    	<sequence>
+    		<element name="angle" type="double" minOccurs="0" />    		
+    		<element name="startPoint" type="m:Point2D" minOccurs="0" />
+    		<element name="endPoint" type="m:Point2D" minOccurs="0" />
+    		<element name="layer" type="int" maxOccurs="unbounded" minOccurs="0" />
+    	</sequence>
     	<attribute name="type" type="m:Operations" use="required" />
     </complexType>
 
