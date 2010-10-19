@@ -3,13 +3,18 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.swing.JApplet;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiLoader;
@@ -17,7 +22,10 @@ import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
 /**
- * Common GUI elements for both the viewer and editor
+ * Common GUI elements for both the viewer and editor.
+ * 
+ * Provided properties:
+ * messages (protected property)
  * 
  * @author Martin Pecka
  */
@@ -42,11 +50,26 @@ public abstract class CommonGui extends JApplet
      */
     public CommonGui()
     {
-        // TODO get the configured locale; also listen to the configured locale
-        // changes
-        messages = ResourceBundle.getBundle("cz.cuni.mff.peckam.java.origamist.gui.Gui");
-        // TODO also set the locale and listen for changes
-        format = new MessageFormat("");
+        registerServices();
+
+        final Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
+
+        final String bundleName = "cz.cuni.mff.peckam.java.origamist.gui.Gui";
+
+        messages = ResourceBundle.getBundle(bundleName, config.getLocale());
+        format = new MessageFormat("", config.getLocale());
+        config.addPropertyChangeListener("locale", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (!messages.getLocale().equals(evt.getNewValue())) {
+                    ResourceBundle oldMessages = messages;
+                    messages = ResourceBundle.getBundle(bundleName, (Locale) evt.getNewValue());
+                    CommonGui.this.firePropertyChange("messages", oldMessages, messages);
+                    format = new MessageFormat("", (Locale) evt.getNewValue());
+                }
+            }
+        });
 
         // to allow transparent JCanvas3D background
         System.setProperty("j3d.transparentOffScreen", "true");
@@ -56,8 +79,6 @@ public abstract class CommonGui extends JApplet
     public void init()
     {
         super.init();
-
-        registerServices();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -70,13 +91,9 @@ public abstract class CommonGui extends JApplet
             });
 
         } catch (InterruptedException e) {
-            System.err.println(messages.getString("guiInitializationInterrupted"));
-            throw new RuntimeException(messages.getString("runtimeException"), e);
+            dieWithException(e, messages.getString("guiInitializationInterrupted"));
         } catch (InvocationTargetException e) {
-            format.applyPattern(messages.getString("guiInitializationException"));
-
-            System.err.println(format.format(new Object[] { e.getCause() }));
-            throw new RuntimeException(messages.getString("runtimeException"), e.getCause());
+            dieWithException(e, messages.getString("guiInitializationException"));
         }
     }
 
@@ -117,4 +134,30 @@ public abstract class CommonGui extends JApplet
         super.destroy();
     }
 
+    /**
+     * Presents the given exception to the user and ends the program.
+     * 
+     * @param e The exception that was thrown.
+     * @param desc The human-readable description of the exception.
+     */
+    protected void dieWithException(final Exception e, final String desc)
+    {
+        final String desc2;
+        if (desc != null)
+            desc2 = desc;
+        else
+            desc2 = messages.getString("unknownError");
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                System.err.println(desc + ":\n" + e);
+                format.applyPattern(messages.getString("dieWithException"));
+                JOptionPane.showMessageDialog(getRootPane(), format.format(new String[] { desc2, e.toString() }),
+                        messages.getString("dieWithExceptionTitle"), JOptionPane.ERROR_MESSAGE);
+                stop();
+            }
+        });
+    }
 }
