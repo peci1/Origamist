@@ -73,19 +73,6 @@ public class Configuration
     }
 
     /**
-     * Create a default configuration. It may depend on the host's environment.
-     * 
-     * @return The defalt configuration.
-     */
-    public static Configuration getDefault()
-    {
-        Configuration c = new Configuration();
-        c.setLocale(Locale.getDefault());
-        c.setDiagramLocale(Locale.getDefault());
-        return c;
-    }
-
-    /**
      * Notify listeners on the change of the <code>property</code>.
      * 
      * The event is fired only if newValue and oldValue aren't the same.
