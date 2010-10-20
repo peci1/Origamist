@@ -19,7 +19,7 @@ public interface OrigamiLoader
     /**
      * Load the model saved in path. Always returns the model converted to the newest available schema version.
      * 
-     * @param path Path to the model (either local or a URL)
+     * @param path Path to the model
      * @param onlyMetadata If true, the contents of the <code>model</code> tag will be skipped. They will be loaded
      *            lazily the first time they will be accessed.
      * @return The model parsed from the given file.
