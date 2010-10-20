@@ -24,18 +24,26 @@
         	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
     </target-->
 
-	<target name="jaxb" description="Generates JAXB source files">
+	<target name="jaxb-common" description="Generates JAXB source files from common.xsd">
 		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/common.xsd" destdir="src" removeOldOutput="true">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
 			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
-		</xjc>
+		</xjc>	
+	</target>
+	
+	<target name="jaxb-files" description="Generates JAXB source files from files.xsd">
 		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/files.xsd" destdir="src" removeOldOutput="true">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
 		</xjc>
+	</target>
+	
+	<target name="jaxb-diagram" description="Generates JAXB source files from diagram.xsd">
 		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/diagram.xsd" destdir="src" removeOldOutput="true">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
-		</xjc>
+		</xjc>		
 	</target>
+	
+	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram" />
 	
     <target name="compile" depends="" description="Compiles the application">
         <javac srcdir="src" destdir="bin" includes="**/*.java">

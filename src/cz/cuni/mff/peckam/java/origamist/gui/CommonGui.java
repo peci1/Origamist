@@ -93,7 +93,7 @@ public abstract class CommonGui extends JApplet
         } catch (InterruptedException e) {
             dieWithException(e, messages.getString("guiInitializationInterrupted"));
         } catch (InvocationTargetException e) {
-            dieWithException(e, messages.getString("guiInitializationException"));
+            dieWithException(e.getCause(), messages.getString("guiInitializationException"));
         }
     }
 
@@ -140,7 +140,7 @@ public abstract class CommonGui extends JApplet
      * @param e The exception that was thrown.
      * @param desc The human-readable description of the exception.
      */
-    protected void dieWithException(final Exception e, final String desc)
+    protected void dieWithException(final Throwable throwable, final String desc)
     {
         final String desc2;
         if (desc != null)
@@ -152,9 +152,10 @@ public abstract class CommonGui extends JApplet
             @Override
             public void run()
             {
-                System.err.println(desc + ":\n" + e);
+                System.err.println(desc + ":\n" + throwable + "\nCause:\n" + throwable.getCause());
                 format.applyPattern(messages.getString("dieWithException"));
-                JOptionPane.showMessageDialog(getRootPane(), format.format(new String[] { desc2, e.toString() }),
+                JOptionPane.showMessageDialog(getRootPane(),
+                        format.format(new String[] { desc2, throwable.toString() }),
                         messages.getString("dieWithExceptionTitle"), JOptionPane.ERROR_MESSAGE);
                 stop();
             }

@@ -21,6 +21,7 @@
     
     <complexType name="Listing">
     	<sequence>
+    		<element name="version" type="integer" />
     		<element name="files" type="m:Files">
     			<annotation>
 					<appinfo>
