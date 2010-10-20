@@ -5,8 +5,8 @@ package cz.cuni.mff.peckam.java.origamist.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -33,7 +33,7 @@ public class OrigamiViewer extends CommonGui
         String path = getClass().getPackage().getName().replaceAll("\\.", "/") + "/../diagram.xml";
         try {
             // TODO remove testing stuff and put some more meaningful code
-            Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path);
+            Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(new URL(this.getDocumentBase(), path), true);
             /*
              * StepRenderer r = new StepRenderer(); r.setOrigami(o); r.setStep((Step)
              * o.getModel().getSteps().getStep().get(3)); r.setPreferredSize(new Dimension(200, 200));
@@ -41,8 +41,6 @@ public class OrigamiViewer extends CommonGui
             DiagramRenderer r = new DiagramRenderer(o, (Step) o.getModel().getSteps().getStep().get(0));
             r.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(r, BorderLayout.NORTH);
-        } catch (FileNotFoundException e) {
-            System.err.println(e); // TODO handle file not found exception
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
