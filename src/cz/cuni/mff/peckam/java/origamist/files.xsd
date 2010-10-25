@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>  
 <schema xmlns="http://www.w3.org/2001/XMLSchema" 
 	xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/files/"
 	xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/"
-	xmlns:jxb="http://java.sun.com/xml/ns/jaxb"	
+	xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:patch="http://www.mff.cuni.cz/~peckam/java/origamist/jaxb/plugins/patch"
 	jxb:version="2.0" 
-	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/files/">	
+	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/files/"
+	jxb:extensionBindingPrefixes="patch">   
 	
 	<import schemaLocation="common.xsd" namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/" />
 
@@ -20,16 +22,20 @@
     </element>    
     
     <complexType name="Listing">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Listing"/>
+    		</appinfo>
+    	</annotation>
     	<sequence>
-    		<element name="version" type="integer" />
-    		<element name="files" type="m:Files">
+    		<element name="files" type="m:Files" maxOccurs="1" minOccurs="0">
     			<annotation>
 					<appinfo>
 						<jxb:property 
 							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
 					</appinfo>
 				</annotation>
-    		</element>
+    		</element> 
     		<element name="categories" type="m:Categories" maxOccurs="1"
     			minOccurs="0">
     			<annotation>
@@ -40,6 +46,7 @@
 				</annotation>
     		</element>
     	</sequence>
+    	<attribute name="version" type="integer" use="required" />
     </complexType>
 
     <complexType name="Files">
@@ -49,6 +56,11 @@
     </complexType>
 
     <complexType name="File">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.File"/>
+    		</appinfo>
+    	</annotation>
     	<sequence>
     		<element name="author" type="c:Author" maxOccurs="1" minOccurs="0"/>
     		<element name="name" type="c:LangString"
@@ -79,14 +91,30 @@
     </complexType>            
 
     <complexType name="Categories">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Categories"/>
+    		</appinfo>
+    	</annotation>
     	<sequence>
     		<element name="category" type="m:Category"
     			maxOccurs="unbounded" minOccurs="1">
+    			<annotation>
+					<appinfo>
+						<jxb:property 
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+					</appinfo>
+				</annotation>
     		</element>
     	</sequence>
     </complexType>
 
     <complexType name="Category">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Category"/> 
+    		</appinfo>
+    	</annotation>
     	<sequence>
     		<element name="name" type="c:LangString"
     			maxOccurs="unbounded" minOccurs="1">
@@ -97,7 +125,7 @@
 					</appinfo>
 				</annotation>
     		</element>
-    		<element name="files" type="m:Files">
+    		<element name="files" type="m:Files" minOccurs="0" maxOccurs="unbounded">
     			<annotation>
 					<appinfo>
 						<jxb:property 
@@ -105,7 +133,7 @@
 					</appinfo>
 				</annotation>
     		</element>
-    		<element name="categories" type="m:Categories">
+    		<element name="categories" type="m:Categories" minOccurs="0" maxOccurs="unbounded">
     			<annotation>
 					<appinfo>
 						<jxb:property 
@@ -116,4 +144,4 @@
     	</sequence>    	
     	<attribute name="id" type="string" use="required"/>
     </complexType>
-</schema>
+</schema> 

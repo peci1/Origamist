@@ -6,8 +6,9 @@ package cz.cuni.mff.peckam.java.origamist.utils;
 /**
  * A listener to change notifications
  * 
+ * @param T Type of the elements in the observed list.
+ * 
  * @author Martin Pecka
- * @param <T> Type of the item that is to be changed
  */
 public interface ChangeNotificationListener<T>
 {

@@ -8,8 +8,9 @@ import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList.ChangeTypes;
 /**
  * Notification about a change (addition/removal of an item) in the list
  * 
+ * @param T Type of the elements in the observed list.
+ * 
  * @author Martin Pecka
- * @param <T> Type of the item that has been modified
  */
 public class ChangeNotification<T>
 {

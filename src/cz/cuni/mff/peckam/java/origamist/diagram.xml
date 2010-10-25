@@ -15,8 +15,7 @@
     <content>You can do whatever you want except hiding or changing the authorship information.</content>
     <permission>export</permission>
     <permission>edit</permission>
-    <permission>distribute</permission>
-    
+    <permission>distribute</permission>    
   </license>
   <thumbnail>
     <image type="image/jpeg">0</image>

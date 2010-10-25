@@ -11,7 +11,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
 
 /**
  * A step of the model creation.
@@ -53,8 +53,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public Step()
     {
-        ((ChangeNotifyingList<LangString>) description).addChangeListener(new HashtableChangeNotificationListener(
-                descriptions));
+        ((ChangeNotifyingList<LangString>) description)
+                .addChangeListener(new LangStringHashtableChangeNotificationListener(descriptions));
         if (zoom == null)
             zoom = 100.0;
     }

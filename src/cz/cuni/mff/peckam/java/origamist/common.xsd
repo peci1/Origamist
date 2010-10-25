@@ -5,7 +5,7 @@
 	xmlns:s="http://www.mff.cuni.cz/~peckam/java/origamist/common/"
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/">
 	
-	<annotation> 
+	<annotation>
 		<appinfo>
 			<jxb:globalBindings>	
 				<jxb:javaType name="Integer" xmlType="integer" 
@@ -27,7 +27,12 @@
 		</appinfo>
 	</annotation>
 	
-	<complexType name="Author">		
+	<complexType name="Author">
+		<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.Author"/>
+    		</appinfo>
+    	</annotation>		
 		<sequence>
 			<element name="name" type="string"/>
 			<element name="homepage" type="anyURI" maxOccurs="1" minOccurs="0"/>

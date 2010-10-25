@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
 
 /**
  * The paper the model is made of.
@@ -20,8 +20,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListen
  * @author Martin Pecka
  */
 @XmlTransient
-public class ModelPaper extends
-        cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelPaper
+public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelPaper
 {
 
     /**
@@ -35,9 +34,8 @@ public class ModelPaper extends
      */
     public ModelPaper()
     {
-        ((ChangeNotifyingList<LangString>) note)
-                .addChangeListener(new HashtableChangeNotificationListener(
-                        notes));
+        ((ChangeNotifyingList<LangString>) note).addChangeListener(new LangStringHashtableChangeNotificationListener(
+                notes));
     }
 
     /**
@@ -86,8 +84,7 @@ public class ModelPaper extends
     public String getNote(Locale l)
     {
         if (notes.size() == 0) {
-            ResourceBundle b = ResourceBundle.getBundle(
-                    "cz.cuni.mff.peckam.java.origamist.model.ModelPaper", l);
+            ResourceBundle b = ResourceBundle.getBundle("cz.cuni.mff.peckam.java.origamist.model.ModelPaper", l);
             return b.getString("noteNotFound");
         }
 
@@ -104,8 +101,7 @@ public class ModelPaper extends
      */
     public void addNote(Locale l, String note)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(note);
         this.note.add(s);

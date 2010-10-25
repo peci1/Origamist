@@ -12,8 +12,9 @@ import java.util.List;
 /**
  * A list that notifies its listeners whenever an item is added/removed
  * 
+ * @param T The type of elements in the list.
+ * 
  * @author Martin Pecka
- * @param <T> Type of the items in this list
  */
 public class ChangeNotifyingList<T> extends ArrayList<T>
 {

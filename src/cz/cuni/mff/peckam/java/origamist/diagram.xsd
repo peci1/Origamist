@@ -8,7 +8,7 @@
 
 	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/" schemaLocation="common.xsd"/>
 
-	<annotation>
+	<annotation> 
 		<appinfo>			
 			<jxb:schemaBindings>
 				<jxb:package name="cz.cuni.mff.peckam.java.origamist.model.jaxb"/>
@@ -20,6 +20,11 @@
 	</element>
 
 	<complexType name="Origami">
+		<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Origami"/>
+    		</appinfo>
+    	</annotation> 
 		<sequence>
 			<element name="author" type="c:Author" />
 			<element name="name" type="c:LangString"

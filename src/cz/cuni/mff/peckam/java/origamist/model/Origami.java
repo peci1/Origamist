@@ -17,7 +17,7 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
 
 /**
  * The origami diagram.
@@ -48,11 +48,12 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public Origami()
     {
-        ((ChangeNotifyingList<LangString>) name).addChangeListener(new HashtableChangeNotificationListener(names));
-        ((ChangeNotifyingList<LangString>) shortdesc).addChangeListener(new HashtableChangeNotificationListener(
-                shortDescs));
-        ((ChangeNotifyingList<LangString>) description).addChangeListener(new HashtableChangeNotificationListener(
-                descriptions));
+        ((ChangeNotifyingList<LangString>) name).addChangeListener(new LangStringHashtableChangeNotificationListener(
+                names));
+        ((ChangeNotifyingList<LangString>) shortdesc)
+                .addChangeListener(new LangStringHashtableChangeNotificationListener(shortDescs));
+        ((ChangeNotifyingList<LangString>) description)
+                .addChangeListener(new LangStringHashtableChangeNotificationListener(descriptions));
     }
 
     /**

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<m:listing version="1" xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/files/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/files/ files.xsd http://www.mff.cuni.cz/~peckam/java/origamist/common/ common.xsd ">
+  <files>
+    <file src="diagram.xml">
+    	<author>
+    		<name>Kawasaki</name>
+    		<homepage>http://www.kawasaki.com</homepage>
+    	</author>
+    	<name>Kawasaki rose</name>
+    	<name lang="cs-CZ">Kawasakiho růže</name>
+    	<year>2000</year>
+    	<shortdesc>A very nice, but hard rose model.</shortdesc>
+  		<shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
+  		<license>
+    		<name>BSD</name>
+    		<content>You can do whatever you want except hiding or changing the authorship information.</content>
+    		<permission>export</permission>
+    		<permission>edit</permission>
+    		<permission>distribute</permission>    
+  		</license>
+  		<original>http://www.mff.cuni.cz</original>
+  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
+    </file>
+  </files>
+  <categories>
+    <category id="flowers">
+      <name lang="en-US">Flowers</name>
+      <name lang="cs-CZ">Květiny</name>
+      <files>
+        <file src="diagram.xml">
+	    	<author>
+	    		<name>Kawasaki - categorized</name>
+	    		<homepage>http://www.kawasaki.com</homepage>
+	    	</author>
+	    	<name>Kawasaki rose in flowers category</name>
+	    	<name lang="cs-CZ">Kawasakiho růže v kategorii květin</name>
+	    	<year>2000</year>
+	    	<shortdesc>A very nice, but hard rose model.</shortdesc>
+	  		<shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
+	  		<license>
+	    		<name>BSD</name>
+	    		<content>You can do whatever you want except hiding or changing the authorship information.</content>
+	    		<permission>export</permission>
+	    		<permission>edit</permission>
+	    		<permission>distribute</permission>    
+	  		</license>
+	  		<original>http://www.mff.cuni.cz</original>
+	  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
+	    </file>
+      </files>
+      <categories>
+      	<category id="roses">
+      		<name>Roses</name>
+      		<name lang="cs-CZ">Růže</name>
+      		<files>
+      			<file src="diagram.xml">
+			    	<author>
+			    		<name>Kawasaki - categorized - roses</name>
+			    		<homepage>http://www.kawasaki.com</homepage>
+			    	</author>
+			    	<name>Kawasaki rose in flowers category - roses</name>
+			    	<name lang="cs-CZ">Kawasakiho růže v kategorii květin - růže</name>
+			    	<year>2000</year>
+			    	<shortdesc>A very nice, but hard rose model.</shortdesc>
+			  		<shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
+			  		<license>
+			    		<name>BSD</name>
+			    		<content>You can do whatever you want except hiding or changing the authorship information.</content>
+			    		<permission>export</permission>
+			    		<permission>edit</permission>
+			    		<permission>distribute</permission>    
+			  		</license>
+			  		<original>http://www.mff.cuni.cz</original>
+			  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
+			    </file>		
+      		</files>
+      	</category>
+      	<category id="red">
+      		<name>Red</name>
+      		<name lang="cs-CZ">Červené</name>
+      		<files>
+      			<file src="diagram.xml">
+			    	<author>
+			    		<name>Kawasaki - categorized - red</name>
+			    		<homepage>http://www.kawasaki.com</homepage>
+			    	</author>
+			    	<name>Kawasaki rose in flowers category - red</name>
+			    	<name lang="cs-CZ">Kawasakiho růže v kategorii květin - červené</name>
+			    	<year>2000</year>
+			    	<shortdesc>A very nice, but hard rose model.</shortdesc>
+			  		<shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
+			  		<license>
+			    		<name>BSD</name>
+			    		<content>You can do whatever you want except hiding or changing the authorship information.</content>
+			    		<permission>export</permission>
+			    		<permission>edit</permission>
+			    		<permission>distribute</permission>    
+			  		</license>
+			  		<original>http://www.mff.cuni.cz</original>
+			  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
+			    </file>		
+      		</files>
+      	</category>
+      </categories>
+    </category>
+  </categories>
+</m:listing>
