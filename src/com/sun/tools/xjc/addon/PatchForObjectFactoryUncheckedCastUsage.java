@@ -53,14 +53,11 @@ public class PatchForObjectFactoryUncheckedCastUsage extends Plugin
     {
 
         Iterator<? extends PackageOutline> i = model.getAllPackageContexts().iterator();
-        System.err.println("i");
         while (i.hasNext()) {
             PackageOutline pack = i.next();
-            System.err.println(pack._package().name());
             JDefinedClass factory = pack.objectFactory();
             // iterate through all methods of the object factory
             outer: for (JMethod m : factory.methods()) {
-                System.err.println(m.name());
                 @SuppressWarnings("unchecked")
                 List<JAnnotationUse> annots = (List<JAnnotationUse>) getValueWithReflection("annotations", m,
                         JMethod.class);
