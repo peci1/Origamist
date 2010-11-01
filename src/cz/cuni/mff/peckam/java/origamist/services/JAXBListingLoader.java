@@ -74,7 +74,7 @@ public class JAXBListingLoader implements ListingLoader
     protected Unmarshaller getUnmarshallerForVersion(int version) throws JAXBException
     {
         // TODO handle different versions
-        JAXBContext context = JAXBContext.newInstance("cz.cuni.mff.peckam.java.origamist.listing.jaxb", getClass()
+        JAXBContext context = JAXBContext.newInstance("cz.cuni.mff.peckam.java.origamist.files.jaxb", getClass()
                 .getClassLoader());
         Unmarshaller u = context.createUnmarshaller();
         u.setProperty("com.sun.xml.internal.bind.ObjectFactory", new ObjectFactory());

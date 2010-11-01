@@ -17,7 +17,9 @@ import javax.swing.SwingUtilities;
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.services.JAXBListingLoader;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.ListingLoader;
 import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
@@ -35,8 +37,7 @@ public abstract class CommonGui extends JApplet
     private static final long serialVersionUID = -9021667515698972438L;
 
     /**
-     * The localized messages for the GUI classes. Normally this would be private, but we want to use this bundle also
-     * in the derived classes.
+     * The localized messages for the common GUI classes.
      */
     protected ResourceBundle  messages         = null;
 
@@ -45,11 +46,11 @@ public abstract class CommonGui extends JApplet
      */
     protected MessageFormat   format           = null;
 
-    /**
-     * Create an applet that is the base for both viewer and editor
-     */
-    public CommonGui()
+    @Override
+    public void init()
     {
+        super.init();
+
         registerServices();
 
         final Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
@@ -73,12 +74,6 @@ public abstract class CommonGui extends JApplet
 
         // to allow transparent JCanvas3D background
         System.setProperty("j3d.transparentOffScreen", "true");
-    }
-
-    @Override
-    public void init()
-    {
-        super.init();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -112,7 +107,8 @@ public abstract class CommonGui extends JApplet
      */
     protected void registerServices()
     {
-        ServiceLocator.add(OrigamiLoader.class, new JAXBOrigamiLoader());
+        ServiceLocator.add(OrigamiLoader.class, new JAXBOrigamiLoader(this.getDocumentBase()));
+        ServiceLocator.add(ListingLoader.class, new JAXBListingLoader());
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
     }
 

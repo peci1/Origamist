@@ -198,7 +198,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
 
     public void initSteps()
     {
-        List<cz.cuni.mff.peckam.java.origamist.model.jaxb.Step> list = this.getModel().getSteps().getStep();
+        List<cz.cuni.mff.peckam.java.origamist.model.Step> list = this.getModel().getSteps().getStep();
 
         ModelState defaultModelState = new DefaultModelState(this);
         if (list.size() == 0)
@@ -207,7 +207,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
             ((Step) list.get(0)).setDefaultModelState(defaultModelState);
             return;
         } else {
-            Iterator<cz.cuni.mff.peckam.java.origamist.model.jaxb.Step> i = list.iterator();
+            Iterator<cz.cuni.mff.peckam.java.origamist.model.Step> i = list.iterator();
             Step prev = null, curr = null, next = (Step) i.next();
             next.setDefaultModelState(defaultModelState);
             while (i.hasNext()) {

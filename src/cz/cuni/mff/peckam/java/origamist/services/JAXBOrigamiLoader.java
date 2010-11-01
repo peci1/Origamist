@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.services;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.concurrent.Callable;
@@ -42,7 +43,27 @@ public class JAXBOrigamiLoader implements OrigamiLoader
 {
 
     /** The model to return. */
-    protected Origami model = null;
+    protected Origami model        = null;
+
+    /** The base path for resolving relative URIs. */
+    protected URL     documentBase = null;
+
+    public JAXBOrigamiLoader(URL documentBase)
+    {
+        this.documentBase = documentBase;
+    }
+
+    @Override
+    public Origami loadModel(final URI path, boolean onlyMetadata) throws IOException, UnsupportedDataFormatException
+    {
+        URL url = null;
+        if (path.isAbsolute()) {
+            url = path.toURL();
+        } else {
+            url = new URL(documentBase, path.toString());
+        }
+        return loadModel(url, onlyMetadata);
+    }
 
     @Override
     public Origami loadModel(final URL path, boolean onlyMetadata) throws IOException, UnsupportedDataFormatException
@@ -104,6 +125,22 @@ public class JAXBOrigamiLoader implements OrigamiLoader
             System.err.println(e);
         }
         return null;
+    }
+
+    /**
+     * @return the documentBase
+     */
+    public URL getDocumentBase()
+    {
+        return documentBase;
+    }
+
+    /**
+     * @param documentBase the documentBase to set
+     */
+    public void setDocumentBase(URL documentBase)
+    {
+        this.documentBase = documentBase;
     }
 
     /**

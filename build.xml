@@ -145,7 +145,7 @@
 
             <manifest>
                 <attribute name="Created-By" value="Martin Pecka" />
-                <attribute name="Main-Class" value="cz.cuni.mff.peckam.java.origamist.gui.OrigamiViewer" />
+                <attribute name="Main-Class" value="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewer" />
                 <attribute name="Class-Path" value="${mf.classpath}" />
             </manifest>
 

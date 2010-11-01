@@ -3,11 +3,19 @@
  */
 package cz.cuni.mff.peckam.java.origamist.files;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
+import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
+import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
 
@@ -22,11 +30,17 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
     /**
      * The hastable for more comfortable search in localized names.
      */
+    @XmlTransient
     protected Hashtable<Locale, String> names      = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized short descriptions.
      */
+    @XmlTransient
     protected Hashtable<Locale, String> shortDescs = new Hashtable<Locale, String>();
+
+    /** The origami model corresponding to this file. */
+    @XmlTransient
+    protected Origami                   origami    = null;
 
     /**
      * Create a new origami metadata.
@@ -104,6 +118,49 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
         s.setLang(l);
         s.setValue(desc);
         this.shortdesc.add(s);
+    }
+
+    /**
+     * (Potentionally load) and return the model corresponding to this listing entry.
+     * 
+     * @return The model corresponding to this listing entry.
+     * 
+     * @throws MalformedURLException If the source is invalid.
+     * @throws IOException If the source could not be read.
+     * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
+     */
+    public Origami getOrigami() throws UnsupportedDataFormatException, MalformedURLException, IOException
+    {
+        return getOrigami(false);
+    }
+
+    /**
+     * (Potentionally load) and return the model corresponding to this listing entry.
+     * 
+     * @param onlyMetadata If true, load only metadata of the model if it has not yet been loaded.
+     * 
+     * @return The model corresponding to this listing entry.
+     * 
+     * @throws MalformedURLException If the source is invalid.
+     * @throws IOException If the source could not be read.
+     * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
+     */
+    public Origami getOrigami(boolean onlyMetadata) throws UnsupportedDataFormatException, MalformedURLException,
+            IOException
+    {
+        if (origami == null) {
+            origami = ServiceLocator.get(OrigamiLoader.class).loadModel(getSrc(), onlyMetadata);
+        }
+        return origami;
+
+    }
+
+    @Override
+    public String toString()
+    {
+        return "File [names=" + names + ", shortDescs=" + shortDescs + ", author=" + author + ", name=" + name
+                + ", year=" + year + ", shortdesc=" + shortdesc + ", license=" + license + ", original=" + original
+                + ", thumbnail=" + thumbnail + ", src=" + src + "]";
     }
 
 }

@@ -38,9 +38,13 @@
 			<element name="homepage" type="anyURI" maxOccurs="1" minOccurs="0"/>
 		</sequence>
 	</complexType>
-
 	
     <complexType name="LangString">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.LangString"/>
+    		</appinfo>
+    	</annotation>
     	<simpleContent>
     		<extension base="string">
     			<attribute name="lang" type="language" use="optional" default="en-US"/>
