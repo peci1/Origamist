@@ -108,7 +108,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     public Iterator<File> recursiveIterator()
     {
         return new Iterator<File>() {
-            Iterator<File> fileIterator     = null;
+            Iterator<File> fileIterator       = null;
             Iterator<File> categoriesIterator = null;
             {
                 if (getFiles() != null) {
@@ -147,6 +147,24 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                 return false;
             }
         };
+    }
+
+    /**
+     * Set this category as the parent of its files and subcategories and recursively do the same for all subcategories.
+     */
+    public void updateChildCategories()
+    {
+        if (getFiles() != null) {
+            for (File f : getFiles().getFile()) {
+                f.setParentCategory(null);
+            }
+        }
+        if (getCategories() != null) {
+            for (Category c : getCategories().getCategory()) {
+                c.setParentCategory(null);
+                c.updateChildCategories();
+            }
+        }
     }
 
     @Override

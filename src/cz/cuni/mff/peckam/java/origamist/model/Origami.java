@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -42,6 +43,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
 
     /** If the origami is loaded without the model, then this task will be run the first time the model is read. */
     protected Callable<Model>           loadModelCallable = null;
+
+    /** The file in the listing containing this origami. */
+    protected File                      file              = null;
 
     /**
      * Create a new origami diagram.
@@ -183,6 +187,22 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     public void setLoadModelCallable(Callable<Model> loadModelCallable)
     {
         this.loadModelCallable = loadModelCallable;
+    }
+
+    /**
+     * @return the file
+     */
+    public File getFile()
+    {
+        return file;
+    }
+
+    /**
+     * @param file the file to set
+     */
+    public void setFile(File file)
+    {
+        this.file = file;
     }
 
     /**

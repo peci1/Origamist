@@ -33,16 +33,19 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      * The hastable for more comfortable search in localized names.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> names      = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> names          = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized short descriptions.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> shortDescs = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> shortDescs     = new Hashtable<Locale, String>();
 
     /** The origami model corresponding to this file. */
     @XmlTransient
-    protected Origami                   origami    = null;
+    protected Origami                   origami        = null;
+
+    /** The category this file is contained in. <code>null</code> means no category. */
+    protected Category                  parentCategory = null;
 
     /**
      * Create a new origami metadata.
@@ -154,6 +157,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
     {
         if (origami == null) {
             origami = ServiceLocator.get(OrigamiLoader.class).loadModel(getSrc(), onlyMetadata);
+            origami.setFile(this);
         }
         return origami;
 
@@ -179,6 +183,22 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
         this.shortdesc.addAll(origami.getShortdesc());
         this.thumbnail = origami.getThumbnail();
         this.year = origami.getYear();
+    }
+
+    /**
+     * @return the parentCategory
+     */
+    public Category getParentCategory()
+    {
+        return parentCategory;
+    }
+
+    /**
+     * @param parentCategory the parentCategory to set
+     */
+    public void setParentCategory(Category parentCategory)
+    {
+        this.parentCategory = parentCategory;
     }
 
     @Override
