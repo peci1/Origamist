@@ -11,8 +11,7 @@ import java.security.Permission;
  * @author Martin Pecka
  */
 
-public class License extends
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.License
+public class License extends cz.cuni.mff.peckam.java.origamist.common.jaxb.License
 {
     /**
      * @param action The action you ask to.
@@ -21,5 +20,12 @@ public class License extends
     public boolean isPermitted(Permission action)
     {
         return permission.contains(action);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "License [name=" + name + ", homepage=" + homepage + ", content=" + content + ", permission="
+                + permission + "]";
     }
 }

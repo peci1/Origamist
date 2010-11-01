@@ -233,6 +233,7 @@ public class OrigamiViewer extends CommonGui
                     cz.cuni.mff.peckam.java.origamist.files.File file = iterator.next();
                     try {
                         file.getOrigami(onlyMetadata);
+                        file.fillFromOrigami();
                     } catch (UnsupportedDataFormatException e) {
                         System.err.println("The model in file '" + file.getSrc() + "' is not a valid model.");
                     } catch (MalformedURLException e) {

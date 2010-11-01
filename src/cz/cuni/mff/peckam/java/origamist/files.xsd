@@ -50,6 +50,11 @@
     </complexType>
 
     <complexType name="Files">
+    	<annotation>
+    		<appinfo>
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Files"/>
+    		</appinfo>
+    	</annotation>
     	<sequence>
     		<element name="file" type="m:File" maxOccurs="unbounded" minOccurs="1"/>
     	</sequence>

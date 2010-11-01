@@ -11,7 +11,9 @@ import java.util.ResourceBundle;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.Author;
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
@@ -47,9 +49,9 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      */
     public File()
     {
-        ((ChangeNotifyingList<LangString>) name).addChangeListener(new LangStringHashtableChangeNotificationListener(
-                names));
-        ((ChangeNotifyingList<LangString>) shortdesc)
+        ((ChangeNotifyingList<LangString>) getName())
+                .addChangeListener(new LangStringHashtableChangeNotificationListener(names));
+        ((ChangeNotifyingList<LangString>) getShortdesc())
                 .addChangeListener(new LangStringHashtableChangeNotificationListener(shortDescs));
     }
 
@@ -80,7 +82,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      */
     public void addName(Locale l, String name)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);
@@ -114,7 +117,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      */
     public void addShortDesc(Locale l, String desc)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.shortdesc.add(s);
@@ -153,6 +157,28 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
         }
         return origami;
 
+    }
+
+    /**
+     * Fills this file's metadata from the metadata of this file's origami.
+     * 
+     * @throws IllegalStateException If the origami has not yet been loaded.
+     */
+    public void fillFromOrigami() throws IllegalStateException
+    {
+        if (origami == null)
+            throw new IllegalStateException(
+                    "Tried to fill a File's metadata from its origami, but the origami has not been loaded yet.");
+
+        this.author = (Author) origami.getAuthor();
+        this.license = (License) origami.getLicense();
+        this.name.clear();
+        this.name.addAll(origami.getName());
+        this.original = origami.getOriginal();
+        this.shortdesc.clear();
+        this.shortdesc.addAll(origami.getShortdesc());
+        this.thumbnail = origami.getThumbnail();
+        this.year = origami.getYear();
     }
 
     @Override

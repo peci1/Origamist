@@ -14,7 +14,7 @@
 				<jxb:package name="cz.cuni.mff.peckam.java.origamist.model.jaxb"/>
 			</jxb:schemaBindings>
 		</appinfo>
-	</annotation>
+	</annotation> 
 
 	<element name="origami" type="m:Origami">
 	</element>

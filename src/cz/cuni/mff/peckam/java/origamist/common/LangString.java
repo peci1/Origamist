@@ -27,4 +27,10 @@ public class LangString extends cz.cuni.mff.peckam.java.origamist.common.jaxb.La
         this.setValue(s);
         this.setLang(l);
     }
+
+    @Override
+    public String toString()
+    {
+        return getLang().toString() + ":" + getValue();
+    }
 }

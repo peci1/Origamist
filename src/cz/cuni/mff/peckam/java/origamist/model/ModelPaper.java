@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
 
@@ -34,8 +34,8 @@ public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Mod
      */
     public ModelPaper()
     {
-        ((ChangeNotifyingList<LangString>) note).addChangeListener(new LangStringHashtableChangeNotificationListener(
-                notes));
+        ((ChangeNotifyingList<LangString>) getNote())
+                .addChangeListener(new LangStringHashtableChangeNotificationListener(notes));
     }
 
     /**
@@ -101,7 +101,8 @@ public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Mod
      */
     public void addNote(Locale l, String note)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(note);
         this.note.add(s);

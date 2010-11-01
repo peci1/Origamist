@@ -8,7 +8,7 @@ import java.util.Locale;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
@@ -53,7 +53,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public Step()
     {
-        ((ChangeNotifyingList<LangString>) description)
+        ((ChangeNotifyingList<LangString>) getDescription())
                 .addChangeListener(new LangStringHashtableChangeNotificationListener(descriptions));
         if (zoom == null)
             zoom = 100.0;
@@ -87,7 +87,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void addDescription(Locale l, String desc)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.description.add(s);

@@ -6,7 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.utils;
 import java.util.Hashtable;
 import java.util.Locale;
 
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
 
 /**
  * Element adapter for LangString.
