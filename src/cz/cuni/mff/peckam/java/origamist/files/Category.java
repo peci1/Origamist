@@ -4,9 +4,12 @@
 package cz.cuni.mff.peckam.java.origamist.files;
 
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
 import org.apache.log4j.Logger;
+
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
 
 /**
  * A category containing some diagram metadata.
@@ -101,6 +104,30 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
                 c.updateChildCategories();
             }
         }
+    }
+
+    /**
+     * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy
+     * and all missing categories are created.
+     * 
+     * @param categoryString The category to create. It is written in the form "cat1id/cat2id/cat3id".
+     * @return The created category.
+     */
+    public Category createSubCategories(String categoryString)
+    {
+        String[] cats = categoryString.split("/");
+        Category oldCat = this;
+        for (String cat : cats) {
+            Category newCat = (Category) new ObjectFactory().createCategory();
+            newCat.setId(cat);
+            newCat.getName().add(new LangString(cat, Locale.getDefault()));
+            newCat.setParentCategory(oldCat);
+            if (oldCat.getCategories() == null)
+                oldCat.setCategories(new ObjectFactory().createCategories());
+            oldCat.getCategories().getCategory().add(newCat);
+            oldCat = newCat;
+        }
+        return oldCat;
     }
 
     @Override

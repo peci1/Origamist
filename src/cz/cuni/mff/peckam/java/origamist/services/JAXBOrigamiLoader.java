@@ -110,6 +110,7 @@ public class JAXBOrigamiLoader implements OrigamiLoader
                 });
             }
 
+            model.setSrc(path);
             return model.convertToNewestVersion();
         } catch (SAXException e) {
             throw new UnsupportedDataFormatException(e);

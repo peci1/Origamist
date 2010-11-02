@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.net.URL;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +50,11 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
 
     /** The file in the listing containing this origami. */
     protected File                      file              = null;
+
+    /**
+     * The URL this origami was created from. Obviously this will be <code>null</code> for the just-being-created model.
+     */
+    protected URL                       src               = null;
 
     /**
      * Create a new origami diagram.
@@ -203,6 +209,22 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     public void setFile(File file)
     {
         this.file = file;
+    }
+
+    /**
+     * @return the src
+     */
+    public URL getSrc()
+    {
+        return src;
+    }
+
+    /**
+     * @param src the src to set
+     */
+    public void setSrc(URL src)
+    {
+        this.src = src;
     }
 
     /**

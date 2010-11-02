@@ -50,6 +50,14 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
     }
 
     /**
+     * @return The hashtable with the same elements as getCategory(), with category ids as keys.
+     */
+    public Hashtable<String, Category> getHashtable()
+    {
+        return categories;
+    }
+
+    /**
      * Count the overall number of files in this category and its subcategories.
      * 
      * @return The overall number of files in this category and its subcategories.

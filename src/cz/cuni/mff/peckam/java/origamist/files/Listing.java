@@ -4,15 +4,24 @@
 package cz.cuni.mff.peckam.java.origamist.files;
 
 import java.io.FileFilter;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
+import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
 /**
  * Additional functionality for the JAXB generated listing element.
@@ -100,6 +109,159 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                 this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory);
             }
         }
+    }
+
+    /**
+     * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy
+     * and all missing categories are created.
+     * 
+     * @param categoryString The category to create. It is written in the form "cat1id/cat2id/cat3id".
+     * @return The created category.
+     */
+    public Category createSubCategories(String categoryString)
+    {
+        String[] cats = categoryString.split("/");
+        Category firstCat = ((Categories) this.getCategories()).getHashtable().get(cats[0]);
+        if (firstCat == null) {
+            firstCat = (Category) new ObjectFactory().createCategory();
+            firstCat.setId(cats[0]);
+            firstCat.getName().add(new LangString(cats[0], Locale.getDefault()));
+            firstCat.setParentCategory(null);
+            if (this.getCategories() == null)
+                this.setCategories(new ObjectFactory().createCategories());
+            this.getCategories().getCategory().add(firstCat);
+        }
+        if (cats.length == 1) {
+            return firstCat;
+        }
+        return firstCat.createSubCategories(categoryString.substring(categoryString.indexOf("/") + 1));
+    }
+
+    /**
+     * Adds the given origami to the file listing.
+     * 
+     * @param origami The origami to add. It must have its src property non-<code>null</code>.
+     * @param categoryString The category to add the origami to, or <code>""</code> if it has to be added directly under
+     *            the listing. The category is written in the form "cat1id/cat2id/cat3id".
+     * 
+     * @return The File object created when adding the origami.
+     */
+    public File addOrigami(Origami origami, String categoryString)
+    {
+        Category category = createSubCategories(categoryString);
+        return addOrigami(origami, category);
+    }
+
+    /**
+     * Loads origami from the given path and adds it to the file listing.
+     * 
+     * @param path The path where the origami is to be loaded from.
+     * @param category The category to add the origami to, or <code>null</code> if it has to be added directly under the
+     *            listing.
+     * 
+     * @return The File object created when adding the origami.
+     * 
+     * @throws UnsupportedDataFormatException If the origami could not be loaded.
+     * @throws IOException If an IO error occured while loading the origami.
+     */
+    public File addOrigami(URI path, Category category) throws UnsupportedDataFormatException, IOException
+    {
+        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        return addOrigami(o, category);
+    }
+
+    /**
+     * Loads origami from the given path and adds it to the file listing.
+     * 
+     * @param path The path where the origami is to be loaded from.
+     * @param category The category to add the origami to, or <code>null</code> if it has to be added directly under the
+     *            listing.
+     * 
+     * @return The File object created when adding the origami.
+     * 
+     * @throws UnsupportedDataFormatException If the origami could not be loaded.
+     * @throws IOException If an IO error occured while loading the origami.
+     */
+    public File addOrigami(URL path, Category category) throws UnsupportedDataFormatException, IOException
+    {
+        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        return addOrigami(o, category);
+    }
+
+    /**
+     * Loads origami from the given path and adds it to the file listing.
+     * 
+     * @param path The path where the origami is to be loaded from.
+     * @param category The category to add the origami to, or <code>""</code> if it has to be added directly under
+     *            the listing. The category is written in the form "cat1id/cat2id/cat3id".
+     * 
+     * @return The File object created when adding the origami.
+     * 
+     * @throws UnsupportedDataFormatException If the origami could not be loaded.
+     * @throws IOException If an IO error occured while loading the origami.
+     */
+    public File addOrigami(URI path, String category) throws UnsupportedDataFormatException, IOException
+    {
+        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        return addOrigami(o, category);
+    }
+
+    /**
+     * Loads origami from the given path and adds it to the file listing.
+     * 
+     * @param path The path where the origami is to be loaded from.
+     * @param category The category to add the origami to, or <code>""</code> if it has to be added directly under
+     *            the listing. The category is written in the form "cat1id/cat2id/cat3id".
+     * 
+     * @return The File object created when adding the origami.
+     * 
+     * @throws UnsupportedDataFormatException If the origami could not be loaded.
+     * @throws IOException If an IO error occured while loading the origami.
+     */
+    public File addOrigami(URL path, String category) throws UnsupportedDataFormatException, IOException
+    {
+        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        return addOrigami(o, category);
+    }
+
+    /**
+     * Adds the given origami to the file listing.
+     * 
+     * @param origami The origami to add. It must have its src property non-<code>null</code>.
+     * @param category The category to add the origami to, or <code>null</code> if it has to be added directly under the
+     *            listing.
+     * 
+     * @return The File object created when adding the origami.
+     */
+    public File addOrigami(Origami origami, Category category)
+    {
+        File file = (File) new ObjectFactory().createFile();
+        if (origami.getSrc() == null) {
+            Logger.getLogger("application").l7dlog(Level.ERROR, "listingAddOrigamiInvalidOrigamiSource",
+                    new NullPointerException());
+            return null;
+        }
+        try {
+            file.setSrc(origami.getSrc().toURI());
+        } catch (URISyntaxException e) {
+            Logger.getLogger("application").l7dlog(Level.ERROR, "listingAddOrigamiInvalidOrigamiSource", e);
+            return null;
+        }
+
+        file.setParentCategory(category);
+        file.setOrigami(origami);
+        file.fillFromOrigami();
+
+        if (category != null) {
+            if (category.getFiles() == null)
+                category.setFiles(new ObjectFactory().createFiles());
+            category.getFiles().getFile().add(file);
+        } else {
+            if (this.getFiles() == null)
+                this.setFiles(new ObjectFactory().createFiles());
+            this.getFiles().getFile().add(file);
+        }
+        return file;
     }
 
     /**

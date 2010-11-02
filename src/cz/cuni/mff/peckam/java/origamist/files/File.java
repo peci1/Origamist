@@ -18,8 +18,8 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * Metadata of a model.
@@ -52,10 +52,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      */
     public File()
     {
-        ((ObservableList<LangString>) getName())
-                .addObserver(new LangStringHashtableObserver(names));
-        ((ObservableList<LangString>) getShortdesc())
-                .addObserver(new LangStringHashtableObserver(shortDescs));
+        ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
+        ((ObservableList<LangString>) getShortdesc()).addObserver(new LangStringHashtableObserver(shortDescs));
     }
 
     /**
@@ -161,6 +159,17 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
         }
         return origami;
 
+    }
+
+    /**
+     * Sets the model this file represents (particulary this doesn't update the file's metadata from the origami's
+     * metadata).
+     * 
+     * @param origami The origami to set.
+     */
+    public void setOrigami(Origami origami)
+    {
+        this.origami = origami;
     }
 
     /**
