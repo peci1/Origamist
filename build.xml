@@ -17,6 +17,10 @@
 
     <target depends="compile,jar" description="Build whole project and its documentation." name="default"/>
 
+	<target name="init">
+		<mkdir dir="bin" />
+	</target>
+	
     <!--target name="javadoc">
         <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
         	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
@@ -25,7 +29,7 @@
         	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
     </target-->
 
-	<target name="jaxb-implClass-plugin">
+	<target name="jaxb-implClass-plugin" depends="init">
 		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java">
 		    <classpath>
         		<pathelement path="src"/> 
@@ -52,7 +56,7 @@
 		<delete dir="lib-compile-time/plugin-jar" />
 	</target>
 	
-	<target name="jaxb-objFactoryCast-plugin">
+	<target name="jaxb-objFactoryCast-plugin" depends="init">
 			<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
 			    <classpath>
 	        		<pathelement path="src"/> 
@@ -109,7 +113,11 @@
 	
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram" />
 	
-    <target name="compile" depends="jaxb" description="Compiles the application">
+	<target name="clean">
+		<delete dir="bin" />
+	</target>
+	
+    <target name="compile" depends="init,jaxb" description="Compiles the application">
         <javac srcdir="src" destdir="bin" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java">
         	<classpath>
         		<pathelement path="src"/> 
