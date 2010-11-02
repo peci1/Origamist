@@ -6,6 +6,8 @@ package cz.cuni.mff.peckam.java.origamist.files;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.apache.log4j.Logger;
+
 /**
  * A category containing some diagram metadata.
  * 
@@ -38,7 +40,8 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
             @Override
             public void remove()
             {
-                System.err.println("Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+                Logger.getLogger(getClass()).warn(
+                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
             }
 
             @Override

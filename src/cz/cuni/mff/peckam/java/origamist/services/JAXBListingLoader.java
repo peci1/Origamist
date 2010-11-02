@@ -57,11 +57,10 @@ public class JAXBListingLoader implements ListingLoader
             reader.parse(new InputSource(is));
             return listing.convertToNewestVersion();
         } catch (SAXException e) {
-            System.err.println(e);
+            throw new UnsupportedDataFormatException(e);
         } catch (ParserConfigurationException e) {
-            System.err.println(e);
+            throw new UnsupportedDataFormatException(e);
         }
-        return null;
     }
 
     /**

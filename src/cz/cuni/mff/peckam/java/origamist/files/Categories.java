@@ -7,9 +7,11 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
-import cz.cuni.mff.peckam.java.origamist.utils.HashtableObserver;
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.utils.HashtableElementAdapter;
+import cz.cuni.mff.peckam.java.origamist.utils.HashtableObserver;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * A list of subcategories.
@@ -78,7 +80,8 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
             @Override
             public void remove()
             {
-                System.err.println("Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+                Logger.getLogger(getClass()).warn(
+                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
             }
 
             @Override

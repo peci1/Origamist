@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 
 /**
@@ -122,7 +124,8 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             @Override
             public void remove()
             {
-                System.err.println("Tried to delete a file from a listing's recursive iterator. Not implemented.");
+                Logger.getLogger(getClass()).warn(
+                        "Tried to delete a file from a listing's recursive iterator. Not implemented.");
             }
 
             @Override

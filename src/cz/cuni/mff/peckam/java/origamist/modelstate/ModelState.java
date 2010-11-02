@@ -20,6 +20,8 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Point4d;
 import javax.vecmath.Vector3d;
 
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
@@ -34,9 +36,9 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
-import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
 /**
  * The internal state of the model after some steps.
@@ -53,12 +55,12 @@ public class ModelState implements Cloneable
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                          foldLineArray         = null;
+    protected LineArray                     foldLineArray         = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                            foldLineArrayDirty    = true;
+    protected boolean                       foldLineArrayDirty    = true;
 
     /**
      * The triangles this model state consists of.
@@ -68,45 +70,45 @@ public class ModelState implements Cloneable
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                      trianglesArray        = null;
+    protected TriangleArray                 trianglesArray        = null;
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D. The triangles face
      * the other side than the corresponding ones in trianglesArray.
      */
-    protected TriangleArray                      inverseTrianglesArray = null;
+    protected TriangleArray                 inverseTrianglesArray = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                            trianglesArrayDirty   = true;
+    protected boolean                       trianglesArrayDirty   = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                             rotationAngle         = 0;
+    protected double                        rotationAngle         = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                             viewingAngle          = Math.PI / 2.0;
+    protected double                        viewingAngle          = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
      */
-    protected Step                               step;
+    protected Step                          step;
 
     /**
      * The origami model which is this the state of.
      */
-    protected Origami                            origami;
+    protected Origami                       origami;
 
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                                stepBlendingTreshold  = 5;
+    protected int                           stepBlendingTreshold  = 5;
 
     public ModelState()
     {
@@ -177,7 +179,7 @@ public class ModelState implements Cloneable
         }
 
         if (containingTriangle == null) {
-            System.err.println("locatePointFromPaperTo3D: Couldn't locate point " + point);
+            Logger.getLogger(getClass()).warn("locatePointFromPaperTo3D: Couldn't locate point " + point);
             return new Point3d();
         }
 
@@ -404,8 +406,8 @@ public class ModelState implements Cloneable
         }
 
         for (ModelTriangle tr : trianglesToRotate) {
-            tr.setPoints(MathHelper.rotate(tr.getP1(), segment, angle1), MathHelper.rotate(tr.getP2(), segment, angle1),
-                    MathHelper.rotate(tr.getP3(), segment, angle1));
+            tr.setPoints(MathHelper.rotate(tr.getP1(), segment, angle1),
+                    MathHelper.rotate(tr.getP2(), segment, angle1), MathHelper.rotate(tr.getP3(), segment, angle1));
         }
         trianglesArrayDirty = true;
     }
@@ -864,8 +866,7 @@ public class ModelState implements Cloneable
                     && get(2) != null
                     && ((Double.isNaN(get(0).x) && Double.isNaN(get(0).y) && Double.isNaN(get(0).z))
                             || (Double.isNaN(get(1).x) && Double.isNaN(get(1).y) && Double.isNaN(get(1).z)) || (Double
-                            .isNaN(get(2).x)
-                            && Double.isNaN(get(2).y) && Double.isNaN(get(2).z)));
+                            .isNaN(get(2).x) && Double.isNaN(get(2).y) && Double.isNaN(get(2).z)));
         }
     }
 }

@@ -93,38 +93,29 @@ public class JAXBOrigamiLoader implements OrigamiLoader
                     @Override
                     public Model call() throws Exception
                     {
-                        try {
-                            Unmarshaller u = getUnmarshallerForVersion(origVersion);
+                        Unmarshaller u = getUnmarshallerForVersion(origVersion);
 
-                            @SuppressWarnings("unchecked")
-                            Origami o = ((JAXBElement<Origami>) u.unmarshal(path.openStream())).getValue();
+                        @SuppressWarnings("unchecked")
+                        Origami o = ((JAXBElement<Origami>) u.unmarshal(path.openStream())).getValue();
 
-                            // the following line is a fix for a (possible) bug in JAXB
-                            // I think that the createOrigami method should have been called by unmarshal(),
-                            // but for some odd reason it doesn't get called
-                            o = (Origami) new ObjectFactory().createOrigami(o).getValue();
+                        // the following line is a fix for a (possible) bug in JAXB
+                        // I think that the createOrigami method should have been called by unmarshal(),
+                        // but for some odd reason it doesn't get called
+                        o = (Origami) new ObjectFactory().createOrigami(o).getValue();
 
-                            o = o.convertToNewestVersion();
+                        o = o.convertToNewestVersion();
 
-                            return o.getModel();
-                        } catch (JAXBException e) {
-                            System.err.println(e);
-                            return new ObjectFactory().createModel();
-                        } catch (IOException e) {
-                            System.err.println(e);
-                            return new ObjectFactory().createModel();
-                        }
+                        return o.getModel();
                     }
                 });
             }
 
             return model.convertToNewestVersion();
         } catch (SAXException e) {
-            System.err.println(e);
+            throw new UnsupportedDataFormatException(e);
         } catch (ParserConfigurationException e) {
-            System.err.println(e);
+            throw new UnsupportedDataFormatException(e);
         }
-        return null;
     }
 
     /**

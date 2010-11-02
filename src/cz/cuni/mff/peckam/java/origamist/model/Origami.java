@@ -12,13 +12,16 @@ import java.util.concurrent.Callable;
 
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * The origami diagram.
@@ -52,12 +55,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public Origami()
     {
-        ((ObservableList<LangString>) getName())
-                .addObserver(new LangStringHashtableObserver(names));
-        ((ObservableList<LangString>) getShortdesc())
-                .addObserver(new LangStringHashtableObserver(shortDescs));
-        ((ObservableList<LangString>) getDescription())
-                .addObserver(new LangStringHashtableObserver(descriptions));
+        ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
+        ((ObservableList<LangString>) getShortdesc()).addObserver(new LangStringHashtableObserver(shortDescs));
+        ((ObservableList<LangString>) getDescription()).addObserver(new LangStringHashtableObserver(descriptions));
     }
 
     /**
@@ -175,7 +175,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 initSteps();
             } catch (Exception e) {
                 this.model = new ObjectFactory().createModel();
-                System.err.println("The loading of the model failed because of exception " + e);
+                Logger.getLogger("application").l7dlog(Level.ERROR, "modelLazyLoadException", e);
             }
         }
         return super.getModel();

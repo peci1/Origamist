@@ -14,6 +14,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ResourceBundle;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Categories;
@@ -21,8 +25,10 @@ import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
+import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
+import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.ListingLoader;
 import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -125,8 +131,8 @@ public class OrigamiViewer extends CommonGui
             try {
                 startupMode = StartupMode.valueOf(getParameter("startupMode").toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.print("Invalid value for the 'startupMode' parameter. ");
-                System.err.println(e);
+                Logger.getLogger("viewer").l7dlog(Level.ERROR, "startupModeParamInvalid",
+                        new Object[] { Arrays.asList(StartupMode.values()) }, e);
                 // we just do nothing, so the default value remains set
             }
         }
@@ -153,8 +159,7 @@ public class OrigamiViewer extends CommonGui
                 else if (param.equalsIgnoreCase("none")) {
                     modelDownloadMode = MODEL_DOWNLOAD_MODE_NONE;
                 } else {
-                    System.err.print("Invalid value for the 'modelDownloadMode' parameter. ");
-                    System.err.println(e);
+                    Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelDownloadModeParamInvalid", e);
                     // we just do nothing, so the default value remains set
                 }
             }
@@ -168,8 +173,8 @@ public class OrigamiViewer extends CommonGui
     {
         String param = getParameter("files");
         if (param == null) {
-            dieWithException(new IllegalArgumentException("The 'files' applet parameter must be set"),
-                    messages.getString("filesParamMissing"));
+            Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamMissing",
+                    new IllegalArgumentException("The 'files' applet parameter must be set"));
             return;
         }
 
@@ -181,11 +186,11 @@ public class OrigamiViewer extends CommonGui
                 ServiceLocator.get(OrigamiLoader.class).setDocumentBase(paramURL);
                 filesToDisplay = ServiceLocator.get(ListingLoader.class).loadListing(paramURL);
             } catch (MalformedURLException e) {
-                dieWithException(e, messages.getString("filesParamInvalidListingURL"));
+                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingURL", e);
             } catch (UnsupportedDataFormatException e) {
-                dieWithException(e, messages.getString("filesParamInvalidListingFormat"));
+                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingFormat", e);
             } catch (IOException e) {
-                dieWithException(e, messages.getString("filesParamInvalidListingUnread"));
+                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingUnread", e);
             }
         } else {
             List<String> filesAsStrings = Arrays.asList(param.split(" "));
@@ -198,9 +203,11 @@ public class OrigamiViewer extends CommonGui
                     File file = new File(new URL(getDocumentBase(), fileString).toURI());
                     files.add(file);
                 } catch (MalformedURLException e) {
-                    System.err.println("Invalid item in 'files' applet parameter: '" + fileString + "'. " + e);
+                    Logger.getLogger("viewer").l7dlog(Level.ERROR, "filesParamInvalidItem",
+                            new Object[] { fileString }, e);
                 } catch (URISyntaxException e) {
-                    System.err.println("Invalid item in 'files' applet parameter: '" + fileString + "'. " + e);
+                    Logger.getLogger("viewer").l7dlog(Level.ERROR, "filesParamInvalidItem",
+                            new Object[] { fileString }, e);
                 }
             }
             filesToDisplay.addFiles(files, recursive ? null : 1, null);
@@ -208,8 +215,8 @@ public class OrigamiViewer extends CommonGui
             if ((filesToDisplay.getFiles() == null || filesToDisplay.getFiles().getFile().size() == 0)
                     && (filesToDisplay.getCategories() == null || ((Categories) filesToDisplay.getCategories())
                             .sizeRecursive() == 0)) {
-                dieWithException(new IllegalArgumentException("No input files defined."),
-                        messages.getString("filesParamInvalidFileList"));
+                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidFileList", null,
+                        new IllegalArgumentException("No input files defined."));
             }
 
             // we only show the file listing if two or more models are being displayed
@@ -235,11 +242,14 @@ public class OrigamiViewer extends CommonGui
                         file.getOrigami(onlyMetadata);
                         file.fillFromOrigami();
                     } catch (UnsupportedDataFormatException e) {
-                        System.err.println("The model in file '" + file.getSrc() + "' is not a valid model.");
+                        Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelFile",
+                                new Object[] { file.getSrc() }, e);
                     } catch (MalformedURLException e) {
-                        System.err.println("The source of the model is invalid: '" + file.getSrc() + "'");
+                        Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelSource",
+                                new Object[] { file.getSrc() }, e);
                     } catch (IOException e) {
-                        System.err.println("I/O Error while reading model from source '" + file.getSrc() + "'.");
+                        Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLoadIOError",
+                                new Object[] { file.getSrc() }, e);
                     }
                 }
             }
@@ -263,6 +273,18 @@ public class OrigamiViewer extends CommonGui
     public void destroy()
     {
         super.destroy();
+    }
+
+    @Override
+    protected void setupLoggers()
+    {
+        super.setupLoggers();
+
+        Logger l = Logger.getLogger("viewer");
+        l.setResourceBundle(ResourceBundle.getBundle("viewer", ServiceLocator.get(ConfigurationManager.class).get()
+                .getLocale()));
+        l.setLevel(Level.ALL);
+        l.addAppender(new GUIAppender(this));
     }
 
 }

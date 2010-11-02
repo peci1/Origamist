@@ -11,11 +11,16 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.swing.JApplet;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
+import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBListingLoader;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiLoader;
@@ -53,6 +58,8 @@ public abstract class CommonGui extends JApplet
 
         registerServices();
 
+        setupLoggers();
+
         final Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
 
         final String bundleName = "cz.cuni.mff.peckam.java.origamist.gui.Gui";
@@ -67,7 +74,9 @@ public abstract class CommonGui extends JApplet
                     ResourceBundle oldMessages = messages;
                     messages = ResourceBundle.getBundle(bundleName, (Locale) evt.getNewValue());
                     CommonGui.this.firePropertyChange("messages", oldMessages, messages);
+                    MessageFormat oldFormat = format;
                     format = new MessageFormat("", (Locale) evt.getNewValue());
+                    CommonGui.this.firePropertyChange("format", oldFormat, format);
                 }
             }
         });
@@ -84,11 +93,10 @@ public abstract class CommonGui extends JApplet
                     buildLayout();
                 }
             });
-
         } catch (InterruptedException e) {
-            dieWithException(e, messages.getString("guiInitializationInterrupted"));
+            Logger.getLogger("application").l7dlog(Level.FATAL, "guiInitializationInterrupted", e);
         } catch (InvocationTargetException e) {
-            dieWithException(e.getCause(), messages.getString("guiInitializationException"));
+            Logger.getLogger("application").l7dlog(Level.FATAL, "guiInitializationException", e.getCause());
         }
     }
 
@@ -112,6 +120,19 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
     }
 
+    protected void setupLoggers()
+    {
+        BasicConfigurator.configure();
+
+        LogManager.getRootLogger().addAppender(new GUIAppender(this));
+
+        final Logger l = Logger.getLogger("application");
+        l.setResourceBundle(ResourceBundle.getBundle("application", ServiceLocator.get(ConfigurationManager.class)
+                .get().getLocale()));
+        l.setLevel(Level.ALL);
+        l.addAppender(new GUIAppender(this));
+    }
+
     @Override
     public void start()
     {
@@ -128,33 +149,5 @@ public abstract class CommonGui extends JApplet
     public void destroy()
     {
         super.destroy();
-    }
-
-    /**
-     * Presents the given exception to the user and ends the program.
-     * 
-     * @param e The exception that was thrown.
-     * @param desc The human-readable description of the exception.
-     */
-    protected void dieWithException(final Throwable throwable, final String desc)
-    {
-        final String desc2;
-        if (desc != null)
-            desc2 = desc;
-        else
-            desc2 = messages.getString("unknownError");
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run()
-            {
-                System.err.println(desc + ":\n" + throwable + "\nCause:\n" + throwable.getCause());
-                format.applyPattern(messages.getString("dieWithException"));
-                JOptionPane.showMessageDialog(getRootPane(),
-                        format.format(new String[] { desc2, throwable.toString() }),
-                        messages.getString("dieWithExceptionTitle"), JOptionPane.ERROR_MESSAGE);
-                stop();
-            }
-        });
     }
 }
