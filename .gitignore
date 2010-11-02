@@ -1,0 +1,9 @@
+bin
+lib-compile-time/xjc-patch-for-implClass-and-list.jar
+lib-compile-time/xjc-patch-for-pbjectFactory-unchecked-cast-usage.jar
+doc/*.aux
+doc/*.log
+doc/*.out
+doc/.~lock*
+OrigamistViewer.jar
+signapplet.bat
