@@ -7,3 +7,6 @@ doc/*.out
 doc/.~lock*
 OrigamistViewer.jar
 signapplet.bat
+signapplet.sh
+browser.bat
+browser.sh

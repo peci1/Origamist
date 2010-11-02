@@ -23,6 +23,31 @@
 
     <target depends="compile,jar,jar-sign" description="Build whole project and its documentation." name="default"/>
 
+	<target name="run" depends="default">
+		<var name="browserExecutable" value="browser.sh"/>
+    	<if>
+    		<os family="windows"/>
+    		<then>
+    			<var name="browserExecutable" value="browser.bat"/>
+			</then>
+    	</if>
+		
+		<if>
+			<available property="" file="${browserExecutable}"/>
+			<then>
+				<exec executable="${browserExecutable}" dir=".">
+		    		<arg value="preview.html" />
+		    	</exec>
+				<!--exec executable="${browserExecutable}" dir=".">
+		    		<arg value="preview.editor.html" />
+		    	</exec-->
+			</then>
+			<else>
+				<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
+			</else>
+		</if>
+	</target>
+	
 	<target name="init">
 		<mkdir dir="bin" />
 	</target>
