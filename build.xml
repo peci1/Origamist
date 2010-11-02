@@ -11,11 +11,17 @@
 	  </classpath>
 	</taskdef>
 	
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+		<classpath>
+			<pathelement location="lib-compile-time/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+	
     <path id="project.classpath">
 		<fileset dir="lib" includes="*.jar" />
     </path>
 
-    <target depends="compile,jar" description="Build whole project and its documentation." name="default"/>
+    <target depends="compile,jar,jar-sign" description="Build whole project and its documentation." name="default"/>
 
 	<target name="init">
 		<mkdir dir="bin" />
@@ -145,7 +151,7 @@
         <pathconvert property="mf.classpath" pathsep=" ">
             <path refid="project.classpath" />
             <flattenmapper />
-        </pathconvert>        
+        </pathconvert>
 
         <jar destfile="OrigamistViewer.jar">
             <fileset dir="bin" includes="**/*.*" />
@@ -157,16 +163,7 @@
                 <attribute name="Class-Path" value="${mf.classpath}" />
             </manifest>
 
-        </jar>
-    	
-    	<exec executable="jarsigner" dir=".">
-    		<arg value="-storepass" />
-    		<arg value="keystore" />
-    		<arg value="-keypass" />
-    		<arg value="pecikey" />
-    		<arg value="OrigamistViewer.jar" />
-    		<arg value="peci1" />
-    	</exec>    
+        </jar>  
     	
     	<!--jar destfile="OrigamistEditor.jar">
             <fileset dir="bin" includes="**/*.*" />
@@ -177,17 +174,32 @@
                 <attribute name="Main-Class" value="cz.cuni.mff.peckam.java.origamist.gui.OrigamiEditor" />
                 <attribute name="Class-Path" value="${mf.classpath}" />
             </manifest>
-
-        </jar>
-    	
-    	<exec executable="jarsigner" dir=".">
-    		<arg value="-storepass" />
-    		<arg value="keystore" />
-    		<arg value="-keypass" />
-    		<arg value="pecikey" />
-    		<arg value="OrigamistEditor.jar" />
-    		<arg value="peci1" />
-    	</exec-->
+        </jar-->
     </target>
+	
+	<target name="jar-sign" depends="jar">
+		<var name="signappletExecutable" value="signapplet.sh"/>
+    	<if>
+    		<os family="windows"/>
+    		<then>
+    			<var name="signappletExecutable" value="signapplet.bat"/>
+			</then>
+    	</if>
+		
+		<if>
+			<available property="" file="${signappletExecutable}"/>
+			<then>
+				<exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="OrigamistViewer.jar" />
+		    	</exec>
+				<!--exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="OrigamistEditor.jar" />
+		    	</exec-->
+			</then>
+			<else>
+				<echo>Please create your ${signappletExecutable} file to sign the applets. Look in ${signappletExecutable}.example for example contents of that file.</echo>
+			</else>
+		</if>
+	</target>
 
 </project>

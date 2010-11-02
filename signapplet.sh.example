@@ -1,0 +1,3 @@
+#!/bin/bash
+jarsigner -keystore /path/to/your/key -storepass your_password $1 your_keystore_name
+exit 0 
