@@ -3,7 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.utils;
 
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList.ChangeTypes;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 
 /**
  * Notification about a change (addition/removal of an item) in the list

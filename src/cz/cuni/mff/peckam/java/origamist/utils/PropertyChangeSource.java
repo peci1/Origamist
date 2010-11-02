@@ -40,7 +40,7 @@ public class PropertyChangeSource
     }
 
     /**
-     * Notify listeners on the change of the <code>property</code>.
+     * Notify observers on the change of the <code>property</code>.
      * 
      * The event is fired only if newValue and oldValue aren't the same.
      * 
@@ -68,7 +68,7 @@ public class PropertyChangeSource
     /**
      * Adds a listener of the changes of the given property.
      * 
-     * Multiple listeners for a single property are allowed and will be notified in the order they were registered.
+     * Multiple observers for a single property are allowed and will be notified in the order they were registered.
      * 
      * @param property The property to listen its changes to.
      * @param listener The listener to be bound to the change event.
@@ -84,7 +84,7 @@ public class PropertyChangeSource
     }
 
     /**
-     * Removes the given listener from the list of listeners on the changes of the given property.
+     * Removes the given listener from the list of observers on the changes of the given property.
      * 
      * @param property The property to remove the listener from.
      * @param listener The listener to remove.
@@ -98,9 +98,9 @@ public class PropertyChangeSource
     }
 
     /**
-     * Removes all listeners on the changes of the given property.
+     * Removes all observers on the changes of the given property.
      * 
-     * @param property The property to remove listeners from.
+     * @param property The property to remove observers from.
      */
     public void removeAllPropertyChangeListeners(String property)
     {

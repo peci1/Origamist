@@ -9,15 +9,14 @@ import java.util.Locale;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 
 /**
- * Element adapter for LangString.
+ * Observer adapter for LangString.
  * 
  * @author Martin Pecka
  */
-public class LangStringHashtableChangeNotificationListener extends
-        HashtableChangeNotificationListener<LangString, Locale, String>
+public class LangStringHashtableObserver extends HashtableObserver<LangString, Locale, String>
 {
 
-    public LangStringHashtableChangeNotificationListener(Hashtable<Locale, String> table)
+    public LangStringHashtableObserver(Hashtable<Locale, String> table)
     {
         super(table, new HashtableElementAdapter<LangString, Locale, String>() {
             @Override

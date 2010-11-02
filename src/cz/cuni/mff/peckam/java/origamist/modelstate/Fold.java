@@ -5,7 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import java.awt.geom.Line2D;
 
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * Represents a fold on the paper.
@@ -17,7 +17,7 @@ public class Fold implements Cloneable
     /**
      * The lines this fold consists of.
      */
-    protected ChangeNotifyingList<FoldLine> lines             = new ChangeNotifyingList<FoldLine>();
+    protected ObservableList<FoldLine> lines             = new ObservableList<FoldLine>();
 
     /**
      * Id of the step this fold originated in.
@@ -27,7 +27,7 @@ public class Fold implements Cloneable
     /**
      * @return the lines this fold consists of
      */
-    public ChangeNotifyingList<FoldLine> getLines()
+    public ObservableList<FoldLine> getLines()
     {
         return lines;
     }
@@ -45,7 +45,7 @@ public class Fold implements Cloneable
     {
         Fold result = (Fold) super.clone();
 
-        result.lines = new ChangeNotifyingList<FoldLine>();
+        result.lines = new ObservableList<FoldLine>();
         for (FoldLine l : lines) {
             FoldLine line = new FoldLine();
             line.line = (Line2D) l.line.clone();

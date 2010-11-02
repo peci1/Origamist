@@ -4,18 +4,18 @@
 package cz.cuni.mff.peckam.java.origamist.utils;
 
 /**
- * A listener to change notifications
+ * An observer of changes.
  * 
  * @param T Type of the elements in the observed list.
  * 
  * @author Martin Pecka
  */
-public interface ChangeNotificationListener<T>
+public interface Observer<T>
 {
     /**
-     * Called when the listened list gets modified
+     * Called when the observed object gets modified
      * 
-     * @param change The change that has happened
+     * @param change The change that has happened.
      */
     void changePerformed(ChangeNotification<T> change);
 }

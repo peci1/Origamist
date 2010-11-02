@@ -17,8 +17,8 @@ import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 
 /**
  * The origami diagram.
@@ -52,12 +52,12 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public Origami()
     {
-        ((ChangeNotifyingList<LangString>) getName())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(names));
-        ((ChangeNotifyingList<LangString>) getShortdesc())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(shortDescs));
-        ((ChangeNotifyingList<LangString>) getDescription())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(descriptions));
+        ((ObservableList<LangString>) getName())
+                .addObserver(new LangStringHashtableObserver(names));
+        ((ObservableList<LangString>) getShortdesc())
+                .addObserver(new LangStringHashtableObserver(shortDescs));
+        ((ObservableList<LangString>) getDescription())
+                .addObserver(new LangStringHashtableObserver(descriptions));
     }
 
     /**

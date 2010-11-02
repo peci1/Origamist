@@ -32,7 +32,7 @@
 				<annotation>
 					<appinfo>
 						<jxb:property 
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
 					</appinfo>
 				</annotation>
 			</element>
@@ -42,7 +42,7 @@
 				<annotation>
 					<appinfo>
 						<jxb:property 
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
 					</appinfo>
 				</annotation>
 			</element>
@@ -51,7 +51,7 @@
 				<annotation>
 					<appinfo>
 						<jxb:property 
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
 					</appinfo>
 				</annotation>
 			</element>
@@ -183,7 +183,7 @@
     					<annotation>
 							<appinfo>
 								<jxb:property 
-									collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+									collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
 							</appinfo>
 						</annotation>
 					</element>
@@ -217,7 +217,7 @@
     			<annotation>
 					<appinfo>
 						<jxb:property 
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList"/>
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
 					</appinfo>
 				</annotation>
     		</element>

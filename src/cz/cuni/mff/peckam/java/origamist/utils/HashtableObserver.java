@@ -6,20 +6,19 @@ package cz.cuni.mff.peckam.java.origamist.utils;
 import java.util.Hashtable;
 
 /**
- * This change notification listener projects the changes in the given
- * hashtable.
+ * This observer projects the changes into the given hashtable.
  * 
- * @param T Type of the elements in the list.
+ * @param T Type of the observed elements.
  * @param K Type of the keys of the hashtable.
  * @param V Type of the values of the hashtable.
  * 
  * @author Martin Pecka
  */
-public class HashtableChangeNotificationListener<T, K, V> implements ChangeNotificationListener<T>
+public class HashtableObserver<T, K, V> implements Observer<T>
 {
 
     /**
-     * The Hashtable bound to this listener.
+     * The Hashtable bound to this observer.
      */
     protected Hashtable<K, V>                  table   = null;
 
@@ -27,10 +26,10 @@ public class HashtableChangeNotificationListener<T, K, V> implements ChangeNotif
     protected HashtableElementAdapter<T, K, V> adapter = null;
 
     /**
-     * @param table The Hashtable bound to this listener
+     * @param table The Hashtable bound to this observer.
      * @param adapter This adapter extracts keys and values from the changed item.
      */
-    public HashtableChangeNotificationListener(Hashtable<K, V> table, HashtableElementAdapter<T, K, V> adapter)
+    public HashtableObserver(Hashtable<K, V> table, HashtableElementAdapter<T, K, V> adapter)
     {
         this.table = table;
         this.adapter = adapter;

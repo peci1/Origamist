@@ -7,8 +7,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.HashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.HashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.HashtableElementAdapter;
 
 /**
@@ -26,7 +26,7 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
 
     public Categories()
     {
-        category = new ChangeNotifyingList<Category>();
+        category = new ObservableList<Category>();
         HashtableElementAdapter<Category, String, Category> elementAdapter = new HashtableElementAdapter<Category, String, Category>() {
 
             @Override
@@ -42,9 +42,9 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
             }
 
         };
-        HashtableChangeNotificationListener<Category, String, Category> listener = new HashtableChangeNotificationListener<Category, String, Category>(
+        HashtableObserver<Category, String, Category> listener = new HashtableObserver<Category, String, Category>(
                 categories, elementAdapter);
-        ((ChangeNotifyingList<Category>) category).addChangeListener(listener);
+        ((ObservableList<Category>) category).addObserver(listener);
     }
 
     /**

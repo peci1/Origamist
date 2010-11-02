@@ -34,9 +34,9 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotificationListener;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList.ChangeTypes;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 
 /**
  * The internal state of the model after some steps.
@@ -48,7 +48,7 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ChangeNotifyingList<Fold>          folds                 = new ChangeNotifyingList<Fold>();
+    protected ObservableList<Fold>          folds                 = new ObservableList<Fold>();
 
     /**
      * Cache for array of the lines representing folds.
@@ -63,7 +63,7 @@ public class ModelState implements Cloneable
     /**
      * The triangles this model state consists of.
      */
-    protected ChangeNotifyingList<ModelTriangle> triangles             = new ChangeNotifyingList<ModelTriangle>();
+    protected ObservableList<ModelTriangle> triangles             = new ObservableList<ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
@@ -110,14 +110,14 @@ public class ModelState implements Cloneable
 
     public ModelState()
     {
-        folds.addChangeListener(new ChangeNotificationListener<Fold>() {
+        folds.addObserver(new Observer<Fold>() {
             @Override
             public void changePerformed(ChangeNotification<Fold> change)
             {
                 ModelState.this.foldLineArrayDirty = true;
 
                 if (change.getChangeType() == ChangeTypes.ADD) {
-                    change.getItem().lines.addChangeListener(new ChangeNotificationListener<FoldLine>() {
+                    change.getItem().lines.addObserver(new Observer<FoldLine>() {
                         @Override
                         public void changePerformed(ChangeNotification<FoldLine> change)
                         {
@@ -128,7 +128,7 @@ public class ModelState implements Cloneable
             }
         });
 
-        triangles.addChangeListener(new ChangeNotificationListener<ModelTriangle>() {
+        triangles.addObserver(new Observer<ModelTriangle>() {
             @Override
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {

@@ -18,8 +18,8 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 
 /**
  * Metadata of a model.
@@ -52,10 +52,10 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      */
     public File()
     {
-        ((ChangeNotifyingList<LangString>) getName())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(names));
-        ((ChangeNotifyingList<LangString>) getShortdesc())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(shortDescs));
+        ((ObservableList<LangString>) getName())
+                .addObserver(new LangStringHashtableObserver(names));
+        ((ObservableList<LangString>) getShortdesc())
+                .addObserver(new LangStringHashtableObserver(shortDescs));
     }
 
     /**

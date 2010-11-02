@@ -11,8 +11,8 @@ import java.util.ResourceBundle;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotifyingList;
-import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableChangeNotificationListener;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 
 /**
  * The paper the model is made of.
@@ -34,8 +34,8 @@ public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Mod
      */
     public ModelPaper()
     {
-        ((ChangeNotifyingList<LangString>) getNote())
-                .addChangeListener(new LangStringHashtableChangeNotificationListener(notes));
+        ((ObservableList<LangString>) getNote())
+                .addObserver(new LangStringHashtableObserver(notes));
     }
 
     /**
