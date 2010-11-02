@@ -63,31 +63,31 @@
 	</target>
 	
 	<target name="jaxb-objFactoryCast-plugin" depends="init">
-			<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
-			    <classpath>
-	        		<pathelement path="src"/> 
-	        		<fileset dir="lib">
-	        			<include name="**/*.jar"/>
-	        		</fileset>
-			    	<fileset dir="lib-compile-time">
-			    		<include name="jaxb-xjc-2.1.12.jar"/>
-		    		</fileset> 
-	        	</classpath>
-	        </javac>
-			<mkdir dir="lib-compile-time/plugin-jar"/>
-			<mkdir dir="lib-compile-time/plugin-jar/META-INF"/>
-			<mkdir dir="lib-compile-time/plugin-jar/META-INF/services"/>
-	    	<move todir="lib-compile-time/plugin-jar">
-	    		<fileset dir="bin">
-	    			<include name="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.class"/>    			
-	    		</fileset>
-	    	</move>
-			<copy tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" file="src/com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage-com.sun.tools.xjc.Plugin"/>		
-			<jar destfile="lib-compile-time/xjc-patch-for-pbjectFactory-unchecked-cast-usage.jar">
-	            <fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
-	        </jar>
-			<delete dir="lib-compile-time/plugin-jar" />
-		</target>
+		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
+		    <classpath>
+        		<pathelement path="src"/> 
+        		<fileset dir="lib">
+        			<include name="**/*.jar"/>
+        		</fileset>
+		    	<fileset dir="lib-compile-time">
+		    		<include name="jaxb-xjc-2.1.12.jar"/>
+	    		</fileset> 
+        	</classpath>
+        </javac>
+		<mkdir dir="lib-compile-time/plugin-jar"/>
+		<mkdir dir="lib-compile-time/plugin-jar/META-INF"/>
+		<mkdir dir="lib-compile-time/plugin-jar/META-INF/services"/>
+    	<move todir="lib-compile-time/plugin-jar">
+    		<fileset dir="bin">
+    			<include name="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.class"/>    			
+    		</fileset>
+    	</move>
+		<copy tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" file="src/com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage-com.sun.tools.xjc.Plugin"/>		
+		<jar destfile="lib-compile-time/xjc-patch-for-pbjectFactory-unchecked-cast-usage.jar">
+            <fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
+        </jar>
+		<delete dir="lib-compile-time/plugin-jar" />
+	</target>
 	
 	<target name="jaxb-common" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from common.xsd">
 		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/common.xsd" destdir="src" removeOldOutput="true">
