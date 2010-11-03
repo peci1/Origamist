@@ -3,10 +3,9 @@
     <description>
             Origami diagram making application
     </description>
-
+	
 	<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
 	  <classpath>
-	  	<fileset dir="lib" includes="*.jar"/>
 	  	<fileset dir="lib-compile-time" includes="*.jar" />
 	  </classpath>
 	</taskdef>
@@ -23,52 +22,20 @@
 
     <target depends="compile,jar,jar-sign" description="Build whole project and its documentation." name="default"/>
 
-	<target name="run" depends="default">
-		<var name="browserExecutable" value="browser.sh"/>
-    	<if>
-    		<os family="windows"/>
-    		<then>
-    			<var name="browserExecutable" value="browser.bat"/>
-			</then>
-    	</if>
-		
-		<if>
-			<available property="" file="${browserExecutable}"/>
-			<then>
-				<exec executable="${browserExecutable}" dir=".">
-		    		<arg value="preview.html" />
-		    	</exec>
-				<!--exec executable="${browserExecutable}" dir=".">
-		    		<arg value="preview.editor.html" />
-		    	</exec-->
-			</then>
-			<else>
-				<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
-			</else>
-		</if>
+	<target name="clean">
+		<delete dir="bin" />
 	</target>
 	
 	<target name="init">
 		<mkdir dir="bin" />
 	</target>
-	
-    <!--target name="javadoc">
-        <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
-        	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
-        	doctitle="Thumbnailer" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" overview="E:\Programování\Java\Thumbnailer\overview.html" 
-        	packagenames="javax.swing,cz.cuni.mff.peckam.java.thumbnailer.dialogs,cz.cuni.mff.peckam.java.thumbnailer,cz.cuni.mff.peckam.java.thumbnailer.graphics,cz.cuni.mff.peckam.java.thumbnailer.utils,cz.cuni.mff.peckam.java.thumbnailer.ftp,cz.cuni.mff.peckam.java.thumbnailer.configurations,cz.cuni.mff.peckam.java.thumbnailer.sql" 
-        	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
-    </target-->
 
 	<target name="jaxb-implClass-plugin" depends="init">
 		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java">
 		    <classpath>
         		<pathelement path="src"/> 
-        		<fileset dir="lib">
-        			<include name="**/*.jar"/>
-        		</fileset>
 		    	<fileset dir="lib-compile-time">
-		    		<include name="jaxb-xjc-2.1.12.jar"/>
+		    		<include name="**/*.jar"/>
 	    		</fileset> 
         	</classpath>
         </javac>
@@ -91,12 +58,9 @@
 		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
 		    <classpath>
         		<pathelement path="src"/> 
-        		<fileset dir="lib">
-        			<include name="**/*.jar"/>
-        		</fileset>
 		    	<fileset dir="lib-compile-time">
-		    		<include name="jaxb-xjc-2.1.12.jar"/>
-	    		</fileset> 
+		    		<include name="**/*.jar"/>
+	    		</fileset>
         	</classpath>
         </javac>
 		<mkdir dir="lib-compile-time/plugin-jar"/>
@@ -143,10 +107,6 @@
 	</target>
 	
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram" />
-	
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
 	
     <target name="compile" depends="init,jaxb" description="Compiles the application">
         <javac srcdir="src" destdir="bin" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java">
@@ -223,6 +183,61 @@
 			</then>
 			<else>
 				<echo>Please create your ${signappletExecutable} file to sign the applets. Look in ${signappletExecutable}.example for example contents of that file.</echo>
+			</else>
+		</if>
+	</target>
+	
+	<target name="run" depends="default">
+		<var name="browserExecutable" value="browser.sh"/>
+    	<if>
+    		<os family="windows"/>
+    		<then>
+    			<var name="browserExecutable" value="browser.bat"/>
+			</then>
+    	</if>
+		
+		<if>
+			<available property="" file="${browserExecutable}"/>
+			<then>
+				<exec executable="${browserExecutable}" dir=".">
+		    		<arg value="preview.html" />
+		    	</exec>
+				<!--exec executable="${browserExecutable}" dir=".">
+		    		<arg value="preview.editor.html" />
+		    	</exec-->
+			</then>
+			<else>
+				<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
+			</else>
+		</if>
+	</target>
+	
+	<!--target name="javadoc">
+        <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
+        	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
+        	doctitle="Thumbnailer" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" overview="E:\Programování\Java\Thumbnailer\overview.html" 
+        	packagenames="javax.swing,cz.cuni.mff.peckam.java.thumbnailer.dialogs,cz.cuni.mff.peckam.java.thumbnailer,cz.cuni.mff.peckam.java.thumbnailer.graphics,cz.cuni.mff.peckam.java.thumbnailer.utils,cz.cuni.mff.peckam.java.thumbnailer.ftp,cz.cuni.mff.peckam.java.thumbnailer.configurations,cz.cuni.mff.peckam.java.thumbnailer.sql" 
+        	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
+    </target-->
+	
+	<target name="libs-sign" description="Signs the JAR libraries deployed along with the applet. This is needed because Java Plugin shows a warning if a signed applet uses unsigned libraries.">
+		<var name="signappletExecutable" value="signapplet.sh"/>
+    	<if>
+    		<os family="windows"/>
+    		<then>
+    			<var name="signappletExecutable" value="signapplet.bat"/>
+			</then>
+    	</if>
+		
+		<if>
+			<available property="" file="${signappletExecutable}"/>
+			<then>
+				<exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="lib/log4j-1.2.16.jar" />
+		    	</exec>
+			</then>
+			<else>
+				<echo>Please create your ${signappletExecutable} file to sign the libraries. Look in ${signappletExecutable}.example for example contents of that file.</echo>
 			</else>
 		</if>
 	</target>
