@@ -187,7 +187,9 @@
 		</if>
 	</target>
 	
-	<target name="run" depends="default">
+	<target name="run-browser" depends="default,just-run-browser" description="Builds and runs the applet in web browser. This task needs to have the JAR files signed." />
+	
+	<target name="just-run-browser" description="Runs the applet in web browser. This task needs to have the JAR files signed.">
 		<var name="browserExecutable" value="browser.sh"/>
     	<if>
     		<os family="windows"/>
@@ -212,6 +214,19 @@
 		</if>
 	</target>
 	
+	<target name="run-appletviewer" depends="default,just-run-appletviewer" description="Builds and runs the applet in appletviewer. This task doesn't need to have the JAR files signed." />
+	
+	<target name="just-run-appletviewer" description="Runs the applet in appletviewer. This task doesn't need to have the JAR files signed.">		
+		<exec executable="appletviewer" dir=".">
+    		<arg value="-J-Djava.security.policy=java.policy.applet" />
+			<arg value="preview.html" />
+    	</exec>
+		<!--exec executable="appletviewer" dir=".">
+			<arg value="-J-Djava.security.policy=java.policy.applet" />
+    		<arg value="preview.editor.html" />
+    	</exec-->
+	</target>
+	
 	<!--target name="javadoc">
         <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
         	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
@@ -234,6 +249,15 @@
 			<then>
 				<exec executable="${signappletExecutable}" dir=".">
 		    		<arg value="lib/log4j-1.2.16.jar" />
+		    	</exec>
+				<exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="lib/j3dcore.jar" />
+		    	</exec>
+				<exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="lib/j3dutils.jar" />
+		    	</exec>
+				<exec executable="${signappletExecutable}" dir=".">
+		    		<arg value="lib/vecmath.jar" />
 		    	</exec>
 			</then>
 			<else>
