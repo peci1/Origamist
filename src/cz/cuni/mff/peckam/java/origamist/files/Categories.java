@@ -7,6 +7,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.utils.HashtableElementAdapter;
@@ -24,6 +26,7 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
     /**
      * The hastable for more comfortable search in subcatagories.
      */
+    @XmlTransient
     protected Hashtable<String, Category> categories = new Hashtable<String, Category>();
 
     public Categories()

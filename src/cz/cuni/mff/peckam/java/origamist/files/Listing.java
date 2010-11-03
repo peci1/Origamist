@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
 /**
@@ -166,7 +166,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(URI path, Category category) throws UnsupportedDataFormatException, IOException
     {
-        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
     }
 
@@ -184,7 +184,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(URL path, Category category) throws UnsupportedDataFormatException, IOException
     {
-        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
     }
 
@@ -202,7 +202,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(URI path, String category) throws UnsupportedDataFormatException, IOException
     {
-        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
     }
 
@@ -220,7 +220,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(URL path, String category) throws UnsupportedDataFormatException, IOException
     {
-        Origami o = ServiceLocator.get(OrigamiLoader.class).loadModel(path, true);
+        Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
     }
 

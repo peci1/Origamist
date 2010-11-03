@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.services;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -13,6 +14,8 @@ import java.util.concurrent.Callable;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.MarshalException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,6 +34,7 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
+import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**
  * Loads an origami model from XML file using JAXB.
@@ -39,7 +43,7 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
  * 
  * @author Martin Pecka
  */
-public class JAXBOrigamiLoader implements OrigamiLoader
+public class JAXBOrigamiHandler implements OrigamiHandler
 {
 
     /** The model to return. */
@@ -48,9 +52,33 @@ public class JAXBOrigamiLoader implements OrigamiLoader
     /** The base path for resolving relative URIs. */
     protected URL     documentBase = null;
 
-    public JAXBOrigamiLoader(URL documentBase)
+    public JAXBOrigamiHandler(URL documentBase)
     {
         this.documentBase = documentBase;
+    }
+
+    @Override
+    public void save(Origami origami, File file) throws IOException, MarshalException, JAXBException
+    {
+        if (!file.exists())
+            file.createNewFile();
+        if (!file.isFile())
+            throw new IOException("Cannot save the model in a directory or a non-file object: "
+                    + file.getAbsolutePath() + ".");
+
+        JAXBContext context = JAXBContext.newInstance("cz.cuni.mff.peckam.java.origamist.model.jaxb", getClass()
+                .getClassLoader());
+        Marshaller m = context.createMarshaller();
+
+        // enable indenting and newline generation
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+        // make URLs in the listing relative to the location we save the listing to
+        m.setAdapter(new URIAdapter());
+        m.getAdapter(URIAdapter.class).setRelativeBase(file.getParentFile().toURI());
+
+        // do the Java class->XML conversion
+        m.marshal(new ObjectFactory().createOrigami(origami), file);
     }
 
     @Override

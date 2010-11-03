@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.services;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -11,6 +12,8 @@ import java.util.Enumeration;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.MarshalException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.parsers.ParserConfigurationException;
@@ -28,22 +31,47 @@ import org.xml.sax.helpers.XMLFilterImpl;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
+import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**
- * Loads a listing.xml file using JAXB.
+ * Handles loading and exporting a listing.xml file using JAXB.
  * 
  * The code is inspired by partial-unmarshalling example in JAXB section of JWSDP.
  * 
  * @author Martin Pecka
  */
-public class JAXBListingLoader implements ListingLoader
+public class JAXBListingHandler implements ListingHandler
 {
 
     /** The listing to return. */
     protected Listing listing = null;
 
     @Override
-    public Listing loadListing(final URL path) throws IOException, UnsupportedDataFormatException
+    public void export(Listing listing, File file) throws IOException, MarshalException, JAXBException
+    {
+        if (!file.exists())
+            file.createNewFile();
+        if (!file.isFile())
+            throw new IOException("Cannot save listing.xml in a directory or a non-file object: "
+                    + file.getAbsolutePath() + ".");
+
+        JAXBContext context = JAXBContext.newInstance("cz.cuni.mff.peckam.java.origamist.files.jaxb", getClass()
+                .getClassLoader());
+        Marshaller m = context.createMarshaller();
+
+        // enable indenting and newline generation
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+        // make URLs in the listing relative to the location we save the listing to
+        m.setAdapter(new URIAdapter());
+        m.getAdapter(URIAdapter.class).setRelativeBase(file.getParentFile().toURI());
+
+        // do the Java class->XML conversion
+        m.marshal(new ObjectFactory().createListing(listing), file);
+    }
+
+    @Override
+    public Listing load(final URL path) throws IOException, UnsupportedDataFormatException
     {
         try {
             XMLReader reader = getXMLReader();
@@ -228,4 +256,5 @@ public class JAXBListingLoader implements ListingLoader
             super.endPrefixMapping(prefix);
         }
     }
+
 }

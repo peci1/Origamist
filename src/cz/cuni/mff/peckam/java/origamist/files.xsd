@@ -7,7 +7,7 @@
 	jxb:version="2.0" 
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/files/"
 	jxb:extensionBindingPrefixes="patch">   
-	
+ 	 
 	<import schemaLocation="common.xsd" namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/" />
 
 	<annotation>

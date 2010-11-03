@@ -16,7 +16,7 @@ import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
@@ -45,6 +45,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
     protected Origami                   origami        = null;
 
     /** The category this file is contained in. <code>null</code> means no category. */
+    @XmlTransient
     protected Category                  parentCategory = null;
 
     /**
@@ -154,7 +155,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
             IOException
     {
         if (origami == null) {
-            origami = ServiceLocator.get(OrigamiLoader.class).loadModel(getSrc(), onlyMetadata);
+            origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
             origami.setFile(this);
         }
         return origami;

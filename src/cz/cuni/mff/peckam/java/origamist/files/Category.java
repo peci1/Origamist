@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
@@ -20,6 +22,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
 {
 
     /** The category this category is a subcategory of. <code>null</code> means that this is the top-level category. */
+    @XmlTransient
     protected Category parentCategory = null;
 
     /**

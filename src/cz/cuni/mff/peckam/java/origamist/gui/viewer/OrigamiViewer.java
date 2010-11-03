@@ -29,8 +29,8 @@ import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
-import cz.cuni.mff.peckam.java.origamist.services.ListingLoader;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.ListingHandler;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
 /**
@@ -94,6 +94,18 @@ public class OrigamiViewer extends CommonGui
             DiagramRenderer r = new DiagramRenderer(o, (Step) o.getModel().getSteps().getStep().get(0));
             r.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(r, BorderLayout.NORTH);
+            /*
+             * try {
+             * File docBase = new File(getDocumentBase().toURI());
+             * if (!docBase.isDirectory())
+             * docBase = docBase.getParentFile();
+             * ServiceLocator.get(OrigamiHandler.class).save(o, new File(docBase, "..\\model.xml"));
+             * } catch (MarshalException e) {
+             * System.err.println(e);
+             * } catch (JAXBException e) {
+             * System.err.println(e);
+             * } catch (URISyntaxException e) {}
+             */
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
@@ -183,8 +195,8 @@ public class OrigamiViewer extends CommonGui
             try {
                 URL paramURL = new URL(getDocumentBase(), param);
                 // use the listing.xml location as the base for relative model URLs
-                ServiceLocator.get(OrigamiLoader.class).setDocumentBase(paramURL);
-                filesToDisplay = ServiceLocator.get(ListingLoader.class).loadListing(paramURL);
+                ServiceLocator.get(OrigamiHandler.class).setDocumentBase(paramURL);
+                filesToDisplay = ServiceLocator.get(ListingHandler.class).load(paramURL);
             } catch (MalformedURLException e) {
                 Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingURL", e);
             } catch (UnsupportedDataFormatException e) {

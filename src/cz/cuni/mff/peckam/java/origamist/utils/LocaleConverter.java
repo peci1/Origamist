@@ -39,6 +39,6 @@ public class LocaleConverter
     {
         if (l == null)
             return null;
-        return l.getISO3Language() + "-" + l.getISO3Country();
+        return l.getLanguage() + "-" + l.getCountry();
     }
 }

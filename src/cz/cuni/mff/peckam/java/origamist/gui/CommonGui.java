@@ -22,10 +22,10 @@ import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
-import cz.cuni.mff.peckam.java.origamist.services.JAXBListingLoader;
-import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiLoader;
-import cz.cuni.mff.peckam.java.origamist.services.ListingLoader;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiLoader;
+import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
+import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.services.ListingHandler;
+import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 
 /**
@@ -115,8 +115,8 @@ public abstract class CommonGui extends JApplet
      */
     protected void registerServices()
     {
-        ServiceLocator.add(OrigamiLoader.class, new JAXBOrigamiLoader(this.getDocumentBase()));
-        ServiceLocator.add(ListingLoader.class, new JAXBListingLoader());
+        ServiceLocator.add(OrigamiHandler.class, new JAXBOrigamiHandler(this.getDocumentBase()));
+        ServiceLocator.add(ListingHandler.class, new JAXBListingHandler());
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
     }
 
