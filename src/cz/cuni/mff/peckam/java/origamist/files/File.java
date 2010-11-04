@@ -16,8 +16,8 @@ import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 

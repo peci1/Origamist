@@ -20,8 +20,8 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 
 /**
  * Additional functionality for the JAXB generated listing element.

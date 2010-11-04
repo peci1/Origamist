@@ -4,7 +4,7 @@
             Origami diagram making application
     </description>
 	
-	<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
 	  <classpath>
 	  	<fileset dir="lib-compile-time" includes="*.jar" />
 	  </classpath>
@@ -83,6 +83,8 @@
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list"/>
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
+			<arg value="-Xequals" />
+			<arg value="-XhashCode" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
 			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
 		</xjc>	
@@ -93,6 +95,8 @@
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list"/>
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
+			<arg value="-Xequals" />
+			<arg value="-XhashCode" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
 		</xjc>
 	</target>
@@ -102,6 +106,8 @@
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list"/>
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
+			<arg value="-Xequals" />
+			<arg value="-XhashCode" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
 		</xjc>		
 	</target>
@@ -122,6 +128,7 @@
     			<include name="**/*.properties"/>
     			<include name="**/*.xml"/>
     			<include name="**/*.xsd"/>
+    			<exclude name="cz/cuni/mff/peckam/java/origamist/tests/**/*.*"/>
     		</fileset>
     	</copy>
     </target>
@@ -234,6 +241,36 @@
         	packagenames="javax.swing,cz.cuni.mff.peckam.java.thumbnailer.dialogs,cz.cuni.mff.peckam.java.thumbnailer,cz.cuni.mff.peckam.java.thumbnailer.graphics,cz.cuni.mff.peckam.java.thumbnailer.utils,cz.cuni.mff.peckam.java.thumbnailer.ftp,cz.cuni.mff.peckam.java.thumbnailer.configurations,cz.cuni.mff.peckam.java.thumbnailer.sql" 
         	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
     </target-->
+	
+	<target name="tests" depends="compile" description="Runs JUnit tests">
+		<mkdir dir="tests/bin" />
+		<javac srcdir="src" sourcepath="" destdir="tests/bin" includes="cz/cuni/mff/peckam/java/origamist/tests/*.java">
+        	<classpath>
+        		<pathelement path="bin"/>
+        		<fileset dir="lib">
+        			<include name="**/*.jar"/>
+        		</fileset>
+        		<fileset file="lib-compile-time/junit.jar" />
+        		<fileset file="lib-compile-time/org.hamcrest.core*.jar" />
+        	</classpath>
+        </javac>
+		<junit>
+			<classpath>
+        		<pathelement location="tests/bin"/>
+				<pathelement location="bin"/>
+        		<fileset dir="lib">
+        			<include name="**/*.jar"/>
+        		</fileset>
+				<fileset file="lib-compile-time/junit.jar" />
+				<fileset file="lib-compile-time/org.hamcrest.core*.jar" />
+        	</classpath>
+			<formatter type="brief" usefile="false"/>
+			<batchtest>
+				<fileset dir="tests/bin" includes="cz/cuni/mff/peckam/java/origamist/tests/**/*.class" />
+			</batchtest>
+		</junit>
+		<delete dir="tests/bin" />
+	</target>
 	
 	<target name="libs-sign" description="Signs the JAR libraries deployed along with the applet. This is needed because Java Plugin shows a warning if a signed applet uses unsigned libraries.">
 		<var name="signappletExecutable" value="signapplet.sh"/>

@@ -12,6 +12,8 @@ import javax.xml.bind.annotation.XmlTransient;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 
 /**
  * 
@@ -127,4 +129,36 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
         modelStateCache.put(previousState, state);
         return state;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        if (icon == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + ServiceLocator.get(HashCodeAndEqualsHelper.class).hashCode(icon);
+        }
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Operation other = (Operation) obj;
+        if (icon == null) {
+            if (other.icon != null)
+                return false;
+        } else if (!ServiceLocator.get(HashCodeAndEqualsHelper.class).equals(icon, other.icon))
+            return false;
+        return true;
+    }
+
 }

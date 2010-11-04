@@ -11,5 +11,8 @@
 			<attribute name="javadoc_location" value="file:/F:/Program Files/Java/javadoc/log4j-1.2.16/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib-compile-time/junit.jar"/>
+	<classpathentry kind="lib" path="lib-compile-time/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb2-basics-runtime-0.6.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
