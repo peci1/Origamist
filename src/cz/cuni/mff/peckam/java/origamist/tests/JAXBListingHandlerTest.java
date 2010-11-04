@@ -11,8 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URL;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.MarshalException;
@@ -20,44 +19,41 @@ import javax.xml.bind.MarshalException;
 import org.junit.Test;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
-import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.files.Listing;
+import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
 
 /**
  * 
  * 
  * @author Martin Pecka
  */
-public class JAXBOrigamiHandlerTest
+public class JAXBListingHandlerTest
 {
 
     /**
      * Test method for
-     * {@link cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler#save(cz.cuni.mff.peckam.java.origamist.model.Origami, java.io.File)}
-     * and {@link cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler#loadModel(java.net.URI, boolean)}.
+     * {@link cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler#export(cz.cuni.mff.peckam.java.origamist.files.Listing, java.io.File)}
+     * and {@link cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler#loadListing(java.net.URL)}.
      */
     @Test
-    public void testLoadAndSave()
+    public void testLoadAndExport()
     {
         try {
-            File docBase = new File("tests");
-            JAXBOrigamiHandler h = new JAXBOrigamiHandler(docBase.toURI().toURL());
+            File docBase = new File("tests/listing1");
+            JAXBListingHandler h = new JAXBListingHandler();
 
-            assertEquals("", docBase.toURI().toURL(), h.getDocumentBase());
+            Listing l = h.load(new URL(docBase.toURI().toURL(), "listing.xml"));
 
-            Origami o = h.loadModel(new URI("diagram1.xml"), false);
+            assertNotNull(l);
 
-            assertNotNull(o);
+            File f = new File(docBase, "listingTest1.xml");
+            h.export(l, f);
 
-            File f = new File(docBase, "diagramTestLoadAndSave.xml");
-            h.save(o, f);
+            File f2 = new File(docBase, "listingTest2.xml");
+            Listing l2 = h.load(f.toURI().toURL());
+            h.export(l2, f2);
 
-            File f2 = new File(docBase, "diagramTestLoadAndSave2.xml");
-            Origami o2 = h.loadModel(f.toURI(), false);
-            h.save(o2, f2);
-
-            o2.setSrc(o.getSrc()); // we know the files have different sources
-            assertEquals(o, o2);
+            assertEquals(l, l2);
             InputStream fis = f.toURI().toURL().openStream();
             InputStream f2is = f2.toURI().toURL().openStream();
 
@@ -77,8 +73,6 @@ public class JAXBOrigamiHandlerTest
         } catch (UnsupportedDataFormatException e) {
             fail(e.toString());
         } catch (IOException e) {
-            fail(e.toString());
-        } catch (URISyntaxException e) {
             fail(e.toString());
         } catch (MarshalException e) {
             fail(e.toString());
