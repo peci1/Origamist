@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Categories;
+import cz.cuni.mff.peckam.java.origamist.files.Category;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
@@ -85,7 +86,7 @@ public class OrigamiViewer extends CommonGui
             handleAppletParams();
 
             // if the iterator should be empty, then handleAppletParams will die with an exception
-            Origami o = filesToDisplay.recursiveIterator().next().getOrigami();
+            Origami o = filesToDisplay.recursiveFileIterator().next().getOrigami();
             /*
              * StepRenderer r = new StepRenderer(); r.setOrigami(o); r.setStep((Step)
              * o.getModel().getSteps().getStep().get(3)); r.setPreferredSize(new Dimension(200, 200));
@@ -94,18 +95,19 @@ public class OrigamiViewer extends CommonGui
             DiagramRenderer r = new DiagramRenderer(o, (Step) o.getModel().getSteps().getStep().get(0));
             r.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(r, BorderLayout.NORTH);
-            /*
-             * try {
-             * File docBase = new File(getDocumentBase().toURI());
-             * if (!docBase.isDirectory())
-             * docBase = docBase.getParentFile();
-             * ServiceLocator.get(OrigamiHandler.class).save(o, new File(docBase, "..\\model.xml"));
-             * } catch (MarshalException e) {
-             * System.err.println(e);
-             * } catch (JAXBException e) {
-             * System.err.println(e);
-             * } catch (URISyntaxException e) {}
-             */
+            Iterator<Category> it = filesToDisplay.recursiveCategoryIterator();
+            if (it != null) {
+                System.err.println("Loaded categories and files they contain: ");
+                while (it.hasNext()) {
+                    Category cat = it.next();
+                    System.err.println(cat.getHierarchicalId("/"));
+                    if (cat.getFiles() != null) {
+                        for (cz.cuni.mff.peckam.java.origamist.files.File f : cat.getFiles().getFile()) {
+                            System.err.println("* " + f.getName(getLocale()) + " (" + f.getSrc() + ")");
+                        }
+                    }
+                }
+            }
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
@@ -232,27 +234,32 @@ public class OrigamiViewer extends CommonGui
             }
 
             // we only show the file listing if two or more models are being displayed
-            Iterator<cz.cuni.mff.peckam.java.origamist.files.File> it = filesToDisplay.recursiveIterator();
+            Iterator<cz.cuni.mff.peckam.java.origamist.files.File> it = filesToDisplay.recursiveFileIterator();
             int numOfModels = 0;
-            while (it.hasNext()) {
-                numOfModels++;
-                if (numOfModels == 2)
-                    break;
+            if (it != null) {
+                while (it.hasNext()) {
+                    numOfModels++;
+                    if (numOfModels == 2)
+                        break;
+                }
             }
 
             showFileListingByDefault = numOfModels >= 2;
 
             if (modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS || modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL
                     || modelDownloadMode > 0) {
-                Iterator<cz.cuni.mff.peckam.java.origamist.files.File> iterator = filesToDisplay.recursiveIterator();
+                Iterator<cz.cuni.mff.peckam.java.origamist.files.File> iterator = filesToDisplay
+                        .recursiveFileIterator();
                 boolean onlyMetadata = modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS;
 
                 int i = 0;
+                List<cz.cuni.mff.peckam.java.origamist.files.File> badFiles = new LinkedList<cz.cuni.mff.peckam.java.origamist.files.File>();
                 while (iterator.hasNext() && (modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL || i++ < modelDownloadMode)) {
                     cz.cuni.mff.peckam.java.origamist.files.File file = iterator.next();
                     try {
                         file.getOrigami(onlyMetadata);
                         file.fillFromOrigami();
+                        continue;
                     } catch (UnsupportedDataFormatException e) {
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelFile",
                                 new Object[] { file.getSrc() }, e);
@@ -263,6 +270,16 @@ public class OrigamiViewer extends CommonGui
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLoadIOError",
                                 new Object[] { file.getSrc() }, e);
                     }
+                    badFiles.add(file);
+                }
+                iterator = null;
+                // be "sure" the iterator will be dead
+                System.gc();
+                for (cz.cuni.mff.peckam.java.origamist.files.File file : badFiles) {
+                    if (file.getParentCategory() != null)
+                        file.getParentCategory().getFiles().getFile().remove(file);
+                    else
+                        filesToDisplay.getFiles().getFile().remove(file);
                 }
             }
         }

@@ -82,11 +82,11 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
      * 
      * @return Iterator that iterates over all files in this list of categories and their subcategories.
      */
-    public Iterator<File> recursiveIterator()
+    public Iterator<File> recursiveFileIterator()
     {
         return new Iterator<File>() {
             Iterator<Category> categoryIterator = category.iterator();
-            Iterator<File>     catFileIterator  = categoryIterator.next().recursiveIterator();
+            Iterator<File>     catFileIterator  = categoryIterator.next().recursiveFileIterator();
 
             @Override
             public void remove()
@@ -114,12 +114,62 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
                     return true;
                 } else if (categoryIterator.hasNext()) {
                     while (categoryIterator.hasNext() && !catFileIterator.hasNext()) {
-                        catFileIterator = categoryIterator.next().recursiveIterator();
+                        catFileIterator = categoryIterator.next().recursiveFileIterator();
                     }
                     return catFileIterator.hasNext();
                 }
 
                 return false;
+            }
+        };
+    }
+
+    /**
+     * Iterator that iterates over all categories and subcategories in this list of categories.
+     * 
+     * @return Iterator that iterates over all categories and subcategories in this list of categories.
+     */
+    public Iterator<Category> recursiveCategoryIterator()
+    {
+        return new Iterator<Category>() {
+            Iterator<Category> categoryIterator = category.iterator();
+            Category           current          = null;
+            Iterator<Category> currentIterator  = null;
+
+            @Override
+            public void remove()
+            {
+                Logger.getLogger(getClass()).warn(
+                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+            }
+
+            @Override
+            public Category next()
+            {
+                if (currentIterator != null && currentIterator.hasNext()) {
+                    return currentIterator.next();
+                } else if (current == null && categoryIterator.hasNext()) {
+                    current = categoryIterator.next();
+                    currentIterator = current.recursiveCategoryIterator();
+                    return current;
+                } else if (current == null) {
+                    throw new NoSuchElementException("No more elements in recursive file iterator.");
+                } else /* if ((currentIterator == null || !currentIterator.hasNext()) && current != null) */{
+                    current = null;
+                    return next();
+                }
+            }
+
+            @Override
+            public boolean hasNext()
+            {
+                // if we are in a categorie's iterator, just use it... when it ends up, the next category returned
+                // should be the next category of this category list
+                if (currentIterator != null && currentIterator.hasNext()) {
+                    return true;
+                } else {
+                    return categoryIterator.hasNext();
+                }
             }
         };
     }

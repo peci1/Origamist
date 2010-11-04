@@ -30,7 +30,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      * 
      * @return Iterator that iterates over all files in this categorie's files and subcategories.
      */
-    public Iterator<File> recursiveIterator()
+    public Iterator<File> recursiveFileIterator()
     {
         return new Iterator<File>() {
             Iterator<File> fileIterator       = null;
@@ -40,7 +40,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
                 if (getFiles() != null)
                     fileIterator = getFiles().getFile().iterator();
                 if (getCategories() != null)
-                    categoriesIterator = ((Categories) getCategories()).recursiveIterator();
+                    categoriesIterator = ((Categories) getCategories()).recursiveFileIterator();
             }
 
             @Override
@@ -73,6 +73,19 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
                 return false;
             }
         };
+    }
+
+    /**
+     * Iterator that iterates over all subcategories in this category.
+     * 
+     * @return Iterator that iterates over all subcategories in this category.
+     */
+    public Iterator<Category> recursiveCategoryIterator()
+    {
+        if (getCategories() == null)
+            return null;
+
+        return ((Categories) getCategories()).recursiveCategoryIterator();
     }
 
     /**
@@ -131,6 +144,22 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
             oldCat = newCat;
         }
         return oldCat;
+    }
+
+    /**
+     * Returns the id of this category composed of names of it and all of its parent categories connected with
+     * <code>separator</code>, starting with the highest category.
+     * 
+     * @param separator The string to connect the categories with.
+     * 
+     * @return The hierarchical id of this category.
+     */
+    public String getHierarchicalId(String separator)
+    {
+        if (parentCategory == null)
+            return this.id;
+        else
+            return parentCategory.getHierarchicalId(separator) + separator + this.id;
     }
 
     @Override

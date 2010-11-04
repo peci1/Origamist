@@ -28,6 +28,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * 
  * @author Martin Pecka
  */
+// TODO: implement a common interface along with Category
 public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listing
 {
 
@@ -79,6 +80,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                     continue;
                 File file = (File) of.createFile();
                 file.setSrc(ioFile.toURI());
+                file.setParentCategory(category);
                 if (category == null) {
                     if (getFiles() == null)
                         setFiles(of.createFiles());
@@ -267,9 +269,9 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     /**
      * Iterator that iterates over all files in this listing and the categories and subcategories.
      * 
-     * @return Iterator that iterates over all files in thi listing and the categories and subcategories.
+     * @return Iterator that iterates over all files in this listing and the categories and subcategories.
      */
-    public Iterator<File> recursiveIterator()
+    public Iterator<File> recursiveFileIterator()
     {
         return new Iterator<File>() {
             Iterator<File> fileIterator       = null;
@@ -279,7 +281,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                     fileIterator = getFiles().getFile().iterator();
                 }
                 if (getCategories() != null) {
-                    categoriesIterator = ((Categories) getCategories()).recursiveIterator();
+                    categoriesIterator = ((Categories) getCategories()).recursiveFileIterator();
                 }
             }
 
@@ -312,6 +314,19 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                 return false;
             }
         };
+    }
+
+    /**
+     * Iterator that iterates over all subcategories in this listing.
+     * 
+     * @return Iterator that iterates over all subcategories in this listing.
+     */
+    public Iterator<Category> recursiveCategoryIterator()
+    {
+        if (getCategories() == null)
+            return null;
+
+        return ((Categories) getCategories()).recursiveCategoryIterator();
     }
 
     /**

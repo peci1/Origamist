@@ -106,12 +106,21 @@ public class JAXBOrigamiHandler implements OrigamiHandler
             reader.setContentHandler(filter);
 
             // parses the model to this.model
+            model = null;
             try {
                 reader.parse(new InputSource(is));
             } catch (SAXException e) {
                 // if e is ParseAbortedException, then no error actually occured, just the reading was aborted
                 if (!(e.getCause() instanceof ParseAbortedException))
                     throw e;
+            }
+
+            // if the PartialLoadingXMLFilter doesn't match the root origami element, it parses the file without a
+            // schema and this.model is never touched
+            if (model == null) {
+                throw new UnsupportedDataFormatException("The file doesn't contain a root element in namespace "
+                        + "http://www.mff.cuni.cz/~peckam/java/origamist/diagram/ and with local name 'origami' "
+                        + "and thus is not a valid model.");
             }
 
             if (onlyMetadata) {
