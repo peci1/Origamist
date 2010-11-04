@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.services;
+package cz.cuni.mff.peckam.java.origamist.services.interfaces;
 
 import java.util.prefs.BackingStoreException;
 

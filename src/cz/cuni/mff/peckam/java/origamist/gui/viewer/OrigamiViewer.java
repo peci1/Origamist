@@ -28,10 +28,10 @@ import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
-import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
-import cz.cuni.mff.peckam.java.origamist.services.ListingHandler;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 
 /**
  * The viewer of the origami model.

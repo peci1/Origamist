@@ -21,12 +21,14 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
-import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.services.HashCodeAndEqualsHelperImpl;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler;
-import cz.cuni.mff.peckam.java.origamist.services.ListingHandler;
-import cz.cuni.mff.peckam.java.origamist.services.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 
 /**
  * Common GUI elements for both the viewer and editor.
@@ -118,6 +120,7 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(OrigamiHandler.class, new JAXBOrigamiHandler(this.getDocumentBase()));
         ServiceLocator.add(ListingHandler.class, new JAXBListingHandler());
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
+        ServiceLocator.add(HashCodeAndEqualsHelper.class, new HashCodeAndEqualsHelperImpl());
     }
 
     protected void setupLoggers()

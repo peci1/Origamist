@@ -31,6 +31,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**

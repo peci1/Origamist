@@ -34,6 +34,7 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**

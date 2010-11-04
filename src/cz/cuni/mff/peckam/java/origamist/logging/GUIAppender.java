@@ -20,8 +20,8 @@ import org.apache.log4j.spi.LoggingEvent;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
-import cz.cuni.mff.peckam.java.origamist.services.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * This appender writes the messages to the console. FATAL messages are also shown as error popups to the user.
