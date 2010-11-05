@@ -109,11 +109,15 @@ public class OrigamiViewer extends CommonGui
                         }
                     }
                 }
+            } else {
+                System.err.println("There are no files loaded.");
             }
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
             System.err.println(e); // TODO handle IO errors
+        } catch (IllegalArgumentException e) {
+            Logger.getLogger("viewer").fatal(e.getMessage(), e);
         }
 
     }
@@ -129,8 +133,11 @@ public class OrigamiViewer extends CommonGui
 
     /**
      * Handles the applet parameters. Eg. loads listing.xml, or sets other settings.
+     * 
+     * @throws IllegalArgumentException If an argument has bad value and the continuation of the app is impossible due
+     *             to it.
      */
-    protected void handleAppletParams()
+    protected void handleAppletParams() throws IllegalArgumentException
     {
         handleStartupModeParam();
         handleModelDownloadModeParam();
@@ -184,8 +191,10 @@ public class OrigamiViewer extends CommonGui
 
     /**
      * Handles the "files" applet parameter. (Also handles the "recursive" parameter, where applicable)
+     * 
+     * @throws IllegalArgumentException If the loaded listing would be empty or listing.xml could not be loaded.
      */
-    protected void handleFilesParam()
+    protected void handleFilesParam() throws IllegalArgumentException
     {
         String param = getParameter("files");
         if (param == null) {
@@ -202,11 +211,17 @@ public class OrigamiViewer extends CommonGui
                 ServiceLocator.get(OrigamiHandler.class).setDocumentBase(paramURL);
                 filesToDisplay = ServiceLocator.get(ListingHandler.class).load(paramURL);
             } catch (MalformedURLException e) {
-                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingURL", e);
+                ResourceBundle messages = ResourceBundle.getBundle("viewer",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+                throw new IllegalArgumentException(messages.getString("filesParamInvalidListingURL"), e);
             } catch (UnsupportedDataFormatException e) {
-                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingFormat", e);
+                ResourceBundle messages = ResourceBundle.getBundle("viewer",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+                throw new IllegalArgumentException(messages.getString("filesParamInvalidListingFormat"), e);
             } catch (IOException e) {
-                Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidListingUnread", e);
+                ResourceBundle messages = ResourceBundle.getBundle("viewer",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+                throw new IllegalArgumentException(messages.getString("filesParamInvalidListingUnread"), e);
             }
         } else {
             List<String> filesAsStrings = Arrays.asList(param.split(" "));
@@ -234,20 +249,6 @@ public class OrigamiViewer extends CommonGui
                 Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidFileList", null,
                         new IllegalArgumentException("No input files defined."));
             }
-
-            // we only show the file listing if two or more models are being displayed
-            Iterator<cz.cuni.mff.peckam.java.origamist.files.File> it = filesToDisplay.recursiveFileIterator();
-            int numOfModels = 0;
-            if (it != null) {
-                while (it.hasNext()) {
-                    numOfModels++;
-                    if (numOfModels == 2)
-                        break;
-                }
-            }
-            it = null;
-
-            showFileListingByDefault = numOfModels >= 2;
 
             if (modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS || modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL
                     || modelDownloadMode > 0) {
@@ -277,6 +278,27 @@ public class OrigamiViewer extends CommonGui
                 }
 
                 iterator = null;
+            }
+
+            // we only show the file listing if two or more models are being displayed
+            Iterator<cz.cuni.mff.peckam.java.origamist.files.File> it = filesToDisplay.recursiveFileIterator();
+            int numOfModels = 0;
+            if (it != null) {
+                while (it.hasNext()) {
+                    it.next();
+                    numOfModels++;
+                    if (numOfModels == 2)
+                        break;
+                }
+            }
+            it = null;
+
+            showFileListingByDefault = numOfModels >= 2;
+
+            if (numOfModels == 0) {
+                ResourceBundle messages = ResourceBundle.getBundle("viewer",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+                throw new IllegalArgumentException(messages.getString("filesParamInvalidFileList"));
             }
         }
     }

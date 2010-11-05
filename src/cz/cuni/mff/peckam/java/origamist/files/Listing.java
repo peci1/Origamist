@@ -303,11 +303,9 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             {
                 wasRemoved = false;
                 if (fileIterator != null && fileIterator.hasNext()) {
-                    File f = fileIterator.next();
-                    if (!fileIterator.hasNext())
-                        fileIterator = null;
-                    return f;
+                    return fileIterator.next();
                 } else if (categoriesFileIterator != null && categoriesFileIterator.hasNext()) {
+                    fileIterator = null;
                     return categoriesFileIterator.next();
                 }
                 throw new NoSuchElementException("No more elements in recursive file iterator.");
