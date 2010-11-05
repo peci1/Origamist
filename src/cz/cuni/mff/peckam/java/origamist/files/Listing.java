@@ -435,4 +435,10 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     {
         return "";
     }
+
+    @Override
+    public Category getParent()
+    {
+        return null;
+    }
 }

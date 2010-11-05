@@ -3,15 +3,19 @@
  */
 package cz.cuni.mff.peckam.java.origamist.files;
 
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.ResourceBundle;
 
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * A category containing some diagram metadata.
@@ -24,7 +28,19 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
 
     /** The category or listing this category is a subcategory of. */
     @XmlTransient
-    protected CategoriesContainer parent = null;
+    protected CategoriesContainer       parent = null;
+
+    /** The hastable for more comfortable search in localized names. */
+    @XmlTransient
+    protected Hashtable<Locale, String> names  = new Hashtable<Locale, String>();
+
+    /**
+     * Create a new listing category.
+     */
+    public Category()
+    {
+        ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
+    }
 
     /**
      * Iterator that iterates over all files in this categorie's files and subcategories.
@@ -186,6 +202,40 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     public String toString()
     {
         return "Category [name=" + name + ", id=" + id + ", files=" + files + ", categories=" + categories + "]";
+    }
+
+    /**
+     * Return the localized name of the category.
+     * 
+     * @param l The locale of the name. If null or not found, returns the content of the first &lt;name&gt; element
+     *            defined.
+     * @return The localized name.
+     */
+    public String getName(Locale l)
+    {
+        if (names.size() == 0) {
+            ResourceBundle b = ResourceBundle.getBundle("cz.cuni.mff.peckam.java.origamist.model.Origami", l);
+            return b.getString("nameNotFound");
+        }
+
+        if (l == null || !names.containsKey(l))
+            return name.get(0).getValue();
+        return names.get(l);
+    }
+
+    /**
+     * Add a name in the given locale.
+     * 
+     * @param l The locale of the name
+     * @param name The name to add
+     */
+    public void addName(Locale l, String name)
+    {
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
+        s.setLang(l);
+        s.setValue(name);
+        this.name.add(s);
     }
 
 }

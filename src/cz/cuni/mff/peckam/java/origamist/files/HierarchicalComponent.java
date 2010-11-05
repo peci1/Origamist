@@ -19,4 +19,11 @@ public interface HierarchicalComponent
      * @return The hierarchical id of this component.
      */
     String getHierarchicalId(String separator);
+
+    /**
+     * Returns the parent of this component, or <code>null</code>, if this is the topmost component.
+     * 
+     * @return The parent of this component, or <code>null</code>, if this is the topmost component.
+     */
+    HierarchicalComponent getParent();
 }

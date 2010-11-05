@@ -8,7 +8,7 @@ package cz.cuni.mff.peckam.java.origamist.files;
  * 
  * @author Martin Pecka
  */
-public interface FilesContainer
+public interface FilesContainer extends HierarchicalComponent
 {
     /**
      * Returns the container of the list of files.

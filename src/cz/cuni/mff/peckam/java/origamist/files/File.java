@@ -26,7 +26,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
  * 
  * @author Martin Pecka
  */
-public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
+public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File implements HierarchicalComponent
 {
 
     /**
@@ -61,8 +61,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      * Return the localized name of the model.
      * 
      * @param l The locale of the name. If null or not found, returns the
-     *            content of the first &lt;name> element defined
-     * @return The localized note
+     *            content of the first &lt;name&gt; element defined.
+     * @return The localized name.
      */
     public String getName(Locale l)
     {
@@ -249,6 +249,12 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
         return "File [names=" + names + ", shortDescs=" + shortDescs + ", author=" + author + ", name=" + name
                 + ", year=" + year + ", shortdesc=" + shortdesc + ", license=" + license + ", original=" + original
                 + ", thumbnail=" + thumbnail + ", src=" + src + "]";
+    }
+
+    @Override
+    public String getHierarchicalId(String separator)
+    {
+        return parent.getHierarchicalId(separator) + separator + this.getName(Locale.getDefault());
     }
 
 }

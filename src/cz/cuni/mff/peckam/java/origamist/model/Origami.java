@@ -175,6 +175,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     {
         if (loadModelCallable != null) {
             try {
+                // TODO notify the user about loading
                 Callable<Model> callable = loadModelCallable;
                 loadModelCallable = null;
                 this.model = callable.call();
