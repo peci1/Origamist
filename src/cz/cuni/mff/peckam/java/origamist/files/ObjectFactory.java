@@ -18,7 +18,7 @@ public class ObjectFactory extends cz.cuni.mff.peckam.java.origamist.files.jaxb.
     public JAXBElement<Listing> createListing(Listing value)
     {
         JAXBElement<Listing> result = super.createListing(value);
-        ((cz.cuni.mff.peckam.java.origamist.files.Listing) result.getValue()).updateChildCategories();
+        ((cz.cuni.mff.peckam.java.origamist.files.Listing) result.getValue()).updateChildParents();
         return result;
     }
 

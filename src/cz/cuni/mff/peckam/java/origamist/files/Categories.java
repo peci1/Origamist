@@ -65,14 +65,14 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
      * 
      * @return The overall number of files in this category and its subcategories.
      */
-    public int sizeRecursive()
+    public int numOfFilesRecursive()
     {
         int result = 0;
         for (Category cat : category) {
             if (cat.getFiles() != null)
                 result += cat.getFiles().getFile().size();
             if (cat.getCategories() != null)
-                result += ((Categories) cat.getCategories()).sizeRecursive();
+                result += ((Categories) cat.getCategories()).numOfFilesRecursive();
         }
         return result;
     }
@@ -86,13 +86,28 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
     {
         return new Iterator<File>() {
             Iterator<Category> categoryIterator = category.iterator();
-            Iterator<File>     catFileIterator  = categoryIterator.next().recursiveFileIterator();
+            Iterator<File>     catFileIterator  = null;
+            boolean            wasRemoved       = false;
+
+            {
+                if (categoryIterator.hasNext()) {
+                    catFileIterator = categoryIterator.next().recursiveFileIterator();
+                }
+            }
 
             @Override
             public void remove()
             {
-                Logger.getLogger(getClass()).warn(
-                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+                if (wasRemoved) {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to delete a file from a categorie's recursive iterator twice.");
+                } else if (catFileIterator != null) {
+                    wasRemoved = true;
+                    catFileIterator.remove();
+                } else {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to delete a file from a categorie's recursive iterator before a call to next().");
+                }
             }
 
             @Override
@@ -103,6 +118,8 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
 
                 // hasNext will do all the magic for us
 
+                wasRemoved = false;
+
                 return catFileIterator.next();
 
             }
@@ -110,7 +127,9 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
             @Override
             public boolean hasNext()
             {
-                if (catFileIterator.hasNext()) {
+                if (catFileIterator == null) {
+                    return false;
+                } else if (catFileIterator.hasNext()) {
                     return true;
                 } else if (categoryIterator.hasNext()) {
                     while (categoryIterator.hasNext() && !catFileIterator.hasNext()) {
@@ -135,12 +154,20 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
             Iterator<Category> categoryIterator = category.iterator();
             Category           current          = null;
             Iterator<Category> currentIterator  = null;
+            boolean            wasRemoved       = false;
 
             @Override
             public void remove()
             {
-                Logger.getLogger(getClass()).warn(
-                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+                if (wasRemoved) {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to delete a subcategory from a categorie's recursive iterator twice.");
+                } else if (currentIterator != null) {
+                    currentIterator.remove();
+                } else {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to delete a file from a categorie's recursive iterator before a call to next().");
+                }
             }
 
             @Override

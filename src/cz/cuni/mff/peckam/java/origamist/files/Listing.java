@@ -28,8 +28,8 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * 
  * @author Martin Pecka
  */
-// TODO: implement a common interface along with Category
-public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listing
+public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listing implements FilesContainer,
+        CategoriesContainer
 {
 
     /**
@@ -53,10 +53,13 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      * @param ioFiles The files to add.
      * @param recurseDepth If <code>null</code>, recurse infinitely, else recurse subdirectories of the depth
      *            <code>recurseDepth</code> and less.
-     * @param category If <code>null</code>, add the files in the listing itself, otherwise add them in the category.
+     * @param category The category or listing to add the files to.
      */
-    public void addFiles(List<java.io.File> ioFiles, final Integer recurseDepth, Category category)
+    public void addFiles(List<java.io.File> ioFiles, final Integer recurseDepth, FilesContainer category)
     {
+        if (category == null)
+            throw new IllegalArgumentException("Cannot add files to null category.");
+
         if (recurseDepth != null && recurseDepth < 0)
             return;
 
@@ -80,16 +83,10 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                     continue;
                 File file = (File) of.createFile();
                 file.setSrc(ioFile.toURI());
-                file.setParentCategory(category);
-                if (category == null) {
-                    if (getFiles() == null)
-                        setFiles(of.createFiles());
-                    getFiles().getFile().add(file);
-                } else {
-                    if (category.getFiles() == null)
-                        category.setFiles(of.createFiles());
-                    category.getFiles().getFile().add(file);
-                }
+                file.setParent(category);
+                if (category.getFiles() == null)
+                    category.setFiles(of.createFiles());
+                category.getFiles().getFile().add(file);
             } else {
                 List<java.io.File> ioFilesToAdd = Arrays.asList(ioFile.listFiles(fileFilter));
 
@@ -98,15 +95,13 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                 newCategory.setId(name);
                 newCategory.getName().add(new LangString(name, Locale.getDefault()));
 
-                if (category == null) {
-                    if (getCategories() == null)
-                        setCategories(of.createCategories());
-                    getCategories().getCategory().add(newCategory);
-                } else {
-                    if (category.getCategories() == null)
-                        category.setCategories(of.createCategories());
-                    category.getCategories().getCategory().add(newCategory);
-                }
+                CategoriesContainer cCategory = (CategoriesContainer) category;
+
+                newCategory.setParent(cCategory);
+
+                if (cCategory.getCategories() == null)
+                    cCategory.setCategories(of.createCategories());
+                cCategory.getCategories().getCategory().add(newCategory);
 
                 this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory);
             }
@@ -117,18 +112,23 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy
      * and all missing categories are created.
      * 
+     * Categories "" and "/" are concerned as the listing.
+     * 
      * @param categoryString The category to create. It is written in the form "cat1id/cat2id/cat3id".
      * @return The created category.
      */
-    public Category createSubCategories(String categoryString)
+    public CategoriesContainer createSubCategories(String categoryString)
     {
+        if (categoryString == null || categoryString.equals("") || categoryString.equals("/"))
+            return this;
+
         String[] cats = categoryString.split("/");
         Category firstCat = ((Categories) this.getCategories()).getHashtable().get(cats[0]);
         if (firstCat == null) {
             firstCat = (Category) new ObjectFactory().createCategory();
             firstCat.setId(cats[0]);
             firstCat.getName().add(new LangString(cats[0], Locale.getDefault()));
-            firstCat.setParentCategory(null);
+            firstCat.setParent(this);
             if (this.getCategories() == null)
                 this.setCategories(new ObjectFactory().createCategories());
             this.getCategories().getCategory().add(firstCat);
@@ -150,7 +150,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(Origami origami, String categoryString)
     {
-        Category category = createSubCategories(categoryString);
+        FilesContainer category = (FilesContainer) createSubCategories(categoryString);
         return addOrigami(origami, category);
     }
 
@@ -166,7 +166,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      * @throws UnsupportedDataFormatException If the origami could not be loaded.
      * @throws IOException If an IO error occured while loading the origami.
      */
-    public File addOrigami(URI path, Category category) throws UnsupportedDataFormatException, IOException
+    public File addOrigami(URI path, FilesContainer category) throws UnsupportedDataFormatException, IOException
     {
         Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
@@ -176,15 +176,14 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      * Loads origami from the given path and adds it to the file listing.
      * 
      * @param path The path where the origami is to be loaded from.
-     * @param category The category to add the origami to, or <code>null</code> if it has to be added directly under the
-     *            listing.
+     * @param category The category or listing to add the origami to.
      * 
      * @return The File object created when adding the origami.
      * 
      * @throws UnsupportedDataFormatException If the origami could not be loaded.
      * @throws IOException If an IO error occured while loading the origami.
      */
-    public File addOrigami(URL path, Category category) throws UnsupportedDataFormatException, IOException
+    public File addOrigami(URL path, FilesContainer category) throws UnsupportedDataFormatException, IOException
     {
         Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(path, true);
         return addOrigami(o, category);
@@ -230,12 +229,11 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      * Adds the given origami to the file listing.
      * 
      * @param origami The origami to add. It must have its src property non-<code>null</code>.
-     * @param category The category to add the origami to, or <code>null</code> if it has to be added directly under the
-     *            listing.
+     * @param category The category or listing to add the origami to.
      * 
      * @return The File object created when adding the origami.
      */
-    public File addOrigami(Origami origami, Category category)
+    public File addOrigami(Origami origami, FilesContainer category)
     {
         File file = (File) new ObjectFactory().createFile();
         if (origami.getSrc() == null) {
@@ -250,19 +248,14 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             return null;
         }
 
-        file.setParentCategory(category);
+        file.setParent(category);
         file.setOrigami(origami);
         file.fillFromOrigami();
 
-        if (category != null) {
-            if (category.getFiles() == null)
-                category.setFiles(new ObjectFactory().createFiles());
-            category.getFiles().getFile().add(file);
-        } else {
-            if (this.getFiles() == null)
-                this.setFiles(new ObjectFactory().createFiles());
-            this.getFiles().getFile().add(file);
-        }
+        if (category.getFiles() == null)
+            category.setFiles(new ObjectFactory().createFiles());
+        category.getFiles().getFile().add(file);
+
         return file;
     }
 
@@ -274,31 +267,48 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     public Iterator<File> recursiveFileIterator()
     {
         return new Iterator<File>() {
-            Iterator<File> fileIterator       = null;
-            Iterator<File> categoriesIterator = null;
+            Iterator<File> fileIterator           = null;
+            Iterator<File> categoriesFileIterator = null;
+            boolean        wasRemoved             = false;
+
             {
                 if (getFiles() != null) {
                     fileIterator = getFiles().getFile().iterator();
                 }
                 if (getCategories() != null) {
-                    categoriesIterator = ((Categories) getCategories()).recursiveFileIterator();
+                    categoriesFileIterator = ((Categories) getCategories()).recursiveFileIterator();
                 }
             }
 
             @Override
             public void remove()
             {
-                Logger.getLogger(getClass()).warn(
-                        "Tried to delete a file from a listing's recursive iterator. Not implemented.");
+                if (wasRemoved) {
+                    throw new IllegalStateException(
+                            "Tried to remove a file from a listings's recursive iterator twice.");
+                } else if (fileIterator != null) {
+                    wasRemoved = true;
+                    fileIterator.remove();
+                } else if (categoriesFileIterator != null) {
+                    wasRemoved = true;
+                    categoriesFileIterator.remove();
+                } else {
+                    throw new IllegalStateException(
+                            "Tried to delete a file from a listing's recursive iterator before a call to next().");
+                }
             }
 
             @Override
             public File next()
             {
+                wasRemoved = false;
                 if (fileIterator != null && fileIterator.hasNext()) {
-                    return fileIterator.next();
-                } else if (categoriesIterator != null && categoriesIterator.hasNext()) {
-                    return categoriesIterator.next();
+                    File f = fileIterator.next();
+                    if (!fileIterator.hasNext())
+                        fileIterator = null;
+                    return f;
+                } else if (categoriesFileIterator != null && categoriesFileIterator.hasNext()) {
+                    return categoriesFileIterator.next();
                 }
                 throw new NoSuchElementException("No more elements in recursive file iterator.");
             }
@@ -308,12 +318,81 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             {
                 if (fileIterator != null && fileIterator.hasNext()) {
                     return true;
-                } else if (categoriesIterator != null && categoriesIterator.hasNext()) {
+                } else if (categoriesFileIterator != null && categoriesFileIterator.hasNext()) {
                     return true;
                 }
                 return false;
             }
         };
+    }
+
+    /**
+     * Iterator that iterates over all files in this listing and the categories and subcategories.
+     * 
+     * @param beginWithThis If true, the first value returned by the iterator will be <code>this</code>.
+     * @return Iterator that iterates over all files in this listing and the categories and subcategories.
+     */
+    public Iterator<? extends CategoriesContainer> recursiveCategoryIterator(boolean beginWithThis)
+    {
+        if (!beginWithThis) {
+            return recursiveCategoryIterator();
+        } else {
+            return new Iterator<CategoriesContainer>() {
+                boolean            wasThis          = false;
+                Iterator<Category> categoryIterator = recursiveCategoryIterator();
+
+                @Override
+                public boolean hasNext()
+                {
+                    if (!wasThis) {
+                        return true;
+                    } else if (categoryIterator != null && categoryIterator.hasNext()) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+
+                @Override
+                public CategoriesContainer next()
+                {
+                    if (!wasThis) {
+                        wasThis = true;
+                        return Listing.this;
+                    } else if (categoryIterator != null) {
+                        return categoryIterator.next();
+                    }
+                    throw new NoSuchElementException("There are no more categories in the listing.");
+                }
+
+                @Override
+                public void remove()
+                {
+                    if (!wasThis) {
+                        throw new IllegalStateException(
+                                "Tried to remove a category from a listings's recursive iterator before a call to next().");
+                    } else {
+                        if (categoryIterator != null && categoryIterator.hasNext()) {
+                            try {
+                                categoryIterator.remove();
+                            } catch (IllegalStateException e) {
+                                // if wasThis == true and we get the exception here, it is the case when this was
+                                // returned last time and the categoryIterator.next() has not been called yet
+                                // we don't allow to remove the whole listing
+                                throw new IllegalStateException(
+                                        "Tried to remove listing from a listing's category iterator. Not allowed.");
+                            }
+                        } else if (categoryIterator != null) {
+                            categoryIterator.remove();
+                        } else {
+                            throw new IllegalStateException(
+                                    "There are no categories to remove in the listing iterator.");
+                        }
+                    }
+                }
+
+            };
+        }
     }
 
     /**
@@ -330,19 +409,19 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     }
 
     /**
-     * Set this category as the parent of its files and subcategories and recursively do the same for all subcategories.
+     * Set this listing as the parent of its files and subcategories and recursively do the same for all subcategories.
      */
-    public void updateChildCategories()
+    public void updateChildParents()
     {
         if (getFiles() != null) {
             for (File f : getFiles().getFile()) {
-                f.setParentCategory(null);
+                f.setParent(this);
             }
         }
         if (getCategories() != null) {
             for (Category c : getCategories().getCategory()) {
-                c.setParentCategory(null);
-                c.updateChildCategories();
+                c.setParent(this);
+                c.updateChildParents();
             }
         }
     }
@@ -351,5 +430,11 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     public String toString()
     {
         return "Listing [files=" + files + ", categories=" + categories + ", version=" + version + "]";
+    }
+
+    @Override
+    public String getHierarchicalId(String separator)
+    {
+        return "";
     }
 }

@@ -33,20 +33,20 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
      * The hastable for more comfortable search in localized names.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> names          = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> names      = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized short descriptions.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> shortDescs     = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> shortDescs = new Hashtable<Locale, String>();
 
     /** The origami model corresponding to this file. */
     @XmlTransient
-    protected Origami                   origami        = null;
+    protected Origami                   origami    = null;
 
-    /** The category this file is contained in. <code>null</code> means no category. */
+    /** The category or listing this file is contained in. */
     @XmlTransient
-    protected Category                  parentCategory = null;
+    protected FilesContainer            parent     = null;
 
     /**
      * Create a new origami metadata.
@@ -196,19 +196,19 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
     }
 
     /**
-     * @return the parentCategory
+     * @return The category or listing this file is contained in.
      */
-    public Category getParentCategory()
+    public FilesContainer getParent()
     {
-        return parentCategory;
+        return parent;
     }
 
     /**
-     * @param parentCategory the parentCategory to set
+     * @param parent The category or listing this file is contained in.
      */
-    public void setParentCategory(Category parentCategory)
+    public void setParent(FilesContainer parent)
     {
-        this.parentCategory = parentCategory;
+        this.parent = parent;
     }
 
     @Override

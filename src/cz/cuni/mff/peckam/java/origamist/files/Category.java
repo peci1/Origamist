@@ -18,12 +18,13 @@ import cz.cuni.mff.peckam.java.origamist.common.LangString;
  * 
  * @author Martin Pecka
  */
-public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Category
+public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Category implements FilesContainer,
+        CategoriesContainer
 {
 
-    /** The category this category is a subcategory of. <code>null</code> means that this is the top-level category. */
+    /** The category or listing this category is a subcategory of. */
     @XmlTransient
-    protected Category parentCategory = null;
+    protected CategoriesContainer parent = null;
 
     /**
      * Iterator that iterates over all files in this categorie's files and subcategories.
@@ -33,30 +34,44 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     public Iterator<File> recursiveFileIterator()
     {
         return new Iterator<File>() {
-            Iterator<File> fileIterator       = null;
-            Iterator<File> categoriesIterator = null;
+            Iterator<File> fileIterator           = null;
+            Iterator<File> categoriesFileIterator = null;
+            boolean        wasRemoved             = false;
 
             {
                 if (getFiles() != null)
                     fileIterator = getFiles().getFile().iterator();
                 if (getCategories() != null)
-                    categoriesIterator = ((Categories) getCategories()).recursiveFileIterator();
+                    categoriesFileIterator = ((Categories) getCategories()).recursiveFileIterator();
             }
 
             @Override
             public void remove()
             {
-                Logger.getLogger(getClass()).warn(
-                        "Tried to delete a file from a categorie's recursive iterator. Not implemented.");
+                if (wasRemoved) {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to remove a file from a categorie's recursive iterator twice.");
+                } else if (fileIterator != null) {
+                    wasRemoved = true;
+                    fileIterator.remove();
+                } else if (categoriesFileIterator != null) {
+                    wasRemoved = true;
+                    categoriesFileIterator.remove();
+                } else {
+                    Logger.getLogger(getClass()).warn(
+                            "Tried to delete a file from a categorie's recursive iterator before a call to next().");
+                }
             }
 
             @Override
             public File next()
             {
+                wasRemoved = false;
                 if (fileIterator != null && fileIterator.hasNext()) {
                     return fileIterator.next();
-                } else if (categoriesIterator != null && categoriesIterator.hasNext()) {
-                    return categoriesIterator.next();
+                } else if (categoriesFileIterator != null && categoriesFileIterator.hasNext()) {
+                    fileIterator = null;
+                    return categoriesFileIterator.next();
                 }
 
                 throw new NoSuchElementException("No more elements in recursive file iterator.");
@@ -67,7 +82,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
             {
                 if (fileIterator != null && fileIterator.hasNext()) {
                     return true;
-                } else if (categoriesIterator != null && categoriesIterator.hasNext()) {
+                } else if (categoriesFileIterator != null && categoriesFileIterator.hasNext()) {
                     return true;
                 }
                 return false;
@@ -89,35 +104,36 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     }
 
     /**
-     * @return the parentCategory
+     * @return The category or listing this category is a subcategory of.
      */
-    public Category getParentCategory()
+    public CategoriesContainer getParent()
     {
-        return parentCategory;
+        return parent;
     }
 
     /**
-     * @param parentCategory the parentCategory to set
+     * @param parent The category or listing this category is a subcategory of.
      */
-    public void setParentCategory(Category parentCategory)
+    public void setParent(CategoriesContainer parent)
     {
-        this.parentCategory = parentCategory;
+        this.parent = parent;
     }
 
     /**
-     * Set this category as the parent of its files and subcategories and recursively do the same for all subcategories.
+     * Set this category as the parent of its files and subcategories and recursively does the same for all
+     * subcategories.
      */
-    public void updateChildCategories()
+    public void updateChildParents()
     {
         if (getFiles() != null) {
             for (File f : getFiles().getFile()) {
-                f.setParentCategory(this);
+                f.setParent(this);
             }
         }
         if (getCategories() != null) {
             for (Category c : getCategories().getCategory()) {
-                c.setParentCategory(this);
-                c.updateChildCategories();
+                c.setParent(this);
+                c.updateChildParents();
             }
         }
     }
@@ -126,18 +142,25 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy
      * and all missing categories are created.
      * 
+     * Category "" is treated as <code>this</code>. Categories starting with a slash are not allowed here.
+     * 
      * @param categoryString The category to create. It is written in the form "cat1id/cat2id/cat3id".
      * @return The created category.
+     * 
+     * @throws IllegalArgumentException If the categoryString is <code>null</code> or if it starts with a slash.
      */
-    public Category createSubCategories(String categoryString)
+    public CategoriesContainer createSubCategories(String categoryString)
     {
+        if (categoryString == null || categoryString.startsWith("/"))
+            throw new IllegalArgumentException("Cannot create absolute-path-like subcategories in a raw category.");
+
         String[] cats = categoryString.split("/");
         Category oldCat = this;
         for (String cat : cats) {
             Category newCat = (Category) new ObjectFactory().createCategory();
             newCat.setId(cat);
             newCat.getName().add(new LangString(cat, Locale.getDefault()));
-            newCat.setParentCategory(oldCat);
+            newCat.setParent(oldCat);
             if (oldCat.getCategories() == null)
                 oldCat.setCategories(new ObjectFactory().createCategories());
             oldCat.getCategories().getCategory().add(newCat);
@@ -156,10 +179,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      */
     public String getHierarchicalId(String separator)
     {
-        if (parentCategory == null)
-            return this.id;
-        else
-            return parentCategory.getHierarchicalId(separator) + separator + this.id;
+        return parent.getHierarchicalId(separator) + separator + this.id;
     }
 
     @Override

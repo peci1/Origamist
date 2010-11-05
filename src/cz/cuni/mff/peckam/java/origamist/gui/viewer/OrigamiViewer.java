@@ -21,7 +21,8 @@ import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Categories;
-import cz.cuni.mff.peckam.java.origamist.files.Category;
+import cz.cuni.mff.peckam.java.origamist.files.CategoriesContainer;
+import cz.cuni.mff.peckam.java.origamist.files.FilesContainer;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
@@ -95,14 +96,15 @@ public class OrigamiViewer extends CommonGui
             DiagramRenderer r = new DiagramRenderer(o, (Step) o.getModel().getSteps().getStep().get(0));
             r.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(r, BorderLayout.NORTH);
-            Iterator<Category> it = filesToDisplay.recursiveCategoryIterator();
+            Iterator<? extends CategoriesContainer> it = filesToDisplay.recursiveCategoryIterator(true);
             if (it != null) {
                 System.err.println("Loaded categories and files they contain: ");
                 while (it.hasNext()) {
-                    Category cat = it.next();
+                    CategoriesContainer cat = it.next();
                     System.err.println(cat.getHierarchicalId("/"));
-                    if (cat.getFiles() != null) {
-                        for (cz.cuni.mff.peckam.java.origamist.files.File f : cat.getFiles().getFile()) {
+                    FilesContainer fCat = (FilesContainer) cat;
+                    if (fCat.getFiles() != null) {
+                        for (cz.cuni.mff.peckam.java.origamist.files.File f : fCat.getFiles().getFile()) {
                             System.err.println("* " + f.getName(getLocale()) + " (" + f.getSrc() + ")");
                         }
                     }
@@ -224,11 +226,11 @@ public class OrigamiViewer extends CommonGui
                             new Object[] { fileString }, e);
                 }
             }
-            filesToDisplay.addFiles(files, recursive ? null : 1, null);
+            filesToDisplay.addFiles(files, recursive ? null : 1, filesToDisplay);
 
             if ((filesToDisplay.getFiles() == null || filesToDisplay.getFiles().getFile().size() == 0)
                     && (filesToDisplay.getCategories() == null || ((Categories) filesToDisplay.getCategories())
-                            .sizeRecursive() == 0)) {
+                            .numOfFilesRecursive() == 0)) {
                 Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidFileList", null,
                         new IllegalArgumentException("No input files defined."));
             }
@@ -243,17 +245,19 @@ public class OrigamiViewer extends CommonGui
                         break;
                 }
             }
+            it = null;
 
             showFileListingByDefault = numOfModels >= 2;
 
             if (modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS || modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL
                     || modelDownloadMode > 0) {
+
                 Iterator<cz.cuni.mff.peckam.java.origamist.files.File> iterator = filesToDisplay
                         .recursiveFileIterator();
+
                 boolean onlyMetadata = modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS;
 
                 int i = 0;
-                List<cz.cuni.mff.peckam.java.origamist.files.File> badFiles = new LinkedList<cz.cuni.mff.peckam.java.origamist.files.File>();
                 while (iterator.hasNext() && (modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL || i++ < modelDownloadMode)) {
                     cz.cuni.mff.peckam.java.origamist.files.File file = iterator.next();
                     try {
@@ -270,17 +274,12 @@ public class OrigamiViewer extends CommonGui
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLoadIOError",
                                 new Object[] { file.getSrc() }, e);
                     }
-                    badFiles.add(file);
+                    i--;
+                    iterator.remove();
+                    file.setParent(null);
                 }
+
                 iterator = null;
-                // be "sure" the iterator will be dead
-                System.gc();
-                for (cz.cuni.mff.peckam.java.origamist.files.File file : badFiles) {
-                    if (file.getParentCategory() != null)
-                        file.getParentCategory().getFiles().getFile().remove(file);
-                    else
-                        filesToDisplay.getFiles().getFile().remove(file);
-                }
             }
         }
     }
