@@ -36,7 +36,42 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 
 /**
- * The viewer of the origami model.
+ * The viewer of the origami model. <br />
+ * <br />
+ * The applet recognizes these parameters:<br />
+ * 
+ * <code>files</code> (<b>required</b>):
+ * <ul>
+ * <li>either a string containing either a location of <code>listing.xml</code>, or</li>
+ * <li>a list of files and directories.</li>
+ * </ul>
+ * <code>recursive</code>: Effective only if <code>files</code> contain some directories.
+ * <ul>
+ * <li>If not set, no files from subdirectories will be loaded (but direct children of the specified folders will be
+ * loaded).</li>
+ * <li>If set to <code>recursive</code>, then all subdirectories will be searched for models.</li>
+ * <li>If set to a number, the number means the depth od subdirectories to search in.
+ * <em>Please notice, that the value <code>0</code> means that only the specified files will be loaded and the specified directories will be ignored!</em>
+ * </li>
+ * </ul>
+ * <code>startupMode</code>:
+ * <ul>
+ * <li>either <code>page</code> (displays a bunch of steps at once) or</li>
+ * <li><code>diagram</code> (displays only one step at once). Defaults to <code>page</code>.</li>
+ * <li>when not set, defaults to <code>page</code></li>
+ * </ul>
+ * <code>modelDownloadMode</code>:
+ * <ul>
+ * <li>if set to <code>all</code>, all contents of all models defined in <code>files</code> will be downloaded at
+ * startup.</li>
+ * <li>If set to <code>headers</code>, only metadata for each model will be downloaded immediately and the models
+ * themselves will be downloaded on demand.</li>
+ * <li>If set to <code>none</code> , no files will be downloaded at startup and everything will be downloaded on-demand
+ * (this means the metadata will not be available at startup).</li>
+ * <li>If set to a number <code>n</code>, mode <code>all</code> will be used for first <code>n</code> files and mode
+ * <code>none</code> will be used for the rest of them.</li>
+ * <li>if not set, defaults to <code>10</code></li>
+ * </ul>
  * 
  * @author Martin Pecka
  */
@@ -225,7 +260,21 @@ public class OrigamiViewer extends CommonGui
             }
         } else {
             List<String> filesAsStrings = Arrays.asList(param.split(" "));
-            boolean recursive = getParameter("recursive") != null;
+
+            Integer recursive;
+            String recursiveParam = getParameter("recursive");
+            if (recursiveParam == null) {
+                recursive = 1;
+            } else if (recursiveParam.equalsIgnoreCase("recursive")) {
+                recursive = null;
+            } else {
+                try {
+                    recursive = Integer.parseInt(recursiveParam);
+                } catch (NumberFormatException e) {
+                    recursive = 1;
+                }
+            }
+
             ObjectFactory of = new ObjectFactory();
             filesToDisplay = (Listing) of.createListing();
             List<File> files = new LinkedList<File>();
@@ -241,7 +290,7 @@ public class OrigamiViewer extends CommonGui
                             new Object[] { fileString }, e);
                 }
             }
-            filesToDisplay.addFiles(files, recursive ? null : 1, filesToDisplay);
+            filesToDisplay.addFiles(files, recursive, filesToDisplay);
 
             if ((filesToDisplay.getFiles() == null || filesToDisplay.getFiles().getFile().size() == 0)
                     && (filesToDisplay.getCategories() == null || ((Categories) filesToDisplay.getCategories())
