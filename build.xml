@@ -19,6 +19,22 @@
     <path id="project.classpath">
 		<fileset dir="lib" includes="*.jar" />
     </path>
+	
+	<var name="signappletExecutable" value="signapplet.sh"/>
+	<if>
+		<os family="windows"/>
+		<then>
+			<var name="signappletExecutable" value="signapplet.bat"/>
+		</then>
+	</if>
+	
+	<var name="browserExecutable" value="browser.sh"/>
+	<if>
+		<os family="windows"/>
+		<then>
+			<var name="browserExecutable" value="browser.bat"/>
+		</then>
+	</if>
 
     <target depends="compile,jar,jar-sign" description="Build whole project and its documentation." name="default"/>
 
@@ -170,14 +186,6 @@
     </target>
 	
 	<target name="jar-sign" depends="jar">
-		<var name="signappletExecutable" value="signapplet.sh"/>
-    	<if>
-    		<os family="windows"/>
-    		<then>
-    			<var name="signappletExecutable" value="signapplet.bat"/>
-			</then>
-    	</if>
-		
 		<if>
 			<available property="" file="${signappletExecutable}"/>
 			<then>
@@ -197,14 +205,6 @@
 	<target name="run-browser" depends="default,just-run-browser" description="Builds and runs the applet in web browser. This task needs to have the JAR files signed." />
 	
 	<target name="just-run-browser" description="Runs the applet in web browser. This task needs to have the JAR files signed.">
-		<var name="browserExecutable" value="browser.sh"/>
-    	<if>
-    		<os family="windows"/>
-    		<then>
-    			<var name="browserExecutable" value="browser.bat"/>
-			</then>
-    	</if>
-		
 		<if>
 			<available property="" file="${browserExecutable}"/>
 			<then>
@@ -273,34 +273,25 @@
 	</target>
 	
 	<target name="libs-sign" description="Signs the JAR libraries deployed along with the applet. This is needed because Java Plugin shows a warning if a signed applet uses unsigned libraries.">
-		<var name="signappletExecutable" value="signapplet.sh"/>
-    	<if>
-    		<os family="windows"/>
-    		<then>
-    			<var name="signappletExecutable" value="signapplet.bat"/>
-			</then>
-    	</if>
-		
 		<if>
 			<available property="" file="${signappletExecutable}"/>
 			<then>
-				<exec executable="${signappletExecutable}" dir=".">
-		    		<arg value="lib/log4j-1.2.16.jar" />
-		    	</exec>
-				<exec executable="${signappletExecutable}" dir=".">
-		    		<arg value="lib/j3dcore.jar" />
-		    	</exec>
-				<exec executable="${signappletExecutable}" dir=".">
-		    		<arg value="lib/j3dutils.jar" />
-		    	</exec>
-				<exec executable="${signappletExecutable}" dir=".">
-		    		<arg value="lib/vecmath.jar" />
-		    	</exec>
+				<foreach target="libs-sign-inner-foreach" param="file.to.sign">
+					<path>
+						<fileset dir="lib" includes="*.jar"/>
+					</path>
+				</foreach>
 			</then>
 			<else>
 				<echo>Please create your ${signappletExecutable} file to sign the libraries. Look in ${signappletExecutable}.example for example contents of that file.</echo>
 			</else>
 		</if>
+	</target>
+	
+	<target name="libs-sign-inner-foreach">
+		<exec executable="${signappletExecutable}" dir=".">
+			<arg value="${file.to.sign}" />
+		</exec>
 	</target>
 
 </project>
