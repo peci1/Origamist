@@ -8,7 +8,7 @@ package cz.cuni.mff.peckam.java.origamist.gui.viewer;
  * 
  * @author Martin Pecka
  */
-public enum StartupMode
+public enum DisplayMode
 {
     /** The viewer displays a set of diagrams (a page). */
     PAGE,

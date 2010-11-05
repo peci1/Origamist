@@ -16,17 +16,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javax.swing.JTree;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Categories;
-import cz.cuni.mff.peckam.java.origamist.files.CategoriesContainer;
-import cz.cuni.mff.peckam.java.origamist.files.FilesContainer;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
+import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTree;
+import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeCellRenderer;
+import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeModel;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
@@ -54,7 +57,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * <em>Please notice, that the value <code>0</code> means that only the specified files will be loaded and the specified directories will be ignored!</em>
  * </li>
  * </ul>
- * <code>startupMode</code>:
+ * <code>displayMode</code>:
  * <ul>
  * <li>either <code>page</code> (displays a bunch of steps at once) or</li>
  * <li><code>diagram</code> (displays only one step at once). Defaults to <code>page</code>.</li>
@@ -73,15 +76,19 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * <li>if not set, defaults to <code>10</code></li>
  * </ul>
  * 
+ * Properties handled by this class (events are fired when they change - but not at startup):
+ * <ul>
+ * <li><code>showFileListing</code></li>
+ * <li><code>displayMode</code></li>
+ * <li><code>displayedOrigami</code></li>
+ * </ul>
+ * 
  * @author Martin Pecka
  */
 public class OrigamiViewer extends CommonGui
 {
 
     private static final long serialVersionUID            = -6853141518719373854L;
-
-    /** The mode of displaying diagrams. */
-    protected StartupMode     startupMode                 = StartupMode.PAGE;
 
     /** Download whole models for all selected files. */
     public static int         MODEL_DOWNLOAD_MODE_ALL     = -2;
@@ -108,8 +115,17 @@ public class OrigamiViewer extends CommonGui
     /** The files to be displayed by the viewer. */
     protected Listing         filesToDisplay              = null;
 
-    /** If true, show the sidebar with open files by default, otherwise hide it by default. */
-    protected boolean         showFileListingByDefault    = false;
+    /** The mode of displaying diagrams. Do not access directly, use setter/getter. */
+    protected DisplayMode     displayMode                 = DisplayMode.PAGE;
+
+    /** If true, show the sidebar with open files. Do not access directly, use setter/getter. */
+    protected boolean         showFileListing             = false;
+
+    /** The origami currently displayed. Do not access directly, use setter/getter. */
+    protected Origami         displayedOrigami            = null;
+
+    /** The renderer used to render the diagrams. */
+    protected DiagramRenderer renderer                    = null;
 
     /**
      * Create and setup all the form components.
@@ -122,31 +138,19 @@ public class OrigamiViewer extends CommonGui
             handleAppletParams();
 
             // if the iterator should be empty, then handleAppletParams will die with an exception
-            Origami o = filesToDisplay.recursiveFileIterator().next().getOrigami();
-            /*
-             * StepRenderer r = new StepRenderer(); r.setOrigami(o); r.setStep((Step)
-             * o.getModel().getSteps().getStep().get(3)); r.setPreferredSize(new Dimension(200, 200));
-             */
+            // we must access this property directly, because we don't want to fire events before the GUI is properly
+            // setup.
+            displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
+
             // TODO remove testing stuff and put some more meaningful code
-            DiagramRenderer r = new DiagramRenderer(o, (Step) o.getModel().getSteps().getStep().get(0));
-            r.setPreferredSize(new Dimension(500, 500));
-            getContentPane().add(r, BorderLayout.NORTH);
-            Iterator<? extends CategoriesContainer> it = filesToDisplay.recursiveCategoryIterator(true);
-            if (it != null) {
-                System.err.println("Loaded categories and files they contain: ");
-                while (it.hasNext()) {
-                    CategoriesContainer cat = it.next();
-                    System.err.println(cat.getHierarchicalId("/"));
-                    FilesContainer fCat = (FilesContainer) cat;
-                    if (fCat.getFiles() != null) {
-                        for (cz.cuni.mff.peckam.java.origamist.files.File f : fCat.getFiles().getFile()) {
-                            System.err.println("* " + f.getName(getLocale()) + " (" + f.getSrc() + ")");
-                        }
-                    }
-                }
-            } else {
-                System.err.println("There are no files loaded.");
-            }
+            renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
+                    .get(0));
+            renderer.setPreferredSize(new Dimension(500, 500));
+            getContentPane().add(renderer, BorderLayout.CENTER);
+
+            JTree listingTree = new ListingTree(new ListingTreeModel(filesToDisplay));
+            listingTree.setCellRenderer(new ListingTreeCellRenderer());
+            getContentPane().add(listingTree, BorderLayout.WEST);
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {
@@ -181,16 +185,16 @@ public class OrigamiViewer extends CommonGui
     }
 
     /**
-     * Handles the "startupMode" applet parameter.
+     * Handles the "displayMode" applet parameter.
      */
     protected void handleStartupModeParam()
     {
-        if (getParameter("startupMode") != null) {
+        if (getParameter("displayMode") != null) {
             try {
-                startupMode = StartupMode.valueOf(getParameter("startupMode").toUpperCase());
+                displayMode = DisplayMode.valueOf(getParameter("displayMode").toUpperCase());
             } catch (IllegalArgumentException e) {
                 Logger.getLogger("viewer").l7dlog(Level.ERROR, "startupModeParamInvalid",
-                        new Object[] { Arrays.asList(StartupMode.values()) }, e);
+                        new Object[] { Arrays.asList(DisplayMode.values()) }, e);
                 // we just do nothing, so the default value remains set
             }
         }
@@ -239,7 +243,7 @@ public class OrigamiViewer extends CommonGui
         }
 
         if (param.endsWith(LISTING_FILE_NAME)) {
-            showFileListingByDefault = true;
+            showFileListing = true;
             try {
                 URL paramURL = new URL(getDocumentBase(), param);
                 // use the listing.xml location as the base for relative model URLs
@@ -342,7 +346,9 @@ public class OrigamiViewer extends CommonGui
             }
             it = null;
 
-            showFileListingByDefault = numOfModels >= 2;
+            // we must access this property directly, because we don't want to fire events before the GUI is properly
+            // setup.
+            showFileListing = numOfModels >= 2;
 
             if (numOfModels == 0) {
                 ResourceBundle messages = ResourceBundle.getBundle("viewer",
@@ -381,6 +387,57 @@ public class OrigamiViewer extends CommonGui
                 .getLocale()));
         l.setLevel(Level.ALL);
         l.addAppender(new GUIAppender(this));
+    }
+
+    /**
+     * @return Whether to show the sidebar with open files.
+     */
+    public boolean isShowFileListing()
+    {
+        return showFileListing;
+    }
+
+    /**
+     * @param showFileListing Whether to show the sidebar with open files.
+     */
+    public void setShowFileListing(boolean showFileListing)
+    {
+        this.firePropertyChange("showFileListing", this.showFileListing, showFileListing);
+        this.showFileListing = showFileListing;
+    }
+
+    /**
+     * @return The mode of displaying diagrams.
+     */
+    public DisplayMode getDisplayMode()
+    {
+        return displayMode;
+    }
+
+    /**
+     * @param displayMode The mode of displaying diagrams.
+     */
+    public void setDisplayMode(DisplayMode displayMode)
+    {
+        this.firePropertyChange("displayMode", this.displayMode, displayMode);
+        this.displayMode = displayMode;
+    }
+
+    /**
+     * @return The origami currently displayed.
+     */
+    public Origami getDisplayedOrigami()
+    {
+        return displayedOrigami;
+    }
+
+    /**
+     * @param displayedOrigami The origami currently displayed.
+     */
+    public void setDisplayedOrigami(Origami displayedOrigami)
+    {
+        this.firePropertyChange("displayedOrigami", this.displayedOrigami, displayedOrigami);
+        this.displayedOrigami = displayedOrigami;
     }
 
 }
