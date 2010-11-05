@@ -143,20 +143,52 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File
     /**
      * (Potentionally load) and return the model corresponding to this listing entry.
      * 
+     * If the referenced file does not contain a valid model, remove this file from its parent.
+     * 
      * @param onlyMetadata If true, load only metadata of the model if it has not yet been loaded.
      * 
      * @return The model corresponding to this listing entry.
      * 
-     * @throws MalformedURLException If the source is invalid.
      * @throws IOException If the source could not be read.
      * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
      */
-    public Origami getOrigami(boolean onlyMetadata) throws UnsupportedDataFormatException, MalformedURLException,
+    public Origami getOrigami(boolean onlyMetadata) throws UnsupportedDataFormatException, IOException
+    {
+        return getOrigami(onlyMetadata, true);
+    }
+
+    /**
+     * (Potentionally load) and return the model corresponding to this listing entry.
+     * 
+     * @param onlyMetadata If true, load only metadata of the model if it has not yet been loaded.
+     * @param autoRemoveBad If the referenced file does not contain a valid model and <code>autoRemoveBad</code> is
+     *            <code>true</code>, remove this file from its parent.
+     * 
+     * @return The model corresponding to this listing entry.
+     * 
+     * @throws IOException If the source could not be read.
+     * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
+     */
+    public Origami getOrigami(boolean onlyMetadata, boolean autoRemoveBad) throws UnsupportedDataFormatException,
             IOException
     {
         if (origami == null) {
-            origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
-            origami.setFile(this);
+            try {
+                origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
+                origami.setFile(this);
+            } catch (UnsupportedDataFormatException e) {
+                if (autoRemoveBad && this.parent != null) {
+                    this.parent.getFiles().getFile().remove(this);
+                    this.parent = null;
+                }
+                throw e;
+            } catch (IOException e) {
+                if (autoRemoveBad && this.parent != null) {
+                    this.parent.getFiles().getFile().remove(this);
+                    this.parent = null;
+                }
+                throw e;
+            }
         }
         return origami;
 

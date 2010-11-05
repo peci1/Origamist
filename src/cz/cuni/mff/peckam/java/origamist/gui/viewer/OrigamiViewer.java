@@ -261,14 +261,11 @@ public class OrigamiViewer extends CommonGui
                 while (iterator.hasNext() && (modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL || i++ < modelDownloadMode)) {
                     cz.cuni.mff.peckam.java.origamist.files.File file = iterator.next();
                     try {
-                        file.getOrigami(onlyMetadata);
+                        file.getOrigami(onlyMetadata, false);
                         file.fillFromOrigami();
                         continue;
                     } catch (UnsupportedDataFormatException e) {
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelFile",
-                                new Object[] { file.getSrc() }, e);
-                    } catch (MalformedURLException e) {
-                        Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelSource",
                                 new Object[] { file.getSrc() }, e);
                     } catch (IOException e) {
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLoadIOError",
