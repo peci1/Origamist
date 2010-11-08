@@ -11,6 +11,8 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import org.apache.log4j.Logger;
+
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
@@ -19,8 +21,7 @@ import sun.misc.BASE64Encoder;
  * 
  * @author Martin Pecka
  */
-public class BinaryImage extends
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.BinaryImage
+public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.BinaryImage
 {
     /**
      * Return the content as an ImageIcon.
@@ -30,9 +31,9 @@ public class BinaryImage extends
     public ImageIcon getImageIcon()
     {
         try {
-            return new ImageIcon(new BASE64Decoder()
-                    .decodeBuffer(new ByteArrayInputStream(value)));
+            return new ImageIcon(new BASE64Decoder().decodeBuffer(new ByteArrayInputStream(value)));
         } catch (IOException e) {
+            Logger.getLogger("application").warn("IO error while loading a thumbnail of origami.", e);
             return null;
         }
     }
@@ -47,12 +48,11 @@ public class BinaryImage extends
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ByteArrayOutputStream os2 = new ByteArrayOutputStream();
         try {
-            ImageIO.write((RenderedImage) icon.getImage(), type.replaceAll(
-                    "[^/]*/", ""), os);
+            ImageIO.write((RenderedImage) icon.getImage(), type.replaceAll("[^/]*/", ""), os);
             new BASE64Encoder().encode(os.toByteArray(), os2);
             value = os2.toByteArray();
         } catch (IOException e) {
-
+            Logger.getLogger("application").warn("IO error while setting a thumbnail of origami.", e);
         } finally {
             try {
                 os.close();
