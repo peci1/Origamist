@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.files;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -131,11 +130,10 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      * 
      * @return The model corresponding to this listing entry.
      * 
-     * @throws MalformedURLException If the source is invalid.
      * @throws IOException If the source could not be read.
      * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
      */
-    public Origami getOrigami() throws UnsupportedDataFormatException, MalformedURLException, IOException
+    public Origami getOrigami() throws UnsupportedDataFormatException, IOException
     {
         return getOrigami(false);
     }
@@ -255,6 +253,14 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     public String getHierarchicalId(String separator)
     {
         return parent.getHierarchicalId(separator) + separator + this.getName(Locale.getDefault());
+    }
+
+    /**
+     * @return True if the origami belonging to this file has been loaded.
+     */
+    public boolean isOrigamiLoaded()
+    {
+        return origami != null;
     }
 
 }

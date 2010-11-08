@@ -16,4 +16,15 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.jem.beaninfo.BeanInfoNature</nature>
 	</natures>
+	<filteredResources>
+		<filter>
+			<id>1289130858033</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*descript.dat</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>

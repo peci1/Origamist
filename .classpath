@@ -14,5 +14,6 @@
 	<classpathentry kind="lib" path="lib-compile-time/junit.jar"/>
 	<classpathentry kind="lib" path="lib-compile-time/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
 	<classpathentry kind="lib" path="lib/jaxb2-basics-runtime-0.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/forms.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
