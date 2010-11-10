@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp href="origami_viewer.jnlp">
+  <information>
+    <title>Origamist viewer</title>
+    <vendor>Martin Pecka</vendor>
+    <homepage href="http://github.com/peci1/Origamist"/>
+    <description>A viewer for digital origami models.</description>
+    <description kind="short">An origami viewer application.</description>
+    <offline-allowed/>
+  </information>
+  <security>
+    <all-permissions/>
+  </security>
+
+  <resources os="Windows">         
+    <property name="sun.java2d.noddraw" value="true"/>       
+  </resources>
+
+  <resources os="Mac OS X">
+    <property name="j3d.rend" value="jogl"/>
+  </resources>
+
+  <resources>
+    <java href="http://java.sun.com/products/autodl/j2se" version="1.6+" />
+    <jar href="OrigamistViewer.jar" main="true" />
+    <jar href="lib/log4j-1.2.16.jar" />
+    <jar href="lib/j3dcore.jar" />
+    <jar href="lib/j3dutils.jar" />
+    <jar href="lib/vecmath.jar" />
+    <jar href="lib/jaxb2-basics-runtime-0.6.0.jar" />
+    <jar href="lib/forms.jar" />
+  </resources>
+
+  <applet-desc 
+      name="Origami viewer"
+      main-class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper"
+      documentBase="."
+      width="100" 
+      height="100">
+  </applet-desc>
+</jnlp>
