@@ -1,8 +1,20 @@
 <html>
     <body>
-        <applet code="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewer" archive="OrigamistViewer.jar,lib/log4j-1.2.16.jar,lib/j3dcore.jar,lib/j3dutils.jar,lib/vecmath.jar,lib/jaxb2-basics-runtime-0.6.0.jar,lib/forms.jar" width="800" height="600">
-            <param name="files" value="diagrams" />
-            <param name="startupMode" value="page" />
-        </applet>
+        <applet code="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper"
+              width="800"
+              height="600"
+              archive="
+                lib/log4j-1.2.16.jar,
+                lib/j3dcore.jar,
+                lib/j3dutils.jar,
+                lib/vecmath.jar,
+                lib/jaxb2-basics-runtime-0.6.0.jar,
+                lib/forms.jar,
+                OrigamistViewer.jar
+            ">
+           <param name="jnlp_href" value="origami_viewer.jnlp">
+           <param name="files" value="diagrams" />
+           <param name="startupMode" value="page" />
+        </applet>        
     </body>
 </html>

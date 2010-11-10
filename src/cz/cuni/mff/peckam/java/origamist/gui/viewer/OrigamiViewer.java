@@ -3,7 +3,9 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
+import java.applet.AppletContext;
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +18,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javax.swing.JApplet;
+import javax.swing.JRootPane;
 import javax.swing.JTree;
 
 import org.apache.log4j.Level;
@@ -83,6 +87,9 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * <li><code>displayedOrigami</code></li>
  * </ul>
  * 
+ * This applet is intended to be started using a bootstrapper that will add support for Java3D without the need to
+ * install it on the client computer.
+ * 
  * @author Martin Pecka
  */
 public class OrigamiViewer extends CommonGui
@@ -127,6 +134,28 @@ public class OrigamiViewer extends CommonGui
     /** The renderer used to render the diagrams. */
     protected DiagramRenderer renderer                    = null;
 
+    /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
+    protected JApplet         bootstrap                   = null;
+
+    /**
+     * Instantiate the origami viewer without a bootstrapper.
+     */
+    public OrigamiViewer()
+    {
+        super();
+    }
+
+    /**
+     * Instanitate the origami viewer with the given bootstrapper.
+     * 
+     * @param bootstrap The bootstrapper that starts this applet.
+     */
+    public OrigamiViewer(JApplet bootstrap)
+    {
+        super();
+        this.bootstrap = bootstrap;
+    }
+
     /**
      * Create and setup all the form components.
      */
@@ -134,7 +163,6 @@ public class OrigamiViewer extends CommonGui
     protected void createComponents()
     {
         try {
-
             handleAppletParams();
 
             // if the iterator should be empty, then handleAppletParams will die with an exception
@@ -181,7 +209,7 @@ public class OrigamiViewer extends CommonGui
         handleStartupModeParam();
         handleModelDownloadModeParam();
         handleFilesParam();
-        // the recursive param is handled by the previous handler
+        // the "recursive" param is handled by the previous handler
     }
 
     /**
@@ -438,6 +466,64 @@ public class OrigamiViewer extends CommonGui
     {
         this.firePropertyChange("displayedOrigami", this.displayedOrigami, displayedOrigami);
         this.displayedOrigami = displayedOrigami;
+    }
+
+    // bootstrapping support
+
+    @Override
+    public JRootPane getRootPane()
+    {
+        if (bootstrap != null)
+            return bootstrap.getRootPane();
+        return super.getRootPane();
+    }
+
+    @Override
+    public Container getContentPane()
+    {
+        if (bootstrap != null)
+            return bootstrap.getContentPane();
+        return super.getContentPane();
+    }
+
+    @Override
+    public URL getDocumentBase()
+    {
+        if (bootstrap != null)
+            return bootstrap.getDocumentBase();
+        return super.getDocumentBase();
+    }
+
+    @Override
+    public URL getCodeBase()
+    {
+        if (bootstrap != null)
+            return bootstrap.getCodeBase();
+        return super.getCodeBase();
+    }
+
+    @Override
+    public String getParameter(String name)
+    {
+        if (bootstrap != null)
+            return bootstrap.getParameter(name);
+        return super.getParameter(name);
+    }
+
+    @Override
+    public AppletContext getAppletContext()
+    {
+        if (bootstrap != null)
+            return bootstrap.getAppletContext();
+        return super.getAppletContext();
+    }
+
+    @Override
+    public String getAppletInfo()
+    {
+        if (bootstrap != null)
+            return bootstrap.getAppletInfo();
+        return super.getAppletInfo();
     }
 
 }
