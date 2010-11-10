@@ -131,7 +131,7 @@
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram" />
 	
     <target name="compile" depends="init,jaxb" description="Compiles the application">
-        <javac srcdir="src" destdir="bin" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java">
+        <javac srcdir="src" destdir="bin" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java">
         	<classpath>
         		<pathelement path="src"/> 
         		<fileset dir="lib">
