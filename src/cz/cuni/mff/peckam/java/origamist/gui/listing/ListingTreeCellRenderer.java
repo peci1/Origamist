@@ -19,6 +19,8 @@ import javax.swing.JPanel;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
+import org.apache.log4j.Logger;
+
 import sun.awt.image.ToolkitImage;
 
 import com.jgoodies.forms.layout.CellConstraints;
@@ -69,20 +71,24 @@ public class ListingTreeCellRenderer extends DefaultTreeCellRenderer
             renderer.setLayout(layout);
 
             CellConstraints cc = new CellConstraints();
-
             File file = (File) value;
             if (file.isOrigamiLoaded()) {
                 try {
                     ImageIcon icon = ((BinaryImage) file.getOrigami().getThumbnail().getImage()).getImageIcon();
                     if (icon != null) {
                         Image im = icon.getImage();
-                        BufferedImage bim = null;
-                        if (im instanceof BufferedImage)
-                            bim = (BufferedImage) im;
-                        else if (im instanceof ToolkitImage)
-                            bim = ((ToolkitImage) im).getBufferedImage();
-                        JImage image = new JImage(bim);
-                        renderer.add(image, cc.xywh(2, 2, 1, 5));
+                        ((ToolkitImage) im).getWidth(); // finishes loading the image
+                        if (!((ToolkitImage) im).hasError()) {
+                            BufferedImage bim = null;
+                            if (im instanceof BufferedImage)
+                                bim = (BufferedImage) im;
+                            else if (im instanceof ToolkitImage)
+                                bim = ((ToolkitImage) im).getBufferedImage();
+                            JImage image = new JImage(bim);
+                            renderer.add(image, cc.xywh(2, 2, 1, 5));
+                        } else {
+                            Logger.getLogger("application").warn("Error while loading origami thumbnail.");
+                        }
                     }
                 } catch (UnsupportedDataFormatException e) {
                     assert false : "The origami is loaded, but getOrigami() threw UnsupportedDataFormatException.";
