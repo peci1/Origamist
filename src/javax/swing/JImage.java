@@ -32,49 +32,81 @@ package javax.swing;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
+import java.awt.Image;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.util.Hashtable;
 
 /**
- * Component for drawing custom images
+ * Component for drawing images instead of showing them as a label's icon.
  * 
  * @author Martin Pecka
  */
 public class JImage extends JPanel
 {
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 4988265017725943377L;
+    /** */
+    private static final long                   serialVersionUID = 4988265017725943377L;
 
-    /**
-     * The image to draw
-     */
-    protected BufferedImage   image            = null;
+    /** The image to display. */
+    protected Image                             image            = null;
+
+    /** The scaled instances of the image to display. */
+    final protected Hashtable<Dimension, Image> scaledImages     = new Hashtable<Dimension, Image>();
+
+    /** The currently used (and probably scaled) image to display. */
+    protected Image                             currentImage     = null;
 
     /**
      * @param image The Image to display
      */
-    public JImage(BufferedImage image)
+    public JImage(Image image)
     {
         this.image = image;
+        this.currentImage = image;
         this.setOpaque(false);
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e)
+            {
+                Dimension size = e.getComponent().getSize();
+                Image current = scaledImages.get(size);
+                if (current != null) {
+                    currentImage = current;
+                } else {
+                    currentImage = JImage.this.image.getScaledInstance(size.width, size.height, Image.SCALE_SMOOTH);
+                    scaledImages.put(size, currentImage);
+                }
+            }
+        });
     }
 
     /**
-     * @return the image
+     * @return The displayed image.
      */
-    public BufferedImage getImage()
+    public Image getImage()
     {
         return image;
     }
 
     /**
-     * @param image the image to set
+     * @return The currently used (probably scaled) instance of the image.
      */
-    public void setImage(BufferedImage image)
+    public Image getCurrentImage()
+    {
+        return currentImage;
+    }
+
+    /**
+     * @param image The image to display.
+     */
+    public void setImage(Image image)
     {
         this.image = image;
+        scaledImages.clear();
+        for (ComponentListener l : getComponentListeners())
+            l.componentResized(new ComponentEvent(this, ComponentEvent.COMPONENT_RESIZED));
         repaint();
     }
 
@@ -83,21 +115,32 @@ public class JImage extends JPanel
     {
         if (this.image == null)
             return new Dimension(0, 0);
-        return new Dimension(this.image.getWidth(), this.image.getHeight());
+
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+
+        if (width == -1 || height == -1)
+            return new Dimension(0, 0);
+
+        return new Dimension(width, height);
     }
 
+    /**
+     * @return The scale the given image is displayed at.
+     */
     public double getCurrentScale()
     {
-        if (this.image == null)
+        if (this.currentImage == null)
             return 1d;
-        return this.getWidth() / image.getWidth();
+
+        int width = currentImage.getWidth(null);
+
+        if (width == -1)
+            return 1d;
+
+        return this.getWidth() / width;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.JComponent#paint(java.awt.Graphics)
-     */
     @Override
     public void paint(Graphics g)
     {
@@ -105,18 +148,21 @@ public class JImage extends JPanel
 
         Graphics2D g2 = (Graphics2D) g;
 
-        if (image != null) {
+        if (currentImage != null) {
             int w = getWidth();
             int h = getHeight();
-            int iw = image.getWidth();
-            int ih = image.getHeight();
+            int iw = currentImage.getWidth(null);
+            int ih = currentImage.getHeight(null);
+
+            if (iw == -1 || ih == -1)
+                return;
 
             double scale = Math.min((double) w / iw, (double) h / ih);
 
             int drawW = (int) (iw * scale);
             int drawH = (int) (ih * scale);
 
-            g2.drawImage(image, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH, null);
+            g2.drawImage(currentImage, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH, null);
         }
     }
 }
