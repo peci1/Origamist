@@ -3,6 +3,9 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.net.URI;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -12,12 +15,15 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.DiagramPaper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -26,6 +32,16 @@ import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * The origami diagram.
+ * 
+ * Provides the following bound properties:
+ * author
+ * license
+ * year
+ * thumbnail
+ * src
+ * original
+ * model
+ * paper
  * 
  * @author Martin Pecka
  */
@@ -55,6 +71,10 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      * The URL this origami was created from. Obviously this will be <code>null</code> for the just-being-created model.
      */
     protected URL                       src               = null;
+
+    /** Property change listeners. */
+    @XmlTransient
+    protected PropertyChangeSupport     propertyListeners = new PropertyChangeSupport(this);
 
     /**
      * Create a new origami diagram.
@@ -221,11 +241,84 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     /**
-     * @param src the src to set
+     * @param value the new src
      */
-    public void setSrc(URL src)
+    public void setSrc(URL value)
     {
-        this.src = src;
+        URL oldValue = getSrc();
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("src", oldValue, value);
+    }
+
+    @Override
+    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.jaxb.Author value)
+    {
+        cz.cuni.mff.peckam.java.origamist.common.jaxb.Author oldValue = getAuthor();
+        super.setAuthor(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("author", oldValue, value);
+    }
+
+    @Override
+    public void setYear(XMLGregorianCalendar value)
+    {
+        XMLGregorianCalendar oldValue = getYear();
+        super.setYear(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("year", oldValue, value);
+    }
+
+    @Override
+    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.jaxb.License value)
+    {
+        cz.cuni.mff.peckam.java.origamist.common.jaxb.License oldValue = getLicense();
+        super.setLicense(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("license", oldValue, value);
+    }
+
+    @Override
+    public void setOriginal(URI value)
+    {
+        URI oldValue = getOriginal();
+        super.setOriginal(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("original", oldValue, value);
+    }
+
+    @Override
+    public void setThumbnail(Image value)
+    {
+        Image oldValue = getThumbnail();
+        super.setThumbnail(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("thumbnail", oldValue, value);
+    }
+
+    @Override
+    public void setPaper(DiagramPaper value)
+    {
+        DiagramPaper oldValue = getPaper();
+        super.setPaper(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("paper", oldValue, value);
+    }
+
+    @Override
+    public void setModel(Model value)
+    {
+        Model oldValue = getModel();
+        super.setModel(value);
+        if ((oldValue == null && value != null) || (oldValue != null && value == null)
+                || (oldValue != null && value != null && !oldValue.equals(value)))
+            propertyListeners.firePropertyChange("model", oldValue, value);
     }
 
     /**
@@ -298,5 +391,64 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         } else if (!src.equals(other.src))
             return false;
         return true;
+    }
+
+    /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener)
+    {
+        propertyListeners.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener)
+    {
+        propertyListeners.removePropertyChangeListener(listener);
+    }
+
+    /**
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners()
+    {
+        return propertyListeners.getPropertyChangeListeners();
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        propertyListeners.addPropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        propertyListeners.removePropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
+    {
+        return propertyListeners.getPropertyChangeListeners(propertyName);
     }
 }

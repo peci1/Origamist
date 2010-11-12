@@ -14,18 +14,11 @@ public class JMultilineLabel extends JEditorPane
     /** */
     private static final long serialVersionUID = 5609298956672557477L;
 
+    /** If true, the string the user set to this label began with &lt;html&gt; */
+    protected boolean         wasSetHtml       = false;
+
     public JMultilineLabel(String text)
     {
-        if (text.startsWith("<html>")) {
-            this.setContentType("text/html");
-            String t = text.replaceAll("</html>", "");
-            // HACK: the next line is needed, without it the last line sometimes disappears
-            t += "<br/>&nbsp;</html>";
-            setText(t);
-        } else {
-            this.setContentType("text/plain");
-            setText(text);
-        }
         this.setEditable(false);
         this.setCursor(null);
         this.setOpaque(false);
@@ -33,11 +26,29 @@ public class JMultilineLabel extends JEditorPane
         this.setFont(UIManager.getFont("Label.font"));
         this.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         this.setMargin(null);
+        this.setContentType("text/html");
+        setText(text);
     }
 
     @Override
     public String getText()
     {
         return super.getText().replaceAll("<br/>&nbsp;</html>", "</html>");
+    }
+
+    @Override
+    public void setText(String text)
+    {
+        String t = text;
+        if (!text.startsWith("<html>")) {
+            t = "<html>" + text + "</html>";
+            wasSetHtml = false;
+        } else {
+            wasSetHtml = true;
+        }
+        t = text.replaceAll("</html>", "");
+        // HACK: the next line is needed, without it the last line sometimes disappears
+        t += "<br/>&nbsp;</html>";
+        super.setText(t);
     }
 }

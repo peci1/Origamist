@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.log4j.Logger;
 
@@ -19,6 +20,10 @@ import org.apache.log4j.Logger;
  */
 public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.BinaryImage
 {
+    /** The image this class holds. */
+    @XmlTransient
+    protected ImageIcon icon = null;
+
     /**
      * Return the content as an ImageIcon.
      * 
@@ -26,7 +31,9 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
      */
     public ImageIcon getImageIcon()
     {
-        return new ImageIcon(value);
+        if (icon == null)
+            icon = new ImageIcon(value);
+        return icon;
     }
 
     /**
@@ -40,6 +47,7 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
         try {
             ImageIO.write((RenderedImage) icon.getImage(), type.replaceAll("[^/]*/", ""), os);
             value = os.toByteArray();
+            this.icon = icon;
         } catch (IOException e) {
             Logger.getLogger("application").warn("IO error while setting a thumbnail of origami.", e);
         } finally {
