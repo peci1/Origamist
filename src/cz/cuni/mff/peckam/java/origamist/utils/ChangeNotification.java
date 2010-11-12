@@ -35,7 +35,7 @@ public class ChangeNotification<T>
      */
     public ChangeNotification(T item, ChangeTypes changeType)
     {
-        this(item, null, changeType);
+        this(item, item, changeType);
     }
 
     /**
