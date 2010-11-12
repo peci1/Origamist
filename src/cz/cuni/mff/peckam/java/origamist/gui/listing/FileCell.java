@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JMultilineLabel;
 import javax.swing.JPanel;
 import javax.swing.RoundedBorder;
+import javax.swing.border.Border;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
@@ -108,6 +109,15 @@ public class FileCell extends JPanel
     /** The listener to fire when the file's description gets changed. */
     protected Observer<LangString>   descListener             = null;
 
+    /** The border to be used for non-focused cell. */
+    protected static Border          unfocusedBorder          = BorderFactory.createCompoundBorder(
+                                                                      BorderFactory.createEmptyBorder(1, 0, 2, 0),
+                                                                      new RoundedBorder(20, 1, Color.LIGHT_GRAY));
+    /** The border to be used for focused cell. */
+    protected static Border          focusedBorder            = BorderFactory.createCompoundBorder(
+                                                                      BorderFactory.createEmptyBorder(1, 0, 2, 0),
+                                                                      new RoundedBorder(20, 1, Color.GRAY));
+
     public FileCell(File file)
     {
         super(true);
@@ -120,10 +130,8 @@ public class FileCell extends JPanel
         layout.setRowGroups(new int[][] { { 2, 4 } });
         this.setLayout(layout);
 
-        this.setBackground(new Color(0, 0, 0, 0)); // fully transparent color
         this.setOpaque(false);
-        this.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(1, 0, 2, 0),
-                new RoundedBorder(20, 1, Color.LIGHT_GRAY)));
+        this.configure(false, false);
 
         this.file = file;
 
@@ -351,6 +359,27 @@ public class FileCell extends JPanel
             }
         }
 
+    }
+
+    /**
+     * Configure this cell's look based on the information if it is selected or if it has focus.
+     * 
+     * @param selected Is this cell selected?
+     * @param hasFocus Has this cell focus?
+     */
+    public void configure(boolean selected, boolean hasFocus)
+    {
+        if (selected) {
+            setBackground(new Color(192, 192, 255));
+        } else {
+            setBackground(new Color(0, 0, 0, 0));
+        }
+
+        if (hasFocus) {
+            setBorder(focusedBorder);
+        } else {
+            setBorder(unfocusedBorder);
+        }
     }
 
     @Override

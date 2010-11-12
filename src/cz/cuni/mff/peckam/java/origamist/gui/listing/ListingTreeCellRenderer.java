@@ -52,7 +52,9 @@ public class ListingTreeCellRenderer extends DefaultTreeCellRenderer
             if (fileRenderers.get(value) == null) {
                 fileRenderers.put((File) value, new FileCell((File) value));
             }
-            return fileRenderers.get(value);
+            FileCell cell = fileRenderers.get(value);
+            cell.configure(sel, hasFocus);
+            return cell;
         } else {
             return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
         }

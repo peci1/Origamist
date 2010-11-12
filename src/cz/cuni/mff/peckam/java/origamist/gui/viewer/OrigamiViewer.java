@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 
 import javax.swing.JApplet;
 import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTree;
 
 import org.apache.log4j.Level;
@@ -178,7 +179,7 @@ public class OrigamiViewer extends CommonGui
 
             JTree listingTree = new ListingTree(new ListingTreeModel(filesToDisplay));
             listingTree.setCellRenderer(new ListingTreeCellRenderer());
-            getContentPane().add(listingTree, BorderLayout.WEST);
+            getContentPane().add(new JScrollPane(listingTree), BorderLayout.WEST);
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {

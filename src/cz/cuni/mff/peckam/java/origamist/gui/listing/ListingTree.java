@@ -11,9 +11,11 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.swing.JTree;
+import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import cz.cuni.mff.peckam.java.origamist.files.File;
 
@@ -30,6 +32,9 @@ public class ListingTree extends JTree
 
     {
         setToolTipText("");
+        TreeSelectionModel selectionModel = new DefaultTreeSelectionModel();
+        selectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        setSelectionModel(selectionModel);
     }
 
     /**
