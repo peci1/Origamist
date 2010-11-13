@@ -251,7 +251,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
         this.shortdesc.clear();
         this.shortdesc.addAll(origami.getShortdesc());
         setThumbnail(origami.getThumbnail());
-        setYear(this.year = origami.getYear());
+        setYear(origami.getYear());
     }
 
     /**

@@ -35,6 +35,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTree;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeCellRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeModel;
+import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
@@ -95,7 +96,6 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  */
 public class OrigamiViewer extends CommonGui
 {
-
     private static final long serialVersionUID            = -6853141518719373854L;
 
     /** Download whole models for all selected files. */
@@ -179,6 +179,7 @@ public class OrigamiViewer extends CommonGui
 
             JTree listingTree = new ListingTree(new ListingTreeModel(filesToDisplay));
             listingTree.setCellRenderer(new ListingTreeCellRenderer());
+            listingTree.addTreeSelectionListener(new ListingTreeSelectionListener());
             getContentPane().add(new JScrollPane(listingTree), BorderLayout.WEST);
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
@@ -467,6 +468,14 @@ public class OrigamiViewer extends CommonGui
     {
         this.firePropertyChange("displayedOrigami", this.displayedOrigami, displayedOrigami);
         this.displayedOrigami = displayedOrigami;
+        renderer.setOrigami(displayedOrigami);
+    }
+
+    @Override
+    protected void registerServices()
+    {
+        super.registerServices();
+        ServiceLocator.add(OrigamiViewer.class, this);
     }
 
     // bootstrapping support

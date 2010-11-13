@@ -31,10 +31,36 @@ public class DiagramRenderer extends JPanel
 
     public DiagramRenderer(Origami o, Step firstStep)
     {
+        setOrigami(o, firstStep);
+    }
+
+    /**
+     * Instructs the renderer to display the given origami from now on.
+     * 
+     * Automatically chooses the first step to be displayed.
+     * 
+     * @param o The origami to display.
+     */
+    public void setOrigami(Origami o)
+    {
+        setOrigami(o, o.getModel().getSteps().getStep().get(0));
+    }
+
+    /**
+     * Instructs the renderer to display the given origami from the given step.
+     * 
+     * @param o The origami to display.
+     * @param firstStep The step to be displayed as the first one.
+     */
+    public void setOrigami(Origami o, Step firstStep)
+    {
         this.origami = o;
         this.firstStep = firstStep;
 
         this.setLayout(new GridLayout(o.getPaper().getCols(), 0, 10, 10));
+
+        // this is needed for performance. Also Java3D cannot handle more than 32 JCanvas3D's at once.
+        this.removeAll();
 
         int numSteps = o.getPaper().getCols() * o.getPaper().getRows();
         Step step = firstStep;
