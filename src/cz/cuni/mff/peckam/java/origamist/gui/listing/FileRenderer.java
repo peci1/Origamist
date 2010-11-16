@@ -116,6 +116,11 @@ public class FileRenderer extends JPanelWithOverlay
         loading.setHorizontalAlignment(SwingConstants.CENTER);
         loading.setVerticalAlignment(SwingConstants.CENTER);
         loading.setForeground(Color.WHITE);
+        // TODO: the GIF doesn't show up... odd...
+        // URL spinnerURL = this.getClass().getResource("/resources/images/ajax-loader.gif");
+        // ImageIcon icon = new ImageIcon(spinnerURL);
+        // loading.setIcon(icon);
+        // icon.setImageObserver(loading);
 
         getOverlay().setLayout(new BorderLayout());
         getOverlay().add(loading, BorderLayout.CENTER);
