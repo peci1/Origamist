@@ -66,6 +66,10 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     @XmlTransient
     protected PropertyChangeSupport     propertyListeners = new PropertyChangeSupport(this);
 
+    /** True if the origami is being loaded right now. */
+    @XmlTransient
+    protected volatile boolean          origamiLoading    = false;
+
     /**
      * Create a new origami metadata.
      */
@@ -190,25 +194,27 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
             IOException
     {
         if (origami == null) {
+            origamiLoading = true;
             try {
-                origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
-                origami.setFile(this);
-                propertyListeners.firePropertyChange("isOrigamiLoaded", null, origami);
-                propertyListeners.firePropertyChange("origami", null, origami);
+                Origami origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
+                setOrigami(origami);
             } catch (UnsupportedDataFormatException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
                     this.parent = null;
                 }
+                origamiLoading = false;
                 throw e;
             } catch (IOException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
                     this.parent = null;
                 }
+                origamiLoading = false;
                 throw e;
             }
         }
+        origamiLoading = false;
         return origami;
 
     }
@@ -223,6 +229,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     {
         Origami oldOrigami = this.origami;
         this.origami = origami;
+        origami.setFile(this);
 
         if (oldOrigami == null && origami != null)
             propertyListeners.firePropertyChange("isOrigamiLoaded", null, origami);
@@ -290,6 +297,14 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     public boolean isOrigamiLoaded()
     {
         return origami != null;
+    }
+
+    /**
+     * @return True if the origami is being loaded right now.
+     */
+    public boolean isOrigamiLoading()
+    {
+        return origamiLoading;
     }
 
     @Override

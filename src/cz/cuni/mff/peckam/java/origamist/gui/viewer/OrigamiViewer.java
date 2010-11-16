@@ -33,9 +33,6 @@ import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTree;
-import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeCellRenderer;
-import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeModel;
-import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
@@ -177,10 +174,9 @@ public class OrigamiViewer extends CommonGui
             renderer.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(renderer, BorderLayout.CENTER);
 
-            JTree listingTree = new ListingTree(new ListingTreeModel(filesToDisplay));
-            listingTree.setCellRenderer(new ListingTreeCellRenderer());
-            listingTree.addTreeSelectionListener(new ListingTreeSelectionListener());
+            final JTree listingTree = new ListingTree(filesToDisplay);
             getContentPane().add(new JScrollPane(listingTree), BorderLayout.WEST);
+
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {

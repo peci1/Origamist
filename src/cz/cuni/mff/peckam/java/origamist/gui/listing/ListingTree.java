@@ -7,20 +7,25 @@ import java.awt.Component;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultTreeSelectionModel;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import cz.cuni.mff.peckam.java.origamist.files.File;
+import cz.cuni.mff.peckam.java.origamist.files.Listing;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
- * 
+ * A JTree displaying the list of loaded files and categories.
  * 
  * @author Martin Pecka
  */
@@ -28,70 +33,63 @@ public class ListingTree extends JTree
 {
 
     /** */
-    private static final long serialVersionUID = 7977020048548617471L;
+    private static final long serialVersionUID           = 7977020048548617471L;
 
+    /**
+     * The expanded nodes. A hashtable would serve better, but we workaround the unability to use hashcode() of the
+     * changing nodes.
+     */
+    protected List<TreePath>  expanded                   = new LinkedList<TreePath>();
+
+    /** If false, do not fire TreeExpansionListeners' events. */
+    protected boolean         fireTreeExpansionListeners = true;
+
+    public ListingTree(Listing listing)
     {
+        super(new ListingTreeModel(listing));
         setToolTipText("");
         TreeSelectionModel selectionModel = new DefaultTreeSelectionModel();
         selectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         setSelectionModel(selectionModel);
+        setRootVisible(false);
+        setShowsRootHandles(true);
+        setCellRenderer(new ListingTreeCellRenderer());
+        addTreeSelectionListener(new ListingTreeSelectionListener());
+        addTreeExpansionListener(new TreeExpansionListener() {
+            @Override
+            public void treeExpanded(TreeExpansionEvent event)
+            {
+                if (!fireTreeExpansionListeners)
+                    return;
+                expanded.add(event.getPath());
+            }
+
+            @Override
+            public void treeCollapsed(TreeExpansionEvent event)
+            {
+                expanded.remove(event.getPath());
+            }
+        });
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addPropertyChangeListener("diagramLocale", new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt)
+                    {
+                        invalidate();
+                    }
+                });
     }
 
     /**
-     * 
+     * Expands all paths that were expanded before the model reload.
      */
-    public ListingTree()
+    public void restoreExpanded()
     {
-        super();
-    }
-
-    /**
-     * @param value
-     */
-    public ListingTree(Hashtable<?, ?> value)
-    {
-        super(value);
-    }
-
-    /**
-     * @param value
-     */
-    public ListingTree(Object[] value)
-    {
-        super(value);
-    }
-
-    /**
-     * @param newModel
-     */
-    public ListingTree(TreeModel newModel)
-    {
-        super(newModel);
-    }
-
-    /**
-     * @param root
-     * @param asksAllowsChildren
-     */
-    public ListingTree(TreeNode root, boolean asksAllowsChildren)
-    {
-        super(root, asksAllowsChildren);
-    }
-
-    /**
-     * @param root
-     */
-    public ListingTree(TreeNode root)
-    {
-        super(root);
-    }
-
-    /**
-     * @param value
-     */
-    public ListingTree(Vector<?> value)
-    {
-        super(value);
+        fireTreeExpansionListeners = false;
+        for (TreePath path : expanded) {
+            expandPath(path);
+        }
+        fireTreeExpansionListeners = true;
     }
 
     @Override
@@ -102,8 +100,8 @@ public class ListingTree extends JTree
         TreePath curPath = getPathForLocation(event.getX(), event.getY());
         Object comp = curPath.getLastPathComponent();
         if (comp instanceof File) {
-            FileCell fc = (FileCell) getCellRenderer().getTreeCellRendererComponent(this, comp, false, false, true, 0,
-                    false);
+            FileRenderer fc = (FileRenderer) getCellRenderer().getTreeCellRendererComponent(this, comp, false, false,
+                    true, 0, false);
             Rectangle entryBounds = this.getPathBounds(curPath);
             int x = (int) (event.getX() - entryBounds.getX());
             int y = (int) (event.getY() - entryBounds.getY());
@@ -124,8 +122,8 @@ public class ListingTree extends JTree
         TreePath curPath = getPathForLocation(event.getX(), event.getY());
         Object comp = curPath.getLastPathComponent();
         if (comp instanceof File) {
-            FileCell fc = (FileCell) getCellRenderer().getTreeCellRendererComponent(this, comp, false, false, true, 0,
-                    false);
+            FileRenderer fc = (FileRenderer) getCellRenderer().getTreeCellRendererComponent(this, comp, false, false,
+                    true, 0, false);
             Rectangle entryBounds = this.getPathBounds(curPath);
             int x = (int) (event.getX() - entryBounds.getX());
             int y = (int) (event.getY() - entryBounds.getY());

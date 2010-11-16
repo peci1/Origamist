@@ -92,45 +92,18 @@ public class ListingTreeModel implements TreeModel
     @Override
     public void valueForPathChanged(TreePath path, Object newValue)
     {
-        if (!(newValue instanceof File) || !(newValue instanceof Category))
+        if (!(newValue instanceof File || newValue instanceof Category))
             return;
 
-        Object parent = path.getParentPath().getLastPathComponent();
-        if (!(parent instanceof CategoriesContainer) || !(parent instanceof FilesContainer))
-            return;
-
-        Object oldValue = path.getLastPathComponent();
-
-        if (oldValue == null)
-            return;
-
-        // no action is needed when the values are the same
-        if (oldValue == newValue || oldValue.equals(newValue))
-            return;
-
-        CategoriesContainer cParent = (CategoriesContainer) parent;
-        FilesContainer fParent = (FilesContainer) parent;
-
-        if (newValue instanceof Category && oldValue instanceof Category) {
-            if (cParent.getCategories() == null)
-                return;
-            int index = cParent.getCategories().getCategory().indexOf(oldValue);
-            cParent.getCategories().getCategory().remove(oldValue);
-            cParent.getCategories().getCategory().add(index, (Category) newValue);
-
-            notifyTreeNodesChanged(newValue, path);
-        } else if (newValue instanceof File && oldValue instanceof File) {
-            if (fParent.getFiles() == null)
-                return;
-            int index = fParent.getFiles().getFile().indexOf(oldValue);
-            fParent.getFiles().getFile().remove(oldValue);
-            fParent.getFiles().getFile().add(index, (File) newValue);
-        }
+        fireTreeStructureChanged(new TreeModelEvent(this, path.getParentPath()));
     }
 
     @Override
     public int getIndexOfChild(Object parent, Object child)
     {
+        if (parent == null || child == null)
+            return -1;
+
         if (!(parent instanceof CategoriesContainer) || !(parent instanceof FilesContainer))
             return -1;
 
@@ -141,8 +114,7 @@ public class ListingTreeModel implements TreeModel
         CategoriesContainer cParent = (CategoriesContainer) parent;
         FilesContainer fParent = (FilesContainer) parent;
 
-        // intentionally ==, equals() wouldn't be suitable here
-        if (parent != hChild.getParent())
+        if (!parent.equals(hChild.getParent()))
             return -1;
 
         if (child instanceof File) {
@@ -172,16 +144,31 @@ public class ListingTreeModel implements TreeModel
         treeModelListeners.remove(l);
     }
 
-    /**
-     * Notify TreeModelListeners about a node change.
-     * 
-     * @param source The Object responsible for generating the event.
-     * @param path A TreePath object that identifies the path to the change.
-     */
-    protected void notifyTreeNodesChanged(Object source, TreePath path)
+    public void fireTreeNodesChanged(TreeModelEvent e)
     {
-        for (TreeModelListener l : treeModelListeners) {
-            l.treeNodesChanged(new TreeModelEvent(source, path));
+        for (TreeModelListener listener : treeModelListeners) {
+            listener.treeNodesChanged(e);
+        }
+    }
+
+    public void fireTreeNodesInserted(TreeModelEvent e)
+    {
+        for (TreeModelListener listener : treeModelListeners) {
+            listener.treeNodesInserted(e);
+        }
+    }
+
+    public void fireTreeNodesRemoved(TreeModelEvent e)
+    {
+        for (TreeModelListener listener : treeModelListeners) {
+            listener.treeNodesRemoved(e);
+        }
+    }
+
+    public void fireTreeStructureChanged(TreeModelEvent e)
+    {
+        for (TreeModelListener listener : treeModelListeners) {
+            listener.treeStructureChanged(e);
         }
     }
 

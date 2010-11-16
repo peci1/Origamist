@@ -41,7 +41,7 @@ public class DiagramRenderer extends JPanel
      * 
      * @param o The origami to display.
      */
-    public void setOrigami(Origami o)
+    public synchronized void setOrigami(Origami o)
     {
         setOrigami(o, o.getModel().getSteps().getStep().get(0));
     }
@@ -52,7 +52,7 @@ public class DiagramRenderer extends JPanel
      * @param o The origami to display.
      * @param firstStep The step to be displayed as the first one.
      */
-    public void setOrigami(Origami o, Step firstStep)
+    public synchronized void setOrigami(Origami o, Step firstStep)
     {
         this.origami = o;
         this.firstStep = firstStep;

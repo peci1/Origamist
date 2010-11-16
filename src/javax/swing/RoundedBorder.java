@@ -32,13 +32,13 @@ public class RoundedBorder extends AbstractBorder
     /** The insets of the border. */
     protected Insets                                       insets;
     /** The stroke to draw the line with. */
-    protected Stroke                                       stroke;
+    protected Stroke                                       stroke           = null;
     /** Color of the drawn line. */
-    protected Color                                        strokeColor;
+    protected Color                                        strokeColor      = Color.BLACK;
     /** The size of the arc to use. */
     protected int                                          arc;
     /** The width of the stroke to use. */
-    protected float                                        strokeWidth;
+    protected float                                        strokeWidth      = 0f;
 
     // TODO maybe make this static and add <code>strokeWidth</code> to the search key
     /** The cached rectangles containing the content based on the requested size. */
@@ -71,6 +71,21 @@ public class RoundedBorder extends AbstractBorder
         this.stroke = new BasicStroke(strokeWidth);
         this.strokeColor = color;
         this.strokeWidth = strokeWidth;
+    }
+
+    /**
+     * Returns the round rectangle that is used to draw the inner area of the component.
+     * 
+     * @param dim The outer dimension of the component.
+     * @return The round rectangle that is used to draw the inner area of the component.
+     */
+    public RoundRectangle2D getRoundRectangle(Dimension dim)
+    {
+        if (rect.get(dim) == null) {
+            int i = (int) strokeWidth / 2;
+            rect.put(dim, new RoundRectangle2D.Float(i, i, dim.width - strokeWidth, dim.height - strokeWidth, arc, arc));
+        }
+        return rect.get(dim);
     }
 
     @Override

@@ -37,7 +37,7 @@ public class JMultilineLabel extends JEditorPane
     }
 
     @Override
-    public void setText(String text)
+    public synchronized void setText(String text)
     {
         String t = text;
         if (!text.startsWith("<html>")) {
