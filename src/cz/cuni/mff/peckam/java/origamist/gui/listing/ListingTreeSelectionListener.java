@@ -67,7 +67,6 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
                                 tree.restoreExpanded();
                                 if (selectedRow != null)
                                     tree.setSelectionRow(selectedRow.intValue());
-                                tree.invalidate();
                             }
                         });
                     }
