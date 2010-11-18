@@ -26,6 +26,8 @@ import javax.swing.JTree;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.jgoodies.forms.util.DefaultUnitConverter;
+
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.Categories;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
@@ -175,7 +177,10 @@ public class OrigamiViewer extends CommonGui
             getContentPane().add(renderer, BorderLayout.CENTER);
 
             final JTree listingTree = new ListingTree(filesToDisplay);
-            getContentPane().add(new JScrollPane(listingTree), BorderLayout.WEST);
+            JScrollPane listingPane = new JScrollPane(listingTree);
+            listingPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(170,
+                    listingTree), 0));
+            getContentPane().add(listingPane, BorderLayout.WEST);
 
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files

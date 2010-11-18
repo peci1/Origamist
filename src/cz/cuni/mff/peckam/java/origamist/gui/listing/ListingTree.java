@@ -110,7 +110,7 @@ public class ListingTree extends JTree
                     true, event.getButton());
             return fc.getToolTipText(e);
         } else {
-            return null;
+            return super.getToolTipText(event);
         }
     }
 

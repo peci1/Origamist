@@ -8,3 +8,23 @@ JTree disappears after some nodes are expanded:
 http://forums.oracle.com/forums/thread.jspa?threadID=2131740&tstart=0
 
 ------------
+
+The maximum and minimum sizes of a JScrollPane (and probably of most of Swing
+components) are not taken into account by some Swing layout managers. You
+must set the preferred size instead. If you only want to fix one dimension,
+set the other dimension to 0.
+
+-----------
+
+Java3D needs some native libraries (.so or .dll files). They cannot be loaded
+in the same way as JAR libraries. There are some ways to include them without
+installation on the host computer on the web, but all of them have seemed to
+be broken since JDK 1.6.0_20. So I had to write custom ClassLoader and use a
+bootstrapping technique (Java3DBootstrappingApplet). The classloader loads
+the native libraries from the specified path. It would be a big problem if I
+tried to set the default classloader to the custom one (particulary it is IMHO
+impossible for applets in a general way). So that's why the bootstrapping 
+technique (the bootstrapper is loaded by the default CL and then it uses the
+custom CL to load and instantiate my applet).
+
+-----------

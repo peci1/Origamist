@@ -193,7 +193,14 @@ public class FileRenderer extends JPanelWithOverlay
     @Override
     public String getToolTipText(MouseEvent event)
     {
-        for (Component c : this.getComponents()) {
+        // show tooltips for overlay components if the overlay is displayed
+        Component[] comps;
+        if (getOverlay().isVisible()) {
+            comps = getOverlay().getComponents();
+        } else {
+            comps = getContent().getComponents();
+        }
+        for (Component c : comps) {
             int x = event.getX() - c.getX();
             int y = event.getY() - c.getY();
             if (c.contains(x, y)) {
@@ -206,7 +213,14 @@ public class FileRenderer extends JPanelWithOverlay
     @Override
     public Point getToolTipLocation(MouseEvent event)
     {
-        for (Component c : this.getComponents()) {
+        // show tooltips for overlay components if the overlay is displayed
+        Component[] comps;
+        if (getOverlay().isVisible()) {
+            comps = getOverlay().getComponents();
+        } else {
+            comps = getContent().getComponents();
+        }
+        for (Component c : comps) {
             int x = event.getX() - c.getX();
             int y = event.getY() - c.getY();
             if (c.contains(x, y)) {
