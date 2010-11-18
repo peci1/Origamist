@@ -10,13 +10,13 @@ import java.io.IOException;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.File;
-import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewer;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -36,7 +36,7 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
             return;
         }
 
-        final Object selected = e.getPath().getLastPathComponent();
+        final Object selected = ((DefaultMutableTreeNode) e.getPath().getLastPathComponent()).getUserObject();
         if (selected instanceof File) {
             final OrigamiViewer viewer = ServiceLocator.get(OrigamiViewer.class);
             if (viewer == null) {
@@ -50,28 +50,18 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
                     @Override
                     public void propertyChange(PropertyChangeEvent evt)
                     {
-                        final Integer selectedRow;
-                        if (tree.getSelectionRows() != null && tree.getSelectionRows().length > 0)
-                            selectedRow = tree.getSelectionRows()[0];
-                        else
-                            selectedRow = null;
-                        file.fillFromOrigami();
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
                             public void run()
                             {
-                                // TODO: this is very very ineffective, but since we can change the hashcode of the file
-                                // by loading the origami, this seems like the only suitable way to workaround crashing
-                                // JTree which cannot deal with hashcode-changing nodes
-                                tree.setModel(new ListingTreeModel((Listing) tree.getModel().getRoot()));
-                                tree.restoreExpanded();
-                                if (selectedRow != null)
-                                    tree.setSelectionRow(selectedRow.intValue());
+                                file.fillFromOrigami();
+                                tree.invalidate();
                             }
                         });
                     }
                 });
 
+                // load the origami in a separate thread, it may take a long time
                 new Thread() {
                     @Override
                     public void run()
@@ -95,5 +85,4 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
             }
         }
     }
-
 }

@@ -7,6 +7,7 @@ import java.awt.Component;
 import java.util.Locale;
 
 import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
 import cz.cuni.mff.peckam.java.origamist.files.Category;
@@ -32,14 +33,18 @@ public class ListingTreeCellRenderer extends DefaultTreeCellRenderer
     public Component getTreeCellRendererComponent(JTree tree, final Object value, boolean sel, boolean expanded,
             boolean leaf, int row, boolean hasFocus)
     {
-        if (value instanceof Category) {
+        if (!(value instanceof DefaultMutableTreeNode))
+            return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
+        Object nodeVal = ((DefaultMutableTreeNode) value).getUserObject();
+        if (nodeVal instanceof Category) {
             Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
-            String text = ((Category) value).getName(l);
+            String text = ((Category) nodeVal).getName(l);
             super.getTreeCellRendererComponent(tree, text, sel, expanded, leaf, row, hasFocus);
             setIcon(expanded ? getOpenIcon() : getClosedIcon());
             return this;
-        } else if (value instanceof File) {
-            fileRenderer.configure((File) value, sel, hasFocus);
+        } else if (nodeVal instanceof File) {
+            fileRenderer.configure((File) nodeVal, sel, hasFocus);
             return fileRenderer;
         } else {
             return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);

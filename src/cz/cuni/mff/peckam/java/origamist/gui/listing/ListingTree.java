@@ -11,14 +11,16 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Stack;
 
 import javax.swing.JTree;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeExpansionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import cz.cuni.mff.peckam.java.origamist.files.Category;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -46,30 +48,18 @@ public class ListingTree extends JTree
 
     public ListingTree(Listing listing)
     {
-        super(new ListingTreeModel(listing));
-        setToolTipText("");
-        TreeSelectionModel selectionModel = new DefaultTreeSelectionModel();
-        selectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        setSelectionModel(selectionModel);
+        setModel(new DefaultTreeModel(createStructure(listing)));
+
+        setSelectionModel(new DefaultTreeSelectionModel());
+        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
         setRootVisible(false);
         setShowsRootHandles(true);
-        setCellRenderer(new ListingTreeCellRenderer());
-        addTreeSelectionListener(new ListingTreeSelectionListener());
-        addTreeExpansionListener(new TreeExpansionListener() {
-            @Override
-            public void treeExpanded(TreeExpansionEvent event)
-            {
-                if (!fireTreeExpansionListeners)
-                    return;
-                expanded.add(event.getPath());
-            }
 
-            @Override
-            public void treeCollapsed(TreeExpansionEvent event)
-            {
-                expanded.remove(event.getPath());
-            }
-        });
+        setCellRenderer(new ListingTreeCellRenderer());
+
+        addTreeSelectionListener(new ListingTreeSelectionListener());
+
         ServiceLocator.get(ConfigurationManager.class).get()
                 .addPropertyChangeListener("diagramLocale", new PropertyChangeListener() {
                     @Override
@@ -81,15 +71,50 @@ public class ListingTree extends JTree
     }
 
     /**
-     * Expands all paths that were expanded before the model reload.
+     * Create a structure of DefaultMutableTreeNodes corresponding to the given listing.
+     * 
+     * @param listing The listing to generate the structure from.
+     * @return The structure generated from the listing.
      */
-    public void restoreExpanded()
+    protected DefaultMutableTreeNode createStructure(Listing listing)
     {
-        fireTreeExpansionListeners = false;
-        for (TreePath path : expanded) {
-            expandPath(path);
+        if (listing == null)
+            return null;
+
+        Stack<DefaultMutableTreeNode> categories = new Stack<DefaultMutableTreeNode>();
+
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(listing);
+        if (listing.getCategories() != null) {
+            for (Category cat : listing.getCategories().getCategory()) {
+                DefaultMutableTreeNode node = new DefaultMutableTreeNode(cat);
+                categories.push(node);
+                root.add(node);
+            }
         }
-        fireTreeExpansionListeners = true;
+        if (listing.getFiles() != null) {
+            for (File file : listing.getFiles().getFile()) {
+                root.add(new DefaultMutableTreeNode(file, false));
+            }
+        }
+
+        while (!categories.isEmpty()) {
+            DefaultMutableTreeNode catNode = categories.pop();
+            Category cat = (Category) catNode.getUserObject();
+            if (cat.getCategories() != null) {
+                for (Category cat1 : cat.getCategories().getCategory()) {
+                    DefaultMutableTreeNode node = new DefaultMutableTreeNode(cat1);
+                    categories.push(node);
+                    catNode.add(node);
+                }
+            }
+            if (cat.getFiles() != null) {
+                for (File file : cat.getFiles().getFile()) {
+                    catNode.add(new DefaultMutableTreeNode(file, false));
+                }
+            }
+        }
+
+        return root;
     }
 
     @Override
@@ -120,10 +145,10 @@ public class ListingTree extends JTree
         if (getRowForLocation(event.getX(), event.getY()) == -1)
             return super.getToolTipLocation(event);
         TreePath curPath = getPathForLocation(event.getX(), event.getY());
-        Object comp = curPath.getLastPathComponent();
+        Object comp = ((DefaultMutableTreeNode) curPath.getLastPathComponent()).getUserObject();
         if (comp instanceof File) {
-            FileRenderer fc = (FileRenderer) getCellRenderer().getTreeCellRendererComponent(this, comp, false, false,
-                    true, 0, false);
+            FileRenderer fc = (FileRenderer) getCellRenderer().getTreeCellRendererComponent(this,
+                    curPath.getLastPathComponent(), false, false, true, 0, false);
             Rectangle entryBounds = this.getPathBounds(curPath);
             int x = (int) (event.getX() - entryBounds.getX());
             int y = (int) (event.getY() - entryBounds.getY());
