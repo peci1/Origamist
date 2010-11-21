@@ -34,7 +34,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
  * Common GUI elements for both the viewer and editor.
  * 
  * Provided properties:
- * messages (protected property)
+ * appMessages (protected property)
  * 
  * @author Martin Pecka
  */
@@ -46,7 +46,7 @@ public abstract class CommonGui extends JApplet
     /**
      * The localized messages for the common GUI classes.
      */
-    protected ResourceBundle  messages         = null;
+    protected ResourceBundle  appMessages      = null;
 
     /**
      * The common message formater that can be used over the GUI. It has its locale set to the configured one
@@ -64,18 +64,18 @@ public abstract class CommonGui extends JApplet
 
         final Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
 
-        final String bundleName = "cz.cuni.mff.peckam.java.origamist.gui.Gui";
+        final String bundleName = "application";
 
-        messages = ResourceBundle.getBundle(bundleName, config.getLocale());
+        appMessages = ResourceBundle.getBundle(bundleName, config.getLocale());
         format = new MessageFormat("", config.getLocale());
         config.addPropertyChangeListener("locale", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (!messages.getLocale().equals(evt.getNewValue())) {
-                    ResourceBundle oldMessages = messages;
-                    messages = ResourceBundle.getBundle(bundleName, (Locale) evt.getNewValue());
-                    CommonGui.this.firePropertyChange("messages", oldMessages, messages);
+                if (!appMessages.getLocale().equals(evt.getNewValue())) {
+                    ResourceBundle oldMessages = appMessages;
+                    appMessages = ResourceBundle.getBundle(bundleName, (Locale) evt.getNewValue());
+                    CommonGui.this.firePropertyChange("appMessages", oldMessages, appMessages);
                     MessageFormat oldFormat = format;
                     format = new MessageFormat("", (Locale) evt.getNewValue());
                     CommonGui.this.firePropertyChange("format", oldFormat, format);
@@ -130,8 +130,14 @@ public abstract class CommonGui extends JApplet
         LogManager.getRootLogger().addAppender(new GUIAppender(this));
 
         final Logger l = Logger.getLogger("application");
-        l.setResourceBundle(ResourceBundle.getBundle("application", ServiceLocator.get(ConfigurationManager.class)
-                .get().getLocale()));
+        l.setResourceBundle(appMessages);
+        addPropertyChangeListener("appMessages", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                l.setResourceBundle(appMessages);
+            }
+        });
         l.setLevel(Level.ALL);
         l.addAppender(new GUIAppender(this));
     }

@@ -7,6 +7,8 @@ import java.applet.AppletContext;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -16,12 +18,27 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javax.swing.AbstractButton;
+import javax.swing.Action;
+import javax.swing.ButtonGroup;
+import javax.swing.DropDownButton;
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -125,11 +142,14 @@ public class OrigamiViewer extends CommonGui
     /** The mode of displaying diagrams. Do not access directly, use setter/getter. */
     protected DisplayMode     displayMode                 = DisplayMode.PAGE;
 
-    /** If true, show the sidebar with open files. Do not access directly, use setter/getter. */
-    protected boolean         showFileListing             = false;
-
     /** The origami currently displayed. Do not access directly, use setter/getter. */
     protected Origami         displayedOrigami            = null;
+
+    /** The list of files that were recognized at startup. */
+    protected JTree           fileListing                 = null;
+
+    /** If true, show the sidebar with open files. Do not access directly, use setter/getter. */
+    protected boolean         showFileListing             = false;
 
     /** The renderer used to render the diagrams. */
     protected DiagramRenderer renderer                    = null;
@@ -176,11 +196,13 @@ public class OrigamiViewer extends CommonGui
             renderer.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(renderer, BorderLayout.CENTER);
 
-            final JTree listingTree = new ListingTree(filesToDisplay);
-            JScrollPane listingPane = new JScrollPane(listingTree);
+            fileListing = new ListingTree(filesToDisplay);
+            JScrollPane listingPane = new JScrollPane(fileListing);
             listingPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(170,
-                    listingTree), 0));
+                    fileListing), 0));
             getContentPane().add(listingPane, BorderLayout.WEST);
+
+            createMainToolbar();
 
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
@@ -389,6 +411,143 @@ public class OrigamiViewer extends CommonGui
         }
     }
 
+    protected JComponent createMainToolbar()
+    {
+        JToolBar toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+
+        DropDownButton dropDown = createToolbarDropdownButton(null, "menu.save", null);
+        toolbar.add(dropDown);
+
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asXML", null));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asPDF", null));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asSVG", null));
+
+        dropDown.addComponent(new JSeparator());
+
+        final JMenuItem listingItem;
+        dropDown.addComponent(listingItem = createToolbarDropdownItem(null, "menu.save.listing", null));
+        addPropertyChangeListener("showFileListing", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                listingItem.setEnabled(isShowFileListing());
+            }
+        });
+
+        toolbar.add(new JToolBar.Separator());
+
+        ButtonGroup displayGroup = new ButtonGroup();
+
+        final JToggleButton displayDiagram;
+        toolbar.add(displayDiagram = createToolbarItem(new JToggleButton(), null, "menu.display.diagram", null));
+        displayGroup.add(displayDiagram);
+
+        final JToggleButton displayPage;
+        toolbar.add(displayPage = createToolbarItem(new JToggleButton(), null, "menu.display.page", null));
+        displayGroup.add(displayPage);
+
+        toolbar.add(new JToolBar.Separator());
+
+        toolbar.add(createToolbarButton(null, "menu.zoom.in", null));
+        toolbar.add(createToolbarButton(null, "menu.zoom.out", null));
+
+        toolbar.add(new JToolBar.Separator());
+
+        final JButton diagramPrev;
+        toolbar.add(diagramPrev = createToolbarButton(null, "menu.prevDiagram", null));
+        addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                try {
+                    diagramPrev.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
+                            .getLastPathComponent()).getPreviousLeaf() != null);
+                } catch (NullPointerException e) {}
+            }
+        });
+
+        final JButton diagramNext;
+        toolbar.add(diagramNext = createToolbarButton(null, "menu.nextDiagram", null));
+        addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                try {
+                    diagramNext.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
+                            .getLastPathComponent()).getNextLeaf() != null);
+                } catch (NullPointerException e) {}
+            }
+        });
+
+        toolbar.add(new JToolBar.Separator());
+
+        toolbar.add(createToolbarButton(null, "menu.settings", null));
+
+        getContentPane().add(toolbar, BorderLayout.NORTH);
+        return toolbar;
+    }
+
+    protected JButton createToolbarButton(Action action, final String bundleName, final String iconName)
+    {
+        return createToolbarItem(new JButton(), action, bundleName, iconName);
+    }
+
+    protected DropDownButton createToolbarDropdownButton(Action action, final String bundleName, final String iconName)
+    {
+        return createToolbarItem(new DropDownButton(new JButton()), action, bundleName, iconName);
+    }
+
+    protected JMenuItem createToolbarDropdownItem(Action action, final String bundleName, final String iconName)
+    {
+        return createToolbarItem(new JMenuItem(), action, bundleName, iconName);
+    }
+
+    protected <T extends AbstractButton> T createToolbarItem(final T button, final Action action,
+            final String bundleName, final String iconName)
+    {
+        if (bundleName == null)
+            throw new NullPointerException("Tried to create toolbar item without giving the corresponding bundle name.");
+
+        button.setAction(action);
+        if (iconName != null)
+            button.setIcon(new ImageIcon(getClass().getResource("/resources/images/" + iconName)));
+
+        PropertyChangeListener listener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                try {
+                    button.setText(appMessages.getString(bundleName));
+                } catch (MissingResourceException e) {
+                    button.setText("");
+                }
+
+                try {
+                    String tooltip = appMessages.getString(bundleName + ".tooltip");
+                    button.setToolTipText(appMessages.getString(tooltip));
+                    button.getAccessibleContext().setAccessibleDescription(button.getToolTipText());
+                } catch (MissingResourceException e) {}
+
+                try {
+                    String mnemonic = appMessages.getString(bundleName + ".mnemonic");
+                    KeyStroke stroke = KeyStroke.getKeyStroke(mnemonic);
+                    if (stroke != null) {
+
+                        if ((button instanceof JMenuItem) && !(button instanceof JMenu))
+                            ((JMenuItem) button).setAccelerator(stroke);
+                        button.setMnemonic(stroke.getKeyCode());
+
+                        getRootPane().registerKeyboardAction(action, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+                    }
+                } catch (MissingResourceException e) {}
+            }
+        };
+        listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
+        addPropertyChangeListener("appMessages", listener);
+        return button;
+    }
+
     @Override
     public void start()
     {
@@ -433,8 +592,9 @@ public class OrigamiViewer extends CommonGui
      */
     public void setShowFileListing(boolean showFileListing)
     {
-        this.firePropertyChange("showFileListing", this.showFileListing, showFileListing);
+        boolean oldVal = this.showFileListing;
         this.showFileListing = showFileListing;
+        this.firePropertyChange("showFileListing", oldVal, showFileListing);
     }
 
     /**
@@ -450,8 +610,9 @@ public class OrigamiViewer extends CommonGui
      */
     public void setDisplayMode(DisplayMode displayMode)
     {
-        this.firePropertyChange("displayMode", this.displayMode, displayMode);
+        DisplayMode oldVal = this.displayMode;
         this.displayMode = displayMode;
+        this.firePropertyChange("displayMode", oldVal, displayMode);
     }
 
     /**
@@ -467,8 +628,9 @@ public class OrigamiViewer extends CommonGui
      */
     public void setDisplayedOrigami(Origami displayedOrigami)
     {
-        this.firePropertyChange("displayedOrigami", this.displayedOrigami, displayedOrigami);
+        Origami oldVal = this.displayedOrigami;
         this.displayedOrigami = displayedOrigami;
+        this.firePropertyChange("displayedOrigami", oldVal, displayedOrigami);
         renderer.setOrigami(displayedOrigami);
     }
 

@@ -24,7 +24,7 @@ import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
- * This appender writes the messages to the console. FATAL messages are also shown as error popups to the user.
+ * This appender writes the appMessages to the console. FATAL appMessages are also shown as error popups to the user.
  * 
  * By default, it uses System.err and a PatternLayout.
  * 
@@ -33,7 +33,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 public class GUIAppender extends ConsoleAppender
 {
 
-    /** The localized messages for the "application" bundle. */
+    /** The localized appMessages for the "application" bundle. */
     protected ResourceBundle messages = null;
 
     /** The message formater that can be used. It has its locale set to the configured one. */
