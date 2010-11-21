@@ -7,6 +7,7 @@ import java.applet.AppletContext;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -21,8 +22,10 @@ import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DropDownButton;
 import javax.swing.ImageIcon;
@@ -33,7 +36,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
+import javax.swing.JTitledSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
@@ -416,17 +419,21 @@ public class OrigamiViewer extends CommonGui
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
 
-        DropDownButton dropDown = createToolbarDropdownButton(null, "menu.save", null);
+        DropDownButton dropDown = createToolbarDropdownButton(null, "menu.save", "save.png");
         toolbar.add(dropDown);
 
-        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asXML", null));
-        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asPDF", null));
-        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asSVG", null));
+        dropDown.addComponent(createToolbarDropdownSeparator("menu.separator.editable"));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asXML", "xml.png"));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asSVG", "svg.png"));
 
-        dropDown.addComponent(new JSeparator());
+        dropDown.addComponent(createToolbarDropdownSeparator("menu.separator.non-editable"));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asPDF", "pdf.png"));
+        dropDown.addComponent(createToolbarDropdownItem(null, "menu.save.asPNG", "png.png"));
+
+        dropDown.addComponent(createToolbarDropdownSeparator("menu.separator.listing"));
 
         final JMenuItem listingItem;
-        dropDown.addComponent(listingItem = createToolbarDropdownItem(null, "menu.save.listing", null));
+        dropDown.addComponent(listingItem = createToolbarDropdownItem(null, "menu.save.listing", "listing.png"));
         addPropertyChangeListener("showFileListing", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
@@ -437,25 +444,44 @@ public class OrigamiViewer extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        ButtonGroup displayGroup = new ButtonGroup();
+        final ButtonGroup displayGroup = new ButtonGroup();
 
         final JToggleButton displayDiagram;
-        toolbar.add(displayDiagram = createToolbarItem(new JToggleButton(), null, "menu.display.diagram", null));
+        toolbar.add(displayDiagram = createToolbarItem(new JToggleButton(), new DisplayModeAction(DisplayMode.DIAGRAM),
+                "menu.display.diagram", "view-diagram.png"));
         displayGroup.add(displayDiagram);
+        addPropertyChangeListener("displayMode", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (getDisplayMode() == DisplayMode.DIAGRAM)
+                    displayGroup.setSelected(displayDiagram.getModel(), true);
+            }
+        });
 
         final JToggleButton displayPage;
-        toolbar.add(displayPage = createToolbarItem(new JToggleButton(), null, "menu.display.page", null));
+        toolbar.add(displayPage = createToolbarItem(new JToggleButton(), new DisplayModeAction(DisplayMode.PAGE),
+                "menu.display.page", "view-page.png"));
         displayGroup.add(displayPage);
+        addPropertyChangeListener("displayMode", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (getDisplayMode() == DisplayMode.PAGE)
+                    displayGroup.setSelected(displayPage.getModel(), true);
+            }
+        });
+        displayGroup.setSelected(displayPage.getModel(), true);
 
         toolbar.add(new JToolBar.Separator());
 
-        toolbar.add(createToolbarButton(null, "menu.zoom.in", null));
-        toolbar.add(createToolbarButton(null, "menu.zoom.out", null));
+        toolbar.add(createToolbarButton(null, "menu.zoom.in", "zoom-in.png"));
+        toolbar.add(createToolbarButton(null, "menu.zoom.out", "zoom-out.png"));
 
         toolbar.add(new JToolBar.Separator());
 
         final JButton diagramPrev;
-        toolbar.add(diagramPrev = createToolbarButton(null, "menu.prevDiagram", null));
+        toolbar.add(diagramPrev = createToolbarButton(null, "menu.prevDiagram", "left.png"));
         addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
@@ -468,7 +494,7 @@ public class OrigamiViewer extends CommonGui
         });
 
         final JButton diagramNext;
-        toolbar.add(diagramNext = createToolbarButton(null, "menu.nextDiagram", null));
+        toolbar.add(diagramNext = createToolbarButton(null, "menu.nextDiagram", "right.png"));
         addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
@@ -482,7 +508,7 @@ public class OrigamiViewer extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        toolbar.add(createToolbarButton(null, "menu.settings", null));
+        toolbar.add(createToolbarButton(null, "menu.settings", "settings.png"));
 
         getContentPane().add(toolbar, BorderLayout.NORTH);
         return toolbar;
@@ -500,7 +526,9 @@ public class OrigamiViewer extends CommonGui
 
     protected JMenuItem createToolbarDropdownItem(Action action, final String bundleName, final String iconName)
     {
-        return createToolbarItem(new JMenuItem(), action, bundleName, iconName);
+        JMenuItem item = new JMenuItem();
+        item.setBorder(BorderFactory.createCompoundBorder(item.getBorder(), BorderFactory.createEmptyBorder(3, 0, 3, 0)));
+        return createToolbarItem(item, action, bundleName, iconName);
     }
 
     protected <T extends AbstractButton> T createToolbarItem(final T button, final Action action,
@@ -510,8 +538,11 @@ public class OrigamiViewer extends CommonGui
             throw new NullPointerException("Tried to create toolbar item without giving the corresponding bundle name.");
 
         button.setAction(action);
-        if (iconName != null)
-            button.setIcon(new ImageIcon(getClass().getResource("/resources/images/" + iconName)));
+        if (iconName != null) {
+            URL url = getClass().getResource("/resources/images/" + iconName);
+            if (url != null)
+                button.setIcon(new ImageIcon(url));
+        }
 
         PropertyChangeListener listener = new PropertyChangeListener() {
             @Override
@@ -546,6 +577,27 @@ public class OrigamiViewer extends CommonGui
         listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
         addPropertyChangeListener("appMessages", listener);
         return button;
+    }
+
+    protected JTitledSeparator createToolbarDropdownSeparator(final String bundleName)
+    {
+        final JTitledSeparator separator = new JTitledSeparator("");
+
+        PropertyChangeListener listener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                try {
+                    separator.setTitle(appMessages.getString(bundleName));
+                } catch (MissingResourceException e) {
+                    separator.setTitle("");
+                }
+            }
+        };
+        listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
+        addPropertyChangeListener("appMessages", listener);
+
+        return separator;
     }
 
     @Override
@@ -697,6 +749,30 @@ public class OrigamiViewer extends CommonGui
         if (bootstrap != null)
             return bootstrap.getAppletInfo();
         return super.getAppletInfo();
+    }
+
+    /**
+     * Action for changing the current display mode to the one given in constructor.
+     * 
+     * @author Martin Pecka
+     */
+    class DisplayModeAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -4054470305119745178L;
+
+        DisplayMode               mode;
+
+        public DisplayModeAction(DisplayMode mode)
+        {
+            this.mode = mode;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            setDisplayMode(mode);
+        }
     }
 
 }

@@ -149,6 +149,36 @@ public class DropDownButton extends JButton implements ActionListener
     }
 
     @Override
+    public Icon getIcon()
+    {
+        return mainButton.getIcon();
+    }
+
+    @Override
+    public void setIcon(Icon defaultIcon)
+    {
+        mainButton.setIcon(defaultIcon);
+    }
+
+    @Override
+    public int getMnemonic()
+    {
+        if (mainButton != null)
+            return mainButton.getMnemonic();
+        else
+            return super.getMnemonic();
+    }
+
+    @Override
+    public void setMnemonic(int mnemonic)
+    {
+        if (mainButton != null)
+            mainButton.setMnemonic(mnemonic);
+        else
+            super.setMnemonic(mnemonic);
+    }
+
+    @Override
     public void setEnabled(boolean enabled)
     {
         super.setEnabled(enabled);
@@ -168,7 +198,7 @@ public class DropDownButton extends JButton implements ActionListener
      */
     protected Border getRolloverBorder()
     {
-        return BorderFactory.createRaisedBevelBorder();
+        return BorderFactory.createEmptyBorder();
     }
 
     /**
