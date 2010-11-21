@@ -556,8 +556,8 @@ public class OrigamiViewer extends CommonGui
 
                 try {
                     String tooltip = appMessages.getString(bundleName + ".tooltip");
-                    button.setToolTipText(appMessages.getString(tooltip));
-                    button.getAccessibleContext().setAccessibleDescription(button.getToolTipText());
+                    button.setToolTipText(tooltip);
+                    button.getAccessibleContext().setAccessibleDescription(tooltip);
                 } catch (MissingResourceException e) {}
 
                 try {
