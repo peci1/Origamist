@@ -55,6 +55,7 @@ public class ListingTree extends JTree
 
         setRootVisible(false);
         setShowsRootHandles(true);
+        setToolTipText(""); // XXX - don't delete this line, or the tooltips for items won't display :(
 
         setCellRenderer(new ListingTreeCellRenderer());
 

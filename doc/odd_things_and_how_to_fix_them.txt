@@ -28,3 +28,16 @@ technique (the bootstrapper is loaded by the default CL and then it uses the
 custom CL to load and instantiate my applet).
 
 -----------
+
+If you want to display custom tooltips for items in a JTree, you must call
+setToolTipText("") on the JTree, or getToolTipText(MouseEvent event) won't
+even be called!
+
+-----------
+
+Do you want a toolbar button with the down arrow on the right, which pops up
+a submenu when clicked? No luck with Java SE classes! You must develop your
+own. Some frameworks have these buttons, too (SwingX, Flamingo). If you don't
+want to use a framework, then the best implementation is to be found at
+mammothsoftware.com under LGPL, but that site doesn't exist this time, so you 
+have to find it in an internet archive.
