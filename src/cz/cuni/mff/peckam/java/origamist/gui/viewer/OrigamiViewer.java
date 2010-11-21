@@ -531,6 +531,31 @@ public class OrigamiViewer extends CommonGui
         return createToolbarItem(item, action, bundleName, iconName);
     }
 
+    /**
+     * Configure the given AbstractButton to fire the given action, load its data from the resources beginning with
+     * <code>bundleName</code> and load the icon from <code>/resources/images/</code>, if <code>iconName</code> is not
+     * <code>null</code>.
+     * 
+     * These bundle name suffixes are recognized:
+     * <dl>
+     * <dt>"" (empty suffix):</dt>
+     * <dd>the text of the button</dd>
+     * <dt>.tooltip:</dt>
+     * <dd>the tooltip for the button</dd>
+     * <dt>.mnemonic:</dt>
+     * <dd>the mnemonic for the button (the letter that will appear underlined in the button's text)</dd>
+     * <dt>.accelerator:</dt>
+     * <dd>the accelerator to be used with this button; if mnemonic is not set, use the keyCode of this accelerator as
+     * mnemonic</dd>
+     * </dl>
+     * 
+     * @param <T> The type of the button.
+     * @param button The button to configure.
+     * @param action The action the button should invoke.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return The button given in <code>button</code> param, configured.
+     */
     protected <T extends AbstractButton> T createToolbarItem(final T button, final Action action,
             final String bundleName, final String iconName)
     {
@@ -553,24 +578,49 @@ public class OrigamiViewer extends CommonGui
                 } catch (MissingResourceException e) {
                     button.setText("");
                 }
+                String mnemonic = null;
+                try {
+                    mnemonic = appMessages.getString(bundleName + ".mnemonic");
+                } catch (MissingResourceException e) {}
+                String accelerator = null;
+                try {
+                    accelerator = appMessages.getString(bundleName + ".accelerator");
+                } catch (MissingResourceException e) {}
+
+                KeyStroke accStroke = KeyStroke.getKeyStroke(accelerator);
+                KeyStroke mnemStroke = KeyStroke.getKeyStroke(mnemonic);
+                if (mnemStroke == null)
+                    mnemStroke = accStroke;
+
+                if (evt.getOldValue() != null && (evt.getOldValue() instanceof ResourceBundle)) {
+                    try {
+                        String oldAcc = ((ResourceBundle) evt.getOldValue()).getString(bundleName + ".accelerator");
+                        KeyStroke oldStroke = KeyStroke.getKeyStroke(oldAcc);
+                        if (oldStroke != null)
+                            getRootPane().unregisterKeyboardAction(oldStroke);
+                    } catch (MissingResourceException e) {}
+                }
+
+                if (accStroke != null) {
+                    if ((button instanceof JMenuItem) && !(button instanceof JMenu))
+                        ((JMenuItem) button).setAccelerator(accStroke);
+                    getRootPane().registerKeyboardAction(action, accStroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+                }
+                if (mnemStroke != null) {
+                    button.setMnemonic(mnemStroke.getKeyCode());
+                }
 
                 try {
                     String tooltip = appMessages.getString(bundleName + ".tooltip");
+                    if (accStroke != null)
+                        // TODO should be extracted to at least a method
+                        tooltip += " "
+                                + appMessages.getString("accelerator")
+                                + ": "
+                                + accStroke.toString().replaceAll("(typed|pressed|released) ", "").replaceAll(" ", "+")
+                                        .replaceAll("_", " ").toUpperCase();
                     button.setToolTipText(tooltip);
                     button.getAccessibleContext().setAccessibleDescription(tooltip);
-                } catch (MissingResourceException e) {}
-
-                try {
-                    String mnemonic = appMessages.getString(bundleName + ".mnemonic");
-                    KeyStroke stroke = KeyStroke.getKeyStroke(mnemonic);
-                    if (stroke != null) {
-
-                        if ((button instanceof JMenuItem) && !(button instanceof JMenu))
-                            ((JMenuItem) button).setAccelerator(stroke);
-                        button.setMnemonic(stroke.getKeyCode());
-
-                        getRootPane().registerKeyboardAction(action, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
-                    }
                 } catch (MissingResourceException e) {}
             }
         };
