@@ -204,10 +204,13 @@ public class FileRenderer extends JPanelWithOverlay
             int x = event.getX() - c.getX();
             int y = event.getY() - c.getY();
             if (c.contains(x, y)) {
-                return ((JComponent) c).getToolTipText();
+                String tooltip = ((JComponent) c).getToolTipText();
+                if (tooltip == null || tooltip.equals(""))
+                    return null;
+                return tooltip;
             }
         }
-        return super.getToolTipText(event);
+        return null;
     }
 
     @Override
