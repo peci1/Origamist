@@ -44,7 +44,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
  * 
  * @author Martin Pecka
  */
-public class JAXBOrigamiHandler implements OrigamiHandler
+public class JAXBOrigamiHandler extends Service implements OrigamiHandler
 {
 
     /** The model to return. */

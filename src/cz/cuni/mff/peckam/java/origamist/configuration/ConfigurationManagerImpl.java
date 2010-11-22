@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import cz.cuni.mff.peckam.java.origamist.services.Service;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter;
 
@@ -15,7 +16,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter;
  * 
  * @author Martin Pecka
  */
-public class ConfigurationManagerImpl implements ConfigurationManager
+public class ConfigurationManagerImpl extends Service implements ConfigurationManager
 {
 
     /** The active configuration. */

@@ -19,7 +19,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHe
  * 
  * @author Martin Pecka
  */
-public class HashCodeAndEqualsHelperImpl implements HashCodeAndEqualsHelper
+public class HashCodeAndEqualsHelperImpl extends Service implements HashCodeAndEqualsHelper
 {
 
     @Override

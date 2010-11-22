@@ -41,7 +41,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
  * 
  * @author Martin Pecka
  */
-public class JAXBListingHandler implements ListingHandler
+public class JAXBListingHandler extends Service implements ListingHandler
 {
 
     /** The listing to return. */
