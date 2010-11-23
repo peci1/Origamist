@@ -131,13 +131,14 @@ public class DropDownButton extends JButton implements ActionListener
         setFixedSize(mainButton, arrowButton);
     }
 
+    /**
+     * Returns <code>null</code> always. If you want to get the text of the <code>mainButton</code>, call
+     * <code>getMainButton().getText()</code>.
+     */
     @Override
     public String getText()
     {
-        if (mainButton != null)
-            return mainButton.getText();
-        else
-            return super.getText();
+        return null;
     }
 
     @Override
@@ -148,10 +149,14 @@ public class DropDownButton extends JButton implements ActionListener
         arrowButton.setToolTipText(text);
     }
 
+    /**
+     * Returns <code>null</code> always. If you want to get the icon of the <code>mainButton</code>, call
+     * <code>getMainButton().getIcon()</code>.
+     */
     @Override
     public Icon getIcon()
     {
-        return mainButton.getIcon();
+        return null;
     }
 
     @Override
@@ -187,10 +192,36 @@ public class DropDownButton extends JButton implements ActionListener
     }
 
     @Override
+    public void setOpaque(boolean isOpaque)
+    {
+        super.setOpaque(isOpaque);
+        if (mainButton != null)
+            mainButton.setOpaque(isOpaque);
+        if (arrowButton != null)
+            arrowButton.setOpaque(isOpaque);
+    }
+
+    @Override
     public void updateUI()
     {
         super.updateUI();
         setBorder(null);
+    }
+
+    /**
+     * @return the mainButton
+     */
+    public JButton getMainButton()
+    {
+        return mainButton;
+    }
+
+    /**
+     * @return the arrowButton
+     */
+    public JButton getArrowButton()
+    {
+        return arrowButton;
     }
 
     /**
@@ -239,11 +270,16 @@ public class DropDownButton extends JButton implements ActionListener
     {
         initRolloverListener();
 
+        super.setText(null);
+        super.setIcon(null);
+
         Icon disDownArrow = new DisabledDownArrow();
         arrowButton.setDisabledIcon(disDownArrow);
         arrowButton.setMaximumSize(new Dimension(11, 100));
         mainButton.addActionListener(this);
         arrowButton.addActionListener(this);
+        mainButton.setOpaque(isOpaque());
+        arrowButton.setOpaque(isOpaque());
 
         setMargin(new Insets(0, 0, 0, 0));
 
@@ -254,6 +290,7 @@ public class DropDownButton extends JButton implements ActionListener
         tb.setFloatable(false);
         tb.add(mainButton);
         tb.add(arrowButton);
+        tb.setOpaque(false);
         add(tb);
 
         setFixedSize(mainButton, arrowButton);

@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
 import java.applet.AppletContext;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -25,6 +26,8 @@ import java.util.ResourceBundle;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.BackgroundImageSupport;
+import javax.swing.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DropDownButton;
@@ -39,6 +42,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTitledSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.JToolBarWithBgImage;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -424,8 +428,11 @@ public class OrigamiViewer extends CommonGui
      */
     protected JComponent createMainToolbar()
     {
-        JToolBar toolbar = new JToolBar();
+        JToolBarWithBgImage toolbar = new JToolBarWithBgImage();
         toolbar.setFloatable(false);
+        toolbar.setBackground(new Color(231, 231, 184, 230));
+        toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
+                .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
 
         DropDownButton dropDown = createToolbarDropdownButton(null, "menu.save", "save.png");
         toolbar.add(dropDown);
@@ -595,6 +602,8 @@ public class OrigamiViewer extends CommonGui
     {
         if (bundleName == null)
             throw new NullPointerException("Tried to create toolbar item without giving the corresponding bundle name.");
+
+        button.setOpaque(false);
 
         button.setAction(action);
         if (iconName != null) {

@@ -206,6 +206,7 @@ public class RolloverButton extends JButton
         setMnemonic(button.getMnemonic());
         setToolTipText(button.getToolTipText());
         setVisible(button.isVisible());
+        setOpaque(button.isOpaque());
     }
 
     /**
