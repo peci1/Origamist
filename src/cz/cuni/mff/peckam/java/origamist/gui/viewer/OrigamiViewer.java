@@ -59,6 +59,7 @@ import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
@@ -414,6 +415,13 @@ public class OrigamiViewer extends CommonGui
         }
     }
 
+    /**
+     * Return the component that is to be used as the main menu.
+     * 
+     * Also register all provided accelerators. Currently implemented by a JToolbar.
+     * 
+     * @return The component that is to be used as the main menu.
+     */
     protected JComponent createMainToolbar()
     {
         JToolBar toolbar = new JToolBar();
@@ -514,16 +522,40 @@ public class OrigamiViewer extends CommonGui
         return toolbar;
     }
 
+    /**
+     * Create a normal toolbar button.
+     * 
+     * @param action The action the button should invoke.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return A normal toolbar button.
+     */
     protected JButton createToolbarButton(Action action, final String bundleName, final String iconName)
     {
         return createToolbarItem(new JButton(), action, bundleName, iconName);
     }
 
+    /**
+     * Create a toolbar dropdown button.
+     * 
+     * @param action The action the button should invoke when clicked on the main area.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return A toolbar dropdown button.
+     */
     protected DropDownButton createToolbarDropdownButton(Action action, final String bundleName, final String iconName)
     {
         return createToolbarItem(new DropDownButton(new JButton()), action, bundleName, iconName);
     }
 
+    /**
+     * Create a toolbar dropdown button's item.
+     * 
+     * @param action The action the item should invoke.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return A toolbar dropdown button's item.
+     */
     protected JMenuItem createToolbarDropdownItem(Action action, final String bundleName, final String iconName)
     {
         JMenuItem item = new JMenuItem();
@@ -540,6 +572,8 @@ public class OrigamiViewer extends CommonGui
      * <dl>
      * <dt>"" (empty suffix):</dt>
      * <dd>the text of the button</dd>
+     * <dt>.hideText</dt>
+     * <dd>if set (to any other value than "false"), don't display the text in the toolbar</dd>
      * <dt>.tooltip:</dt>
      * <dd>the tooltip for the button</dd>
      * <dt>.mnemonic:</dt>
@@ -573,8 +607,18 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
+                boolean hideText = false;
                 try {
-                    button.setText(appMessages.getString(bundleName));
+                    String hide = appMessages.getString(bundleName + ".hideText");
+                    if (!"false".equals(hide))
+                        hideText = true;
+                } catch (MissingResourceException e) {}
+
+                try {
+                    if (!hideText)
+                        button.setText(appMessages.getString(bundleName));
+                    else
+                        button.setText("");
                 } catch (MissingResourceException e) {
                     button.setText("");
                 }
@@ -611,14 +655,12 @@ public class OrigamiViewer extends CommonGui
                 }
 
                 try {
-                    String tooltip = appMessages.getString(bundleName + ".tooltip");
-                    if (accStroke != null)
-                        // TODO should be extracted to at least a method
-                        tooltip += " "
-                                + appMessages.getString("accelerator")
-                                + ": "
-                                + accStroke.toString().replaceAll("(typed|pressed|released) ", "").replaceAll(" ", "+")
-                                        .replaceAll("_", " ").toUpperCase();
+                    String title = null;
+                    try {
+                        title = appMessages.getString(bundleName);
+                    } catch (MissingResourceException e) {}
+                    String tooltip = ServiceLocator.get(TooltipFactory.class).getDecorated(
+                            appMessages.getString(bundleName + ".tooltip"), title, iconName, accStroke);
                     button.setToolTipText(tooltip);
                     button.getAccessibleContext().setAccessibleDescription(tooltip);
                 } catch (MissingResourceException e) {}
@@ -629,6 +671,12 @@ public class OrigamiViewer extends CommonGui
         return button;
     }
 
+    /**
+     * Create a horizontal "separator" that can have a title and can be used in a {@link JPopupMenu}.
+     * 
+     * @param bundleName The resource bundle string used to get this separator's text.
+     * @return A horizontal "separator" that can have a title and can be used in a {@link JPopupMenu}.
+     */
     protected JTitledSeparator createToolbarDropdownSeparator(final String bundleName)
     {
         final JTitledSeparator separator = new JTitledSeparator("");

@@ -25,6 +25,7 @@ import cz.cuni.mff.peckam.java.origamist.services.HashCodeAndEqualsHelperImpl;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
@@ -121,6 +122,7 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(ListingHandler.class, new JAXBListingHandler());
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
         ServiceLocator.add(HashCodeAndEqualsHelper.class, new HashCodeAndEqualsHelperImpl());
+        ServiceLocator.add(TooltipFactory.class, new TooltipFactory());
     }
 
     protected void setupLoggers()
