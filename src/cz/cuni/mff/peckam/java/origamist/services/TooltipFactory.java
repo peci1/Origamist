@@ -14,6 +14,7 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.KeyStroke;
+import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -68,6 +69,7 @@ public class TooltipFactory extends Service
 
         UIManager.put("ToolTip.border", BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
         UIManager.put("ToolTip.background", new Color(231, 231, 184, 230));
+        ToolTipManager.sharedInstance().setDismissDelay(30000);
     }
 
     /**
