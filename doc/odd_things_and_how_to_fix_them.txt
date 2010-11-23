@@ -41,3 +41,29 @@ own. Some frameworks have these buttons, too (SwingX, Flamingo). If you don't
 want to use a framework, then the best implementation is to be found at
 mammothsoftware.com under LGPL, but that site doesn't exist this time, so you 
 have to find it in an internet archive.
+
+-----------
+
+Some things about HTML+CSS in Swing components:
+* look at http://download.oracle.com/javase/6/docs/api/javax/swing/text/html/CSS.html 
+for the list of supported CSS properties... it's not as rich as it could
+* border-style doesn't work (although the manual says it should) - can be 
+simulated by a pair of surrounding <div>s
+* padding and margin don't work on <span>s (and maybe on other inline tags)
+* if you want to include an image, you must provide its URL using 
+getClass().getResource("/path/to/the/image.jpg")
+* for positioning the background image, don't mix text and numeric position
+values; percentages don't work; 'bottom' doesn't work (but 'right' does)
+* forget about 'em's... define everything in 'px'
+* short colors, like #333, aren't interpreted correctly
+* setting width and height of images in CSS doesn't work, but doing it in
+the HTML attributes works
+
+-----------
+
+Changing the look of tooltips through all the application is painful. If
+you wanted "to do it the Swing way", you would have to subclass all the
+Swing components you use and you would have to override the createToolTip()
+method in all of them. Much simpler (but with some constraints) seems to
+set the tooltip as HTML and format it using CSS. You can make a single
+factory that receives the tooltip's text and returns it formatted with HTML.
