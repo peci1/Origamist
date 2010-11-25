@@ -45,6 +45,7 @@ import javax.swing.JToolBar;
 import javax.swing.JToolBarWithBgImage;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.apache.log4j.Level;
@@ -203,6 +204,19 @@ public class OrigamiViewer extends CommonGui
                     .get(0));
             renderer.setPreferredSize(new Dimension(500, 500));
             getContentPane().add(renderer, BorderLayout.CENTER);
+            addPropertyChangeListener("displayMode", new PropertyChangeListener() {
+                @Override
+                public void propertyChange(final PropertyChangeEvent evt)
+                {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            renderer.setDisplayMode((DisplayMode) evt.getNewValue());
+                        }
+                    });
+                }
+            });
 
             fileListing = new ListingTree(filesToDisplay);
             JScrollPane listingPane = new JScrollPane(fileListing);

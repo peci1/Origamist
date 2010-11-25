@@ -101,7 +101,7 @@ public class JPanelWithOverlay extends JPanel
      */
     public void showOverlay()
     {
-        getOverlay().setVisible(true);
+        getOverlay().setVisible(true);;
     }
 
     /**
