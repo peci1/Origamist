@@ -1,7 +1,7 @@
 /**
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

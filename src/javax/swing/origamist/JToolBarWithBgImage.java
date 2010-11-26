@@ -1,7 +1,7 @@
 /**
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.Graphics;
 
@@ -10,7 +10,7 @@ import java.awt.Graphics;
  * 
  * @author Martin Pecka
  */
-public class JToolBarWithBgImage extends JToolBar
+public class JToolBarWithBgImage extends OrigamistToolBar
 {
     /** */
     private static final long        serialVersionUID = -1484600700012452480L;

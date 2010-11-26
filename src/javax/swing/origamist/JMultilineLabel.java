@@ -1,7 +1,10 @@
 /**
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
+
+import javax.swing.JEditorPane;
+import javax.swing.UIManager;
 
 
 /**

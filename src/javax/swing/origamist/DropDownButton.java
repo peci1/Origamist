@@ -15,7 +15,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 //
 // Contact the author at: info@mammothsoftware.com
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -28,6 +28,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JToolBar;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 

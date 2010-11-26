@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import static java.lang.Math.abs;
 
@@ -40,6 +40,9 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.util.Hashtable;
+
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
  * Component for drawing images instead of showing them as a label's icon.

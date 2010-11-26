@@ -1,13 +1,16 @@
 /**
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.net.URL;
+
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 
 /**
  * This class handles displaying an image on the background of the component that contains it.

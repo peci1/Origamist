@@ -1,12 +1,14 @@
 /**
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
 /**

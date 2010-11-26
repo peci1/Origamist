@@ -1,10 +1,14 @@
 /** 
  * 
  */
-package javax.swing;
+package javax.swing.origamist;
 
 import java.awt.FlowLayout;
 import java.awt.LayoutManager;
+
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.OverlayLayout;
 
 /**
  * A JPanel that allows showing an overlay component above its content.

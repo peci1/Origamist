@@ -25,7 +25,7 @@ public class OrigamiViewerBootstrapper extends Java3DBootstrappingApplet
     @Override
     protected String[] getApplicationRootPackages()
     {
-        return new String[] { "cz.cuni.mff.peckam.java.origamist", "org.w3c._2001.xmlschema" };
+        return new String[] { "cz.cuni.mff.peckam.java.origamist", "org.w3c._2001.xmlschema", "javax.swing.origamist" };
     }
 
 }

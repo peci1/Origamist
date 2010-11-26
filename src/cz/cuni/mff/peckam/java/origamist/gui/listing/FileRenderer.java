@@ -15,14 +15,14 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JImage;
 import javax.swing.JLabel;
-import javax.swing.JMultilineLabel;
 import javax.swing.JPanel;
-import javax.swing.JPanelWithOverlay;
-import javax.swing.RoundedBorder;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
+import javax.swing.origamist.JImage;
+import javax.swing.origamist.JMultilineLabel;
+import javax.swing.origamist.JPanelWithOverlay;
+import javax.swing.origamist.RoundedBorder;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
