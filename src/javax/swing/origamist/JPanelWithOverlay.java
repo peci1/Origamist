@@ -25,31 +25,54 @@ public class JPanelWithOverlay extends JPanel
     private static final long serialVersionUID = 7763109228109028354L;
 
     /** The contents to be displayed. */
-    protected JComponent      content          = null;
+    protected JComponent      content;
     /** The overlay to be displayed on request. */
-    protected JComponent      overlay          = null;
+    protected JComponent      overlay;
 
-    /** */
+    /**
+     * Create a new panel with overlay with {@link FlowLayout} as the layout of the content.
+     * 
+     * Double buffering is set to <code>true</code>.
+     */
     public JPanelWithOverlay()
     {
         this(true);
     }
 
-    /** */
+    /**
+     * Create a new panel with overlay with {@link FlowLayout} as the layout of the content.
+     * 
+     * @param isDoubleBuffered True for double-buffering, which uses additional memory space to achieve fast,
+     *            flicker-free updates
+     */
     public JPanelWithOverlay(boolean isDoubleBuffered)
     {
         this(new FlowLayout(), isDoubleBuffered);
     }
 
-    /** */
+    /**
+     * Create a new panel with overlay. Set the layout of the content to <code>layout</code>.
+     * 
+     * @param layout The layout for the content part of the panel.
+     * @param isDoubleBuffered True for double-buffering, which uses additional memory space to achieve fast,
+     *            flicker-free updates
+     */
     public JPanelWithOverlay(LayoutManager layout, boolean isDoubleBuffered)
     {
         super(layout, isDoubleBuffered);
-        super.setLayout(new OverlayLayout(this));
-        setOverlay(getOverlay());
+        this.setLayout(new OverlayLayout(this));
+        setContent(new JPanel());
+        setOverlay(new JPanel());
+        getContent().setLayout(layout);
     }
 
-    /** */
+    /**
+     * Create a new panel with overlay. Set the layout of the content to <code>layout</code>.
+     * 
+     * Double buffering is set to <code>true</code>.
+     * 
+     * @param layout The layout for the content part of the panel.
+     */
     public JPanelWithOverlay(LayoutManager layout)
     {
         this(layout, true);
@@ -60,8 +83,6 @@ public class JPanelWithOverlay extends JPanel
      */
     public JComponent getOverlay()
     {
-        if (overlay == null)
-            overlay = new JPanel();
         return overlay;
     }
 
@@ -74,8 +95,10 @@ public class JPanelWithOverlay extends JPanel
     {
         this.overlay = overlay;
         super.removeAll();
-        super.add(overlay);
-        super.add(getContent());
+        if (overlay != null)
+            super.add(overlay);
+        if (content != null)
+            super.add(content);
     }
 
     /**
@@ -83,8 +106,6 @@ public class JPanelWithOverlay extends JPanel
      */
     public JComponent getContent()
     {
-        if (content == null)
-            content = new JPanel();
         return content;
     }
 
@@ -95,9 +116,11 @@ public class JPanelWithOverlay extends JPanel
      */
     public void setContent(JComponent content)
     {
-        remove(this.content);
+        if (this.content != null)
+            remove(this.content);
         this.content = content;
-        add(content);
+        if (content != null)
+            add(content);
     }
 
     /**
@@ -105,7 +128,8 @@ public class JPanelWithOverlay extends JPanel
      */
     public void showOverlay()
     {
-        getOverlay().setVisible(true);;
+        if (getOverlay() != null)
+            getOverlay().setVisible(true);
     }
 
     /**
@@ -113,7 +137,8 @@ public class JPanelWithOverlay extends JPanel
      */
     public void hideOverlay()
     {
-        getOverlay().setVisible(false);
+        if (getOverlay() != null)
+            getOverlay().setVisible(false);
     }
 
 }

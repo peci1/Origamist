@@ -40,4 +40,5 @@ public class JToolBarWithBgImage extends OrigamistToolBar
         if (bg != null)
             bg.paintComponent(g);
     }
+
 }

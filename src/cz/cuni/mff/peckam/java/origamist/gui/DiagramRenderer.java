@@ -186,6 +186,7 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         pageSelect = new JComboBox();
         pageSelect.setEditable(false);
+        pageSelect.setBackground(new Color(244, 244, 224));
 
         nextButtonPage = toolbar.createToolbarButton(null, "DiagramRenderer.next.page", "next-page-24.png");
         nextButtonDiagram = toolbar.createToolbarButton(null, "DiagramRenderer.next.diagram", "next-page-24.png");
@@ -395,6 +396,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                             r.setDisplayMode(getDisplayMode());
                             diagramPane.add(r);
                             stepRenderers.add(r);
+                            r = null;
                             if (step.getNext() != null)
                                 step = step.getNext();
                             else
