@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,11 +35,14 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.origamist.BackgroundImageSupport;
+import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.DropDownButton;
 import javax.swing.origamist.JToolBarWithBgImage;
-import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -52,6 +56,7 @@ import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.DiagramRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTree;
+import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
@@ -162,7 +167,7 @@ public class OrigamiViewer extends CommonGui
      */
     public OrigamiViewer()
     {
-        super();
+        this(null);
     }
 
     /**
@@ -185,10 +190,39 @@ public class OrigamiViewer extends CommonGui
         try {
             handleAppletParams();
 
-            // if the iterator should be empty, then handleAppletParams will die with an exception
-            // we must access this property directly, because we don't want to fire events before the GUI is properly
-            // setup.
-            displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
+            fileListing = new ListingTree(filesToDisplay);
+            fileListing.setExpandsSelectedPaths(true);
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode) fileListing.getModel().getRoot();
+            @SuppressWarnings("rawtypes")
+            Enumeration bfNodeEnum = root.breadthFirstEnumeration();
+            DefaultMutableTreeNode toSelect = null;
+            boolean wasFound = false;
+            while ((toSelect = (DefaultMutableTreeNode) bfNodeEnum.nextElement()) != null) {
+                if (toSelect.getUserObject() instanceof cz.cuni.mff.peckam.java.origamist.files.File) {
+                    wasFound = true;
+                    break;
+                }
+            }
+            if (toSelect != null && wasFound)
+                fileListing.setSelectionPath(new TreePath(toSelect.getPath()));
+
+            // we intentionally add the selection listener just after the first selection has been performed
+            fileListing.addTreeSelectionListener(new ListingTreeSelectionListener());
+
+            JScrollPane listingPane = new JScrollPane(fileListing);
+            listingPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(170,
+                    fileListing), 0));
+            getContentPane().add(listingPane, BorderLayout.WEST);
+
+            if (toSelect != null && wasFound) {
+                displayedOrigami = ((cz.cuni.mff.peckam.java.origamist.files.File) toSelect.getUserObject())
+                        .getOrigami();
+            } else {
+                // if the iterator should be empty, then handleAppletParams will die with an exception
+                // we must access this property directly, because we don't want to fire events before the GUI is
+                // properly setup.
+                displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
+            }
 
             // TODO remove testing stuff and put some more meaningful code
             renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
@@ -208,12 +242,6 @@ public class OrigamiViewer extends CommonGui
                     });
                 }
             });
-
-            fileListing = new ListingTree(filesToDisplay);
-            JScrollPane listingPane = new JScrollPane(fileListing);
-            listingPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(170,
-                    fileListing), 0));
-            getContentPane().add(listingPane, BorderLayout.WEST);
 
             createMainToolbar();
 
@@ -501,30 +529,34 @@ public class OrigamiViewer extends CommonGui
         toolbar.add(new JToolBar.Separator());
 
         final JButton diagramPrev;
-        toolbar.add(diagramPrev = toolbar.createToolbarButton(null, "menu.prevDiagram", "left.png"));
-        addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+        toolbar.add(diagramPrev = toolbar.createToolbarButton(new PrevOrigamiAction(), "menu.prevDiagram", "left.png"));
+        TreeSelectionListener prevListener = new TreeSelectionListener() {
             @Override
-            public void propertyChange(PropertyChangeEvent evt)
+            public void valueChanged(TreeSelectionEvent evt)
             {
                 try {
                     diagramPrev.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
                             .getLastPathComponent()).getPreviousLeaf() != null);
                 } catch (NullPointerException e) {}
             }
-        });
+        };
+        fileListing.addTreeSelectionListener(prevListener);
+        prevListener.valueChanged(new TreeSelectionEvent(this, null, true, null, null));
 
         final JButton diagramNext;
-        toolbar.add(diagramNext = toolbar.createToolbarButton(null, "menu.nextDiagram", "right.png"));
-        addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+        toolbar.add(diagramNext = toolbar.createToolbarButton(new NextOrigamiAction(), "menu.nextDiagram", "right.png"));
+        TreeSelectionListener nextListener = new TreeSelectionListener() {
             @Override
-            public void propertyChange(PropertyChangeEvent evt)
+            public void valueChanged(TreeSelectionEvent evt)
             {
                 try {
                     diagramNext.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
                             .getLastPathComponent()).getNextLeaf() != null);
                 } catch (NullPointerException e) {}
             }
-        });
+        };
+        fileListing.addTreeSelectionListener(nextListener);
+        nextListener.valueChanged(new TreeSelectionEvent(this, null, true, null, null));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -706,6 +738,50 @@ public class OrigamiViewer extends CommonGui
         public void actionPerformed(ActionEvent e)
         {
             setDisplayMode(mode);
+        }
+    }
+
+    /**
+     * Sets the previous origami as the current origami.
+     * 
+     * @author Martin Pecka
+     */
+    class PrevOrigamiAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -768961575848838395L;
+
+        @Override
+        public void actionPerformed(ActionEvent evt)
+        {
+            TreePath currPath = fileListing.getSelectionPath();
+            try {
+                TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
+                        .getPreviousLeaf().getPath());
+                fileListing.setSelectionPath(newPath);
+            } catch (NullPointerException e) {}
+        }
+    }
+
+    /**
+     * Sets the next origami as the current origami.
+     * 
+     * @author Martin Pecka
+     */
+    class NextOrigamiAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -768961575848838395L;
+
+        @Override
+        public void actionPerformed(ActionEvent evt)
+        {
+            TreePath currPath = fileListing.getSelectionPath();
+            try {
+                TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
+                        .getNextLeaf().getPath());
+                fileListing.setSelectionPath(newPath);
+            } catch (NullPointerException e) {}
         }
     }
 

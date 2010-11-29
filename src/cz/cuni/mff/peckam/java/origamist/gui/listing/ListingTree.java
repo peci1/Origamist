@@ -59,7 +59,7 @@ public class ListingTree extends JTree
 
         setCellRenderer(new ListingTreeCellRenderer());
 
-        addTreeSelectionListener(new ListingTreeSelectionListener());
+        // addTreeSelectionListener(new ListingTreeSelectionListener()); //this is rather done in OrigamiViewer
 
         ServiceLocator.get(ConfigurationManager.class).get()
                 .addPropertyChangeListener("diagramLocale", new PropertyChangeListener() {
