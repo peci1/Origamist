@@ -6,7 +6,9 @@ package cz.cuni.mff.peckam.java.origamist.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.util.Locale;
 
 import javax.media.j3d.Appearance;
@@ -17,6 +19,7 @@ import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -36,6 +39,7 @@ import com.sun.j3d.exp.swing.JCanvas3D;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.DisplayMode;
+import cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewer;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -101,6 +105,8 @@ public class StepRenderer extends JPanelWithOverlay
 
     public StepRenderer()
     {
+        setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
         canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
         canvas.setOpaque(false);
         canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
@@ -119,7 +125,8 @@ public class StepRenderer extends JPanelWithOverlay
 
         zoomIn = toolbar.createToolbarButton(null, "StepRenderer.zoom.in", "zoom-in-24.png");
         zoomOut = toolbar.createToolbarButton(null, "StepRenderer.zoom.out", "zoom-out-24.png");
-        fullscreenBtn = toolbar.createToolbarButton(null, "StepRenderer.fullscreen", "fullscreen-24.png");
+        fullscreenBtn = toolbar.createToolbarButton(new FullscreenAction(), "StepRenderer.fullscreen",
+                "fullscreen-24.png");
 
         getOverlay().setOpaque(false);
         getContent().setOpaque(false); // MAGIC
@@ -314,6 +321,36 @@ public class StepRenderer extends JPanelWithOverlay
                 }
             }
         }
+    }
+
+    /**
+     * Show this step in DIAGRAM mode.
+     * 
+     * @author Martin Pecka
+     */
+    class FullscreenAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -2874524093660872372L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            DiagramRenderer parent = null;
+            Container comp = StepRenderer.this;
+            while ((comp = comp.getParent()) != null) {
+                if (comp instanceof DiagramRenderer) {
+                    parent = (DiagramRenderer) comp;
+                    break;
+                }
+            }
+
+            ServiceLocator.get(OrigamiViewer.class).setDisplayMode(DisplayMode.DIAGRAM);
+            if (parent != null) {
+                parent.setStep(step);
+            }
+        }
+
     }
 
 }
