@@ -15,13 +15,10 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
@@ -179,16 +176,20 @@ public class OrigamistToolBar extends JToolBar
                     try {
                         String oldAcc = ((ResourceBundle) evt.getOldValue()).getString(bundleName + ".accelerator");
                         KeyStroke oldStroke = KeyStroke.getKeyStroke(oldAcc);
-                        if (oldStroke != null && getRootPane() != null)
-                            getRootPane().unregisterKeyboardAction(oldStroke);
+                        if (oldStroke != null) {
+                            getInputMap(WHEN_IN_FOCUSED_WINDOW).remove(oldStroke);
+                        }
                     } catch (MissingResourceException e) {}
                 }
 
                 if (accStroke != null) {
                     if ((button instanceof JMenuItem) && !(button instanceof JMenu))
                         ((JMenuItem) button).setAccelerator(accStroke);
-                    if (getRootPane() != null)
-                        getRootPane().registerKeyboardAction(action, accStroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+                    // TODO although this should enable the key shortcuts in the application-wide manner, it doesn't do
+                    // that... instead, after a key shortcut is used, the user has to click in the application in order
+                    // to be able to use another key shortcut
+                    getInputMap(WHEN_IN_FOCUSED_WINDOW).put(accStroke, action);
+                    getActionMap().put(action, action);
                 }
                 if (mnemStroke != null) {
                     button.setMnemonic(mnemStroke.getKeyCode());
@@ -208,28 +209,6 @@ public class OrigamistToolBar extends JToolBar
         };
         listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
         addPropertyChangeListener("appMessages", listener);
-
-        // it is supposed that the root pane won't be accessible in the construction time... in that case we cannot
-        // register keyboard shortcuts. So we need to try to set them any time a possibility that the root pane will
-        // be available occurs.
-        addAncestorListener(new AncestorListener() {
-            @Override
-            public void ancestorRemoved(AncestorEvent event)
-            {
-            }
-
-            @Override
-            public void ancestorMoved(AncestorEvent event)
-            {
-                listener.propertyChange(new PropertyChangeEvent(OrigamistToolBar.this, "appMessages", null, appMessages));
-            }
-
-            @Override
-            public void ancestorAdded(AncestorEvent event)
-            {
-                listener.propertyChange(new PropertyChangeEvent(OrigamistToolBar.this, "appMessages", null, appMessages));
-            }
-        });
 
         return button;
     }
