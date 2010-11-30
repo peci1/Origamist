@@ -55,7 +55,8 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
                             public void run()
                             {
                                 file.fillFromOrigami();
-                                tree.invalidate();
+                                tree.revalidate();
+                                tree.repaint(tree.getRowBounds(tree.getRowForPath(e.getPath())));
                             }
                         });
                     }
