@@ -13,6 +13,7 @@ import javax.xml.bind.MarshalException;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 
 /**
  * A class implementing this interface is able to load an origami model from XML and save
@@ -33,6 +34,17 @@ public interface OrigamiHandler
      * @throws JAXBException If JAXB initialization failed.
      */
     public void save(Origami origami, File file) throws IOException, MarshalException, JAXBException;
+
+    /**
+     * Export the given model to the given format.
+     * 
+     * @param origami The model to export.
+     * @param file The file to save the model to.
+     * @param format The format of the exported file.
+     * 
+     * @throws IOException If the export or saving fails.
+     */
+    public void export(Origami origami, File file, ExportFormat format) throws IOException;
 
     /**
      * Load the model saved in path. Always returns the model converted to the newest available schema version.

@@ -21,6 +21,7 @@ import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
@@ -35,6 +36,7 @@ import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**
@@ -80,6 +82,24 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
 
         // do the Java class->XML conversion
         m.marshal(new ObjectFactory().createOrigami(origami), file);
+    }
+
+    @Override
+    public void export(Origami origami, File file, ExportFormat format) throws IOException
+    {
+        if (ExportFormat.XML.equals(format)) {
+            try {
+                save(origami, file);
+            } catch (MarshalException e) {
+                throw new IOException(e);
+            } catch (JAXBException e) {
+                throw new IOException(e);
+            }
+        } else {
+            // TODO other export formats
+            Logger.getLogger("application").error("Unsupported export format: " + format);
+            throw new IOException("Unsupported export format: " + format);
+        }
     }
 
     @Override
