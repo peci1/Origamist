@@ -535,8 +535,8 @@ public class OrigamiViewer extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        toolbar.add(toolbar.createToolbarButton(null, "menu.zoom.in", "zoom-in.png"));
-        toolbar.add(toolbar.createToolbarButton(null, "menu.zoom.out", "zoom-out.png"));
+        toolbar.add(toolbar.createToolbarButton(new ZoomInAction(), "menu.zoom.in", "zoom-in.png"));
+        toolbar.add(toolbar.createToolbarButton(new ZoomOutAction(), "menu.zoom.out", "zoom-out.png"));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -930,6 +930,43 @@ public class OrigamiViewer extends CommonGui
                     Logger.getLogger("application").warn("Unable to export listing.", e1);
                 }
             }
+        }
+
+    }
+
+    /**
+     * Zooms all the displayed steps by 10% in.
+     * 
+     * @author Martin Pecka
+     */
+    class ZoomInAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = 2401463300217345719L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            renderer.incZoom();
+        }
+
+    }
+
+    /**
+     * Zooms all the displayed steps by 10% out.
+     * 
+     * @author Martin Pecka
+     */
+    class ZoomOutAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 6762119407937700068L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            renderer.decZoom();
         }
 
     }

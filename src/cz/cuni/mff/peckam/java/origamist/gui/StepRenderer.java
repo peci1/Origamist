@@ -81,10 +81,13 @@ public class StepRenderer extends JPanelWithOverlay
     /**
      * The canvas the model is rendered to.
      */
-    protected final JCanvas3D     canvas;
+    protected JCanvas3D           canvas;
 
     /** The mode to display this renderer in. */
     protected DisplayMode         displayMode;
+
+    /** The zoom of the step. */
+    protected double              zoom             = 100d;
 
     // COMPONENTS
 
@@ -107,9 +110,7 @@ public class StepRenderer extends JPanelWithOverlay
     {
         setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
-        canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
-        canvas.setOpaque(false);
-        canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
+        canvas = createCanvas();
 
         descLabel = new JTextArea();
         descLabel.setEditable(false);
@@ -123,8 +124,8 @@ public class StepRenderer extends JPanelWithOverlay
         toolbar.setBackground(new Color(231, 231, 184, 230));
         toolbar.setBorder(emptyBorder);
 
-        zoomIn = toolbar.createToolbarButton(null, "StepRenderer.zoom.in", "zoom-in-24.png");
-        zoomOut = toolbar.createToolbarButton(null, "StepRenderer.zoom.out", "zoom-out-24.png");
+        zoomIn = toolbar.createToolbarButton(new ZoomInAction(), "StepRenderer.zoom.in", "zoom-in-24.png");
+        zoomOut = toolbar.createToolbarButton(new ZoomOutAction(), "StepRenderer.zoom.out", "zoom-out-24.png");
         fullscreenBtn = toolbar.createToolbarButton(new FullscreenAction(), "StepRenderer.fullscreen",
                 "fullscreen-24.png");
 
@@ -163,6 +164,17 @@ public class StepRenderer extends JPanelWithOverlay
 
         getOverlay().setLayout(new FormLayout("right:pref:grow", "pref"));
         getOverlay().add(toolbar, new CellConstraints(1, 1));
+    }
+
+    /**
+     * @return The configured <code>JCanvas3D</code>.
+     */
+    protected JCanvas3D createCanvas()
+    {
+        JCanvas3D canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
+        canvas.setOpaque(false);
+        canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
+        return canvas;
     }
 
     public StepRenderer(Origami o, Step s)
@@ -232,6 +244,11 @@ public class StepRenderer extends JPanelWithOverlay
 
         ModelState state = step.getModelState();
 
+        getContent().remove(canvas);
+        canvas = createCanvas();
+        getContent().add(canvas, BorderLayout.CENTER);
+        canvas.setSize(new Dimension(20, 20));
+
         canvas.setSize(this.getWidth(), this.getHeight() - this.descLabel.getHeight());
         canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
         SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
@@ -256,7 +273,7 @@ public class StepRenderer extends JPanelWithOverlay
         Transform3D transform = new Transform3D();
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
         // TODO adjust zoom according to paper size and renderer size - this is placeholder code
-        transform.setScale(step.getZoom() / 100.0);
+        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
         UnitDimension paperSize = ((UnitDimension) origami.getModel().getPaper().getSize()).convertTo(Unit.M);
         transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
         TransformGroup tGroup = new TransformGroup();
@@ -324,6 +341,40 @@ public class StepRenderer extends JPanelWithOverlay
     }
 
     /**
+     * @return the zoom
+     */
+    public double getZoom()
+    {
+        return zoom;
+    }
+
+    /**
+     * @param zoom the zoom to set
+     */
+    public void setZoom(double zoom)
+    {
+        this.zoom = zoom;
+        // reload the step
+        setStep(step);
+    }
+
+    /**
+     * Increase zoom by 10%.
+     */
+    public void incZoom()
+    {
+        setZoom(getZoom() + 10d);
+    }
+
+    /**
+     * Decrease zoom by 10%.
+     */
+    public void decZoom()
+    {
+        setZoom(getZoom() - 10d);
+    }
+
+    /**
      * Show this step in DIAGRAM mode.
      * 
      * @author Martin Pecka
@@ -353,4 +404,41 @@ public class StepRenderer extends JPanelWithOverlay
 
     }
 
+    /**
+     * Zooms the step by 10% in.
+     * 
+     * @author Martin Pecka
+     */
+    class ZoomInAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -8216187646844261072L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            incZoom();
+        }
+
+    }
+
+    /**
+     * Zooms the step by 10% out.
+     * 
+     * @author Martin Pecka
+     */
+    class ZoomOutAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -4073236265184373224L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            decZoom();
+        }
+
+    }
 }

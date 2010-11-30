@@ -73,6 +73,9 @@ public class DiagramRenderer extends JPanelWithOverlay
     /** The actually displayed step renderers. */
     protected final List<StepRenderer>    stepRenderers       = new LinkedList<StepRenderer>();
 
+    /** The basic zoom of all StepRenderers. */
+    protected double                      zoom                = 100d;
+
     // COMPONENTS
 
     /** The label to be displayed over the renderer while it is loading. */
@@ -458,6 +461,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                                 r.setDisplayMode(getDisplayMode());
                                 diagramPane.add(r);
                                 stepRenderers.add(r);
+                                r.setZoom(zoom);
                                 r = null;
                             } else {
                                 diagramPane.add(new JPanel());
@@ -491,6 +495,43 @@ public class DiagramRenderer extends JPanelWithOverlay
                 }.start();
             }
         });
+    }
+
+    /**
+     * @return the zoom
+     */
+    public double getZoom()
+    {
+        return zoom;
+    }
+
+    /**
+     * @param zoom the zoom to set
+     */
+    public void setZoom(double zoom)
+    {
+        double zoomDelta = zoom - this.zoom;
+        this.zoom = zoom;
+        for (StepRenderer r : stepRenderers) {
+            r.setZoom(r.getZoom() + zoomDelta);
+        }
+        revalidate();
+    }
+
+    /**
+     * Increase zoom by 10%.
+     */
+    public void incZoom()
+    {
+        setZoom(getZoom() + 10d);
+    }
+
+    /**
+     * Decrease zoom by 10%.
+     */
+    public void decZoom()
+    {
+        setZoom(getZoom() - 10d);
     }
 
     /**
