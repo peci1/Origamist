@@ -453,15 +453,17 @@ public class DiagramRenderer extends JPanelWithOverlay
                         int numSteps = displayedStepsPattern.width * displayedStepsPattern.height;
                         Step step = firstStep;
                         for (int i = 0; i < numSteps; i++) {
-                            StepRenderer r = new StepRenderer(origami, step);
-                            r.setDisplayMode(getDisplayMode());
-                            diagramPane.add(r);
-                            stepRenderers.add(r);
-                            r = null;
-                            if (step.getNext() != null)
+                            if (step != null) {
+                                StepRenderer r = new StepRenderer(origami, step);
+                                r.setDisplayMode(getDisplayMode());
+                                diagramPane.add(r);
+                                stepRenderers.add(r);
+                                r = null;
+                            } else {
+                                diagramPane.add(new JPanel());
+                            }
+                            if (step != null)
                                 step = step.getNext();
-                            else
-                                break;
                         }
 
                         if (stepRenderers.size() == 0)
