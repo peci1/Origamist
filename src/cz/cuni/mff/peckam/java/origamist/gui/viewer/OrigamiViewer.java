@@ -572,7 +572,7 @@ public class OrigamiViewer extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        toolbar.add(toolbar.createToolbarButton(null, "menu.settings", "settings.png"));
+        toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
 
         getContentPane().add(toolbar, BorderLayout.NORTH);
         return toolbar;
@@ -967,6 +967,25 @@ public class OrigamiViewer extends CommonGui
         public void actionPerformed(ActionEvent e)
         {
             renderer.decZoom();
+        }
+
+    }
+
+    /**
+     * Shows the settings dialog.
+     * 
+     * @author Martin Pecka
+     */
+    class SettingsAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -583073126579360879L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            new SettingsFrame().setVisible(true);
         }
 
     }

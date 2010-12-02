@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.prefs.BackingStoreException;
 
 import javax.swing.JApplet;
 import javax.swing.SwingUtilities;
@@ -153,12 +154,18 @@ public abstract class CommonGui extends JApplet
     @Override
     public void stop()
     {
+        try {
+            ServiceLocator.get(ConfigurationManager.class).persist();
+        } catch (BackingStoreException e) {}
         super.stop();
     }
 
     @Override
     public void destroy()
     {
+        try {
+            ServiceLocator.get(ConfigurationManager.class).persist();
+        } catch (BackingStoreException e) {}
         super.destroy();
     }
 }
