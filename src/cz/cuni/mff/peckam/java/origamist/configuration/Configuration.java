@@ -45,7 +45,7 @@ public class Configuration extends PropertyChangeSource
     {
         Locale oldLocale = this.locale;
         this.locale = locale;
-        firePropertyChange("locale", locale, oldLocale);
+        firePropertyChange("locale", oldLocale, locale);
     }
 
     /**
