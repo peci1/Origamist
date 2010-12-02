@@ -251,7 +251,6 @@ public class OrigamiViewer extends CommonGui
             });
 
             createMainToolbar();
-
         } catch (UnsupportedDataFormatException e) {
             System.err.println(e); // TODO handle errors in data files
         } catch (IOException e) {

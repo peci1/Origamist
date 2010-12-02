@@ -14,12 +14,15 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Vector;
+import java.util.prefs.BackingStoreException;
 
 import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
+
+import org.apache.log4j.Logger;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
@@ -252,6 +255,11 @@ public class SettingsFrame extends JFrame
                     .setLocale((Locale) appLocaleComboBox.getSelectedItem());
             ServiceLocator.get(ConfigurationManager.class).get()
                     .setDiagramLocale((Locale) diagramLocaleComboBox.getSelectedItem());
+            try {
+                ServiceLocator.get(ConfigurationManager.class).persist();
+            } catch (BackingStoreException e1) {
+                Logger.getLogger("application").warn("Couldn't save configuration", e1);
+            }
             setVisible(false);
         }
 

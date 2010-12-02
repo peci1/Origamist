@@ -67,3 +67,12 @@ Swing components you use and you would have to override the createToolTip()
 method in all of them. Much simpler (but with some constraints) seems to
 set the tooltip as HTML and format it using CSS. You can make a single
 factory that receives the tooltip's text and returns it formatted with HTML.
+
+-----------
+
+If you make .properties localization files with non-ASCII characters, you must
+encode them as \uxxxx escape sequences. Ok. But if you make an error in the
+sequence, the localization file is ignored AND no exception is thrown! Argh!
+You can use native2ascii application (I think it is part of JDK) to convert
+Unicode files to ISO-8859-1, which is the only allowed encoding for .properties
+files. WHY??? I thought Java runs exclusively on Unicode. Nope. 
