@@ -186,15 +186,14 @@ public class DiagramRenderer extends JPanelWithOverlay
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
                 .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
 
-        firstButtonPage = toolbar.createToolbarButton(new FirstPageAction(), "DiagramRenderer.first.page",
+        firstButtonPage = toolbar.createToolbarButton(new FirstAction(), "DiagramRenderer.first.page",
                 "first-page-24.png");
-        firstButtonDiagram = toolbar.createToolbarButton(new FirstStepAction(), "DiagramRenderer.first.diagram",
+        firstButtonDiagram = toolbar.createToolbarButton(new FirstAction(), "DiagramRenderer.first.diagram",
                 "first-page-24.png");
         firstButtonDiagram.setVisible(false);
 
-        prevButtonPage = toolbar.createToolbarButton(new PrevPageAction(), "DiagramRenderer.prev.page",
-                "prev-page-24.png");
-        prevButtonDiagram = toolbar.createToolbarButton(new PrevStepAction(), "DiagramRenderer.prev.diagram",
+        prevButtonPage = toolbar.createToolbarButton(new PrevAction(), "DiagramRenderer.prev.page", "prev-page-24.png");
+        prevButtonDiagram = toolbar.createToolbarButton(new PrevAction(), "DiagramRenderer.prev.diagram",
                 "prev-page-24.png");
         prevButtonDiagram.setVisible(false);
 
@@ -203,15 +202,13 @@ public class DiagramRenderer extends JPanelWithOverlay
         pageSelect.setBackground(new Color(244, 244, 224));
         pageSelect.setAction(new PageSelectAction());
 
-        nextButtonPage = toolbar.createToolbarButton(new NextPageAction(), "DiagramRenderer.next.page",
-                "next-page-24.png");
-        nextButtonDiagram = toolbar.createToolbarButton(new NextStepAction(), "DiagramRenderer.next.diagram",
+        nextButtonPage = toolbar.createToolbarButton(new NextAction(), "DiagramRenderer.next.page", "next-page-24.png");
+        nextButtonDiagram = toolbar.createToolbarButton(new NextAction(), "DiagramRenderer.next.diagram",
                 "next-page-24.png");
         nextButtonDiagram.setVisible(false);
 
-        lastButtonPage = toolbar.createToolbarButton(new LastPageAction(), "DiagramRenderer.last.page",
-                "last-page-24.png");
-        lastButtonDiagram = toolbar.createToolbarButton(new LastStepAction(), "DiagramRenderer.last.diagram",
+        lastButtonPage = toolbar.createToolbarButton(new LastAction(), "DiagramRenderer.last.page", "last-page-24.png");
+        lastButtonDiagram = toolbar.createToolbarButton(new LastAction(), "DiagramRenderer.last.diagram",
                 "last-page-24.png");
         lastButtonDiagram.setVisible(false);
 
@@ -574,11 +571,11 @@ public class DiagramRenderer extends JPanelWithOverlay
     }
 
     /**
-     * Sets the first step as the step to be displayed.
+     * Sets the first step/page as the step/page to be displayed.
      * 
      * @author Martin Pecka
      */
-    class FirstStepAction extends AbstractAction
+    class FirstAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -4456533603941034141L;
@@ -586,28 +583,22 @@ public class DiagramRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
+            if (getDisplayMode().equals(DisplayMode.DIAGRAM) && !firstButtonDiagram.isEnabled())
+                return;
+            else if (getDisplayMode().equals(DisplayMode.PAGE) && !firstButtonPage.isEnabled())
+                return;
+
             setStep(origami.getModel().getSteps().getStep().get(0));
             updateDisplayedSteps();
         }
     }
 
     /**
-     * Sets the first page as the page to be displayed.
+     * Sets the last step/page as the step/page to be displayed.
      * 
      * @author Martin Pecka
      */
-    class FirstPageAction extends FirstStepAction
-    {
-        /** */
-        private static final long serialVersionUID = -1982022453581416764L;
-    }
-
-    /**
-     * Sets the last step as the step to be displayed.
-     * 
-     * @author Martin Pecka
-     */
-    class LastStepAction extends AbstractAction
+    class LastAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -4456533603941034141L;
@@ -615,40 +606,30 @@ public class DiagramRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            setStep(origami.getModel().getSteps().getStep().get(origami.getModel().getSteps().getStep().size() - 1));
+            if (getDisplayMode().equals(DisplayMode.DIAGRAM)) {
+                if (!lastButtonDiagram.isEnabled())
+                    return;
+                setStep(origami.getModel().getSteps().getStep().get(origami.getModel().getSteps().getStep().size() - 1));
+            } else {
+                if (!lastButtonPage.isEnabled())
+                    return;
+                int numSteps = origami.getModel().getSteps().getStep().size();
+                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
+                int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
+                int stepIndex = stepsPerPage * numPages;
+
+                setStep(origami.getModel().getSteps().getStep().get(stepIndex));
+            }
             updateDisplayedSteps();
         }
     }
 
     /**
-     * Sets the last page as the page to be displayed.
+     * Sets the previous step/page as the step/page to be displayed.
      * 
      * @author Martin Pecka
      */
-    class LastPageAction extends AbstractAction
-    {
-        /** */
-        private static final long serialVersionUID = -4456533603941034141L;
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            int numSteps = origami.getModel().getSteps().getStep().size();
-            int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-            int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
-            int stepIndex = stepsPerPage * numPages;
-
-            setStep(origami.getModel().getSteps().getStep().get(stepIndex));
-            updateDisplayedSteps();
-        }
-    }
-
-    /**
-     * Sets the previous step as the step to be displayed.
-     * 
-     * @author Martin Pecka
-     */
-    class PrevStepAction extends AbstractAction
+    class PrevAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -7796794346643659044L;
@@ -656,20 +637,35 @@ public class DiagramRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int index = origami.getModel().getSteps().getStep().indexOf(firstStep);
-            if (index > 0) {
-                setStep(origami.getModel().getSteps().getStep().get(index - 1));
-                updateDisplayedSteps();
+            if (getDisplayMode().equals(DisplayMode.DIAGRAM)) {
+                if (!prevButtonDiagram.isEnabled())
+                    return;
+                int index = origami.getModel().getSteps().getStep().indexOf(firstStep);
+                if (index > 0) {
+                    setStep(origami.getModel().getSteps().getStep().get(index - 1));
+                    updateDisplayedSteps();
+                }
+            } else {
+                if (!prevButtonPage.isEnabled())
+                    return;
+                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
+                int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
+                int pageIndex = (stepIndex - 1) / stepsPerPage;
+
+                if (pageIndex > 0) {
+                    setStep(origami.getModel().getSteps().getStep().get((pageIndex - 1) * stepsPerPage));
+                    updateDisplayedSteps();
+                }
             }
         }
     }
 
     /**
-     * Sets the next step as the step to be displayed.
+     * Sets the next step/page as the step/page to be displayed.
      * 
      * @author Martin Pecka
      */
-    class NextStepAction extends AbstractAction
+    class NextAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = 6137420423152101455L;
@@ -677,62 +673,30 @@ public class DiagramRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int index = origami.getModel().getSteps().getStep().indexOf(firstStep);
-            if (index < origami.getModel().getSteps().getStep().size() - 1) {
-                setStep(origami.getModel().getSteps().getStep().get(index + 1));
-                updateDisplayedSteps();
+            if (getDisplayMode().equals(DisplayMode.DIAGRAM)) {
+                if (!nextButtonDiagram.isEnabled())
+                    return;
+                int index = origami.getModel().getSteps().getStep().indexOf(firstStep);
+                if (index < origami.getModel().getSteps().getStep().size() - 1) {
+                    setStep(origami.getModel().getSteps().getStep().get(index + 1));
+                    updateDisplayedSteps();
+                }
+            } else {
+                if (!nextButtonPage.isEnabled())
+                    return;
+                int numSteps = origami.getModel().getSteps().getStep().size();
+                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
+                int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
+
+                int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
+                int pageIndex = (stepIndex - 1) / stepsPerPage;
+
+                if (pageIndex < numPages) {
+                    setStep(origami.getModel().getSteps().getStep().get((pageIndex + 1) * stepsPerPage));
+                    updateDisplayedSteps();
+                }
             }
         }
     }
 
-    /**
-     * Sets the previous page as the page to be displayed.
-     * 
-     * @author Martin Pecka
-     */
-    class PrevPageAction extends AbstractAction
-    {
-        /** */
-        private static final long serialVersionUID = 7778392419275428696L;
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-            int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-            int pageIndex = (stepIndex - 1) / stepsPerPage;
-
-            if (pageIndex > 0) {
-                setStep(origami.getModel().getSteps().getStep().get((pageIndex - 1) * stepsPerPage));
-                updateDisplayedSteps();
-            }
-        }
-    }
-
-    /**
-     * Sets the next page as the page to be displayed.
-     * 
-     * @author Martin Pecka
-     */
-    class NextPageAction extends AbstractAction
-    {
-        /** */
-        private static final long serialVersionUID = -28507997421822068L;
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            int numSteps = origami.getModel().getSteps().getStep().size();
-            int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-            int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
-
-            int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-            int pageIndex = (stepIndex - 1) / stepsPerPage;
-
-            if (pageIndex < numPages) {
-                setStep(origami.getModel().getSteps().getStep().get((pageIndex + 1) * stepsPerPage));
-                updateDisplayedSteps();
-            }
-        }
-    }
 }
