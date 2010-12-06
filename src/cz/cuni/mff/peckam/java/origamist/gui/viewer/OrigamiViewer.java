@@ -231,7 +231,6 @@ public class OrigamiViewer extends CommonGui
                 displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
             }
 
-            // TODO remove testing stuff and put some more meaningful code
             renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
                     .get(0));
             renderer.setPreferredSize(new Dimension(500, 500));
@@ -252,9 +251,10 @@ public class OrigamiViewer extends CommonGui
 
             createMainToolbar();
         } catch (UnsupportedDataFormatException e) {
-            System.err.println(e); // TODO handle errors in data files
+            Logger.getLogger("viewer").fatal(
+                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel"), e);
         } catch (IOException e) {
-            System.err.println(e); // TODO handle IO errors
+            Logger.getLogger("viewer").fatal(appMessages.getString("excpetion.IOException.loadModel"), e);
         } catch (IllegalArgumentException e) {
             Logger.getLogger("viewer").fatal(e.getMessage(), e);
         }

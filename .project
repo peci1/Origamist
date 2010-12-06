@@ -18,12 +18,21 @@
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1289130858033</id>
+			<id>1291666548989</id>
 			<name></name>
 			<type>6</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*descript.dat</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1291666568513</id>
+			<name></name>
+			<type>26</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-.git</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>
