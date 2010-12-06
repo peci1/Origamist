@@ -40,7 +40,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 import cz.cuni.mff.peckam.java.origamist.utils.URIAdapter;
 
 /**
- * Loads an origami model from XML file using JAXB.
+ * Loads an origami model from XML file using JAXB and vice versa.
  * 
  * The code is inspired by partial-unmarshalling example in JAXB section of JWSDP.
  * 
@@ -76,7 +76,7 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
         // enable indenting and newline generation
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
-        // make URLs in the listing relative to the location we save the listing to
+        // make URLs in the listing relative to the location we save the model to
         m.setAdapter(new URIAdapter());
         m.getAdapter(URIAdapter.class).setRelativeBase(file.getParentFile().toURI());
 

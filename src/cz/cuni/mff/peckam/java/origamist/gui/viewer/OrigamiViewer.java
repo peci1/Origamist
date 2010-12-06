@@ -14,6 +14,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
@@ -853,7 +854,7 @@ public class OrigamiViewer extends CommonGui
                     OrigamiViewer.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
                     JOptionPane.showMessageDialog(getRootPane(),
                             OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("exportSuccessful.title"), JOptionPane.ERROR_MESSAGE, null);
+                            appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE, null);
                 } catch (IOException e1) {
                     OrigamiViewer.this.format.applyPattern(appMessages.getString("failedToExport.message"));
                     JOptionPane.showMessageDialog(getRootPane(),
@@ -880,7 +881,41 @@ public class OrigamiViewer extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            // TODO ask to user for the base of the relative URLs in the listing
+            // ask the user for the base URI for URL relativization
+            boolean relativeBaseCorrect = false;
+            URI relativeBase = null;
+            URI modelRelativeBase = null;
+            try {
+                // if you would just use URL.toString(), URL encoding would be performed on non-ASCII characters in the
+                // path, which we don't want to happen
+                modelRelativeBase = new File(ServiceLocator.get(OrigamiHandler.class).getDocumentBase().toURI())
+                        .getParentFile().toURI();
+            } catch (URISyntaxException e2) {}
+            String defaultPath = (modelRelativeBase != null ? modelRelativeBase.toString() : null);
+
+            while (!relativeBaseCorrect) {
+                String base = (String) JOptionPane.showInputDialog(rootPane,
+                        appMessages.getString("exportListing.selectBase"),
+                        appMessages.getString("exportListing.selectBase.title"), JOptionPane.QUESTION_MESSAGE, null,
+                        null, defaultPath);
+                if (base == null) {
+                    // relativeBase = null; // is already done
+                    relativeBaseCorrect = true;
+                } else {
+                    defaultPath = base;
+                    try {
+                        relativeBase = new URI(base);
+                        relativeBaseCorrect = true;
+                    } catch (URISyntaxException e1) {
+                        JOptionPane.showMessageDialog(rootPane,
+                                appMessages.getString("exportListing.selectBase.invalidURI"),
+                                appMessages.getString("exportListing.selectBase.invalidURI.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+
+            // ask the user for the file name
             JFileChooser chooser = new JFileChooser();
             chooser.setFileFilter(new FileNameExtensionFilter("listing.xml", "xml"));
             chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -910,14 +945,14 @@ public class OrigamiViewer extends CommonGui
 
                 try {
                     try {
-                        ServiceLocator.get(ListingHandler.class).export(filesToDisplay, f);
+                        ServiceLocator.get(ListingHandler.class).export(filesToDisplay, f, relativeBase,
+                                modelRelativeBase);
                         OrigamiViewer.this.format
                                 .applyPattern(appMessages.getString("exportListingSuccessful.message"));
-                        JOptionPane
-                                .showMessageDialog(getRootPane(),
-                                        OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                                        appMessages.getString("exportListingSuccessful.title"),
-                                        JOptionPane.ERROR_MESSAGE, null);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                OrigamiViewer.this.format.format(new Object[] { f.toString() }),
+                                appMessages.getString("exportListingSuccessful.title"),
+                                JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (JAXBException e1) {
                         throw new IOException(e1);
                     }
@@ -930,7 +965,6 @@ public class OrigamiViewer extends CommonGui
                 }
             }
         }
-
     }
 
     /**

@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.services;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -50,6 +51,13 @@ public class JAXBListingHandler extends Service implements ListingHandler
     @Override
     public void export(Listing listing, File file) throws IOException, MarshalException, JAXBException
     {
+        export(listing, file, null, null);
+    }
+
+    @Override
+    public void export(Listing listing, File file, URI relativeBase, URI currentBase) throws IOException,
+            MarshalException, JAXBException
+    {
         if (!file.exists())
             file.createNewFile();
         if (!file.isFile())
@@ -65,7 +73,12 @@ public class JAXBListingHandler extends Service implements ListingHandler
 
         // make URLs in the listing relative to the location we save the listing to
         m.setAdapter(new URIAdapter());
-        m.getAdapter(URIAdapter.class).setRelativeBase(file.getParentFile().toURI());
+        m.getAdapter(URIAdapter.class).setCurrentBase(currentBase);
+        if (relativeBase == null) {
+            m.getAdapter(URIAdapter.class).setRelativeBase(file.getParentFile().toURI());
+        } else {
+            m.getAdapter(URIAdapter.class).setRelativeBase(relativeBase);
+        }
 
         // do the Java class->XML conversion
         m.marshal(new ObjectFactory().createListing(listing), file);
