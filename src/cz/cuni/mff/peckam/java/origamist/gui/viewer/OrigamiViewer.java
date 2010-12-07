@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
 import java.applet.AppletContext;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -53,6 +52,8 @@ import javax.xml.bind.JAXBException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.util.DefaultUnitConverter;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
@@ -161,11 +162,20 @@ public class OrigamiViewer extends CommonGui
     /** The list of files that were recognized at startup. */
     protected JTree           fileListing                 = null;
 
+    /** The scroll pane containing the file listing. */
+    protected JScrollPane     fileListingScrollPane       = null;
+
     /** If true, show the sidebar with open files. Do not access directly, use setter/getter. */
     protected boolean         showFileListing             = false;
 
     /** The renderer used to render the diagrams. */
     protected DiagramRenderer renderer                    = null;
+
+    /** The panel that shows info about the model. */
+    protected ModelInfoPanel  modelInfo                   = null;
+
+    /** The main menu component. */
+    protected JComponent      mainToolbar                 = null;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
     protected JApplet         bootstrap                   = null;
@@ -217,10 +227,18 @@ public class OrigamiViewer extends CommonGui
             // we intentionally add the selection listener just after the first selection has been performed
             fileListing.addTreeSelectionListener(new ListingTreeSelectionListener());
 
-            JScrollPane listingPane = new JScrollPane(fileListing);
-            listingPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(170,
-                    fileListing), 0));
-            getContentPane().add(listingPane, BorderLayout.WEST);
+            modelInfo = new ModelInfoPanel(displayedOrigami);
+            addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    modelInfo.setOrigami(displayedOrigami);
+                }
+            });
+
+            fileListingScrollPane = new JScrollPane(fileListing);
+            fileListingScrollPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(
+                    170, fileListing), 0));
 
             if (toSelect != null && wasFound) {
                 displayedOrigami = ((cz.cuni.mff.peckam.java.origamist.files.File) toSelect.getUserObject())
@@ -235,7 +253,6 @@ public class OrigamiViewer extends CommonGui
             renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
                     .get(0));
             renderer.setPreferredSize(new Dimension(500, 500));
-            getContentPane().add(renderer, BorderLayout.CENTER);
             addPropertyChangeListener("displayMode", new PropertyChangeListener() {
                 @Override
                 public void propertyChange(final PropertyChangeEvent evt)
@@ -250,7 +267,7 @@ public class OrigamiViewer extends CommonGui
                 }
             });
 
-            createMainToolbar();
+            mainToolbar = createMainToolbar();
         } catch (UnsupportedDataFormatException e) {
             Logger.getLogger("viewer").fatal(
                     appMessages.getString("exception.UnsupportedDataFormatException.loadModel"), e);
@@ -268,7 +285,13 @@ public class OrigamiViewer extends CommonGui
     @Override
     protected void buildLayout()
     {
-
+        Container pane = getContentPane();
+        pane.setLayout(new FormLayout("pref,pref:grow", "pref,fill:default:grow,pref"));
+        CellConstraints cc = new CellConstraints();
+        pane.add(mainToolbar, cc.xyw(1, 1, 2));
+        pane.add(fileListingScrollPane, cc.xy(1, 2));
+        pane.add(modelInfo, cc.xy(1, 3));
+        pane.add(renderer, cc.xywh(2, 2, 1, 2));
     }
 
     /**
@@ -574,7 +597,6 @@ public class OrigamiViewer extends CommonGui
 
         toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
 
-        getContentPane().add(toolbar, BorderLayout.NORTH);
         return toolbar;
     }
 
@@ -660,8 +682,22 @@ public class OrigamiViewer extends CommonGui
     {
         Origami oldVal = this.displayedOrigami;
         this.displayedOrigami = displayedOrigami;
-        this.firePropertyChange("displayedOrigami", oldVal, displayedOrigami);
+        this.firePropertyChangeEvenIfNewValIsEqual("displayedOrigami", oldVal, displayedOrigami);
         renderer.setOrigami(displayedOrigami);
+    }
+
+    /**
+     * Fires the property changed event even if the new value <code>.equals()</code> the old value.
+     * 
+     * @param property The property name.
+     * @param oldVal Old value.
+     * @param newVal New value.
+     */
+    protected void firePropertyChangeEvenIfNewValIsEqual(String property, Object oldVal, Object newVal)
+    {
+        for (PropertyChangeListener l : getPropertyChangeListeners(property)) {
+            l.propertyChange(new PropertyChangeEvent(this, property, oldVal, newVal));
+        }
     }
 
     @Override
