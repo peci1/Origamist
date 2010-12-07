@@ -823,6 +823,8 @@ public class OrigamiViewer extends CommonGui
         public void actionPerformed(ActionEvent e)
         {
             JFileChooser chooser = new JFileChooser();
+            File defaultFile = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
+            chooser.setCurrentDirectory(defaultFile);
             chooser.setFileFilter(new FileNameExtensionFilter("*." + format.toString().toLowerCase(), format.toString()));
             chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             chooser.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -838,6 +840,7 @@ public class OrigamiViewer extends CommonGui
                 if (!chooser.accept(f)) {
                     f = new File(f.toString() + "." + format.toString().toLowerCase());
                 }
+                ServiceLocator.get(ConfigurationManager.class).get().setLastExportPath(f);
 
                 if (f.exists()) {
                     OrigamiViewer.this.format.applyPattern(appMessages.getString("exportDialog.overwrite"));
@@ -917,6 +920,9 @@ public class OrigamiViewer extends CommonGui
 
             // ask the user for the file name
             JFileChooser chooser = new JFileChooser();
+            File defaultDir = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
+            File defaultFile = new File(defaultDir, "listing.xml");
+            chooser.setSelectedFile(defaultFile);
             chooser.setFileFilter(new FileNameExtensionFilter("listing.xml", "xml"));
             chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             chooser.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -929,8 +935,9 @@ public class OrigamiViewer extends CommonGui
                     KeyStroke.getKeyStroke("alt " + appMessages.getString("exportListingDialog.approve.mnemonic"))));
             if (chooser.showDialog(OrigamiViewer.this, null) == JFileChooser.APPROVE_OPTION) {
                 File f = chooser.getSelectedFile();
+                ServiceLocator.get(ConfigurationManager.class).get().setLastExportPath(f);
                 if (!chooser.accept(f)) {
-                    f = new File(f.toString() + "." + format.toString().toLowerCase());
+                    f = new File(f, "listing.xml");
                 }
 
                 if (f.exists()) {

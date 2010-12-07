@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.configuration;
 
+import java.io.File;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -36,11 +37,13 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
 
         Locale locale = null;
         Locale diagramLocale = null;
+        File lastExportPath = null;
 
         try {
             prefs = Preferences.userNodeForPackage(ConfigurationManager.class);
             locale = LocaleConverter.parse(prefs.get("locale", null));
             diagramLocale = LocaleConverter.parse(prefs.get("diagramLocale", null));
+            lastExportPath = new File(prefs.get("lastExportPath", System.getProperty("user.dir")));
         } catch (SecurityException e) {
             System.err
                     .println("Couldn't load configuration because of security constraints. Using default configuration.");
@@ -54,6 +57,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         if (diagramLocale == null)
             diagramLocale = Locale.getDefault();
         configuration.setDiagramLocale(diagramLocale);
+
+        configuration.setLastExportPath(lastExportPath);
     }
 
     @Override
@@ -75,6 +80,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
 
         tmp = LocaleConverter.print(configuration.getDiagramLocale());
         prefs.put("diagramLocale", tmp == null ? "" : tmp);
+
+        prefs.put("lastExportPath", configuration.getLastExportPath().toString());
 
         prefs.flush();
     }

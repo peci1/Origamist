@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.configuration;
 
+import java.io.File;
 import java.util.Locale;
 
 import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
@@ -13,6 +14,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
  * Properties that fire PropertyChangeEvent when they are changed:
  * locale
  * diagramLocale
+ * lastExportPath
  * 
  * @author Martin Pecka
  */
@@ -22,13 +24,16 @@ public class Configuration extends PropertyChangeSource
     /**
      * General locale of the program.
      */
-    protected Locale locale        = Locale.getDefault();
+    protected Locale locale         = Locale.getDefault();
 
     /**
      * The preferred locale for diagrams. If null, means that it is the same as
      * locale.
      */
-    protected Locale diagramLocale = null;
+    protected Locale diagramLocale  = null;
+
+    /** The path that was last used for exporting a model/listing. */
+    protected File   lastExportPath = null;
 
     /**
      * @return the locale
@@ -64,6 +69,25 @@ public class Configuration extends PropertyChangeSource
         Locale oldLocale = this.diagramLocale;
         this.diagramLocale = diagramLocale;
         firePropertyChange("diagramLocale", oldLocale, diagramLocale);
+    }
+
+    /**
+     * @return the lastExportPath
+     */
+    public File getLastExportPath()
+    {
+        return lastExportPath;
+    }
+
+    /**
+     * @param lastExportPath the lastExportPath to set
+     */
+    public void setLastExportPath(File lastExportPath)
+    {
+        System.err.println(lastExportPath);
+        File oldPath = this.lastExportPath;
+        this.lastExportPath = lastExportPath;
+        firePropertyChange("lastExportPath", oldPath, lastExportPath);
     }
 
 }
