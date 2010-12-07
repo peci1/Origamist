@@ -84,7 +84,6 @@ public class Configuration extends PropertyChangeSource
      */
     public void setLastExportPath(File lastExportPath)
     {
-        System.err.println(lastExportPath);
         File oldPath = this.lastExportPath;
         this.lastExportPath = lastExportPath;
         firePropertyChange("lastExportPath", oldPath, lastExportPath);
