@@ -3,9 +3,16 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.MessageFormat;
 import java.util.Hashtable;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * This class provides additional functionality of the Unit enum.
@@ -22,6 +29,9 @@ public class UnitHelper
      */
     protected static Hashtable<Unit, Double> inMeters = new Hashtable<Unit, Double>();
 
+    /** The resource bundle for getting the unit names. */
+    private static ResourceBundle            messages;
+
     static {
         inMeters.put(Unit.MM, 0.001);
         inMeters.put(Unit.CM, 0.01);
@@ -31,6 +41,17 @@ public class UnitHelper
         inMeters.put(Unit.INCH, 0.0254);
         inMeters.put(Unit.FOOT, 0.3048);
         inMeters.put(Unit.MILE, 1609.344);
+
+        PropertyChangeListener l = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                messages = ResourceBundle.getBundle("application", (Locale) evt.getNewValue());
+            }
+        };
+        ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", l);
+        l.propertyChange(new PropertyChangeEvent(null, "locale", null, ServiceLocator.get(ConfigurationManager.class)
+                .get().getLocale()));
     }
 
     /**
@@ -77,5 +98,52 @@ public class UnitHelper
             return null;
         }
 
+    }
+
+    /**
+     * Return the human-friendly name of the unit (eg. <code>mile</code> or <code>meter</code>).
+     * 
+     * @param unit The unit to get the name of.
+     * @return The human-friendly name of the unit (eg. <code>mile</code> or <code>meter</code>).
+     */
+    public static String getUnitName(Unit unit)
+    {
+        return messages.getString("units." + unit.toString());
+    }
+
+    /**
+     * Return the mark (abbreviation) of the unit (eg. <code>mm</code> or <code>″</code>).
+     * 
+     * @param unit The unit to get the mark of.
+     * @return The mark (abbreviation) of the unit (eg. <code>mm</code> or <code>″</code>).
+     */
+    public static String getUnitMark(Unit unit)
+    {
+        return messages.getString("units." + unit.toString() + ".mark");
+    }
+
+    /**
+     * Return the description of the unit.
+     * 
+     * The description would usually contain the name and the mark of the unit.
+     * 
+     * @param unit The unit to get the description of.
+     * @return The description of the unit.
+     */
+    public static String getUnitDescription(Unit unit)
+    {
+        return getUnitName(unit) + " (" + getUnitMark(unit) + ")";
+    }
+
+    /**
+     * Return the formatted string that contains the given value and the unit's mark.
+     * 
+     * @param unit The unit to use.
+     * @param value The value to display.
+     * @return The formatted string that contains the given value and the unit's mark.
+     */
+    public static String formatUnit(Unit unit, double value)
+    {
+        return MessageFormat.format(messages.getString("units." + unit.toString() + ".format"), new Double(value));
     }
 }
