@@ -3,6 +3,8 @@
  */
 package javax.swing.origamist;
 
+import java.util.IllegalFormatException;
+
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
@@ -22,8 +24,11 @@ public class JLocalizedLabel extends JLabel
     /** The localized string to display. */
     protected LocalizedString string;
 
-    /** The string to be appended after the localized string. */
-    protected String          stringToAppend   = "";
+    /**
+     * The string to be used in String.format() with the localized string as the 1st argument. If <code>null</code> or
+     * not a valid one-argument pattern, only the localized string is shown.
+     */
+    protected String          stringFormat     = null;
 
     /**
      * Creates a <code>JLocalizedLabel</code> instance with the specified localized text, image, and horizontal
@@ -127,16 +132,17 @@ public class JLocalizedLabel extends JLabel
      * All constructors refer to this one.
      * 
      * @param string The localized string to display.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      * @param icon The image to be displayed by the label.
      * @param horizontalAlignment One of the following constants
      *            defined in <code>SwingConstants</code>: <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>,
      *            <code>LEADING</code> or <code>TRAILING</code>.
      */
-    public JLocalizedLabel(LocalizedString string, String stringToAppend, Icon icon, int horizontalAlignment)
+    public JLocalizedLabel(LocalizedString string, String stringFormat, Icon icon, int horizontalAlignment)
     {
         this(string, icon, horizontalAlignment);
-        this.setStringToAppend(stringToAppend);
+        this.setStringFormat(stringFormat);
     }
 
     /**
@@ -144,14 +150,15 @@ public class JLocalizedLabel extends JLabel
      * The label is centered vertically in its display area.
      * 
      * @param string The localized string to display.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      * @param horizontalAlignment One of the following constants
      *            defined in <code>SwingConstants</code>: <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>,
      *            <code>LEADING</code> or <code>TRAILING</code>.
      */
-    public JLocalizedLabel(LocalizedString string, String stringToAppend, int horizontalAlignment)
+    public JLocalizedLabel(LocalizedString string, String stringFormat, int horizontalAlignment)
     {
-        this(string, stringToAppend, null, horizontalAlignment);
+        this(string, stringFormat, null, horizontalAlignment);
     }
 
     /**
@@ -159,11 +166,12 @@ public class JLocalizedLabel extends JLabel
      * The label is aligned against the leading edge of its display area, and centered vertically.
      * 
      * @param string The localized string to display.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      */
-    public JLocalizedLabel(LocalizedString string, String stringToAppend)
+    public JLocalizedLabel(LocalizedString string, String stringFormat)
     {
-        this(string, stringToAppend, null, LEADING);
+        this(string, stringFormat, null, LEADING);
     }
 
     /**
@@ -175,15 +183,16 @@ public class JLocalizedLabel extends JLabel
      * @param bundleName The name of the resource bundle (the bundle will be retrieved by calling
      *            <code>ResourceBundle.getBundle(bundleName, locale)</code>)
      * @param key The key to search for in the resource bundle.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      * @param icon The image to be displayed by the label.
      * @param horizontalAlignment One of the following constants
      *            defined in <code>SwingConstants</code>: <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>,
      *            <code>LEADING</code> or <code>TRAILING</code>.
      */
-    public JLocalizedLabel(String bundleName, String key, String stringToAppend, Icon icon, int horizontalAlignment)
+    public JLocalizedLabel(String bundleName, String key, String stringFormat, Icon icon, int horizontalAlignment)
     {
-        this(new LocalizedString(bundleName, key), stringToAppend, icon, horizontalAlignment);
+        this(new LocalizedString(bundleName, key), stringFormat, icon, horizontalAlignment);
     }
 
     /**
@@ -193,14 +202,15 @@ public class JLocalizedLabel extends JLabel
      * @param bundleName The name of the resource bundle (the bundle will be retrieved by calling
      *            <code>ResourceBundle.getBundle(bundleName, locale)</code>)
      * @param key The key to search for in the resource bundle.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      * @param horizontalAlignment One of the following constants
      *            defined in <code>SwingConstants</code>: <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>,
      *            <code>LEADING</code> or <code>TRAILING</code>.
      */
-    public JLocalizedLabel(String bundleName, String key, String stringToAppend, int horizontalAlignment)
+    public JLocalizedLabel(String bundleName, String key, String stringFormat, int horizontalAlignment)
     {
-        this(new LocalizedString(bundleName, key), stringToAppend, null, horizontalAlignment);
+        this(new LocalizedString(bundleName, key), stringFormat, null, horizontalAlignment);
     }
 
     /**
@@ -210,11 +220,12 @@ public class JLocalizedLabel extends JLabel
      * @param bundleName The name of the resource bundle (the bundle will be retrieved by calling
      *            <code>ResourceBundle.getBundle(bundleName, locale)</code>)
      * @param key The key to search for in the resource bundle.
-     * @param stringToAppend The string to be appended after the localized text.
+     * @param stringFormat The string to be used in String.format() with the localized string as the 1st argument. If
+     *            <code>null</code> or not a valid one-argument pattern, only the localized string is shown.
      */
-    public JLocalizedLabel(String bundleName, String key, String stringToAppend)
+    public JLocalizedLabel(String bundleName, String key, String stringFormat)
     {
-        this(new LocalizedString(bundleName, key), stringToAppend, null, LEADING);
+        this(new LocalizedString(bundleName, key), stringFormat, null, LEADING);
     }
 
     @Override
@@ -222,7 +233,11 @@ public class JLocalizedLabel extends JLabel
     {
         if (string == null)
             return "";
-        return string.toString() + stringToAppend;
+        try {
+            return stringFormat == null ? string.toString() : String.format(stringFormat, string.toString());
+        } catch (IllegalFormatException e) {
+            return string.toString();
+        }
     }
 
     @Override
@@ -250,19 +265,19 @@ public class JLocalizedLabel extends JLabel
     }
 
     /**
-     * @return the stringToAppend
+     * @return the stringFormat
      */
-    public String getStringToAppend()
+    public String getStringFormat()
     {
-        return stringToAppend;
+        return stringFormat;
     }
 
     /**
-     * @param stringToAppend the stringToAppend to set
+     * @param stringFormat the stringFormat to set
      */
-    public void setStringToAppend(String stringToAppend)
+    public void setStringFormat(String stringFormat)
     {
-        this.stringToAppend = stringToAppend;
+        this.stringFormat = stringFormat;
     }
 
 }
