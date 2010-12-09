@@ -124,7 +124,7 @@ public class TooltipFactory extends Service
         StringBuilder result = new StringBuilder();
         String innerText = text.trim();
         // encode HTML entities if the given text isn't HTML yet
-        if (!text.substring(0, 6).toLowerCase().startsWith("<html>")) {
+        if (!text.substring(0, Math.min(text.length(), 6)).toLowerCase().startsWith("<html>")) {
             innerText = innerText.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
         } else {
             innerText = innerText.substring(6).replaceAll("</html>$", "");
