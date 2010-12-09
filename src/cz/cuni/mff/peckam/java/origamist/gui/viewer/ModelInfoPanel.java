@@ -139,7 +139,7 @@ public class ModelInfoPanel extends JHideablePanel
      */
     protected void buildLayout()
     {
-        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("min(default;60dlu),$lcgap,min(default;85dlu)"),
+        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("min(default;60dlu),$lcgap,min(default;100dlu)"),
                 content);
         b.append(nameDesc);
         b.append(name);

@@ -286,7 +286,7 @@ public class OrigamiViewer extends CommonGui
     protected void buildLayout()
     {
         Container pane = getContentPane();
-        pane.setLayout(new FormLayout("min(pref;150dlu),pref:grow", "pref,fill:default:grow,pref"));
+        pane.setLayout(new FormLayout("min(pref;200dlu),pref:grow", "pref,fill:default:grow,pref"));
         CellConstraints cc = new CellConstraints();
         pane.add(mainToolbar, cc.xyw(1, 1, 2));
         pane.add(fileListingScrollPane, cc.xy(1, 2));
