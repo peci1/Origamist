@@ -198,7 +198,7 @@ public class ModelState implements Cloneable
             linesCount += fold.lines.size();
         }
 
-        UnitDimension paperSize = (UnitDimension) origami.getModel().getPaper().getSize();
+        UnitDimension paperSize = origami.getModel().getPaper().getSize();
         double ratio = UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
 
         foldLineArray = new LineArray(2 * linesCount, GeometryArray.COORDINATES | GeometryArray.COLOR_4);
@@ -257,7 +257,7 @@ public class ModelState implements Cloneable
         trianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
         inverseTrianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
 
-        UnitDimension paperSize = (UnitDimension) origami.getModel().getPaper().getSize();
+        UnitDimension paperSize = origami.getModel().getPaper().getSize();
         double ratio = 1.0 / UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
 
         int i = 0;

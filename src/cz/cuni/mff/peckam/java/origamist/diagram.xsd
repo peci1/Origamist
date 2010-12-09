@@ -7,7 +7,7 @@
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/"> 
  
 	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/" schemaLocation="common.xsd"/>
- 
+  
 	<annotation>  
 		<appinfo>			
 			<jxb:schemaBindings>

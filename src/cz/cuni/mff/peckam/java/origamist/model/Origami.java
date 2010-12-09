@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
-import cz.cuni.mff.peckam.java.origamist.model.jaxb.DiagramPaper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -113,8 +112,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addName(Locale l, String name)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);
@@ -148,8 +146,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addShortDesc(Locale l, String desc)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.shortdesc.add(s);
@@ -183,8 +180,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addDescription(Locale l, String desc)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.description.add(s);
@@ -252,9 +248,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     @Override
-    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.jaxb.Author value)
+    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.Author value)
     {
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.Author oldValue = getAuthor();
+        cz.cuni.mff.peckam.java.origamist.common.Author oldValue = getAuthor();
         super.setAuthor(value);
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))
@@ -272,9 +268,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     @Override
-    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.jaxb.License value)
+    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.License value)
     {
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.License oldValue = getLicense();
+        cz.cuni.mff.peckam.java.origamist.common.License oldValue = getLicense();
         super.setLicense(value);
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))
@@ -302,9 +298,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     @Override
-    public void setPaper(DiagramPaper value)
+    public void setPaper(cz.cuni.mff.peckam.java.origamist.model.DiagramPaper value)
     {
-        DiagramPaper oldValue = getPaper();
+        cz.cuni.mff.peckam.java.origamist.model.DiagramPaper oldValue = getPaper();
         super.setPaper(value);
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))
@@ -343,16 +339,16 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         if (list.size() == 0)
             return;
         else if (list.size() == 1) {
-            ((Step) list.get(0)).setDefaultModelState(defaultModelState);
+            (list.get(0)).setDefaultModelState(defaultModelState);
             return;
         } else {
             Iterator<cz.cuni.mff.peckam.java.origamist.model.Step> i = list.iterator();
-            Step prev = null, curr = null, next = (Step) i.next();
+            Step prev = null, curr = null, next = i.next();
             next.setDefaultModelState(defaultModelState);
             while (i.hasNext()) {
                 prev = curr;
                 curr = next;
-                next = (Step) i.next();
+                next = i.next();
                 curr.setPrevious(prev);
                 curr.setNext(next);
             }

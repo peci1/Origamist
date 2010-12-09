@@ -72,7 +72,7 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
             if (cat.getFiles() != null)
                 result += cat.getFiles().getFile().size();
             if (cat.getCategories() != null)
-                result += ((Categories) cat.getCategories()).numOfFilesRecursive();
+                result += cat.getCategories().numOfFilesRecursive();
         }
         return result;
     }

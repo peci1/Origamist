@@ -58,7 +58,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
                 if (getFiles() != null)
                     fileIterator = getFiles().getFile().iterator();
                 if (getCategories() != null)
-                    categoriesFileIterator = ((Categories) getCategories()).recursiveFileIterator();
+                    categoriesFileIterator = (getCategories()).recursiveFileIterator();
             }
 
             @Override
@@ -116,7 +116,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
         if (getCategories() == null)
             return null;
 
-        return ((Categories) getCategories()).recursiveCategoryIterator();
+        return (getCategories()).recursiveCategoryIterator();
     }
 
     /**
@@ -173,7 +173,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
         String[] cats = categoryString.split("/");
         Category oldCat = this;
         for (String cat : cats) {
-            Category newCat = (Category) new ObjectFactory().createCategory();
+            Category newCat = new ObjectFactory().createCategory();
             newCat.setId(cat);
             newCat.getName().add(new LangString(cat, Locale.getDefault()));
             newCat.setParent(oldCat);
@@ -231,8 +231,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      */
     public void addName(Locale l, String name)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);

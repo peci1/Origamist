@@ -17,16 +17,6 @@ public class ObjectFactory extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
 {
 
     /**
-     * Create an instance of {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami }
-     * 
-     */
-    @Override
-    public cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami createOrigami()
-    {
-        return new Origami();
-    }
-
-    /**
      * Create, setup and return the origami model. Set next and previous for all
      * steps.
      */

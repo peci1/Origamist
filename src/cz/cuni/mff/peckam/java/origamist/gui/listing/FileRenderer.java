@@ -27,7 +27,6 @@ import javax.swing.origamist.RoundedBorder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
-import cz.cuni.mff.peckam.java.origamist.common.BinaryImage;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -163,12 +162,11 @@ public class FileRenderer extends JPanelWithOverlay
         }
 
         if (file.getThumbnail() != null) {
-            thumbnail.setImage(((BinaryImage) file.getThumbnail().getImage()).getImageIcon().getImage());
+            thumbnail.setImage((file.getThumbnail().getImage()).getImageIcon().getImage());
         } else if (file.isOrigamiLoaded()) {
             try {
                 if (file.getOrigami().getThumbnail() != null) {
-                    thumbnail.setImage(((BinaryImage) file.getOrigami().getThumbnail().getImage()).getImageIcon()
-                            .getImage());
+                    thumbnail.setImage((file.getOrigami().getThumbnail().getImage()).getImageIcon().getImage());
                 }
             } catch (UnsupportedDataFormatException e) {
                 assert false;

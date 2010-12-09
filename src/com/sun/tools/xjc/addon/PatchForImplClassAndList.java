@@ -4,6 +4,7 @@
 package com.sun.tools.xjc.addon;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -14,10 +15,13 @@ import org.xml.sax.SAXException;
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JConditional;
+import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JStatement;
+import com.sun.codemodel.JType;
+import com.sun.codemodel.JVar;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
 import com.sun.tools.xjc.outline.ClassOutline;
@@ -27,7 +31,8 @@ import com.sun.tools.xjc.outline.Outline;
 /**
  * XJC plugin (to be accurate, bugfix). If you define a type with implClass and use it in the schema in such way, that
  * XJC generates a list of these elements, then XJC originally uses the generated class and not the implClass as the
- * type of elements in the list. This plugin fixes it.
+ * type of elements in the list. This plugin fixes it. Also this tells XJC to use the user-defined implClass in
+ * generated getters and setters.
  * 
  * @author Martin Pecka
  */
@@ -63,69 +68,112 @@ public class PatchForImplClassAndList extends Plugin
         }
 
         for (ClassOutline co : model.getClasses()) {
+
+            String classImplClassName = elementsWithImplClassSet.get(co.implClass.fullName());
+            if (classImplClassName != null) {
+                JClass classImplClass = model.getCodeModel().ref(classImplClassName);
+                JDefinedClass objectFactory = co._package().objectFactory();
+                JMethod ofMethod = objectFactory.getMethod("create" + co.implClass.name(), new JType[] {});
+                if (ofMethod != null)
+                    ofMethod.type(classImplClass);
+            }
+
             for (FieldOutline fo : co.getDeclaredFields()) {
-                if (!"java.util.List".equals(fo.getRawType().erasure().fullName()))
-                    continue;
+                JClass clazz = fo.getRawType().boxify();
+                String implClassName = elementsWithImplClassSet.get(clazz.fullName()); // name of the user-defined class
+                JClass implClass;
+                JClass fieldClass;
+                if (implClassName != null) {
+                    // not a field with implClass resulting in a List
+                    implClass = model.getCodeModel().ref(implClassName);
+                    fieldClass = implClass;
+                } else if ("java.util.List".equals(fo.getRawType().erasure().fullName())) {
+                    // a field with implClass resulting in a list
+                    List<JClass> parameters = ((JClass) fo.getRawType()).getTypeParameters();
 
-                // iterate through all fields that result in a java.util.List and change them
-                List<JClass> parameters = ((JClass) fo.getRawType()).getTypeParameters();
+                    if (parameters == null)
+                        continue;
+                    // we only expect List<E>
+                    if (parameters.size() > 1 || parameters.size() == 0)
+                        continue;
 
-                if (parameters == null)
-                    continue;
-                // we only expect List<E>
-                if (parameters.size() > 1 || parameters.size() == 0)
-                    continue;
+                    JClass c = parameters.get(0);
+                    implClassName = elementsWithImplClassSet.get(c.fullName()); // name of the user-defined class
+                    if (implClassName == null)
+                        continue;
 
-                JClass c = parameters.get(0);
-                String implClass = elementsWithImplClassSet.get(c.fullName()); // name of the user-defined class
-                if (implClass == null)
+                    implClass = model.getCodeModel().ref(implClassName);
+                    // a java.util.List with the corect type argument
+                    fieldClass = ((JClass) fo.getRawType().erasure()).narrow(implClass);
+                } else {
+                    // this is nor a field with implClass nor a list field with implClass
                     continue;
-
-                JClass newClass = model.getCodeModel().ref(implClass);
-                // a java.util.List with the corect type argument
-                JClass listClass = ((JClass) fo.getRawType().erasure()).narrow(newClass);
+                }
 
                 // remove the old invalid field
                 JFieldVar field = co.implClass.fields().get(fo.getPropertyInfo().getName(false));
                 co.implClass.removeField(field);
 
                 // replace the old field with the correct one
-                JFieldVar newField = co.implClass.field(field.mods().getValue(), listClass, field.name());
+                JFieldVar newField = co.implClass.field(field.mods().getValue(), fieldClass, field.name());
                 copyFieldValueWithReflection("annotations", field, newField, field.getClass().getSuperclass());
                 copyFieldValueWithReflection("jdoc", field, newField, field.getClass());
 
                 // update getter for the list (no setter is created)
                 String getterName = "get" + field.name().substring(0, 1).toUpperCase() + field.name().substring(1);
+                String setterName = "set" + field.name().substring(0, 1).toUpperCase() + field.name().substring(1);
                 for (JMethod m : co.implClass.methods()) {
-                    if (!getterName.equals(m.name()))
-                        continue;
+                    if (getterName.equals(m.name())) {
+                        // change the return type of the method
+                        m.type(fieldClass);
 
-                    // change the return type of the method
-                    m.type(listClass);
-
-                    JBlock body = m.body();
-                    JBlock newBody = new JBlock(true, true);
-                    for (Object o : body.getContents()) {
-                        if (o instanceof JConditional) {
-                            JConditional cond = newBody._if(newField.eq(JExpr._null()));
-                            JBlock thenBlock = cond._then();
-                            JClass listImplClass = (JClass) getValueWithReflection("coreList", fo, fo.getClass());
-                            JClass newListImplClass = listImplClass.erasure().narrow(newClass);
-                            thenBlock.assign(newField, JExpr._new(newListImplClass));
-                        } else if (o instanceof JStatement) {
-                            newBody.add((JStatement) o);
+                        JBlock body = m.body();
+                        JBlock newBody = new JBlock(true, true);
+                        for (Object o : body.getContents()) {
+                            if (o instanceof JConditional) {
+                                JConditional cond = newBody._if(newField.eq(JExpr._null()));
+                                JBlock thenBlock = cond._then();
+                                JClass listImplClass = (JClass) getValueWithReflection("coreList", fo, fo.getClass());
+                                JClass newListImplClass = listImplClass.erasure().narrow(implClass);
+                                thenBlock.assign(newField, JExpr._new(newListImplClass));
+                            } else if (o instanceof JStatement) {
+                                newBody.add((JStatement) o);
+                            }
                         }
+
+                        // change the javadoc to reflect the new reality
+                        if (m.javadoc().size() >= 3) {
+                            m.javadoc().remove(m.javadoc().size() - 1);
+                            m.javadoc().remove(m.javadoc().size() - 1);
+                            m.javadoc().remove(m.javadoc().size() - 1);
+
+                            if (implClass != fieldClass) {
+                                m.javadoc().append("<p>Objects of the following type(s) are allowed in the list: ");
+                            } else {
+                                m.javadoc().append("Possible object is: ");
+                            }
+                            m.javadoc().append(implClass);
+                        }
+
+                        setValueWithReflection("body", m, m.getClass(), newBody);
+                    } else if (setterName.equals(m.name())) {
+                        setValueWithReflection("params", m, m.getClass(), new ArrayList<JVar>());
+                        m.param(fieldClass, "value");
+                        JBlock newBody = new JBlock();
+                        newBody.assign(JExpr._this().ref(newField), m.listParams()[0]);
+
+                        // change the javadoc to reflect the new reality
+                        if (m.javadoc().size() >= 3) {
+                            m.javadoc().remove(m.javadoc().size() - 1);
+                            m.javadoc().remove(m.javadoc().size() - 1);
+                            m.javadoc().remove(m.javadoc().size() - 1);
+
+                            m.javadoc().append("Allowed object is: ");
+                            m.javadoc().append(fieldClass);
+                        }
+
+                        setValueWithReflection("body", m, m.getClass(), newBody);
                     }
-
-                    m.javadoc().remove(m.javadoc().size() - 1);
-                    m.javadoc().remove(m.javadoc().size() - 1);
-                    m.javadoc().remove(m.javadoc().size() - 1);
-
-                    m.javadoc().append("<p>Objects of the following type(s) are allowed in the list: ");
-                    m.javadoc().append(newClass);
-                    setValueWithReflection("body", m, m.getClass(), newBody);
-
-                    break;
 
                 }
             }

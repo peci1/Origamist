@@ -17,14 +17,14 @@ public interface CategoriesContainer extends HierarchicalComponent
      * 
      * @return The container of the list of subcategories.
      */
-    cz.cuni.mff.peckam.java.origamist.files.jaxb.Categories getCategories();
+    cz.cuni.mff.peckam.java.origamist.files.Categories getCategories();
 
     /**
      * Sets the container of the list of subcategories.
      * 
      * @param files The container to set.
      */
-    void setCategories(cz.cuni.mff.peckam.java.origamist.files.jaxb.Categories categories);
+    void setCategories(cz.cuni.mff.peckam.java.origamist.files.Categories categories);
 
     /**
      * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy

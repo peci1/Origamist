@@ -29,7 +29,6 @@ import com.jgoodies.forms.layout.FormLayout;
 import cz.cuni.mff.peckam.java.origamist.gui.JLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.gui.JLocalizedLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.gui.JMultilineLabelWithTooltip;
-import cz.cuni.mff.peckam.java.origamist.model.ModelPaper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -120,9 +119,8 @@ public class ModelInfoPanel extends JHideablePanel
                         + (ModelInfoPanel.this.origami.getAuthor().getHomepage() == null ? "" : " (<a href=\""
                                 + ModelInfoPanel.this.origami.getAuthor().getHomepage() + "\">" + homePage + "</a>)")
                         + "</html>");
-                paperDimension.setText(((ModelPaper) ModelInfoPanel.this.origami.getModel().getPaper()).getSize()
-                        .toString());
-                paperNote.setText(((ModelPaper) ModelInfoPanel.this.origami.getModel().getPaper()).getNote(locale));
+                paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString());
+                paperNote.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getNote(locale));
                 desc.setText(ModelInfoPanel.this.origami.getDescription(locale));
 
             }

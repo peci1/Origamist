@@ -10,8 +10,8 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * A step of the model creation.
@@ -53,8 +53,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public Step()
     {
-        ((ObservableList<LangString>) getDescription())
-                .addObserver(new LangStringHashtableObserver(descriptions));
+        ((ObservableList<LangString>) getDescription()).addObserver(new LangStringHashtableObserver(descriptions));
         if (zoom == null)
             zoom = 100.0;
     }
@@ -87,8 +86,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void addDescription(Locale l, String desc)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.description.add(s);

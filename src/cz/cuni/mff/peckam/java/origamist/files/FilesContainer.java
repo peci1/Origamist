@@ -17,12 +17,12 @@ public interface FilesContainer extends HierarchicalComponent
      * 
      * @return The container of the list of files.
      */
-    cz.cuni.mff.peckam.java.origamist.files.jaxb.Files getFiles();
+    cz.cuni.mff.peckam.java.origamist.files.Files getFiles();
 
     /**
      * Sets the container of the list of files.
      * 
      * @param files The container to set.
      */
-    void setFiles(cz.cuni.mff.peckam.java.origamist.files.jaxb.Files files);
+    void setFiles(cz.cuni.mff.peckam.java.origamist.files.Files files);
 }

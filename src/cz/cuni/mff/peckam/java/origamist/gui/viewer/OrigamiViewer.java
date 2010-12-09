@@ -57,7 +57,6 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.util.DefaultUnitConverter;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
-import cz.cuni.mff.peckam.java.origamist.files.Categories;
 import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
@@ -66,7 +65,6 @@ import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTree;
 import cz.cuni.mff.peckam.java.origamist.gui.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -250,8 +248,7 @@ public class OrigamiViewer extends CommonGui
                 }
             });
 
-            renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
-                    .get(0));
+            renderer = new DiagramRenderer(displayedOrigami, displayedOrigami.getModel().getSteps().getStep().get(0));
             renderer.setPreferredSize(new Dimension(500, 500));
             addPropertyChangeListener("displayMode", new PropertyChangeListener() {
                 @Override
@@ -404,7 +401,7 @@ public class OrigamiViewer extends CommonGui
             }
 
             ObjectFactory of = new ObjectFactory();
-            filesToDisplay = (Listing) of.createListing();
+            filesToDisplay = of.createListing();
             List<File> files = new LinkedList<File>();
             for (String fileString : filesAsStrings) {
                 try {
@@ -421,7 +418,7 @@ public class OrigamiViewer extends CommonGui
             filesToDisplay.addFiles(files, recursive, filesToDisplay);
 
             if ((filesToDisplay.getFiles() == null || filesToDisplay.getFiles().getFile().size() == 0)
-                    && (filesToDisplay.getCategories() == null || ((Categories) filesToDisplay.getCategories())
+                    && (filesToDisplay.getCategories() == null || (filesToDisplay.getCategories())
                             .numOfFilesRecursive() == 0)) {
                 Logger.getLogger("viewer").l7dlog(Level.FATAL, "filesParamInvalidFileList", null,
                         new IllegalArgumentException("No input files defined."));

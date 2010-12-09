@@ -14,9 +14,7 @@ import java.util.ResourceBundle;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import cz.cuni.mff.peckam.java.origamist.common.Author;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
-import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -106,8 +104,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      */
     public void addName(Locale l, String name)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);
@@ -141,8 +138,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      */
     public void addShortDesc(Locale l, String desc)
     {
-        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
-                .createLangString();
+        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.shortdesc.add(s);
@@ -250,8 +246,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
             throw new IllegalStateException(
                     "Tried to fill a File's metadata from its origami, but the origami has not been loaded yet.");
 
-        setAuthor((Author) origami.getAuthor());
-        setLicense((License) origami.getLicense());
+        setAuthor(origami.getAuthor());
+        setLicense(origami.getLicense());
         this.name.clear();
         this.name.addAll(origami.getName());
         setOriginal(origami.getOriginal());
@@ -308,9 +304,9 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     }
 
     @Override
-    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.jaxb.Author value)
+    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.Author value)
     {
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.Author oldValue = getAuthor();
+        cz.cuni.mff.peckam.java.origamist.common.Author oldValue = getAuthor();
         super.setAuthor(value);
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))
@@ -328,9 +324,9 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     }
 
     @Override
-    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.jaxb.License value)
+    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.License value)
     {
-        cz.cuni.mff.peckam.java.origamist.common.jaxb.License oldValue = getLicense();
+        cz.cuni.mff.peckam.java.origamist.common.License oldValue = getLicense();
         super.setLicense(value);
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))

@@ -81,7 +81,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             if (!ioFile.isDirectory()) {
                 if (!fileFilter.accept(ioFile))
                     continue;
-                File file = (File) of.createFile();
+                File file = of.createFile();
                 file.setSrc(ioFile.toURI());
                 file.setParent(category);
                 if (category.getFiles() == null)
@@ -90,7 +90,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             } else {
                 List<java.io.File> ioFilesToAdd = Arrays.asList(ioFile.listFiles(fileFilter));
 
-                Category newCategory = (Category) of.createCategory();
+                Category newCategory = of.createCategory();
                 String name = ioFile.getName();
                 newCategory.setId(name);
                 newCategory.getName().add(new LangString(name, Locale.getDefault()));
@@ -123,9 +123,9 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             return this;
 
         String[] cats = categoryString.split("/");
-        Category firstCat = ((Categories) this.getCategories()).getHashtable().get(cats[0]);
+        Category firstCat = (this.getCategories()).getHashtable().get(cats[0]);
         if (firstCat == null) {
-            firstCat = (Category) new ObjectFactory().createCategory();
+            firstCat = new ObjectFactory().createCategory();
             firstCat.setId(cats[0]);
             firstCat.getName().add(new LangString(cats[0], Locale.getDefault()));
             firstCat.setParent(this);
@@ -235,7 +235,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(Origami origami, FilesContainer category)
     {
-        File file = (File) new ObjectFactory().createFile();
+        File file = new ObjectFactory().createFile();
         if (origami.getSrc() == null) {
             Logger.getLogger("application").l7dlog(Level.ERROR, "listingAddOrigamiInvalidOrigamiSource",
                     new NullPointerException());
@@ -276,7 +276,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                     fileIterator = getFiles().getFile().iterator();
                 }
                 if (getCategories() != null) {
-                    categoriesFileIterator = ((Categories) getCategories()).recursiveFileIterator();
+                    categoriesFileIterator = (getCategories()).recursiveFileIterator();
                 }
             }
 
@@ -403,7 +403,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
         if (getCategories() == null)
             return null;
 
-        return ((Categories) getCategories()).recursiveCategoryIterator();
+        return (getCategories()).recursiveCategoryIterator();
     }
 
     /**

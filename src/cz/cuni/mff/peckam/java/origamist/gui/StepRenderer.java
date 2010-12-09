@@ -274,7 +274,7 @@ public class StepRenderer extends JPanelWithOverlay
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
         // TODO adjust zoom according to paper size and renderer size - this is placeholder code
         transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
-        UnitDimension paperSize = ((UnitDimension) origami.getModel().getPaper().getSize()).convertTo(Unit.M);
+        UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
         transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
         TransformGroup tGroup = new TransformGroup();
         tGroup.setTransform(transform);

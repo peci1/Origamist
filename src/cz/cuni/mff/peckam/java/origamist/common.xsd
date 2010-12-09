@@ -6,7 +6,7 @@
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
 	jxb:extensionBindingPrefixes="xjc"
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/"> 
- 	
+ 	 
 	<annotation>
 		<appinfo>
 			<jxb:globalBindings>
