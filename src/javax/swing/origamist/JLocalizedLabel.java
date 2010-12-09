@@ -3,11 +3,15 @@
  */
 package javax.swing.origamist;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.IllegalFormatException;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
@@ -19,16 +23,22 @@ public class JLocalizedLabel extends JLabel
 {
 
     /** */
-    private static final long serialVersionUID = -7689745537418512427L;
+    private static final long              serialVersionUID = -7689745537418512427L;
 
     /** The localized string to display. */
-    protected LocalizedString string;
+    protected LocalizedString              string;
 
     /**
      * The string to be used in String.format() with the localized string as the 1st argument. If <code>null</code> or
      * not a valid one-argument pattern, only the localized string is shown.
      */
-    protected String          stringFormat     = null;
+    protected String                       stringFormat     = null;
+
+    /** If true, copy the localized value to the tooltip, too. */
+    protected boolean                      handleTooltip    = true;
+
+    /** The listener listening to the changes of the locale. */
+    protected final PropertyChangeListener localeListener;
 
     /**
      * Creates a <code>JLocalizedLabel</code> instance with the specified localized text, image, and horizontal
@@ -48,6 +58,18 @@ public class JLocalizedLabel extends JLabel
     {
         super(string.toString(), icon, horizontalAlignment);
         this.string = string;
+        localeListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (handleTooltip) {
+                    setToolTipText(decorateTooltipText(JLocalizedLabel.this.string.toString()));
+                }
+            }
+        };
+        localeListener.propertyChange(new PropertyChangeEvent(this, "locale", null, ServiceLocator
+                .get(ConfigurationManager.class).get().getLocale()));
+        setHandleTooltip(true);
     }
 
     /**
@@ -278,6 +300,40 @@ public class JLocalizedLabel extends JLabel
     public void setStringFormat(String stringFormat)
     {
         this.stringFormat = stringFormat;
+    }
+
+    /**
+     * @return the handleTooltip
+     */
+    public boolean isHandleTooltip()
+    {
+        return handleTooltip;
+    }
+
+    /**
+     * @param handleTooltip the handleTooltip to set
+     */
+    public void setHandleTooltip(boolean handleTooltip)
+    {
+        this.handleTooltip = handleTooltip;
+        if (handleTooltip) {
+            ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", localeListener);
+        } else {
+            ServiceLocator.get(ConfigurationManager.class).get().removePropertyChangeListener("locale", localeListener);
+        }
+    }
+
+    /**
+     * Format the text to be shown in tooltip.
+     * 
+     * This implementation does nothing to the text.
+     * 
+     * @param text The text to format.
+     * @return The formatted text.
+     */
+    protected String decorateTooltipText(String text)
+    {
+        return text;
     }
 
 }
