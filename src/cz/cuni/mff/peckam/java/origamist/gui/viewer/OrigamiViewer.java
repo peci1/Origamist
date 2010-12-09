@@ -227,15 +227,6 @@ public class OrigamiViewer extends CommonGui
             // we intentionally add the selection listener just after the first selection has been performed
             fileListing.addTreeSelectionListener(new ListingTreeSelectionListener());
 
-            modelInfo = new ModelInfoPanel(displayedOrigami);
-            addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt)
-                {
-                    modelInfo.setOrigami(displayedOrigami);
-                }
-            });
-
             fileListingScrollPane = new JScrollPane(fileListing);
             fileListingScrollPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(
                     170, fileListing), 0));
@@ -249,6 +240,15 @@ public class OrigamiViewer extends CommonGui
                 // properly setup.
                 displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
             }
+
+            modelInfo = new ModelInfoPanel(displayedOrigami);
+            addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    modelInfo.setOrigami(displayedOrigami);
+                }
+            });
 
             renderer = new DiagramRenderer(displayedOrigami, (Step) displayedOrigami.getModel().getSteps().getStep()
                     .get(0));
@@ -286,7 +286,7 @@ public class OrigamiViewer extends CommonGui
     protected void buildLayout()
     {
         Container pane = getContentPane();
-        pane.setLayout(new FormLayout("pref,pref:grow", "pref,fill:default:grow,pref"));
+        pane.setLayout(new FormLayout("min(pref;150dlu),pref:grow", "pref,fill:default:grow,pref"));
         CellConstraints cc = new CellConstraints();
         pane.add(mainToolbar, cc.xyw(1, 1, 2));
         pane.add(fileListingScrollPane, cc.xy(1, 2));
