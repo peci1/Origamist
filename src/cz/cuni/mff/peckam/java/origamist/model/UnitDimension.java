@@ -36,8 +36,8 @@ public class UnitDimension extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", l);
-        l.propertyChange(new PropertyChangeEvent(null, "locale", null, ServiceLocator.get(ConfigurationManager.class)
-                .get().getLocale()));
+        l.propertyChange(new PropertyChangeEvent(new Object(), "locale", null, ServiceLocator
+                .get(ConfigurationManager.class).get().getLocale()));
     }
 
     /**

@@ -50,8 +50,8 @@ public class UnitHelper
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", l);
-        l.propertyChange(new PropertyChangeEvent(null, "locale", null, ServiceLocator.get(ConfigurationManager.class)
-                .get().getLocale()));
+        l.propertyChange(new PropertyChangeEvent(new Object(), "locale", null, ServiceLocator
+                .get(ConfigurationManager.class).get().getLocale()));
     }
 
     /**
