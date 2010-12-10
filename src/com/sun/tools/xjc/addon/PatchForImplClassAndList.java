@@ -15,12 +15,10 @@ import org.xml.sax.SAXException;
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JConditional;
-import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JStatement;
-import com.sun.codemodel.JType;
 import com.sun.codemodel.JVar;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
@@ -68,16 +66,6 @@ public class PatchForImplClassAndList extends Plugin
         }
 
         for (ClassOutline co : model.getClasses()) {
-
-            String classImplClassName = elementsWithImplClassSet.get(co.implClass.fullName());
-            if (classImplClassName != null) {
-                JClass classImplClass = model.getCodeModel().ref(classImplClassName);
-                JDefinedClass objectFactory = co._package().objectFactory();
-                JMethod ofMethod = objectFactory.getMethod("create" + co.implClass.name(), new JType[] {});
-                if (ofMethod != null)
-                    ofMethod.type(classImplClass);
-            }
-
             for (FieldOutline fo : co.getDeclaredFields()) {
                 JClass clazz = fo.getRawType().boxify();
                 String implClassName = elementsWithImplClassSet.get(clazz.fullName()); // name of the user-defined class

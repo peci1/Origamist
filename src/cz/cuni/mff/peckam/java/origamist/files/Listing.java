@@ -81,16 +81,16 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             if (!ioFile.isDirectory()) {
                 if (!fileFilter.accept(ioFile))
                     continue;
-                File file = of.createFile();
+                File file = (File) of.createFile();
                 file.setSrc(ioFile.toURI());
                 file.setParent(category);
                 if (category.getFiles() == null)
-                    category.setFiles(of.createFiles());
+                    category.setFiles((Files) of.createFiles());
                 category.getFiles().getFile().add(file);
             } else {
                 List<java.io.File> ioFilesToAdd = Arrays.asList(ioFile.listFiles(fileFilter));
 
-                Category newCategory = of.createCategory();
+                Category newCategory = (Category) of.createCategory();
                 String name = ioFile.getName();
                 newCategory.setId(name);
                 newCategory.getName().add(new LangString(name, Locale.getDefault()));
@@ -100,7 +100,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                 newCategory.setParent(cCategory);
 
                 if (cCategory.getCategories() == null)
-                    cCategory.setCategories(of.createCategories());
+                    cCategory.setCategories((Categories) of.createCategories());
                 cCategory.getCategories().getCategory().add(newCategory);
 
                 this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory);
@@ -125,12 +125,12 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
         String[] cats = categoryString.split("/");
         Category firstCat = (this.getCategories()).getHashtable().get(cats[0]);
         if (firstCat == null) {
-            firstCat = new ObjectFactory().createCategory();
+            firstCat = (Category) new ObjectFactory().createCategory();
             firstCat.setId(cats[0]);
             firstCat.getName().add(new LangString(cats[0], Locale.getDefault()));
             firstCat.setParent(this);
             if (this.getCategories() == null)
-                this.setCategories(new ObjectFactory().createCategories());
+                this.setCategories((Categories) new ObjectFactory().createCategories());
             this.getCategories().getCategory().add(firstCat);
         }
         if (cats.length == 1) {
@@ -235,7 +235,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public File addOrigami(Origami origami, FilesContainer category)
     {
-        File file = new ObjectFactory().createFile();
+        File file = (File) new ObjectFactory().createFile();
         if (origami.getSrc() == null) {
             Logger.getLogger("application").l7dlog(Level.ERROR, "listingAddOrigamiInvalidOrigamiSource",
                     new NullPointerException());
@@ -253,7 +253,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
         file.fillFromOrigami();
 
         if (category.getFiles() == null)
-            category.setFiles(new ObjectFactory().createFiles());
+            category.setFiles((Files) new ObjectFactory().createFiles());
         category.getFiles().getFile().add(file);
 
         return file;

@@ -112,7 +112,8 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addName(Locale l, String name)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);
@@ -146,7 +147,8 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addShortDesc(Locale l, String desc)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.shortdesc.add(s);
@@ -180,7 +182,8 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void addDescription(Locale l, String desc)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(desc);
         this.description.add(s);

@@ -401,7 +401,7 @@ public class OrigamiViewer extends CommonGui
             }
 
             ObjectFactory of = new ObjectFactory();
-            filesToDisplay = of.createListing();
+            filesToDisplay = (Listing) of.createListing();
             List<File> files = new LinkedList<File>();
             for (String fileString : filesAsStrings) {
                 try {

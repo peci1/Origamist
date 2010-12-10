@@ -173,12 +173,12 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
         String[] cats = categoryString.split("/");
         Category oldCat = this;
         for (String cat : cats) {
-            Category newCat = new ObjectFactory().createCategory();
+            Category newCat = (Category) new ObjectFactory().createCategory();
             newCat.setId(cat);
             newCat.getName().add(new LangString(cat, Locale.getDefault()));
             newCat.setParent(oldCat);
             if (oldCat.getCategories() == null)
-                oldCat.setCategories(new ObjectFactory().createCategories());
+                oldCat.setCategories((Categories) new ObjectFactory().createCategories());
             oldCat.getCategories().getCategory().add(newCat);
             oldCat = newCat;
         }
@@ -231,7 +231,8 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      */
     public void addName(Locale l, String name)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(name);
         this.name.add(s);

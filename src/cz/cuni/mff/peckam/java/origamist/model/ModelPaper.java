@@ -100,7 +100,8 @@ public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Mod
      */
     public void addNote(Locale l, String note)
     {
-        LangString s = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLangString();
+        LangString s = (LangString) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory()
+                .createLangString();
         s.setLang(l);
         s.setValue(note);
         this.note.add(s);
