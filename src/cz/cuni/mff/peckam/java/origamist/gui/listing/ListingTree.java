@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.listing;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -58,6 +59,8 @@ public class ListingTree extends JTree
         setToolTipText(""); // XXX - don't delete this line, or the tooltips for items won't display :(
 
         setCellRenderer(new ListingTreeCellRenderer());
+
+        setBackground(new Color(250, 250, 242));
 
         // addTreeSelectionListener(new ListingTreeSelectionListener()); //this is rather done in OrigamiViewer
 

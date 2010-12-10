@@ -42,6 +42,8 @@ public class ModelInfoPanel extends JHideablePanel
 {
     /** */
     private static final long        serialVersionUID    = 9041458561866387156L;
+
+    /** The origami this panel displays info of. */
     protected Origami                origami;
 
     /** The listener for locale changes. */
@@ -84,6 +86,14 @@ public class ModelInfoPanel extends JHideablePanel
     {
         super(BorderLayout.NORTH);
 
+        setOpaque(true);
+        getContent().setOpaque(true);
+
+        hideButton.setBackground(new Color(231, 231, 189));
+        getContent().setBackground(new Color(250, 250, 242));
+
+        hideButton.setBorder(BorderFactory.createEmptyBorder());
+
         paperBackground.setOpaque(true);
         paperForeground.setOpaque(true);
         paperBackground.setFont(name.getFont());
@@ -120,8 +130,14 @@ public class ModelInfoPanel extends JHideablePanel
                                 + ModelInfoPanel.this.origami.getAuthor().getHomepage() + "\">" + homePage + "</a>)")
                         + "</html>");
                 paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString());
+
                 paperNote.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getNote(locale));
+                paperNote.setVisible(!(paperNote.getText() == null || paperNote.getText().equals("")));
+                paperNoteDesc.setVisible(paperNote.isVisible());
+
                 desc.setText(ModelInfoPanel.this.origami.getDescription(locale));
+                desc.setVisible(!(desc.getText() == null || desc.getText().equals("")));
+                descDesc.setVisible(desc.isVisible());
 
             }
         };
@@ -199,6 +215,8 @@ public class ModelInfoPanel extends JHideablePanel
         year.setText(new Integer(origami.getYear().getYear()).toString());
 
         original.setText(origami.getOriginal() == null ? "" : origami.getOriginal().toString());
+        original.setVisible(!(original.getText() == null || original.getText().equals("")));
+        originalDesc.setVisible(original.isVisible());
 
         Color c = origami.getModel().getPaper().getColors().getForeground();
         paperForeground.setText("R: " + c.getRed() + ", G: " + c.getGreen() + ", B: " + c.getBlue());

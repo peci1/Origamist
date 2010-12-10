@@ -42,6 +42,7 @@ public class ListingTreeCellRenderer extends DefaultTreeCellRenderer
             String text = ((Category) nodeVal).getName(l);
             super.getTreeCellRendererComponent(tree, text, sel, expanded, leaf, row, hasFocus);
             setIcon(expanded ? getOpenIcon() : getClosedIcon());
+            setBackgroundNonSelectionColor(tree.getBackground());
             return this;
         } else if (nodeVal instanceof File) {
             fileRenderer.configure((File) nodeVal, sel, hasFocus);
