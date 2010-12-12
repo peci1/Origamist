@@ -131,6 +131,7 @@ public class StepRenderer extends JPanelWithOverlay
 
         getOverlay().setOpaque(false);
         getContent().setOpaque(false); // MAGIC
+        setOpaque(true);
         showOverlay();
 
         // Rows labelled MAGIC are important and shouldn't be changed in the future. If you for instance decide to
@@ -198,7 +199,7 @@ public class StepRenderer extends JPanelWithOverlay
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
-        this.backgroundColor = origami.getPaper().getColor().getBackground();
+        setBackground(origami.getPaper().getColor().getBackground());
     }
 
     @Override

@@ -249,6 +249,7 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         setOrigami(o, firstStep, false);
         setDisplayMode(DisplayMode.PAGE);
+        getContent().setOpaque(false);
     }
 
     /**
@@ -340,6 +341,8 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         if (updateSteps)
             updateDisplayedSteps();
+
+        setBackground(origami.getPaper().getColor().getBackground());
     }
 
     /**
@@ -461,7 +464,9 @@ public class DiagramRenderer extends JPanelWithOverlay
                                 r.setZoom(zoom);
                                 r = null;
                             } else {
-                                diagramPane.add(new JPanel());
+                                JPanel panel = new JPanel();
+                                panel.setBackground(origami.getPaper().getColor().getBackground());
+                                diagramPane.add(panel);
                             }
                             if (step != null)
                                 step = step.getNext();
