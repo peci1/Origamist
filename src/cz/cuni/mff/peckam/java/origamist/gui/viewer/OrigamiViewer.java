@@ -283,7 +283,9 @@ public class OrigamiViewer extends CommonGui
     protected void buildLayout()
     {
         Container pane = getContentPane();
-        pane.setLayout(new FormLayout("min(pref;200dlu),pref:grow", "pref,fill:default:grow,pref"));
+        // the "0:grow" items in the layout specification says that the preferred size of the component is the maximum
+        // available space and no minimum constraints are applied
+        pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow,pref"));
         CellConstraints cc = new CellConstraints();
         pane.add(mainToolbar, cc.xyw(1, 1, 2));
         pane.add(fileListingScrollPane, cc.xy(1, 2));
