@@ -21,7 +21,7 @@
   </resources>
 
   <resources>
-    <java href="http://java.sun.com/products/autodl/j2se" version="1.6+" />
+    <java href="http://java.sun.com/products/autodl/j2se" version="1.6+" max-heap-size="256m" initial-heap-size="128m" />
     <jar href="OrigamistViewer.jar" main="true" />
     <jar href="lib/log4j-1.2.16.jar" />
     <jar href="lib/j3dcore.jar" />
