@@ -76,3 +76,9 @@ sequence, the localization file is ignored AND no exception is thrown! Argh!
 You can use native2ascii application (I think it is part of JDK) to convert
 Unicode files to ISO-8859-1, which is the only allowed encoding for .properties
 files. WHY??? I thought Java runs exclusively on Unicode. Nope. 
+
+-----------
+
+If you implement a MouseListener's mouseWheelRotated event, adding the created
+listner with Component.addMouseListener() isn't sufficient. You must add it 
+using Component.addMouseWheelListener().
