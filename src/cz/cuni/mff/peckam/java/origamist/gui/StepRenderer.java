@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.util.Locale;
 
@@ -23,11 +24,12 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
+import javax.swing.origamist.JMultilineLabel;
 import javax.swing.origamist.JPanelWithOverlay;
 import javax.swing.origamist.JToolBarWithBgImage;
 import javax.vecmath.Color3f;
@@ -56,55 +58,55 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class StepRenderer extends JPanelWithOverlay
 {
-    private static final long     serialVersionUID = 6989958008007575800L;
+    private static final long       serialVersionUID = 6989958008007575800L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami             origami          = null;
+    protected Origami               origami          = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                step             = null;
+    protected Step                  step             = null;
 
     /**
      * The background color.
      */
-    protected Color               backgroundColor  = null;
+    protected Color                 backgroundColor  = null;
 
     /**
      * The label that shows the descripton of the shown step.
      */
-    protected final JTextArea     descLabel;
+    protected final JMultilineLabel descLabel;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D           canvas;
+    protected JCanvas3D             canvas;
 
     /** The mode to display this renderer in. */
-    protected DisplayMode         displayMode;
+    protected DisplayMode           displayMode;
 
     /** The zoom of the step. */
-    protected double              zoom             = 100d;
+    protected double                zoom             = 100d;
 
     // COMPONENTS
 
     /** The toolbar used for this renderer to control the display of the step. */
-    protected JToolBarWithBgImage toolbar;
+    protected JToolBarWithBgImage   toolbar;
 
     /** Button for zooming in. */
-    protected final JButton       zoomIn;
+    protected final JButton         zoomIn;
 
     /** Button for zooming out. */
-    protected final JButton       zoomOut;
+    protected final JButton         zoomOut;
 
     /** The button to show this step in Diagram view, if it is displayed in the Page view. */
-    protected final JButton       fullscreenBtn;
+    protected final JButton         fullscreenBtn;
 
     /** The border the toolbar buttons have in the time they are created. */
-    protected Border              defaultToolbarButtonBorder;
+    protected Border                defaultToolbarButtonBorder;
 
     public StepRenderer()
     {
@@ -112,9 +114,8 @@ public class StepRenderer extends JPanelWithOverlay
 
         canvas = createCanvas();
 
-        descLabel = new JTextArea();
-        descLabel.setEditable(false);
-        descLabel.setOpaque(false);
+        descLabel = new JMultilineLabel("");
+        descLabel.setFont(descLabel.getFont().deriveFont(Font.PLAIN));
 
         Border emptyBorder = BorderFactory.createEmptyBorder();
 
@@ -202,27 +203,6 @@ public class StepRenderer extends JPanelWithOverlay
         setBackground(origami.getPaper().getColor().getBackground());
     }
 
-    @Override
-    public void setPreferredSize(Dimension preferredSize)
-    {
-        super.setPreferredSize(preferredSize);
-        this.descLabel.setMaximumSize(preferredSize);
-    }
-
-    @Override
-    public void setSize(Dimension size)
-    {
-        super.setSize(size);
-        this.descLabel.setMaximumSize(size);
-    }
-
-    @Override
-    public void setSize(int width, int height)
-    {
-        super.setSize(width, height);
-        this.descLabel.setMaximumSize(new Dimension(width, height));
-    }
-
     /**
      * @return the step
      */
@@ -234,64 +214,80 @@ public class StepRenderer extends JPanelWithOverlay
     /**
      * @param stepId the step to set
      */
-    public void setStep(Step step)
+    public void setStep(final Step step)
     {
-        Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
+        Runnable run = new Runnable() {
+            @Override
+            public void run()
+            {
+                synchronized (StepRenderer.this) {
+                    final Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
 
-        this.step = step;
-        this.descLabel.setText(step.getDescription(l));
+                    StepRenderer.this.step = step;
+                    descLabel.setText(step.getDescription(l));
 
-        // TODO refactor from now on
+                    // TODO refactor from now on
 
-        ModelState state = step.getModelState();
+                    ModelState state = step.getModelState();
 
-        getContent().remove(canvas);
-        canvas = createCanvas();
-        getContent().add(canvas, BorderLayout.CENTER);
-        canvas.setSize(new Dimension(20, 20));
+                    getContent().remove(canvas);
+                    canvas = createCanvas();
+                    getContent().add(canvas, BorderLayout.CENTER);
+                    canvas.setSize(new Dimension(20, 20));
 
-        canvas.setSize(this.getWidth(), this.getHeight() - this.descLabel.getHeight());
-        canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
-        SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
+                    canvas.setSize(getWidth(), getHeight() - descLabel.getHeight());
+                    canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
+                    SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
 
-        Appearance appearance = new Appearance();
-        Appearance appearance2 = new Appearance();
+                    Appearance appearance = new Appearance();
+                    Appearance appearance2 = new Appearance();
 
-        PolygonAttributes polyAttribs = new PolygonAttributes();
-        polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
-        // DEBUG IMPORTANT: The next line allows switching between wireframe and full filling mode
-        polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_LINE);
-        appearance.setPolygonAttributes(polyAttribs);
-        appearance2.setPolygonAttributes(polyAttribs);
+                    PolygonAttributes polyAttribs = new PolygonAttributes();
+                    polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
+                    // DEBUG IMPORTANT: The next line allows switching between wireframe and full filling mode
+                    polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_LINE);
+                    appearance.setPolygonAttributes(polyAttribs);
+                    appearance2.setPolygonAttributes(polyAttribs);
 
-        ModelColors paperColors = origami.getModel().getPaper().getColors();
-        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getForeground()),
-                ColoringAttributes.NICEST);
-        appearance.setColoringAttributes(colAttrs);
-        colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()), ColoringAttributes.NICEST);
-        appearance2.setColoringAttributes(colAttrs);
+                    ModelColors paperColors = origami.getModel().getPaper().getColors();
+                    ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getForeground()),
+                            ColoringAttributes.NICEST);
+                    appearance.setColoringAttributes(colAttrs);
+                    colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()),
+                            ColoringAttributes.NICEST);
+                    appearance2.setColoringAttributes(colAttrs);
 
-        Transform3D transform = new Transform3D();
-        transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
-        // TODO adjust zoom according to paper size and renderer size - this is placeholder code
-        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
-        UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
-        transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
-        TransformGroup tGroup = new TransformGroup();
-        tGroup.setTransform(transform);
+                    Transform3D transform = new Transform3D();
+                    transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
+                    // TODO adjust zoom according to paper size and renderer size - this is placeholder code
+                    transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+                    UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
+                    transform
+                            .setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
+                    TransformGroup tGroup = new TransformGroup();
+                    tGroup.setTransform(transform);
 
-        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
-        tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
-        // tGroup.addChild(new Shape3D(state.getLineArray()));
+                    tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
+                    tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
+                    // tGroup.addChild(new Shape3D(state.getLineArray()));
 
-        BranchGroup contents = new BranchGroup();
-        contents.addChild(tGroup);
+                    BranchGroup contents = new BranchGroup();
+                    contents.addChild(tGroup);
 
-        contents.compile(); // may cause unexpected problems - any consequent change of contents
-        // (or even reading of them) will produce an error
+                    contents.compile(); // may cause unexpected problems - any consequent change of contents
+                    // (or even reading of them) will produce an error
 
-        universe.getViewingPlatform().setNominalViewingTransform();
-        universe.addBranchGraph(contents);
+                    universe.getViewingPlatform().setNominalViewingTransform();
+                    universe.addBranchGraph(contents);
+                }
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            new Thread(run).start();
+        } else {
+            run.run();
+        }
     }
 
     /**

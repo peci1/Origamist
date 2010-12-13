@@ -512,11 +512,19 @@ public class DiagramRenderer extends JPanelWithOverlay
      */
     public void setZoom(double zoom)
     {
-        double zoomDelta = zoom - this.zoom;
+        final double zoomDelta = zoom - this.zoom;
         this.zoom = zoom;
-        for (StepRenderer r : stepRenderers) {
-            r.setZoom(r.getZoom() + zoomDelta);
-        }
+
+        new Thread() {
+            @Override
+            public void run()
+            {
+                for (StepRenderer r : stepRenderers) {
+                    r.setZoom(r.getZoom() + zoomDelta);
+                }
+            }
+        }.start();
+
         revalidate();
     }
 
