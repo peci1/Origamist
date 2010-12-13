@@ -13,7 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.Locale;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
@@ -61,55 +62,58 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class StepRenderer extends JPanelWithOverlay
 {
-    private static final long       serialVersionUID = 6989958008007575800L;
+    private static final long        serialVersionUID = 6989958008007575800L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami               origami          = null;
+    protected Origami                origami          = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                  step             = null;
+    protected Step                   step             = null;
 
     /**
      * The background color.
      */
-    protected Color                 backgroundColor  = null;
+    protected Color                  backgroundColor  = null;
 
     /**
      * The label that shows the descripton of the shown step.
      */
-    protected final JMultilineLabel descLabel;
+    protected final JMultilineLabel  descLabel;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D             canvas;
+    protected JCanvas3D              canvas;
 
     /** The mode to display this renderer in. */
-    protected DisplayMode           displayMode;
+    protected DisplayMode            displayMode;
 
     /** The zoom of the step. */
-    protected double                zoom             = 100d;
+    protected double                 zoom             = 100d;
 
     // COMPONENTS
 
     /** The toolbar used for this renderer to control the display of the step. */
-    protected JToolBarWithBgImage   toolbar;
+    protected JToolBarWithBgImage    toolbar;
 
     /** Button for zooming in. */
-    protected final JButton         zoomIn;
+    protected final JButton          zoomIn;
 
     /** Button for zooming out. */
-    protected final JButton         zoomOut;
+    protected final JButton          zoomOut;
 
     /** The button to show this step in Diagram view, if it is displayed in the Page view. */
-    protected final JButton         fullscreenBtn;
+    protected final JButton          fullscreenBtn;
 
     /** The border the toolbar buttons have in the time they are created. */
-    protected Border                defaultToolbarButtonBorder;
+    protected Border                 defaultToolbarButtonBorder;
+
+    /** The listener to update the text. */
+    protected PropertyChangeListener diagramLocaleListener;
 
     public StepRenderer()
     {
@@ -144,6 +148,17 @@ public class StepRenderer extends JPanelWithOverlay
         // Rows labelled MAGIC are important and shouldn't be changed in the future. If you for instance decide to
         // replace toolbar.setOpaque(false) with toolbar.setBackground(new Color(255,255,255,0)), ugly visual artifacts
         // appear on the toolbar buttons
+
+        diagramLocaleListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                descLabel.setText(step.getDescription(ServiceLocator.get(ConfigurationManager.class).get()
+                        .getDiagramLocale()));
+            }
+        };
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addPropertyChangeListener("diagramLocale", diagramLocaleListener);
 
         buildLayout();
 
@@ -227,10 +242,8 @@ public class StepRenderer extends JPanelWithOverlay
             public void run()
             {
                 synchronized (StepRenderer.this) {
-                    final Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
-
                     StepRenderer.this.step = step;
-                    descLabel.setText(step.getDescription(l));
+                    updateText();
 
                     // TODO refactor from now on
 
@@ -294,6 +307,15 @@ public class StepRenderer extends JPanelWithOverlay
         } else {
             run.run();
         }
+    }
+
+    /**
+     * Reload the description of the step.
+     */
+    protected void updateText()
+    {
+        diagramLocaleListener.propertyChange(new PropertyChangeEvent(this, "diagramLocale", null, ServiceLocator
+                .get(ConfigurationManager.class).get().getDiagramLocale()));
     }
 
     /**
