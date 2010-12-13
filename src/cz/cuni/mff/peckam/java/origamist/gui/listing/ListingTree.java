@@ -70,6 +70,7 @@ public class ListingTree extends JTree
                     public void propertyChange(PropertyChangeEvent evt)
                     {
                         invalidate();
+                        repaint();
                     }
                 });
     }
