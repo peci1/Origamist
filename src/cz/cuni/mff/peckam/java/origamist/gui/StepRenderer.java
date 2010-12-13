@@ -10,6 +10,9 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.Locale;
 
 import javax.media.j3d.Appearance;
@@ -111,6 +114,9 @@ public class StepRenderer extends JPanelWithOverlay
     public StepRenderer()
     {
         setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
+        addMouseListener(new MouseListener());
+        addMouseWheelListener(new MouseListener());
 
         canvas = createCanvas();
 
@@ -437,5 +443,37 @@ public class StepRenderer extends JPanelWithOverlay
             decZoom();
         }
 
+    }
+
+    /**
+     * Mouse event handling.
+     * 
+     * @author Martin Pecka
+     */
+    class MouseListener extends MouseAdapter
+    {
+        @Override
+        public void mouseClicked(MouseEvent e)
+        {
+            super.mouseClicked(e);
+            if (displayMode.equals(DisplayMode.PAGE) && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() > 1) {
+                new FullscreenAction().actionPerformed(new ActionEvent(StepRenderer.this, ActionEvent.ACTION_LAST,
+                        "fullscreen"));
+            }
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e)
+        {
+            super.mouseWheelMoved(e);
+            int steps = e.getWheelRotation();
+            if (steps > 0) {
+                for (int i = 0; i < steps; i++)
+                    incZoom();
+            } else {
+                for (int i = steps; i < 0; i++)
+                    decZoom();
+            }
+        }
     }
 }
