@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
+
 /**
  * A basic class for paper.
  * 
@@ -23,6 +25,15 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
         } else {
             return new DoubleDimension(size.getWidth() / size.getHeight(), 1.0);
         }
+    }
+
+    @Override
+    public void setSize(UnitDimension value)
+    {
+        if (value.getUnit().equals(Unit.REL))
+            throw new IllegalStateException("Cannot set relative dimensions to paper.");
+        value.setReference(value.getUnit(), value.getMax());
+        super.setSize(value);
     }
 
 }

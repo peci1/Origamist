@@ -3,12 +3,14 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -17,8 +19,10 @@ import java.util.Vector;
 import java.util.prefs.BackingStoreException;
 
 import javax.swing.AbstractAction;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
 
@@ -33,8 +37,11 @@ import cz.cuni.mff.peckam.java.origamist.files.CategoriesContainer;
 import cz.cuni.mff.peckam.java.origamist.files.Category;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * The window with the settings of the viewer.
@@ -44,19 +51,31 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 public class SettingsFrame extends JFrame
 {
     /** */
-    private static final long        serialVersionUID = -4330246919376017211L;
+    private static final long                        serialVersionUID = -4330246919376017211L;
 
     /** Combobox for selecting the language of the application. */
-    protected final JComboBox        appLocaleComboBox;
+    protected final JComboBox                        appLocaleComboBox;
 
     /** Combobox for selecting the default language of displayed origamis. */
-    protected final JComboBox        diagramLocaleComboBox;
+    protected final JComboBox                        diagramLocaleComboBox;
+
+    /** Combobox for selecting the default measurement unit. */
+    protected final JComboBox                        preferredUnitComboBox;
+
+    /** Cache for the localized names of the units. */
+    protected final Hashtable<Unit, LocalizedString> unitLabels;
+
+    /**
+     * The label for <code>null</code> unit (to show the unit set in the
+     * {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension}).
+     */
+    protected final LocalizedString                  nullUnitLabel;
 
     /** Button for applying the changes. */
-    protected final JLocalizedButton okBtn;
+    protected final JLocalizedButton                 okBtn;
 
     /** Button for cancelling the changes. */
-    protected final JLocalizedButton cancelBtn;
+    protected final JLocalizedButton                 cancelBtn;
 
     public SettingsFrame()
     {
@@ -73,11 +92,21 @@ public class SettingsFrame extends JFrame
         l.propertyChange(new PropertyChangeEvent(this, "locale", null, ServiceLocator.get(ConfigurationManager.class)
                 .get().getLocale()));
 
+        nullUnitLabel = new LocalizedString("application", "units.default");
+        unitLabels = new Hashtable<Unit, LocalizedString>(Unit.values().length);
+        for (Unit u : Unit.values()) {
+            unitLabels.put(u, UnitHelper.getUnitDescription(u, true));
+        }
+
         appLocaleComboBox = new JComboBox(moveSuggestedLocalesToTop(getLocales(), getAppSuggestedLocales()));
         appLocaleComboBox.setRenderer(new LocaleListCellRenderer());
 
         diagramLocaleComboBox = new JComboBox(moveSuggestedLocalesToTop(getLocales(), getDiagramSuggestedLocales()));
         diagramLocaleComboBox.setRenderer(new LocaleListCellRenderer());
+
+        preferredUnitComboBox = new JComboBox(getUnits());
+        preferredUnitComboBox.setRenderer(new UnitListCellRenderer());
+        preferredUnitComboBox.setSelectedItem(ServiceLocator.get(ConfigurationManager.class).get().getPreferredUnit());
 
         okBtn = new JLocalizedButton.OKButton();
         okBtn.setAction(new OKAction());
@@ -95,7 +124,8 @@ public class SettingsFrame extends JFrame
      */
     protected void buildLayout()
     {
-        setLayout(new FormLayout("$dm,left:pref,$lcgap,pref:grow,right:pref,$dm", "$dm,pref,$ugap,pref,$ugap,pref,$dm"));
+        setLayout(new FormLayout("$dm,left:pref,$lcgap,pref:grow,right:pref,$dm",
+                "$dm,pref,$ugap,pref,$ugap,pref,$ugap,pref,$dm"));
         CellConstraints cc = new CellConstraints();
 
         add(new JLocalizedLabel("application", "appLocale"), cc.xy(2, 2));
@@ -104,8 +134,11 @@ public class SettingsFrame extends JFrame
         add(new JLocalizedLabel("application", "diagramLocale"), cc.xy(2, 4));
         add(diagramLocaleComboBox, cc.xyw(4, 4, 2));
 
-        add(okBtn, cc.xy(5, 6));
-        add(cancelBtn, cc.xy(2, 6));
+        add(new JLocalizedLabel("application", "preferredUnit"), cc.xy(2, 6));
+        add(preferredUnitComboBox, cc.xyw(4, 6, 2));
+
+        add(okBtn, cc.xy(5, 8));
+        add(cancelBtn, cc.xy(2, 8));
     }
 
     /**
@@ -213,6 +246,18 @@ public class SettingsFrame extends JFrame
     }
 
     /**
+     * Return all defined units and place a <code>null</code> item at the beginning of the list.
+     * 
+     * @return All defined units and place a <code>null</code> item at the beginning of the list.
+     */
+    protected Vector<Unit> getUnits()
+    {
+        Vector<Unit> units = new Vector<Unit>(Arrays.asList(Unit.values()));
+        units.add(0, null);
+        return units;
+    }
+
+    /**
      * A comparator of locales based on their textual representation.
      * 
      * @author Martin Pecka
@@ -255,6 +300,8 @@ public class SettingsFrame extends JFrame
                     .setLocale((Locale) appLocaleComboBox.getSelectedItem());
             ServiceLocator.get(ConfigurationManager.class).get()
                     .setDiagramLocale((Locale) diagramLocaleComboBox.getSelectedItem());
+            ServiceLocator.get(ConfigurationManager.class).get()
+                    .setPreferredUnit((Unit) preferredUnitComboBox.getSelectedItem());
             try {
                 ServiceLocator.get(ConfigurationManager.class).persist();
             } catch (BackingStoreException e1) {
@@ -282,5 +329,29 @@ public class SettingsFrame extends JFrame
             setVisible(false);
         }
 
+    }
+
+    /**
+     * A renderer to display available units.
+     * 
+     * @author Martin Pecka
+     */
+    class UnitListCellRenderer extends DefaultListCellRenderer
+    {
+        /** */
+        private static final long serialVersionUID = 8031715960897791362L;
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus)
+        {
+            Component result = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value == null) {
+                setText(nullUnitLabel.toString());
+            } else {
+                setText(unitLabels.get(value).toString());
+            }
+            return result;
+        }
     }
 }

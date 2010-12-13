@@ -10,6 +10,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -120,7 +124,7 @@ public class ModelInfoPanel extends JHideablePanel
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                Locale locale = (Locale) evt.getNewValue();
+                Locale locale = ServiceLocator.get(ConfigurationManager.class).get().getLocale();
 
                 name.setText(ModelInfoPanel.this.origami.getName(locale));
                 String homePage = ResourceBundle.getBundle("viewer", locale).getString("author.homepage");
@@ -129,11 +133,19 @@ public class ModelInfoPanel extends JHideablePanel
                         + (ModelInfoPanel.this.origami.getAuthor().getHomepage() == null ? "" : " (<a href=\""
                                 + ModelInfoPanel.this.origami.getAuthor().getHomepage() + "\">" + homePage + "</a>)")
                         + "</html>");
-                paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString());
+
+                Calendar cal = new GregorianCalendar(locale);
+                cal.set(ModelInfoPanel.this.origami.getYear().getYear(), 1, 1);
+                year.setText(new SimpleDateFormat("yyyy", locale).format(cal.getTime()));
+
+                paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString(true));
 
                 paperNote.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getNote(locale));
                 paperNote.setVisible(!(paperNote.getText() == null || paperNote.getText().equals("")));
                 paperNoteDesc.setVisible(paperNote.isVisible());
+                paperWeight.setText(MessageFormat.format(
+                        ResourceBundle.getBundle("application", locale).getString("units.gramm_per_meter2"),
+                        ModelInfoPanel.this.origami.getModel().getPaper().getWeight()));
 
                 desc.setText(ModelInfoPanel.this.origami.getDescription(locale));
                 desc.setVisible(!(desc.getText() == null || desc.getText().equals("")));
@@ -142,6 +154,7 @@ public class ModelInfoPanel extends JHideablePanel
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", localeListener);
+        ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("preferredUnit", localeListener);
 
         setOrigami(origami);
 
@@ -212,8 +225,6 @@ public class ModelInfoPanel extends JHideablePanel
 
         license.setText(origami.getLicense().getName());
 
-        year.setText(new Integer(origami.getYear().getYear()).toString());
-
         original.setText(origami.getOriginal() == null ? "" : origami.getOriginal().toString());
         original.setVisible(!(original.getText() == null || original.getText().equals("")));
         originalDesc.setVisible(original.isVisible());
@@ -225,8 +236,6 @@ public class ModelInfoPanel extends JHideablePanel
         c = origami.getModel().getPaper().getColors().getBackground();
         paperBackground.setText("R: " + c.getRed() + ", G: " + c.getGreen() + ", B: " + c.getBlue());
         paperBackground.setBackground(c);
-
-        paperWeight.setText(origami.getModel().getPaper().getWeight() + " g/m²");
 
         localeListener.propertyChange(new PropertyChangeEvent(this, "locale", null, ServiceLocator
                 .get(ConfigurationManager.class).get().getLocale()));

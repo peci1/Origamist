@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.configuration;
 import java.io.File;
 import java.util.Locale;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
 
 /**
@@ -15,6 +16,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
  * locale
  * diagramLocale
  * lastExportPath
+ * preferredUnit
  * 
  * @author Martin Pecka
  */
@@ -34,6 +36,12 @@ public class Configuration extends PropertyChangeSource
 
     /** The path that was last used for exporting a model/listing. */
     protected File   lastExportPath = null;
+
+    /**
+     * The preferred measurement unit. <code>null</code> means that the unit defined in the corresponding
+     * {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension} should be used for printing.
+     */
+    protected Unit   preferredUnit  = null;
 
     /**
      * @return the locale
@@ -87,6 +95,27 @@ public class Configuration extends PropertyChangeSource
         File oldPath = this.lastExportPath;
         this.lastExportPath = lastExportPath;
         firePropertyChange("lastExportPath", oldPath, lastExportPath);
+    }
+
+    /**
+     * @return The preferred measurement unit. <code>null</code> means that the unit defined in the corresponding
+     *         {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension} should be used for printing.
+     */
+    public Unit getPreferredUnit()
+    {
+        return preferredUnit;
+    }
+
+    /**
+     * @param preferredUnit The preferred measurement unit. <code>null</code> means that the unit defined in the
+     *            corresponding {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension} should be used for
+     *            printing.
+     */
+    public void setPreferredUnit(Unit preferredUnit)
+    {
+        Unit oldUnit = this.preferredUnit;
+        this.preferredUnit = preferredUnit;
+        firePropertyChange("preferredUnit", oldUnit, preferredUnit);
     }
 
 }

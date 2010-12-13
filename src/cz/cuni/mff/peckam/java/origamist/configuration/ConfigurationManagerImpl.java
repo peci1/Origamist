@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.Service;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter;
@@ -38,12 +39,16 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         Locale locale = null;
         Locale diagramLocale = null;
         File lastExportPath = null;
+        Unit preferredUnit = null;
 
         try {
             prefs = Preferences.userNodeForPackage(ConfigurationManager.class);
             locale = LocaleConverter.parse(prefs.get("locale", null));
             diagramLocale = LocaleConverter.parse(prefs.get("diagramLocale", null));
             lastExportPath = new File(prefs.get("lastExportPath", System.getProperty("user.dir")));
+            try {
+                preferredUnit = Enum.valueOf(Unit.class, prefs.get("preferredUnit", null));
+            } catch (NullPointerException e) {} catch (IllegalArgumentException e) {}
         } catch (SecurityException e) {
             System.err
                     .println("Couldn't load configuration because of security constraints. Using default configuration.");
@@ -59,6 +64,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         configuration.setDiagramLocale(diagramLocale);
 
         configuration.setLastExportPath(lastExportPath);
+
+        configuration.setPreferredUnit(preferredUnit);
     }
 
     @Override
@@ -82,6 +89,12 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         prefs.put("diagramLocale", tmp == null ? "" : tmp);
 
         prefs.put("lastExportPath", configuration.getLastExportPath().toString());
+
+        if (configuration.getPreferredUnit() == null) {
+            prefs.remove("preferredUnit");
+        } else {
+            prefs.put("preferredUnit", configuration.getPreferredUnit().toString());
+        }
 
         prefs.flush();
     }

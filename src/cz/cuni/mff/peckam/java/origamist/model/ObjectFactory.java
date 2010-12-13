@@ -29,6 +29,10 @@ public class ObjectFactory extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         if (value.getModel() != null && value.getModel().getSteps() != null && value instanceof Origami) {
             ((Origami) value).initSteps();
         }
+        if (value.getModel() != null && value.getModel().getPaper() != null) {
+            // set the reference unit to the paper size
+            ((Origami) value).getModel().getPaper().setSize(((Origami) value).getModel().getPaper().getSize());
+        }
         return result;
     }
 }
