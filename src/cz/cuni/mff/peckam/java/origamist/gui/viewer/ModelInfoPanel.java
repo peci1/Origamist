@@ -10,11 +10,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.Permission;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
@@ -30,11 +32,13 @@ import javax.swing.origamist.JMultilineLabel;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
+import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.gui.JLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.gui.JLocalizedLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.gui.JMultilineLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
@@ -60,7 +64,7 @@ public class ModelInfoPanel extends JHideablePanel
     protected JMultilineLabel        author              = new JMultilineLabelWithTooltip("");
     protected JLocalizedLabel        licenseDesc         = new JLocalizedLabelWithTooltip("viewer", "licenseLabel",
                                                                  "%1s:");
-    protected JLabel                 license             = new JLabelWithTooltip();
+    protected JLabel                 license             = new JLabel();
     protected JLocalizedLabel        yearDesc            = new JLocalizedLabelWithTooltip("viewer", "yearLabel", "%1s:");
     protected JLabel                 year                = new JLabelWithTooltip();
     protected JLocalizedLabel        originalDesc        = new JLocalizedLabelWithTooltip("viewer", "originalLabel",
@@ -133,6 +137,8 @@ public class ModelInfoPanel extends JHideablePanel
                         + (ModelInfoPanel.this.origami.getAuthor().getHomepage() == null ? "" : " (<a href=\""
                                 + ModelInfoPanel.this.origami.getAuthor().getHomepage() + "\">" + homePage + "</a>)")
                         + "</html>");
+
+                license.setToolTipText(createLicenseTooltip(ModelInfoPanel.this.origami.getLicense()));
 
                 Calendar cal = new GregorianCalendar(locale);
                 cal.set(ModelInfoPanel.this.origami.getYear().getYear(), 1, 1);
@@ -243,5 +249,53 @@ public class ModelInfoPanel extends JHideablePanel
         show();
 
         revalidate();
+    }
+
+    /**
+     * Return the tooltip displaying information about the given license.
+     * 
+     * @param license The license the tooltip will be generated from.
+     * @return The tooltip displaying information about the given license.
+     */
+    protected String createLicenseTooltip(License license)
+    {
+        StringBuilder tooltip = new StringBuilder();
+
+        Locale l = ServiceLocator.get(ConfigurationManager.class).get().getLocale();
+        ResourceBundle viewerMessages = ResourceBundle.getBundle("viewer", l);
+        ResourceBundle messages = ResourceBundle.getBundle("application", l);
+
+        tooltip.append("<html>").append(
+                "<head><style>body {width: 500px;} ul {padding: 0px; margin: 0px; margin-left: 20px;}</style></head>");
+        tooltip.append("<body>");
+        tooltip.append("<h1>" + license.getName() + "</h1>").append(
+                viewerMessages.getString("license.tooltip.youArePermittedTo"));
+        if (license.getPermission().size() == 0) {
+            tooltip.append(messages.getString("permission.doNothing"));
+        } else {
+            tooltip.append("<ul>");
+            for (Permission p : license.getPermission()) {
+                String name = p.getName();
+                try {
+                    name = messages.getString("permission." + name);
+                } catch (MissingResourceException e) {}
+                tooltip.append("<li>" + name + "</li>");
+            }
+            tooltip.append("</ul>");
+        }
+
+        if (license.getHomepage() != null) {
+            tooltip.append("<b>" + viewerMessages.getString("license.tooltip.homepage") + "</b>: "
+                    + license.getHomepage());
+        }
+
+        if (license.getContent() != null) {
+            tooltip.append("<h2>" + viewerMessages.getString("license.tooltip.licenseText") + "</h2>");
+            tooltip.append("<p>" + license.getContent() + "</p>");
+        }
+        tooltip.append("</body>");
+        tooltip.append("</html>");
+
+        return ServiceLocator.get(TooltipFactory.class).getPlain(tooltip.toString());
     }
 }
