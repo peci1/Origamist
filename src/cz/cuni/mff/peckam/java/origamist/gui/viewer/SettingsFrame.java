@@ -21,7 +21,7 @@ import java.util.prefs.BackingStoreException;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
+import javax.swing.JDialog;
 import javax.swing.JList;
 import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
@@ -48,7 +48,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
  * 
  * @author Martin Pecka
  */
-public class SettingsFrame extends JFrame
+public class SettingsFrame extends JDialog
 {
     /** */
     private static final long                        serialVersionUID = -4330246919376017211L;
@@ -117,6 +117,8 @@ public class SettingsFrame extends JFrame
         buildLayout();
 
         pack();
+
+        setModalityType(ModalityType.APPLICATION_MODAL);
     }
 
     /**
