@@ -5,8 +5,11 @@
 /doc/*.log
 /doc/*.out
 /doc/.~lock*
+/OrigamistEditor.jar
 /OrigamistViewer.jar
 /signapplet.bat
 /signapplet.sh
 /browser.bat
 /browser.sh
+/origami_editor.jnlp
+/origami_viewer.jnlp
