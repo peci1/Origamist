@@ -7,12 +7,16 @@ import java.applet.AppletContext;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
+import javax.swing.ButtonGroup;
 import javax.swing.JApplet;
 import javax.swing.JRootPane;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
@@ -44,16 +48,26 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long     serialVersionUID = -6853141518719373854L;
+    private static final long     serialVersionUID        = -6853141518719373854L;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet             bootstrap        = null;
+    protected JApplet             bootstrap               = null;
 
     /** The currently displayed origami. May be <code>null</code>. */
-    protected Origami             origami          = null;
+    protected Origami             origami                 = null;
+
+    /** Reflects whether alternative action buttons are shown. */
+    protected boolean             alternativeActionsShown = false;
 
     /** The main application toolbar. */
-    protected JToolBarWithBgImage toolbar          = null;
+    protected JToolBarWithBgImage toolbar                 = null;
+
+    /** Toolbar buttons for model operations. */
+    protected JToggleButton       operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
+            operationValleyFoldUnfold, operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst,
+            operationTurnOver, operationRotate, operationPull, operationCrimpFoldInside, operationCrimpFoldOutside,
+            operationOpen, operationReverseFoldInside, operationReverseFoldOutside, operationRepeatAction,
+            operationRabbitFold, operationSquashFold, operationMark;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -72,6 +86,28 @@ public class OrigamiEditor extends CommonGui
     {
         super();
         this.bootstrap = bootstrap;
+
+        addGlobalKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+                super.keyPressed(e);
+                if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+                    if (!alternativeActionsShown)
+                        showAlternativeActions(true);
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                super.keyReleased(e);
+                if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+                    if (alternativeActionsShown)
+                        showAlternativeActions(false);
+                }
+            }
+        });
     }
 
     /**
@@ -97,6 +133,35 @@ public class OrigamiEditor extends CommonGui
     }
 
     /**
+     * Show or hide (depending on the parameter) alternative diagram actions - eg. display a valley fold button instead
+     * of mountain fold button and so on.
+     * 
+     * @param show If <code>true</code>, show alternatives, otherwise show the default buttons.
+     */
+    protected void showAlternativeActions(boolean show)
+    {
+        alternativeActionsShown = show;
+
+        operationMountainFold.setVisible(!show);
+        operationValleyFold.setVisible(show);
+
+        operationMountainFoldUnfold.setVisible(!show);
+        operationValleyFoldUnfold.setVisible(show);
+
+        operationThunderboltFoldMountainFirst.setVisible(!show);
+        operationThunderboltFoldValleyFirst.setVisible(show);
+
+        operationTurnOver.setVisible(!show);
+        operationRotate.setVisible(show);
+
+        operationCrimpFoldInside.setVisible(!show);
+        operationCrimpFoldOutside.setVisible(show);
+
+        operationReverseFoldInside.setVisible(!show);
+        operationReverseFoldOutside.setVisible(show);
+    }
+
+    /**
      * @return The main application toolbar.
      */
     protected JToolBarWithBgImage createToolbar()
@@ -113,6 +178,63 @@ public class OrigamiEditor extends CommonGui
         toolbar.add(new JToolBar.Separator());
 
         toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
+
+        ButtonGroup operationGroup = new ButtonGroup();
+
+        toolbar.add(operationMountainFold = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.mountain", null));
+        toolbar.add(operationValleyFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.valley",
+                null));
+        toolbar.add(operationMountainFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.mountainFoldUnfold", null));
+        toolbar.add(operationValleyFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.valleyFoldUnfold", null));
+        toolbar.add(operationThunderboltFoldMountainFirst = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.thunderboltMountainFirst", null));
+        toolbar.add(operationThunderboltFoldValleyFirst = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.thunderboltValleyFirst", null));
+        toolbar.add(operationTurnOver = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.turnOver",
+                null));
+        toolbar.add(operationRotate = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.rotate",
+                null));
+        toolbar.add(operationPull = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.pull", null));
+        toolbar.add(operationCrimpFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.crimpInside", null));
+        toolbar.add(operationCrimpFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.crimpOutside", null));
+        toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open", null));
+        toolbar.add(operationReverseFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.reverseInside", null));
+        toolbar.add(operationReverseFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.reverseOutside", null));
+        toolbar.add(operationRepeatAction = toolbar.createToolbarItem(new JToggleButton(), null,
+                "menu.operation.repeat", null));
+        toolbar.add(operationRabbitFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.rabbit",
+                null));
+        toolbar.add(operationSquashFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.squash",
+                null));
+        toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark", null));
+
+        operationGroup.add(operationMountainFold);
+        operationGroup.add(operationValleyFold);
+        operationGroup.add(operationMountainFoldUnfold);
+        operationGroup.add(operationValleyFoldUnfold);
+        operationGroup.add(operationThunderboltFoldMountainFirst);
+        operationGroup.add(operationThunderboltFoldValleyFirst);
+        operationGroup.add(operationTurnOver);
+        operationGroup.add(operationRotate);
+        operationGroup.add(operationPull);
+        operationGroup.add(operationCrimpFoldInside);
+        operationGroup.add(operationCrimpFoldOutside);
+        operationGroup.add(operationOpen);
+        operationGroup.add(operationReverseFoldInside);
+        operationGroup.add(operationReverseFoldOutside);
+        operationGroup.add(operationRepeatAction);
+        operationGroup.add(operationRabbitFold);
+        operationGroup.add(operationSquashFold);
+        operationGroup.add(operationMark);
+
+        showAlternativeActions(false);
 
         return toolbar;
     }
@@ -217,7 +339,6 @@ public class OrigamiEditor extends CommonGui
      */
     class SettingsAction extends AbstractAction
     {
-
         /** */
         private static final long serialVersionUID = -583073126579360879L;
 

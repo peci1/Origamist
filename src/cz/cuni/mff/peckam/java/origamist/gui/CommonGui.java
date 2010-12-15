@@ -3,6 +3,11 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -126,6 +131,9 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(TooltipFactory.class, new TooltipFactory());
     }
 
+    /**
+     * Setup the loggers used by the application.
+     */
     protected void setupLoggers()
     {
         BasicConfigurator.configure();
@@ -144,6 +152,80 @@ public abstract class CommonGui extends JApplet
         l.setLevel(Level.ALL);
         l.addAppender(new GUIAppender(this));
     }
+
+    /**
+     * Add the key listener in such a way that it reacts to the keypresses not depending on what is focused.
+     * 
+     * @param listener The listener to be added globally.
+     */
+    protected void addGlobalKeyListener(final KeyListener listener)
+    {
+        new GlobalKeyListenerContainerListner(listener).add(getContentPane());
+    }
+
+    /**
+     * A container listener which adds/removes the given KeyListener to/from all added/removed components.
+     * 
+     * @author Martin Pecka
+     */
+    protected class GlobalKeyListenerContainerListner implements ContainerListener
+    {
+
+        /** The key listener to be added to all the components. */
+        protected KeyListener listener;
+
+        /**
+         * @param listener The key listener to be added to all the components.
+         */
+        public GlobalKeyListenerContainerListner(KeyListener listener)
+        {
+            this.listener = listener;
+        }
+
+        @Override
+        public void componentRemoved(ContainerEvent e)
+        {
+            this.remove(e.getChild());
+        }
+
+        @Override
+        public void componentAdded(ContainerEvent e)
+        {
+            this.add(e.getChild());
+        }
+
+        /**
+         * Make the given component (and all of its children, if it is a {@link Container}) listen by the listener.
+         * 
+         * @param c
+         */
+        public void add(Component c)
+        {
+            c.addKeyListener(listener);
+            if (c instanceof Container) {
+                Container cont = (Container) c;
+                cont.addContainerListener(this);
+                for (Component cc : cont.getComponents())
+                    this.add(cc);
+            }
+        }
+
+        /**
+         * Make the given component (and all of its children, if it is a {@link Container}) not listen by the listener.
+         * 
+         * @param c
+         */
+        public void remove(Component c)
+        {
+            c.removeKeyListener(listener);
+            if (c instanceof Container) {
+                Container cont = (Container) c;
+                cont.addContainerListener(this);
+                for (Component cc : cont.getComponents())
+                    this.remove(cc);
+            }
+        }
+    };
 
     @Override
     public void start()
