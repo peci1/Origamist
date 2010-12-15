@@ -18,6 +18,14 @@ public class JToolBarWithBgImage extends OrigamistToolBar
     protected BackgroundImageSupport bg               = null;
 
     /**
+     * @param bundleName The name of the resource bundle this toolbar will fetch the localizations from.
+     */
+    public JToolBarWithBgImage(String bundleName)
+    {
+        super(bundleName);
+    }
+
+    /**
      * @return the backgroundImage
      */
     public BackgroundImageSupport getBackgroundImage()

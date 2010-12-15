@@ -4,18 +4,29 @@
 package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
 import java.applet.AppletContext;
+import java.awt.Color;
 import java.awt.Container;
+import java.awt.event.ActionEvent;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import javax.swing.AbstractAction;
 import javax.swing.JApplet;
 import javax.swing.JRootPane;
+import javax.swing.JToolBar;
+import javax.swing.origamist.BackgroundImageSupport;
+import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
+import javax.swing.origamist.JToolBarWithBgImage;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
+
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
+import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
@@ -33,10 +44,16 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long serialVersionUID = -6853141518719373854L;
+    private static final long     serialVersionUID = -6853141518719373854L;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet         bootstrap        = null;
+    protected JApplet             bootstrap        = null;
+
+    /** The currently displayed origami. May be <code>null</code>. */
+    protected Origami             origami          = null;
+
+    /** The main application toolbar. */
+    protected JToolBarWithBgImage toolbar          = null;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -63,7 +80,7 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void createComponents()
     {
-
+        toolbar = createToolbar();
     }
 
     /**
@@ -72,7 +89,48 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void buildLayout()
     {
+        setLayout(new FormLayout("pref:grow", "pref"));
 
+        CellConstraints cc = new CellConstraints();
+
+        add(toolbar, cc.xy(1, 1));
+    }
+
+    /**
+     * @return The main application toolbar.
+     */
+    protected JToolBarWithBgImage createToolbar()
+    {
+        JToolBarWithBgImage toolbar = new JToolBarWithBgImage("editor");
+        toolbar.setFloatable(false);
+        toolbar.setBackground(new Color(231, 231, 184, 230));
+        toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
+                .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
+
+        toolbar.add(toolbar.createToolbarButton(null, "menu.new", null));
+        toolbar.add(toolbar.createToolbarButton(null, "menu.open", null));
+
+        toolbar.add(new JToolBar.Separator());
+
+        toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
+
+        return toolbar;
+    }
+
+    /**
+     * @return the origami
+     */
+    public Origami getOrigami()
+    {
+        return origami;
+    }
+
+    /**
+     * @param origami the origami to set
+     */
+    public void setOrigami(Origami origami)
+    {
+        this.origami = origami;
     }
 
     @Override
@@ -150,5 +208,23 @@ public class OrigamiEditor extends CommonGui
         if (bootstrap != null)
             return bootstrap.getAppletInfo();
         return super.getAppletInfo();
+    }
+
+    /**
+     * Shows the settings dialog.
+     * 
+     * @author Martin Pecka
+     */
+    class SettingsAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -583073126579360879L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            new SettingsFrame().setVisible(true);
+        }
     }
 }

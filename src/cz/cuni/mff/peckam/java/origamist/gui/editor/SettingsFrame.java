@@ -1,11 +1,9 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.gui.viewer;
+package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
 import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
@@ -19,10 +17,6 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
-import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
-import cz.cuni.mff.peckam.java.origamist.files.CategoriesContainer;
-import cz.cuni.mff.peckam.java.origamist.files.Category;
-import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.gui.AbstractSettingsFrame;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
@@ -36,9 +30,8 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class SettingsFrame extends AbstractSettingsFrame
 {
-
     /** */
-    private static final long serialVersionUID = 5672395004264190956L;
+    private static final long serialVersionUID = 2951337810187496820L;
 
     public SettingsFrame()
     {
@@ -74,36 +67,15 @@ public class SettingsFrame extends AbstractSettingsFrame
         result.add(ServiceLocator.get(ConfigurationManager.class).get().getLocale());
         result.add(Locale.getDefault());
 
-        Iterator<? extends CategoriesContainer> ic = ServiceLocator.get(OrigamiViewer.class).filesToDisplay
-                .recursiveCategoryIterator(false);
-        while (ic.hasNext()) {
-            Category cat = (Category) ic.next();
-            for (LangString ls : cat.getName())
+        OrigamiEditor editor = ServiceLocator.get(OrigamiEditor.class);
+        if (editor.getOrigami() != null) {
+            Origami o = editor.getOrigami();
+            for (LangString ls : o.getDescription())
                 result.add(ls.getLang());
-        }
-
-        Iterator<File> itf = ServiceLocator.get(OrigamiViewer.class).filesToDisplay.recursiveFileIterator();
-        while (itf.hasNext()) {
-            File f = itf.next();
-            for (LangString ls : f.getName())
+            for (LangString ls : o.getName())
                 result.add(ls.getLang());
-            for (LangString ls : f.getShortdesc())
+            for (LangString ls : o.getShortdesc())
                 result.add(ls.getLang());
-            if (f.isOrigamiLoaded()) {
-                try {
-                    Origami o = f.getOrigami();
-                    for (LangString ls : o.getDescription())
-                        result.add(ls.getLang());
-                    for (LangString ls : o.getName())
-                        result.add(ls.getLang());
-                    for (LangString ls : o.getShortdesc())
-                        result.add(ls.getLang());
-                } catch (UnsupportedDataFormatException e) {
-                    assert false : "Origami loaded but getOrigami() threw exception.";
-                } catch (IOException e) {
-                    assert false : "Origami loaded but getOrigami() threw exception.";
-                }
-            }
         }
 
         return result;

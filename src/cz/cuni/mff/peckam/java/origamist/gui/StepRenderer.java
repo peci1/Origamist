@@ -129,7 +129,7 @@ public class StepRenderer extends JPanelWithOverlay
 
         Border emptyBorder = BorderFactory.createEmptyBorder();
 
-        toolbar = new JToolBarWithBgImage();
+        toolbar = new JToolBarWithBgImage("viewer");
         toolbar.setFloatable(false);
         toolbar.setOpaque(false); // MAGIC
         toolbar.setBackground(new Color(231, 231, 184, 230));

@@ -36,19 +36,26 @@ public class OrigamistToolBar extends JToolBar
     private static final long serialVersionUID = 7248513028554332970L;
 
     /** The application localization texts. */
-    protected ResourceBundle  appMessages;
+    protected ResourceBundle  messages;
 
-    public OrigamistToolBar()
+    /** The name of the resource bundle this toolbar will fetch the localizations from. */
+    protected String          bundleName;
+
+    /**
+     * @param bundleName The name of the resource bundle this toolbar will fetch the localizations from.
+     */
+    public OrigamistToolBar(String bundleName)
     {
         super();
+        this.bundleName = bundleName;
         PropertyChangeListener l = new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                ResourceBundle oldAppMessages = appMessages;
-                appMessages = ResourceBundle.getBundle("application", (Locale) evt.getNewValue());
-                if (oldAppMessages == null || !oldAppMessages.equals(appMessages))
-                    firePropertyChange("appMessages", oldAppMessages, appMessages);
+                ResourceBundle oldAppMessages = messages;
+                messages = ResourceBundle.getBundle(OrigamistToolBar.this.bundleName, (Locale) evt.getNewValue());
+                if (oldAppMessages == null || !oldAppMessages.equals(messages))
+                    firePropertyChange("messages", oldAppMessages, messages);
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", l);
@@ -145,14 +152,14 @@ public class OrigamistToolBar extends JToolBar
             {
                 boolean hideText = false;
                 try {
-                    String hide = appMessages.getString(bundleName + ".hideText");
+                    String hide = messages.getString(bundleName + ".hideText");
                     if (!"false".equals(hide))
                         hideText = true;
                 } catch (MissingResourceException e) {}
 
                 try {
                     if (!hideText)
-                        button.setText(appMessages.getString(bundleName));
+                        button.setText(messages.getString(bundleName));
                     else
                         button.setText("");
                 } catch (MissingResourceException e) {
@@ -160,11 +167,11 @@ public class OrigamistToolBar extends JToolBar
                 }
                 String mnemonic = null;
                 try {
-                    mnemonic = appMessages.getString(bundleName + ".mnemonic");
+                    mnemonic = messages.getString(bundleName + ".mnemonic");
                 } catch (MissingResourceException e) {}
                 String accelerator = null;
                 try {
-                    accelerator = appMessages.getString(bundleName + ".accelerator");
+                    accelerator = messages.getString(bundleName + ".accelerator");
                 } catch (MissingResourceException e) {}
 
                 KeyStroke accStroke = KeyStroke.getKeyStroke(accelerator);
@@ -198,17 +205,17 @@ public class OrigamistToolBar extends JToolBar
                 try {
                     String title = null;
                     try {
-                        title = appMessages.getString(bundleName);
+                        title = messages.getString(bundleName);
                     } catch (MissingResourceException e) {}
                     String tooltip = ServiceLocator.get(TooltipFactory.class).getDecorated(
-                            appMessages.getString(bundleName + ".tooltip"), title, iconName, accStroke);
+                            messages.getString(bundleName + ".tooltip"), title, iconName, accStroke);
                     button.setToolTipText(tooltip);
                     button.getAccessibleContext().setAccessibleDescription(tooltip);
                 } catch (MissingResourceException e) {}
             }
         };
-        listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
-        addPropertyChangeListener("appMessages", listener);
+        listener.propertyChange(new PropertyChangeEvent(this, "messages", null, messages));
+        addPropertyChangeListener("messages", listener);
 
         return button;
     }
@@ -228,14 +235,14 @@ public class OrigamistToolBar extends JToolBar
             public void propertyChange(PropertyChangeEvent evt)
             {
                 try {
-                    separator.setTitle(appMessages.getString(bundleName));
+                    separator.setTitle(messages.getString(bundleName));
                 } catch (MissingResourceException e) {
                     separator.setTitle("");
                 }
             }
         };
-        listener.propertyChange(new PropertyChangeEvent(this, "appMessages", null, appMessages));
-        addPropertyChangeListener("appMessages", listener);
+        listener.propertyChange(new PropertyChangeEvent(this, "messages", null, messages));
+        addPropertyChangeListener("messages", listener);
 
         return separator;
     }

@@ -180,7 +180,7 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         diagramPane = new JPanel();
 
-        toolbar = new JToolBarWithBgImage();
+        toolbar = new JToolBarWithBgImage("viewer");
         toolbar.setFloatable(false);
         toolbar.setBackground(new Color(231, 231, 184, 230));
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()

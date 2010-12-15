@@ -490,7 +490,7 @@ public class OrigamiViewer extends CommonGui
      */
     protected JComponent createMainToolbar()
     {
-        JToolBarWithBgImage toolbar = new JToolBarWithBgImage();
+        JToolBarWithBgImage toolbar = new JToolBarWithBgImage("viewer");
         toolbar.setFloatable(false);
         toolbar.setBackground(new Color(231, 231, 184, 230));
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
