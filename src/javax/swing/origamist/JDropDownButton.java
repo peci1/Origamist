@@ -24,10 +24,14 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -35,7 +39,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
 
 /**
  * A Drop Down Button.
@@ -44,7 +47,7 @@ import javax.swing.border.CompoundBorder;
  * @author Martin Pecka - added Javadoc and some minor modifications.
  *         Copyright 2005 Mammoth Software LLC
  */
-public class DropDownButton extends JButton implements ActionListener
+public class JDropDownButton extends JButton
 {
 
     /** */
@@ -52,25 +55,29 @@ public class DropDownButton extends JButton implements ActionListener
 
     protected JPopupMenu      popup              = new JPopupMenu();
     protected JToolBar        tb                 = new ToolBar();
-    protected JButton         mainButton;
-    protected JButton         arrowButton;
+    protected JRolloverButton mainButton;
+    protected JRolloverButton arrowButton;
     protected ActionListener  mainButtonListener = new ActionListener() {
                                                      public void actionPerformed(ActionEvent e)
                                                      {
-                                                         Component component = popup.getComponent(0);
-                                                         if (component instanceof JMenuItem) {
-                                                             JMenuItem item = (JMenuItem) component;
-                                                             item.doClick(0);
+                                                         if (popup.getComponentCount() > 0) {
+                                                             Component component = popup.getComponent(0);
+                                                             if (component instanceof JMenuItem) {
+                                                                 JMenuItem item = (JMenuItem) component;
+                                                                 item.doClick(0);
+                                                             }
                                                          }
                                                      }
                                                  };
+
+    protected boolean         focusInvokedPopup  = false;
 
     /**
      * Create a dropdown button with the given icon and size set to 25x25 for the icon and 11x11 for the arrow.
      * 
      * @param icon The icon to set.
      */
-    public DropDownButton(Icon icon)
+    public JDropDownButton(Icon icon)
     {
         this(icon, new Dimension(25, 25));
     }
@@ -82,11 +89,11 @@ public class DropDownButton extends JButton implements ActionListener
      * @param icon The icon to set.
      * @param size The size of the main button.
      */
-    public DropDownButton(Icon icon, Dimension size)
+    public JDropDownButton(Icon icon, Dimension size)
     {
         this();
-        mainButton = new RolloverButton(icon, size, false);
-        arrowButton = new RolloverButton(new DownArrow(), new Dimension(11, 11), false);
+        mainButton = new JRolloverButton(icon, size, false);
+        arrowButton = new JRolloverButton(new DownArrow(), new Dimension(11, 11), false);
         init();
     }
 
@@ -96,7 +103,7 @@ public class DropDownButton extends JButton implements ActionListener
      * @param mainButton The main button of this dropdown.
      * @param arrowButton The arrow button.
      */
-    public DropDownButton(RolloverButton mainButton, RolloverButton arrowButton)
+    public JDropDownButton(JRolloverButton mainButton, JRolloverButton arrowButton)
     {
         this();
         this.mainButton = mainButton;
@@ -109,9 +116,9 @@ public class DropDownButton extends JButton implements ActionListener
      * 
      * @param mainButton The main button of this dropdown.
      */
-    public DropDownButton(RolloverButton mainButton)
+    public JDropDownButton(JRolloverButton mainButton)
     {
-        this(mainButton, new RolloverButton(new DownArrow(), new Dimension(11, 11), false));
+        this(mainButton, new JRolloverButton(new DownArrow(), new Dimension(11, 11), false));
     }
 
     /**
@@ -119,12 +126,12 @@ public class DropDownButton extends JButton implements ActionListener
      * 
      * @param mainButton The main button of this dropdown.
      */
-    public DropDownButton(JButton mainButton)
+    public JDropDownButton(AbstractButton mainButton)
     {
-        this(new RolloverButton(mainButton, false), new RolloverButton(new DownArrow(), new Dimension(11, 11), false));
+        this(new JRolloverButton(mainButton, false), new JRolloverButton(new DownArrow(), new Dimension(11, 11), false));
     }
 
-    private DropDownButton()
+    private JDropDownButton()
     {
         super();
         setBorder(null);
@@ -244,25 +251,19 @@ public class DropDownButton extends JButton implements ActionListener
     protected void initRolloverListener()
     {
         MouseListener l = new MouseAdapter() {
-            Border mainBorder  = null;
-            Border arrowBorder = null;
 
+            @Override
             public void mouseEntered(MouseEvent e)
             {
-                mainBorder = mainButton.getBorder();
-                arrowBorder = mainButton.getBorder();
-                mainButton.setBorder(new CompoundBorder(getRolloverBorder(), mainBorder));
-                arrowButton.setBorder(new CompoundBorder(getRolloverBorder(), arrowBorder));
-                mainButton.getModel().setRollover(true);
-                arrowButton.getModel().setRollover(true);
+                mainButton.setRollover(true);
+                arrowButton.setRollover(true);
             }
 
+            @Override
             public void mouseExited(MouseEvent e)
             {
-                mainButton.setBorder(mainBorder);
-                arrowButton.setBorder(arrowBorder);
-                mainButton.getModel().setRollover(false);
-                arrowButton.getModel().setRollover(false);
+                mainButton.setRollover(false);
+                arrowButton.setRollover(false);
             }
         };
         mainButton.addMouseListener(l);
@@ -276,14 +277,36 @@ public class DropDownButton extends JButton implements ActionListener
     {
         initRolloverListener();
 
+        this.setAction(new PopupAction());
+        mainButton.setAction(new PopupAction());
+        // using setAction() would delete the arrow icon
+        arrowButton.addActionListener(new PopupAction());
+
         super.setText(null);
         super.setIcon(null);
+
+        arrowButton.setFocusable(false);
+        setFocusable(false);
+
+        mainButton.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e)
+            {
+                if (!focusInvokedPopup) {
+                    focusInvokedPopup = true;
+                    setPopupVisible(true);
+                } else {
+                    focusInvokedPopup = false;
+                }
+            }
+        });
+
+        mainButton.setRolloverBorder(null);
+        arrowButton.setRolloverBorder(null);
 
         Icon disDownArrow = new DisabledDownArrow();
         arrowButton.setDisabledIcon(disDownArrow);
         arrowButton.setMaximumSize(new Dimension(11, 100));
-        mainButton.addActionListener(this);
-        arrowButton.addActionListener(this);
         mainButton.setOpaque(isOpaque());
         arrowButton.setOpaque(isOpaque());
 
@@ -348,22 +371,39 @@ public class DropDownButton extends JButton implements ActionListener
     public void setRunFirstItem(boolean isRunFirstItem)
     {
         if (isRunFirstItem) {
-            mainButton.removeActionListener(this);
+            mainButton.setAction(null);
             mainButton.addActionListener(mainButtonListener);
         }
     }
 
-    /*------------------------------[ ActionListener ]---------------------------------------------------*/
-
-    public void actionPerformed(ActionEvent ae)
+    public void setPopupVisible(boolean visible)
     {
-        JPopupMenu popup = getPopupMenu();
-        popup.show(this, 0, this.getHeight());
+        if (visible)
+            getPopupMenu().show(this, 0, this.getHeight());
+        else
+            getPopupMenu().setVisible(false);
     }
 
     public JPopupMenu getPopupMenu()
     {
         return popup;
+    }
+
+    /**
+     * Pops up the drop-down list.
+     * 
+     * @author Martin Pecka
+     */
+    private class PopupAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 3939022490935483876L;
+
+        @Override
+        public void actionPerformed(ActionEvent ae)
+        {
+            setPopupVisible(true);
+        }
     }
 
     private static class DownArrow implements Icon

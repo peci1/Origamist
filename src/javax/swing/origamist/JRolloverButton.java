@@ -18,12 +18,15 @@
 package javax.swing.origamist;
 
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -35,10 +38,10 @@ import javax.swing.border.CompoundBorder;
  * A button that uses a mouse listener to indicate rollover.
  * 
  * @author m. bangham
- * @author Martin Pecka - added Javadoc and some minor modifications.
+ * @author Martin Pecka - added Javadoc and some modifications.
  *         Copyright 2005 Mammoth Software LLC
  */
-public class RolloverButton extends JButton
+public class JRolloverButton extends JButton
 {
 
     /** If true, the size was explicitly set. */
@@ -47,10 +50,16 @@ public class RolloverButton extends JButton
     /** */
     private static final long serialVersionUID = 3091885225750513834L;
 
+    /** The border of the component. */
+    protected Border          compBorder       = super.getBorder();
+
+    /** The outer border to be used when the button is rolled over. */
+    protected Border          rolloverBorder   = BorderFactory.createRaisedBevelBorder();
+
     /**
      * Create the rollover button with no icon.
      */
-    public RolloverButton()
+    public JRolloverButton()
     {
         init();
         initRolloverListener();
@@ -62,7 +71,7 @@ public class RolloverButton extends JButton
      * @param icon The icon to display.
      * @param size The size of the button.
      */
-    public RolloverButton(Icon icon, Dimension size)
+    public JRolloverButton(Icon icon, Dimension size)
     {
         this(icon, size, true);
     }
@@ -76,7 +85,7 @@ public class RolloverButton extends JButton
      * @param size The size of the button.
      * @param isRollover Whether the button has to behave as rollover.
      */
-    public RolloverButton(Icon icon, Dimension size, boolean isRollover)
+    public JRolloverButton(Icon icon, Dimension size, boolean isRollover)
     {
         super(icon);
         init();
@@ -94,7 +103,7 @@ public class RolloverButton extends JButton
      * @param size The size of the button.
      * @param isRollover Whether the button has to behave as rollover.
      */
-    public RolloverButton(Dimension size, boolean isRollover)
+    public JRolloverButton(Dimension size, boolean isRollover)
     {
         this((Icon) null, size, isRollover);
     }
@@ -106,7 +115,7 @@ public class RolloverButton extends JButton
      * @param action The action to perform and which to take the icon from.
      * @param size The size of the button.
      */
-    public RolloverButton(Action action, Dimension size)
+    public JRolloverButton(Action action, Dimension size)
     {
         this((Icon) action.getValue(Action.SMALL_ICON), size);
         // Note: using setAction(action) causes both icon and text
@@ -119,7 +128,7 @@ public class RolloverButton extends JButton
      * 
      * @param button The button to initialize this button from.
      */
-    public RolloverButton(JButton button)
+    public JRolloverButton(AbstractButton button)
     {
         this(button, button.getPreferredSize(), true);
         isSizeSet = false;
@@ -133,7 +142,7 @@ public class RolloverButton extends JButton
      * @param button The button to initialize this button from.
      * @param isRollover Whether the button has to behave as rollover.
      */
-    public RolloverButton(JButton button, boolean isRollover)
+    public JRolloverButton(AbstractButton button, boolean isRollover)
     {
         this(button, button.getPreferredSize(), isRollover);
         isSizeSet = false;
@@ -145,7 +154,7 @@ public class RolloverButton extends JButton
      * @param button The button to initialize this button from.
      * @param size The size of the button.
      */
-    public RolloverButton(JButton button, Dimension size)
+    public JRolloverButton(AbstractButton button, Dimension size)
     {
         this(button, size, true);
     }
@@ -159,10 +168,10 @@ public class RolloverButton extends JButton
      * @param size The size of the button.
      * @param isRollover Whether the button has to behave as rollover.
      */
-    public RolloverButton(JButton button, Dimension size, boolean isRollover)
+    public JRolloverButton(AbstractButton button, Dimension size, boolean isRollover)
     {
         this(button.getIcon(), size, isRollover);
-        initFromJButton(button);
+        initFromButton(button);
     }
 
     /**
@@ -192,7 +201,7 @@ public class RolloverButton extends JButton
      * 
      * @param button The button to initialize this button from.
      */
-    protected void initFromJButton(JButton button)
+    protected void initFromButton(AbstractButton button)
     {
         setIcon(button.getIcon());
         setDisabledIcon(button.getDisabledIcon());
@@ -200,13 +209,17 @@ public class RolloverButton extends JButton
         setDisabledSelectedIcon(button.getDisabledSelectedIcon());
         setSelectedIcon(button.getSelectedIcon());
         setText(button.getText());
-        setBackground(button.getBackground());
-        setForeground(button.getForeground());
+        if (button.isBackgroundSet())
+            setBackground(button.getBackground());
+        if (button.isForegroundSet())
+            setForeground(button.getForeground());
         setBorder(button.getBorder());
-        setCursor(button.getCursor());
+        if (button.isCursorSet())
+            setCursor(button.getCursor());
         setDisplayedMnemonicIndex(button.getDisplayedMnemonicIndex());
         setEnabled(button.isEnabled());
-        setFont(button.getFont());
+        if (button.isFontSet())
+            setFont(button.getFont());
         setMnemonic(button.getMnemonic());
         setToolTipText(button.getToolTipText());
         setVisible(button.isVisible());
@@ -231,26 +244,39 @@ public class RolloverButton extends JButton
     protected void initRolloverListener()
     {
         MouseListener l = new MouseAdapter() {
-            Border curBorder = null;
-
             public void mouseEntered(MouseEvent e)
             {
-                curBorder = getBorder();
-                /*
-                 * Borders can have different insets - get the size and force it
-                 * so the new rollover border doesn't change the button size.
-                 */
-                setBorder(new CompoundBorder(getRolloverBorder(), curBorder));
-                getModel().setRollover(true);
+                setRollover(true);
             }
 
             public void mouseExited(MouseEvent e)
             {
-                setBorder(curBorder);
-                getModel().setRollover(false);
+                setRollover(false);
             }
         };
         addMouseListener(l);
+    }
+
+    /**
+     * Makes the button to appear as rolled over according to the given argument.
+     * 
+     * @param rollover Whether the button should look rolled over.
+     */
+    public void setRollover(boolean rollover)
+    {
+        if (rollover) {
+            /*
+             * Borders can have different insets - get the size and force it
+             * so the new rollover border doesn't change the button size.
+             */
+            if (!(JRolloverButton.super.getBorder() instanceof RolloverBorder))
+                JRolloverButton.super.setBorder(new RolloverBorder(getRolloverBorder(), getBorder()));
+            getModel().setRollover(true);
+        } else {
+            if (JRolloverButton.super.getBorder() instanceof RolloverBorder)
+                JRolloverButton.super.setBorder(((RolloverBorder) JRolloverButton.super.getBorder()).getInsideBorder());
+            getModel().setRollover(false);
+        }
     }
 
     /**
@@ -258,8 +284,76 @@ public class RolloverButton extends JButton
      */
     protected Border getRolloverBorder()
     {
-        Border border = BorderFactory.createRaisedBevelBorder();
+        return rolloverBorder;
+    }
 
-        return border;
+    /**
+     * @param rolloverBorder The border that is to be used when the mouse is over the button.
+     */
+    public void setRolloverBorder(Border rolloverBorder)
+    {
+        this.rolloverBorder = rolloverBorder;
+    }
+
+    @Override
+    public void setBorder(Border border)
+    {
+        compBorder = border;
+        if (!(super.getBorder() instanceof CompoundBorder)) {
+            super.setBorder(border);
+        }
+    }
+
+    @Override
+    public Border getBorder()
+    {
+        return compBorder != null ? compBorder : super.getBorder();
+    }
+
+    @Override
+    public Insets getInsets()
+    {
+        return compBorder != null ? compBorder.getBorderInsets(this) : super.getInsets();
+    }
+
+    @Override
+    protected void paintBorder(Graphics g)
+    {
+        if (isBorderPainted()) {
+            if (super.getBorder() != null) {
+                super.getBorder().paintBorder(this, g, 0, 0, getWidth(), getHeight());
+            }
+        }
+    }
+
+    /**
+     * A simple tagging compound border to be able to differentiate between user-set compound borders and the inner set
+     * ones.
+     * 
+     * @author Martin Pecka
+     */
+    protected class RolloverBorder extends CompoundBorder
+    {
+
+        /** */
+        private static final long serialVersionUID = 5394741728171932908L;
+
+        /**
+         * 
+         */
+        public RolloverBorder()
+        {
+            super();
+        }
+
+        /**
+         * @param outsideBorder
+         * @param insideBorder
+         */
+        public RolloverBorder(Border outsideBorder, Border insideBorder)
+        {
+            super(outsideBorder, insideBorder);
+        }
+
     }
 }

@@ -43,7 +43,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
-import javax.swing.origamist.DropDownButton;
+import javax.swing.origamist.JDropDownButton;
 import javax.swing.origamist.JToolBarWithBgImage;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -496,7 +496,7 @@ public class OrigamiViewer extends CommonGui
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
                 .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
 
-        DropDownButton dropDown = toolbar.createToolbarDropdownButton(null, "menu.save", "save.png");
+        JDropDownButton dropDown = toolbar.createToolbarDropdownButton(null, "menu.save", "save.png");
         toolbar.add(dropDown);
 
         dropDown.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.editable"));

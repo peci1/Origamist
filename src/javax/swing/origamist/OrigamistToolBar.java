@@ -84,9 +84,24 @@ public class OrigamistToolBar extends JToolBar
      * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
      * @return A toolbar dropdown button.
      */
-    public DropDownButton createToolbarDropdownButton(Action action, final String bundleName, final String iconName)
+    public JDropDownButton createToolbarDropdownButton(Action action, final String bundleName, final String iconName)
     {
-        return createToolbarItem(new DropDownButton(new JButton()), action, bundleName, iconName);
+        return createToolbarItem(new JDropDownButton(new JButton()), action, bundleName, iconName);
+    }
+
+    /**
+     * Create a toolbar dropdown button.
+     * 
+     * @param button The button to use for the item.
+     * @param action The action the button should invoke when clicked on the main area.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return A toolbar dropdown button.
+     */
+    public <T extends JDropDownButton> T createToolbarDropdownButton(T button, Action action, final String bundleName,
+            final String iconName)
+    {
+        return createToolbarItem(button, action, bundleName, iconName);
     }
 
     /**
@@ -99,7 +114,21 @@ public class OrigamistToolBar extends JToolBar
      */
     public JMenuItem createToolbarDropdownItem(Action action, final String bundleName, final String iconName)
     {
-        JMenuItem item = new JMenuItem();
+        return createToolbarDropdownItem(new JMenuItem(), action, bundleName, iconName);
+    }
+
+    /**
+     * Create a toolbar dropdown button's item.
+     * 
+     * @param item The menu item to setup.
+     * @param action The action the item should invoke.
+     * @param bundleName The base of the resource bundle strings used to configure this button.
+     * @param iconName The name that will be appended to the path <code>/resources/images/</code> to find the icon.
+     * @return A toolbar dropdown button's item.
+     */
+    public <T extends AbstractButton> T createToolbarDropdownItem(T item, Action action, final String bundleName,
+            final String iconName)
+    {
         item.setBorder(BorderFactory.createCompoundBorder(item.getBorder(), BorderFactory.createEmptyBorder(3, 0, 3, 0)));
         return createToolbarItem(item, action, bundleName, iconName);
     }

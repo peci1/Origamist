@@ -13,13 +13,17 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
-import javax.swing.ButtonGroup;
 import javax.swing.JApplet;
+import javax.swing.JButton;
 import javax.swing.JRootPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
+import javax.swing.origamist.BoundButtonGroup;
+import javax.swing.origamist.JDropDownButton;
+import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
+import javax.swing.origamist.JToggleMenuItem;
 import javax.swing.origamist.JToolBarWithBgImage;
 
 import org.apache.log4j.Level;
@@ -67,7 +71,10 @@ public class OrigamiEditor extends CommonGui
             operationValleyFoldUnfold, operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst,
             operationTurnOver, operationRotate, operationPull, operationCrimpFoldInside, operationCrimpFoldOutside,
             operationOpen, operationReverseFoldInside, operationReverseFoldOutside, operationRepeatAction,
-            operationRabbitFold, operationSquashFold, operationMark;
+            operationMark;
+
+    /** Toolbar buttons for model operations. */
+    protected JToggleMenuItem     operationRabbitFold, operationSquashFold;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -92,7 +99,7 @@ public class OrigamiEditor extends CommonGui
             public void keyPressed(KeyEvent e)
             {
                 super.keyPressed(e);
-                if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+                if (e.getKeyCode() == KeyEvent.VK_ALT) {
                     if (!alternativeActionsShown)
                         showAlternativeActions(true);
                 }
@@ -102,7 +109,7 @@ public class OrigamiEditor extends CommonGui
             public void keyReleased(KeyEvent e)
             {
                 super.keyReleased(e);
-                if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+                if (e.getKeyCode() == KeyEvent.VK_ALT) {
                     if (alternativeActionsShown)
                         showAlternativeActions(false);
                 }
@@ -179,7 +186,7 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
 
-        ButtonGroup operationGroup = new ButtonGroup();
+        BoundButtonGroup operationGroup = new BoundButtonGroup();
 
         toolbar.add(operationMountainFold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.mountain", null));
@@ -209,10 +216,12 @@ public class OrigamiEditor extends CommonGui
                 "menu.operation.reverseOutside", null));
         toolbar.add(operationRepeatAction = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.repeat", null));
-        toolbar.add(operationRabbitFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.rabbit",
-                null));
-        toolbar.add(operationSquashFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.squash",
-                null));
+
+        operationRabbitFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.rabbit",
+                null);
+        operationSquashFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.squash",
+                null);
+
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark", null));
 
         operationGroup.add(operationMountainFold);
@@ -233,6 +242,13 @@ public class OrigamiEditor extends CommonGui
         operationGroup.add(operationRabbitFold);
         operationGroup.add(operationSquashFold);
         operationGroup.add(operationMark);
+
+        JDropDownButton advancedButton = toolbar.createToolbarDropdownButton(
+                new JDropDownButtonReflectingSelectionGroup(new JButton(), operationGroup), null,
+                "menu.operation.advanced", null);
+        toolbar.add(advancedButton);
+        advancedButton.addComponent(operationRabbitFold);
+        advancedButton.addComponent(operationSquashFold);
 
         showAlternativeActions(false);
 
