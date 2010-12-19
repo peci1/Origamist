@@ -100,18 +100,8 @@ public class OrigamiEditor extends CommonGui
             {
                 super.keyPressed(e);
                 if (e.getKeyCode() == KeyEvent.VK_ALT) {
-                    if (!alternativeActionsShown)
-                        showAlternativeActions(true);
-                }
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e)
-            {
-                super.keyReleased(e);
-                if (e.getKeyCode() == KeyEvent.VK_ALT) {
-                    if (alternativeActionsShown)
-                        showAlternativeActions(false);
+                    showAlternativeActions(!alternativeActionsShown);
+                    e.consume();
                 }
             }
         });
@@ -184,45 +174,50 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings.png"));
+        toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings-32.png"));
+
+        toolbar.add(new JToolBar.Separator());
 
         BoundButtonGroup operationGroup = new BoundButtonGroup();
 
         toolbar.add(operationMountainFold = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.mountain", null));
+                "menu.operation.mountain", "folds/mountain-32.png"));
         toolbar.add(operationValleyFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.valley",
-                null));
+                "folds/valley-32.png"));
         toolbar.add(operationMountainFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.mountainFoldUnfold", null));
+                "menu.operation.mountainFoldUnfold", "folds/mountain-fold-unfold-32.png"));
         toolbar.add(operationValleyFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.valleyFoldUnfold", null));
+                "menu.operation.valleyFoldUnfold", "folds/valley-fold-unfold-32.png"));
         toolbar.add(operationThunderboltFoldMountainFirst = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.thunderboltMountainFirst", null));
+                "menu.operation.thunderboltMountainFirst", "folds/thunderbolt-mountain-first-32.png"));
         toolbar.add(operationThunderboltFoldValleyFirst = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.thunderboltValleyFirst", null));
+                "menu.operation.thunderboltValleyFirst", "folds/thunderbolt-valley-first-32.png"));
         toolbar.add(operationTurnOver = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.turnOver",
-                null));
+                "folds/turn-over-32.png"));
         toolbar.add(operationRotate = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.rotate",
-                null));
-        toolbar.add(operationPull = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.pull", null));
+                "folds/rotate-32.png"));
+        toolbar.add(operationPull = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.pull",
+                "folds/pull-32.png"));
         toolbar.add(operationCrimpFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.crimpInside", null));
+                "menu.operation.crimpInside", "folds/crimp-inside-32.png"));
         toolbar.add(operationCrimpFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.crimpOutside", null));
-        toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open", null));
+                "menu.operation.crimpOutside", "folds/crimp-outside-32.png"));
+        toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open",
+                "folds/open-32.png"));
         toolbar.add(operationReverseFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.reverseInside", null));
+                "menu.operation.reverseInside", "folds/reverse-inside-32.png"));
         toolbar.add(operationReverseFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.reverseOutside", null));
+                "menu.operation.reverseOutside", "folds/reverse-outside-32.png"));
         toolbar.add(operationRepeatAction = toolbar.createToolbarItem(new JToggleButton(), null,
-                "menu.operation.repeat", null));
+                "menu.operation.repeat", "folds/repeat-32.png"));
 
         operationRabbitFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.rabbit",
-                null);
+                "folds/rabbit-32.png");
         operationSquashFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.squash",
-                null);
+                "folds/squash-32.png");
 
-        toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark", null));
+        toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
+                "empty-32.png"));
 
         operationGroup.add(operationMountainFold);
         operationGroup.add(operationValleyFold);
@@ -245,7 +240,7 @@ public class OrigamiEditor extends CommonGui
 
         JDropDownButton advancedButton = toolbar.createToolbarDropdownButton(
                 new JDropDownButtonReflectingSelectionGroup(new JButton(), operationGroup), null,
-                "menu.operation.advanced", null);
+                "menu.operation.advanced", "empty-32.png");
         toolbar.add(advancedButton);
         advancedButton.addComponent(operationRabbitFold);
         advancedButton.addComponent(operationSquashFold);
