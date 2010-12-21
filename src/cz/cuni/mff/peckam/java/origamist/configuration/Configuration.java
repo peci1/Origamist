@@ -4,6 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.configuration;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Locale;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
@@ -36,6 +37,12 @@ public class Configuration extends PropertyChangeSource
 
     /** The path that was last used for exporting a model/listing. */
     protected File   lastExportPath = null;
+
+    /** The path that was last used for opening a model/listing. */
+    protected File   lastOpenPath   = null;
+
+    /** The URL that was last used for opening a model/listing. */
+    protected URL    lastOpenURL    = null;
 
     /**
      * The preferred measurement unit. <code>null</code> means that the unit defined in the corresponding
@@ -95,6 +102,42 @@ public class Configuration extends PropertyChangeSource
         File oldPath = this.lastExportPath;
         this.lastExportPath = lastExportPath;
         firePropertyChange("lastExportPath", oldPath, lastExportPath);
+    }
+
+    /**
+     * @return the lastOpenPath
+     */
+    public File getLastOpenPath()
+    {
+        return lastOpenPath;
+    }
+
+    /**
+     * @param lastOpenPath the lastOpenPath to set
+     */
+    public void setLastOpenPath(File lastOpenPath)
+    {
+        File oldPath = this.lastOpenPath;
+        this.lastOpenPath = lastOpenPath;
+        firePropertyChange("lastOpenPath", oldPath, lastOpenPath);
+    }
+
+    /**
+     * @return the lastOpenURL
+     */
+    public URL getLastOpenURL()
+    {
+        return lastOpenURL;
+    }
+
+    /**
+     * @param lastOpenURL the lastOpenURL to set
+     */
+    public void setLastOpenURL(URL lastOpenURL)
+    {
+        URL oldURL = this.lastOpenURL;
+        this.lastOpenURL = lastOpenURL;
+        firePropertyChange("lastOpenURL", oldURL, lastOpenURL);
     }
 
     /**

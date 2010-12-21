@@ -4,6 +4,8 @@
 package cz.cuni.mff.peckam.java.origamist.configuration;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -39,6 +41,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         Locale locale = null;
         Locale diagramLocale = null;
         File lastExportPath = null;
+        File lastOpenPath = null;
+        URL lastOpenURL = null;
         Unit preferredUnit = null;
 
         try {
@@ -46,6 +50,14 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
             locale = LocaleConverter.parse(prefs.get("locale", null));
             diagramLocale = LocaleConverter.parse(prefs.get("diagramLocale", null));
             lastExportPath = new File(prefs.get("lastExportPath", System.getProperty("user.dir")));
+            lastOpenPath = new File(prefs.get("lastOpenPath", System.getProperty("user.dir")));
+            try {
+                lastOpenURL = new URL(prefs.get("lastOpenURL", "."));
+            } catch (MalformedURLException e1) {
+                try {
+                    lastOpenURL = new URL(".");
+                } catch (MalformedURLException e) {}
+            }
             try {
                 preferredUnit = Enum.valueOf(Unit.class, prefs.get("preferredUnit", null));
             } catch (NullPointerException e) {} catch (IllegalArgumentException e) {}
@@ -64,6 +76,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         configuration.setDiagramLocale(diagramLocale);
 
         configuration.setLastExportPath(lastExportPath);
+        configuration.setLastOpenPath(lastOpenPath);
+        configuration.setLastOpenURL(lastOpenURL);
 
         configuration.setPreferredUnit(preferredUnit);
     }
@@ -89,6 +103,12 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         prefs.put("diagramLocale", tmp == null ? "" : tmp);
 
         prefs.put("lastExportPath", configuration.getLastExportPath().toString());
+        prefs.put("lastOpenPath", configuration.getLastOpenPath().toString());
+        if (configuration.getLastOpenURL() == null) {
+            prefs.remove("lastOpenURL");
+        } else {
+            prefs.put("lastOpenURL", configuration.getLastOpenURL().toString());
+        }
 
         if (configuration.getPreferredUnit() == null) {
             prefs.remove("preferredUnit");

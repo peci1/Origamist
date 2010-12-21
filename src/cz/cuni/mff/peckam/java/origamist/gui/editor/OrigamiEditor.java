@@ -9,15 +9,24 @@ import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JRootPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
@@ -32,11 +41,14 @@ import org.apache.log4j.Logger;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 
 /**
  * The editor of the origami model. <br />
@@ -169,8 +181,11 @@ public class OrigamiEditor extends CommonGui
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
                 .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
 
-        toolbar.add(toolbar.createToolbarButton(null, "menu.new", "new-32.png"));
-        toolbar.add(toolbar.createToolbarButton(null, "menu.open", "open-32.png"));
+        toolbar.add(toolbar.createToolbarButton(new NewFileAction(), "menu.new", "new-32.png"));
+        JDropDownButton open = toolbar.createToolbarDropdownButton(null, "menu.open", "open-32.png");
+        toolbar.add(open);
+        open.addComponent(toolbar.createToolbarDropdownItem(new OpenFileAction(), "menu.open.file", "open-file-32.png"));
+        open.addComponent(toolbar.createToolbarDropdownItem(new OpenURLAction(), "menu.open.url", "open-url-32.png"));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -348,7 +363,7 @@ public class OrigamiEditor extends CommonGui
      * 
      * @author Martin Pecka
      */
-    class SettingsAction extends AbstractAction
+    protected class SettingsAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -583073126579360879L;
@@ -358,5 +373,142 @@ public class OrigamiEditor extends CommonGui
         {
             new SettingsFrame().setVisible(true);
         }
+    }
+
+    /**
+     * Creates a new origami and sets it to be edited.
+     * 
+     * @author Martin Pecka
+     */
+    protected class NewFileAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -4947778589092614575L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            // TODO check if the currently edited origami is saved, if not, show a warning
+            OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(null);
+            propertiesFrame.setVisible(true);
+            if (propertiesFrame.getOrigami() != null) {
+                setOrigami(propertiesFrame.getOrigami());
+            }
+        }
+
+    }
+
+    /**
+     * Shows the open file from disk dialog.
+     * 
+     * @author Martin Pecka
+     */
+    protected class OpenFileAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -4079648565735159553L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            JFileChooser chooser = new JFileChooser();
+            File currentDir = ServiceLocator.get(ConfigurationManager.class).get().getLastOpenPath().getParentFile();
+            chooser.setCurrentDirectory(currentDir);
+            chooser.setFileFilter(new FileNameExtensionFilter("*.xml", "XML"));
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogType(JFileChooser.OPEN_DIALOG);
+            chooser.setApproveButtonText(appMessages.getString("openDialog.approve"));
+            chooser.setApproveButtonMnemonic(KeyStroke.getKeyStroke(
+                    appMessages.getString("openDialog.approve.mnemonic")).getKeyCode());
+            chooser.setApproveButtonToolTipText(ServiceLocator.get(TooltipFactory.class).getDecorated(
+                    appMessages.getString("openDialog.approve.tooltip.message"),
+                    appMessages.getString("openDialog.approve.tooltip.title"), "open-file-32.png",
+                    KeyStroke.getKeyStroke("alt " + appMessages.getString("openDialog.approve.mnemonic"))));
+            if (chooser.showDialog(OrigamiEditor.this, null) == JFileChooser.APPROVE_OPTION) {
+                File selected = chooser.getSelectedFile();
+                ServiceLocator.get(ConfigurationManager.class).get().setLastOpenPath(selected);
+                try {
+                    Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(selected.toURI(), false);
+                    setOrigami(o);
+                } catch (UnsupportedDataFormatException e1) {
+                    JOptionPane.showMessageDialog(rootPane,
+                            appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                            appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                    Logger.getLogger("application").error(e1);
+                } catch (IOException e1) {
+                    JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
+                            appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
+                    Logger.getLogger("application").error(e1);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Shows the open file from URL dialog.
+     * 
+     * @author Martin Pecka
+     */
+    protected class OpenURLAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -4948201244271857952L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            Object selected = null;
+            URL selectedUrl = null;
+
+            Object defaultURL = ServiceLocator.get(ConfigurationManager.class).get().getLastOpenURL();
+            if (defaultURL == null)
+                defaultURL = "http://";
+
+            while ((selected = JOptionPane.showInputDialog(rootPane, appMessages.getString("openUrl.message"),
+                    appMessages.getString("openUrl.title"), JOptionPane.QUESTION_MESSAGE, new ImageIcon(
+                            OrigamiEditor.this.getClass().getResource("/resources/images/open-url.png")), null,
+                    selected == null ? defaultURL : selected)) != null) {
+                try {
+                    selectedUrl = new URL(selected.toString());
+                    if (!selectedUrl.toURI().isAbsolute()) {
+                        throw new MalformedURLException("The URL to open must be absolute!");
+                    }
+                    break;
+                } catch (MalformedURLException e1) {
+                    JOptionPane.showMessageDialog(rootPane, appMessages.getString("openUrl.invalidUrl"),
+                            appMessages.getString("openUrl.invalidUrl.title"), JOptionPane.ERROR_MESSAGE);
+                } catch (URISyntaxException e1) {
+                    JOptionPane.showMessageDialog(rootPane, appMessages.getString("openUrl.invalidUrl"),
+                            appMessages.getString("openUrl.invalidUrl.title"), JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            // the user has cancelled the dialog
+            if (selectedUrl == null)
+                return;
+
+            ServiceLocator.get(ConfigurationManager.class).get().setLastOpenURL(selectedUrl);
+
+            try {
+                Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(selectedUrl, false);
+                setOrigami(o);
+            } catch (UnsupportedDataFormatException e1) {
+                JOptionPane.showMessageDialog(rootPane,
+                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger("application").error(e1);
+            } catch (IOException e1) {
+                JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
+                        appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger("application").error(e1);
+            }
+        }
+
     }
 }
