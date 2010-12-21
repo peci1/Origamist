@@ -169,8 +169,8 @@ public class OrigamiEditor extends CommonGui
         toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
                 .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
 
-        toolbar.add(toolbar.createToolbarButton(null, "menu.new", null));
-        toolbar.add(toolbar.createToolbarButton(null, "menu.open", null));
+        toolbar.add(toolbar.createToolbarButton(null, "menu.new", "new-32.png"));
+        toolbar.add(toolbar.createToolbarButton(null, "menu.open", "open-32.png"));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -217,7 +217,7 @@ public class OrigamiEditor extends CommonGui
                 "folds/squash-32.png");
 
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
-                "empty-32.png"));
+                "folds/mark-32.png"));
 
         operationGroup.add(operationMountainFold);
         operationGroup.add(operationValleyFold);
