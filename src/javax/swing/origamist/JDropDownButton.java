@@ -24,6 +24,9 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -282,7 +285,32 @@ public class JDropDownButton extends JButton
         super.setIcon(null);
 
         arrowButton.setFocusable(false);
-        setFocusable(false);
+        setFocusable(true);
+
+        // these two focus listeners are responsible for focusing only the mainButton while preserving isFocusable() for
+        // the whole JDropDownButton
+        addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e)
+            {
+                if (e.getOppositeComponent() != mainButton)
+                    mainButton.requestFocusInWindow();
+            }
+        });
+        // without this listener, it would be impossible to traverse focus back
+        mainButton.addFocusListener(new FocusListener() {
+            @Override
+            public void focusLost(FocusEvent e)
+            {
+                setFocusable(true);
+            }
+
+            @Override
+            public void focusGained(FocusEvent e)
+            {
+                setFocusable(false);
+            }
+        });
 
         mainButton.setRolloverBorder(null);
         arrowButton.setRolloverBorder(null);
