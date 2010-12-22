@@ -1,4 +1,4 @@
-package cz.cuni.mff.peckam.java.origamist.gui;
+package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.Component;
 import java.util.Hashtable;

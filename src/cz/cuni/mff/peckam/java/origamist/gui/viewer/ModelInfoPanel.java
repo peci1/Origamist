@@ -33,9 +33,9 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.common.License;
-import cz.cuni.mff.peckam.java.origamist.gui.JLabelWithTooltip;
-import cz.cuni.mff.peckam.java.origamist.gui.JLocalizedLabelWithTooltip;
-import cz.cuni.mff.peckam.java.origamist.gui.JMultilineLabelWithTooltip;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JLabelWithTooltip;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JLocalizedLabelWithTooltip;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JMultilineLabelWithTooltip;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;

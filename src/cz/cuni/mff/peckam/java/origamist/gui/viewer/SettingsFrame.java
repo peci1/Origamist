@@ -23,7 +23,7 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.files.CategoriesContainer;
 import cz.cuni.mff.peckam.java.origamist.files.Category;
 import cz.cuni.mff.peckam.java.origamist.files.File;
-import cz.cuni.mff.peckam.java.origamist.gui.AbstractSettingsFrame;
+import cz.cuni.mff.peckam.java.origamist.gui.common.AbstractSettingsFrame;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;

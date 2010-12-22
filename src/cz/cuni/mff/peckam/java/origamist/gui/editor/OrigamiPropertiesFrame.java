@@ -38,6 +38,25 @@ public class OrigamiPropertiesFrame extends JDialog
         setModalityType(ModalityType.APPLICATION_MODAL);
         setOrigami(origami);
         isCreating = (origami == null);
+
+        createComponents();
+        buildLayout();
+    }
+
+    /**
+     * Create all GUI components.
+     */
+    protected void createComponents()
+    {
+
+    }
+
+    /**
+     * Add all components to a layout.
+     */
+    protected void buildLayout()
+    {
+
     }
 
     /**

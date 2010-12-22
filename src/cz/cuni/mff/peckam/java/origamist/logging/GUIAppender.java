@@ -19,7 +19,7 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.LoggingEvent;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
-import cz.cuni.mff.peckam.java.origamist.gui.CommonGui;
+import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 

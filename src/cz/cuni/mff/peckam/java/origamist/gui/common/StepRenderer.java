@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.gui;
+package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

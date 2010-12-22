@@ -3,7 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
-import cz.cuni.mff.peckam.java.origamist.gui.Java3DBootstrappingApplet;
+import cz.cuni.mff.peckam.java.origamist.gui.common.Java3DBootstrappingApplet;
 
 /**
  * This applet just runs OrigamiViewer and adds support for Java3D native libraries.

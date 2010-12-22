@@ -17,7 +17,7 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
-import cz.cuni.mff.peckam.java.origamist.gui.AbstractSettingsFrame;
+import cz.cuni.mff.peckam.java.origamist.gui.common.AbstractSettingsFrame;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;

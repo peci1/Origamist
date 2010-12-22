@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.gui.listing;
+package cz.cuni.mff.peckam.java.origamist.gui.viewer.listing;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
