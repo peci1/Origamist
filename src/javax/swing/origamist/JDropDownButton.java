@@ -24,8 +24,6 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -69,8 +67,6 @@ public class JDropDownButton extends JButton
                                                          }
                                                      }
                                                  };
-
-    protected boolean         focusInvokedPopup  = false;
 
     /**
      * Create a dropdown button with the given icon and size set to 25x25 for the icon and 11x11 for the arrow.
@@ -287,19 +283,6 @@ public class JDropDownButton extends JButton
 
         arrowButton.setFocusable(false);
         setFocusable(false);
-
-        mainButton.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e)
-            {
-                if (!focusInvokedPopup) {
-                    focusInvokedPopup = true;
-                    setPopupVisible(true);
-                } else {
-                    focusInvokedPopup = false;
-                }
-            }
-        });
 
         mainButton.setRolloverBorder(null);
         arrowButton.setRolloverBorder(null);
