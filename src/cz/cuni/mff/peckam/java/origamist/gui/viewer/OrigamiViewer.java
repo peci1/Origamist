@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -195,6 +197,23 @@ public class OrigamiViewer extends CommonGui
     {
         super();
         this.bootstrap = bootstrap;
+    }
+
+    @Override
+    public void init()
+    {
+
+        addGlobalKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_F10 && mainToolbar.getComponentCount() > 0) {
+                    mainToolbar.getComponent(0).requestFocusInWindow();
+                    e.consume();
+                }
+            }
+        });
+        super.init();
     }
 
     /**
