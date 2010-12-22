@@ -6,7 +6,6 @@ package cz.cuni.mff.peckam.java.origamist.gui.common;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -15,6 +14,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
@@ -45,7 +45,6 @@ import com.sun.j3d.exp.swing.JCanvas3D;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.DisplayMode;
-import cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewer;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -57,6 +56,11 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 
 /**
  * This panel renders the given state of the model.
+ * 
+ * Provides the following properties:
+ * <ul>
+ * <li><code>fullscreenModeRequested</code> - fired when the user clicks the "fullscreen" button</li>
+ * </ul>
  * 
  * @author Martin Pecka
  */
@@ -114,6 +118,9 @@ public class StepRenderer extends JPanelWithOverlay
 
     /** The listener to update the text. */
     protected PropertyChangeListener diagramLocaleListener;
+
+    /** The property helper. */
+    protected PropertyChangeSupport  properties       = new PropertyChangeSupport(this);
 
     public StepRenderer()
     {
@@ -400,6 +407,65 @@ public class StepRenderer extends JPanelWithOverlay
     }
 
     /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener)
+    {
+        properties.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener)
+    {
+        properties.removePropertyChangeListener(listener);
+    }
+
+    /**
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners()
+    {
+        return properties.getPropertyChangeListeners();
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        properties.addPropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        properties.removePropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
+    {
+        return properties.getPropertyChangeListeners(propertyName);
+    }
+
+    /**
      * Show this step in DIAGRAM mode.
      * 
      * @author Martin Pecka
@@ -412,19 +478,7 @@ public class StepRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            DiagramRenderer parent = null;
-            Container comp = StepRenderer.this;
-            while ((comp = comp.getParent()) != null) {
-                if (comp instanceof DiagramRenderer) {
-                    parent = (DiagramRenderer) comp;
-                    break;
-                }
-            }
-
-            ServiceLocator.get(OrigamiViewer.class).setDisplayMode(DisplayMode.DIAGRAM);
-            if (parent != null) {
-                parent.setStep(step);
-            }
+            properties.firePropertyChange("fullscreenModeRequested", false, true);
         }
 
     }

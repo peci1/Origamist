@@ -76,6 +76,9 @@ public class DiagramRenderer extends JPanelWithOverlay
     /** The basic zoom of all StepRenderers. */
     protected double                      zoom                = 100d;
 
+    /** The listener to be attached to {@link StepRenderer} to listen when the fullscreen is requested. */
+    protected PropertyChangeListener      stepFullscreenListener;
+
     // COMPONENTS
 
     /** The label to be displayed over the renderer while it is loading. */
@@ -247,6 +250,17 @@ public class DiagramRenderer extends JPanelWithOverlay
         addPropertyChangeListener("mode", l);
         addPropertyChangeListener("firstStep", l);
 
+        stepFullscreenListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (evt.getSource() instanceof StepRenderer) {
+                    setDisplayMode(DisplayMode.DIAGRAM);
+                    setStep(((StepRenderer) evt.getSource()).getStep());
+                }
+            }
+        };
+
         setOrigami(o, firstStep, false);
         setDisplayMode(DisplayMode.PAGE);
         getContent().setOpaque(false);
@@ -325,13 +339,13 @@ public class DiagramRenderer extends JPanelWithOverlay
         int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
 
         Object[] steps = new Object[numSteps + 1];
-        stepXofY = new ParametrizedLocalizedString("application", "DiagramRenderer.stepXofY", stepIndex, numSteps);
+        stepXofY = new ParametrizedLocalizedString("viewer", "DiagramRenderer.stepXofY", stepIndex, numSteps);
         steps[0] = stepXofY;
         for (int i = 1; i <= numSteps; i++)
             steps[i] = i;
 
         Object[] pages = new Object[numPages + 1];
-        pageXofY = new ParametrizedLocalizedString("application", "DiagramRenderer.pageXofY", pageIndex, numPages);
+        pageXofY = new ParametrizedLocalizedString("viewer", "DiagramRenderer.pageXofY", pageIndex, numPages);
         pages[0] = pageXofY;
         for (int i = 1; i <= numPages; i++)
             pages[i] = i;
@@ -459,6 +473,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                             if (step != null) {
                                 StepRenderer r = new StepRenderer(origami, step);
                                 r.setDisplayMode(getDisplayMode());
+                                r.addPropertyChangeListener("fullscreenModeRequested", stepFullscreenListener);
                                 diagramPane.add(r);
                                 stepRenderers.add(r);
                                 r.setZoom(zoom);

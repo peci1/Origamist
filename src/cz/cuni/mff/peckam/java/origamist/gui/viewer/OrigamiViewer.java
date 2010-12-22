@@ -263,6 +263,16 @@ public class OrigamiViewer extends CommonGui
                     });
                 }
             });
+            // it could look like there could be a cycle when changing display mode, but that's not true - the listeners
+            // are notified only if the value really changes, so setting it twice to the same value doesn't fire the
+            // event
+            renderer.addPropertyChangeListener("mode", new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    setDisplayMode(renderer.getDisplayMode());
+                }
+            });
 
             mainToolbar = createMainToolbar();
         } catch (UnsupportedDataFormatException e) {
