@@ -13,6 +13,8 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.log4j.Logger;
 
+import sun.awt.image.ToolkitImage;
+
 /**
  * This class represents an image.
  * 
@@ -43,9 +45,28 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
      */
     public void setImageIcon(ImageIcon icon)
     {
+        if (icon == null) {
+            value = null;
+            this.icon = null;
+            return;
+        }
+
+        RenderedImage image = null;
+        if (icon.getImage() instanceof RenderedImage) {
+            image = (RenderedImage) icon.getImage();
+        } else if (icon.getImage() instanceof ToolkitImage) {
+            image = ((ToolkitImage) icon.getImage()).getBufferedImage();
+        }
+
+        if (image == null) {
+            value = null;
+            this.icon = null;
+            return;
+        }
+
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            ImageIO.write((RenderedImage) icon.getImage(), type.replaceAll("[^/]*/", ""), os);
+            ImageIO.write(image, type.replaceAll("[^/]*/", ""), os);
             value = os.toByteArray();
             this.icon = icon;
         } catch (IOException e) {

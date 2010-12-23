@@ -20,7 +20,10 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import cz.cuni.mff.peckam.java.origamist.common.Author;
+import cz.cuni.mff.peckam.java.origamist.common.BinaryImage;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
@@ -334,6 +337,27 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         return this;
     }
 
+    /**
+     * Initializes the substructures, so that no structure that may contain other structures will be <code>null</code>.
+     */
+    public void initStructure()
+    {
+        this.setAuthor((Author) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createAuthor());
+        this.setLicense((License) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLicense());
+        this.setThumbnail(new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createImage());
+        this.getThumbnail().setImage(
+                (BinaryImage) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createBinaryImage());
+        this.setModel(new ObjectFactory().createModel());
+        this.getModel().setPaper((ModelPaper) new ObjectFactory().createModelPaper());
+        this.getModel().getPaper().setColors(new ObjectFactory().createModelColors());
+        this.getModel().setSteps(new ObjectFactory().createSteps());
+        this.setPaper((DiagramPaper) new ObjectFactory().createDiagramPaper());
+        this.getPaper().setColor(new ObjectFactory().createDiagramColors());
+    }
+
+    /**
+     * Create pointers to previous/next steps.
+     */
     public void initSteps()
     {
         List<cz.cuni.mff.peckam.java.origamist.model.Step> list = this.getModel().getSteps().getStep();

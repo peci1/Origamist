@@ -159,6 +159,9 @@ public class JImage extends JPanel
     @Override
     public Dimension getPreferredSize()
     {
+        if (isPreferredSizeSet())
+            return super.getPreferredSize();
+
         if (this.image == null)
             return new Dimension(0, 0);
 
