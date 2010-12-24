@@ -3,11 +3,16 @@
  */
 package cz.cuni.mff.peckam.java.origamist.configuration;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.URL;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
 
 /**
@@ -159,6 +164,100 @@ public class Configuration extends PropertyChangeSource
         Unit oldUnit = this.preferredUnit;
         this.preferredUnit = preferredUnit;
         firePropertyChange("preferredUnit", oldUnit, preferredUnit);
+    }
+
+    /**
+     * Adds a {@link ResourceBundleListener} as a {@link PropertyChangeListener} and runs it with the current locale.
+     * 
+     * @param l The listener to add.
+     */
+    public void addAndRunResourceBundleListener(ResourceBundleListener l)
+    {
+        addPropertyChangeListener(l.getPropertyName(), l);
+        l.propertyChange(new PropertyChangeEvent(this, l.getPropertyName(), null, l.getProperty()));
+    }
+
+    /**
+     * A listener that calls <code>updateText</code> for the given <code>key</code> from a <code>resourceBundle</code>
+     * whenever the locale <code>propertyName</code> changes.
+     * 
+     * @author Martin Pecka
+     */
+    public abstract static class ResourceBundleListener implements PropertyChangeListener
+    {
+        /** The bundle to monitor. */
+        protected String        bundleName;
+        /** The key from the monitored bundle. */
+        protected String        key;
+        /** The name of the property of the monitored {@link Locale}. */
+        protected String        propertyName;
+
+        /** Configuration for static access "hacking". */
+        protected Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
+
+        /**
+         * @param bundleName The bundle to monitor.
+         * @param key The key from the monitored bundle.
+         * @param propertyName The name of the property of the monitored {@link Locale}.
+         */
+        protected ResourceBundleListener(String bundleName, String key, String propertyName)
+        {
+            this.bundleName = bundleName;
+            this.key = key;
+            this.propertyName = propertyName;
+        }
+
+        /**
+         * @return The name of the property of the monitored {@link Locale}.
+         */
+        public String getPropertyName()
+        {
+            return propertyName;
+        }
+
+        /**
+         * @return The monitored {@link Locale}.
+         */
+        public abstract Locale getProperty();
+
+        /**
+         * Called when the resource bundle changes.
+         * 
+         * @param text The translated text.
+         */
+        protected abstract void updateText(String text);
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            updateText(ResourceBundle.getBundle(bundleName, getProperty()).getString(key));
+        }
+    }
+
+    /**
+     * A listener monitoring changes to <code>locale</code> and reading <code>key</code> from a
+     * <code>resourceBundle</code> whenever the locale changes.
+     * 
+     * @author Martin Pecka
+     */
+    public abstract static class LocaleListener extends ResourceBundleListener
+    {
+
+        /**
+         * @param bundleName The bundle to monitor.
+         * @param key The key from the monitored bundle.
+         */
+        protected LocaleListener(String bundleName, String key)
+        {
+            super(bundleName, key, "locale");
+        }
+
+        @Override
+        public Locale getProperty()
+        {
+            return config.getLocale();
+        }
+
     }
 
 }

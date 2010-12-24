@@ -35,14 +35,14 @@ public class UnitHelper
     private static ResourceBundle            messages;
 
     static {
-        inMeters.put(Unit.MM, 0.001);
-        inMeters.put(Unit.CM, 0.01);
-        inMeters.put(Unit.M, 1.0);
-        inMeters.put(Unit.KM, 1000.0);
+        inMeters.put(Unit.MM, 0.001d);
+        inMeters.put(Unit.CM, 0.01d);
+        inMeters.put(Unit.M, 1.0d);
+        inMeters.put(Unit.KM, 1000.0d);
         inMeters.put(Unit.REL, Double.NaN);
-        inMeters.put(Unit.INCH, 0.0254);
-        inMeters.put(Unit.FOOT, 0.3048);
-        inMeters.put(Unit.MILE, 1609.344);
+        inMeters.put(Unit.INCH, 0.0254d);
+        inMeters.put(Unit.FOOT, 0.3048d);
+        inMeters.put(Unit.MILE, 1609.344d);
 
         PropertyChangeListener l = new PropertyChangeListener() {
             @Override

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.gui.common;
+package javax.swing.origamist;
 
 import java.awt.Component;
 import java.net.URL;

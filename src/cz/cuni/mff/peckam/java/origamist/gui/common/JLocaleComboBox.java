@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
+import javax.swing.origamist.LocaleListCellRenderer;
 
 import cz.cuni.mff.peckam.java.origamist.utils.LocaleComparator;
 

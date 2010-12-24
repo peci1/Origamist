@@ -43,6 +43,7 @@ import javax.swing.origamist.JImage;
 import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JUnitDimensionInput;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -421,6 +422,7 @@ public class OrigamiPropertiesFrame extends JDialog
         add(thumbnailLoadFromFile);
         add(thumbnailFileInput);
         add(thumbnailPreview);
+        add(new JUnitDimensionInput());
         pack();
     }
 

@@ -16,6 +16,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.origamist.JLocalizedButton;
+import javax.swing.origamist.UnitListCellRenderer;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
