@@ -40,6 +40,7 @@ import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -197,6 +198,8 @@ public class OrigamiViewer extends CommonGui
     {
         super();
         this.bootstrap = bootstrap;
+
+        UIManager.getDefaults().addResourceBundle("viewer");
     }
 
     @Override

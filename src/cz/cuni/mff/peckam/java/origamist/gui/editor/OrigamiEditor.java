@@ -26,6 +26,7 @@ import javax.swing.JRootPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
@@ -105,6 +106,8 @@ public class OrigamiEditor extends CommonGui
     {
         super();
         this.bootstrap = bootstrap;
+
+        UIManager.getDefaults().addResourceBundle("editor");
 
         addGlobalKeyListener(new KeyAdapter() {
             @Override
