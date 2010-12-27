@@ -34,6 +34,11 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * 
  * @author Martin Pecka
  */
+/**
+ * 
+ * 
+ * @author Martin Pecka
+ */
 public class JUnitDimensionInput extends JPanel
 {
     /** */
@@ -70,19 +75,31 @@ public class JUnitDimensionInput extends JPanel
     /** Input for reference unit. */
     protected JComboBox       refUnit;
 
+    /** Label. */
+    protected JLabel          widthLabel, heightLabel, unitLabel, refLabel, refLengthLabel, refUnitLabel;
+
     /**
      * 
      */
     public JUnitDimensionInput()
     {
+        createComponents();
+        buildLayout();
+    }
+
+    /**
+     * Create and setup all the components.
+     */
+    protected void createComponents()
+    {
         Unit prefUnit = ServiceLocator.get(ConfigurationManager.class).get().getPreferredUnit();
 
-        final JLabel widthLabel = new JLocalizedLabel("application", "JUnitDimensionInput.width");
-        final JLabel heightLabel = new JLocalizedLabel("application", "JUnitDimensionInput.height");
-        final JLabel unitLabel = new JLocalizedLabel("application", "JUnitDimensionInput.unit");
-        final JLabel refLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLabel");
-        final JLabel refLengthLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLength");
-        final JLabel refUnitLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refUnit");
+        widthLabel = new JLocalizedLabel("application", "JUnitDimensionInput.width");
+        heightLabel = new JLocalizedLabel("application", "JUnitDimensionInput.height");
+        unitLabel = new JLocalizedLabel("application", "JUnitDimensionInput.unit");
+        refLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLabel");
+        refLengthLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLength");
+        refUnitLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refUnit");
 
         width = new JSpinner(new SpinnerNumberModel(0.0d, 0.0d, null, 0.1d));
         JSpinner.NumberEditor widthEditor = new JSpinner.NumberEditor(width, "0.0######");
@@ -274,9 +291,13 @@ public class JUnitDimensionInput extends JPanel
 
         unitItemListener.itemStateChanged(new ItemEvent(unit, 0, unit.getSelectedItem(), ItemEvent.SELECTED));
         refUnitItemListener.itemStateChanged(new ItemEvent(refUnit, 0, refUnit.getSelectedItem(), ItemEvent.SELECTED));
+    }
 
-        // layout
-
+    /**
+     * Add all components to layout.
+     */
+    protected void buildLayout()
+    {
         setLayout(new FormLayout("pref,$lcgap,min(60dlu;pref),$ugap,pref,$lcgap,pref",
                 "pref,$lgap,pref,$lgap,pref,$lgap,pref"));
         CellConstraints cc = new CellConstraints();
@@ -335,6 +356,9 @@ public class JUnitDimensionInput extends JPanel
      */
     public void setValue(UnitDimension value)
     {
+        if (value.getUnit() == null)
+            value.setUnit(Unit.values()[0]);
+
         this.value.setWidth(value.getWidth());
         this.value.setHeight(value.getHeight());
         this.value.setUnit(value.getUnit());

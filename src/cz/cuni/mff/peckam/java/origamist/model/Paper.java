@@ -30,7 +30,7 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
     @Override
     public void setSize(UnitDimension value)
     {
-        if (value.getUnit().equals(Unit.REL))
+        if (Unit.REL.equals(value.getUnit()))
             throw new IllegalStateException("Cannot set relative dimensions to paper.");
         value.setReference(value.getUnit(), value.getMax());
         super.setSize(value);

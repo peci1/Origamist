@@ -27,6 +27,7 @@ import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Steps;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
@@ -349,10 +350,62 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 (BinaryImage) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createBinaryImage());
         this.setModel(new ObjectFactory().createModel());
         this.getModel().setPaper((ModelPaper) new ObjectFactory().createModelPaper());
+        this.getModel().getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
         this.getModel().getPaper().setColors(new ObjectFactory().createModelColors());
         this.getModel().setSteps(new ObjectFactory().createSteps());
         this.setPaper((DiagramPaper) new ObjectFactory().createDiagramPaper());
         this.getPaper().setColor(new ObjectFactory().createDiagramColors());
+        this.getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
+    }
+
+    /**
+     * Set the given origami's metadata to be this origami's metadata. The new metadata are another instance of the
+     * <code>from</code>'s metadata, so it doesn't reflect any further changes to the <code>from</code>'s metadata.
+     * 
+     * @param from The origami the metadata should be loaded from.
+     */
+    public void getMetadataFrom(Origami from)
+    {
+        // initStucture() also clears steps, but we are only resetting metadata
+        Steps oldSteps = getModel().getSteps();
+        // reset the metadata to the empty ones
+        initStructure();
+        getModel().setSteps(oldSteps);
+
+        getAuthor().setName(from.getAuthor().getName());
+        getAuthor().setHomepage(from.getAuthor().getHomepage());
+
+        getLicense().setContent(from.getLicense().getContent());
+        getLicense().setHomepage(from.getLicense().getHomepage());
+        getLicense().setName(from.getLicense().getName());
+
+        getThumbnail().getImage().setValue(from.getThumbnail().getImage().getValue());
+        getThumbnail().getImage().setType(from.getThumbnail().getImage().getType());
+
+        getModel().getPaper().setWeight(from.getModel().getPaper().getWeight());
+        getModel().getPaper().getColors().setBackground(from.getModel().getPaper().getColors().getBackground());
+        getModel().getPaper().getColors().setForeground(from.getModel().getPaper().getColors().getForeground());
+        getModel().getPaper().getSize().setWidth(from.getModel().getPaper().getSize().getWidth());
+        getModel().getPaper().getSize().setHeight(from.getModel().getPaper().getSize().getHeight());
+        getModel().getPaper().getSize().setUnit(from.getModel().getPaper().getSize().getUnit());
+        getModel()
+                .getPaper()
+                .getSize()
+                .setReference(from.getModel().getPaper().getSize().getReferenceUnit(),
+                        from.getModel().getPaper().getSize().getReferenceLength());
+        getModel().getPaper().getNote().clear();
+        ModelPaper paper = getModel().getPaper();
+        for (LangString s : from.getModel().getPaper().getNote())
+            paper.addNote(s.getLang(), s.getValue());
+
+        getPaper().getColor().setBackground(from.getPaper().getColor().getBackground());
+        getPaper().setCols(from.getPaper().getCols());
+        getPaper().setRows(from.getPaper().getRows());
+        getPaper().getSize().setWidth(from.getPaper().getSize().getWidth());
+        getPaper().getSize().setHeight(from.getPaper().getSize().getHeight());
+        getPaper().getSize().setUnit(from.getPaper().getSize().getUnit());
+        getPaper().getSize().setReference(from.getPaper().getSize().getReferenceUnit(),
+                from.getPaper().getSize().getReferenceLength());
     }
 
     /**

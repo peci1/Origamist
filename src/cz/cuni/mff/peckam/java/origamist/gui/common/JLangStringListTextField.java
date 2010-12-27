@@ -21,8 +21,14 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.text.JTextComponent;
 
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
+
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory;
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.UniversalDocumentListener;
 
 /**
@@ -79,17 +85,20 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
 
         this.scrollPane = scrollPane;
 
+        setLayout(new FormLayout("0px:grow,$lcgap,pref", "pref"));
+
+        CellConstraints cc = new CellConstraints();
         value = textField;
         if (scrollPane == null) {
-            add(value);
+            add(value, cc.xy(1, 1));
         } else {
             scrollPane.setViewportView(value);
-            add(scrollPane);
+            add(scrollPane, cc.xy(1, 1));
         }
 
         locales = new JLocaleComboBox();
         updateLocales();
-        add(locales);
+        add(locales, cc.xy(3, 1));
 
         locales.addPopupMenuListener(new PopupMenuListener() {
             @Override
@@ -171,14 +180,20 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
     }
 
     /**
-     * @return The locales that should be topped.
+     * @return The locales that should be topped. The default implementation returns the application and diagram locales
+     *         from user settings along with all locales for which an entry exists in this input.
      */
     protected LinkedHashSet<Locale> getSuggestedLocales()
     {
-        LinkedHashSet<Locale> result = new LinkedHashSet<Locale>(strings.size());
-        for (LangString s : strings) {
+        LinkedHashSet<Locale> result = new LinkedHashSet<Locale>(2);
+
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+        result.add(conf.getLocale());
+        result.add(conf.getDiagramLocale());
+
+        for (LangString s : strings)
             result.add(s.getLang());
-        }
+
         return result;
     }
 

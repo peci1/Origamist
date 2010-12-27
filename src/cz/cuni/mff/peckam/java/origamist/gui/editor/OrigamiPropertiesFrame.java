@@ -26,12 +26,10 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -42,8 +40,10 @@ import javax.swing.origamist.JImage;
 
 import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 
+import cz.cuni.mff.peckam.java.origamist.gui.common.DefaultLangStringListTextArea;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JDiagramPaperInput;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
-import cz.cuni.mff.peckam.java.origamist.gui.common.JUnitDimensionInput;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JModelPaperInput;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -126,6 +126,10 @@ public class OrigamiPropertiesFrame extends JDialog
     protected JFileInput                           thumbnailFileInput;
     /** Component that shows a preview of the thumbnail. */
     protected JImage                               thumbnailPreview;
+    /** Input for configuring diagram paper. */
+    protected JDiagramPaperInput                   diagramPaper;
+    /** Input for configuring model paper. */
+    protected JModelPaperInput                     modelPaper;
 
     /**
      * @param tempOrigami If <code>null</code>, indicates that the dialog should display texts for creating a model
@@ -134,18 +138,13 @@ public class OrigamiPropertiesFrame extends JDialog
     public OrigamiPropertiesFrame(Origami origami)
     {
         setModalityType(ModalityType.APPLICATION_MODAL);
-        if (origami != null) {
-            setOrigami(origami);
-        } else {
-            setOrigami((Origami) new ObjectFactory().createOrigami());
-        }
-        isCreating = (origami == null);
 
-        tempOrigami = (Origami) new ObjectFactory().createOrigami();
-        tempOrigami.initStructure();
+        setOrigami(origami);
 
         createComponents();
         buildLayout();
+
+        setTitle("title"); // TODO
     }
 
     /**
@@ -169,11 +168,7 @@ public class OrigamiPropertiesFrame extends JDialog
 
         shortDesc = new JLangStringListTextField<JTextField>(tempOrigami.getShortdesc(), new JTextField(20));
 
-        description = new JLangStringListTextField<JTextArea>(tempOrigami.getDescription(), new JTextArea(3, 20),
-                new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER));
-        description.getTextField().setLineWrap(true);
-        description.getTextField().setWrapStyleWord(true);
+        description = new DefaultLangStringListTextArea(tempOrigami.getDescription());
 
         authorName = new JTextField(20);
         authorName.getDocument().addDocumentListener(new UniversalDocumentListener() {
@@ -394,6 +389,10 @@ public class OrigamiPropertiesFrame extends JDialog
         thumbnailPreview = new JImage(null);
 
         thumbnailLoadFromModel.setSelected(true);
+
+        diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
+
+        modelPaper = new JModelPaperInput(tempOrigami.getModel().getPaper());
     }
 
     /**
@@ -401,45 +400,62 @@ public class OrigamiPropertiesFrame extends JDialog
      */
     protected void buildLayout()
     {
-        setLayout(new GridLayout(0, 3));
-        add(name);
-        add(year);
-        add(shortDesc);
-        add(description);
-        add(authorName);
-        add(authorHomepage);
-        add(licenseName);
-        add(licenseChooseHomepage);
-        add(licenseChooseContent);
-        add(licenseHomepage);
-        add(licenseContent);
-        add(licensePermissionDoNothing);
-        add(licensePermissionEdit);
-        add(licensePermissionExport);
-        add(licensePermissionDistribute);
-        add(original);
-        add(thumbnailLoadFromModel);
-        add(thumbnailLoadFromFile);
-        add(thumbnailFileInput);
-        add(thumbnailPreview);
-        add(new JUnitDimensionInput());
+        setLayout(new GridLayout(0, 1));
+        // add(name);
+        // add(year);
+        // add(shortDesc);
+        // add(description);
+        // add(authorName);
+        // add(authorHomepage);
+        // add(licenseName);
+        // add(licenseChooseHomepage);
+        // add(licenseChooseContent);
+        // add(licenseHomepage);
+        // add(licenseContent);
+        // add(licensePermissionDoNothing);
+        // add(licensePermissionEdit);
+        // add(licensePermissionExport);
+        // add(licensePermissionDistribute);
+        // add(original);
+        // add(thumbnailLoadFromModel);
+        // add(thumbnailLoadFromFile);
+        // add(thumbnailFileInput);
+        // add(thumbnailPreview);
+        add(modelPaper);
         pack();
     }
 
     /**
-     * @return the tempOrigami
+     * @return the origami that was set to this frame (or a new one if <code>null</code> was specified) with the
+     *         metadata copied from this dialog's inputs' values. <code>null</code> can be returned only if the user
+     *         cancelled the dialog for creating a new origami.
      */
     public Origami getOrigami()
     {
-        return origami;
+        if (origami != null && tempOrigami != null) {
+            origami.getMetadataFrom(tempOrigami);
+            return origami;
+        } else if (origami != null) {
+            return origami;
+        }
+        return tempOrigami;
     }
 
     /**
-     * @param tempOrigami the tempOrigami to set
+     * @param origami The origami that should be edited by the dialog.
      */
     protected void setOrigami(Origami origami)
     {
         this.origami = origami;
+
+        tempOrigami = (Origami) new ObjectFactory().createOrigami();
+        tempOrigami.initStructure();
+
+        if (origami != null) {
+            tempOrigami.getMetadataFrom(origami);
+        }
+
+        isCreating = (origami == null);
     }
 
     /**

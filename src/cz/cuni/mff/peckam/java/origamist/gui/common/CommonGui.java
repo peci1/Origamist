@@ -18,6 +18,7 @@ import java.util.prefs.BackingStoreException;
 
 import javax.swing.JApplet;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -86,9 +87,11 @@ public abstract class CommonGui extends JApplet
                     MessageFormat oldFormat = format;
                     format = new MessageFormat("", (Locale) evt.getNewValue());
                     CommonGui.this.firePropertyChange("format", oldFormat, format);
+                    UIManager.getDefaults().setDefaultLocale((Locale) evt.getNewValue());
                 }
             }
         });
+        UIManager.getDefaults().addResourceBundle("application");
 
         // to allow transparent JCanvas3D background
         System.setProperty("j3d.transparentOffScreen", "true");

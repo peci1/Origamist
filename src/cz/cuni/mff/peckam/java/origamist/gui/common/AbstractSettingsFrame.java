@@ -4,12 +4,9 @@
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Vector;
 
 import javax.swing.AbstractAction;
@@ -18,6 +15,7 @@ import javax.swing.JDialog;
 import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.UnitListCellRenderer;
 
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -49,18 +47,14 @@ public abstract class AbstractSettingsFrame extends JDialog
 
     public AbstractSettingsFrame()
     {
-        PropertyChangeListener l = new PropertyChangeListener() {
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt)
-            {
-                setTitle(ResourceBundle.getBundle("application", (Locale) evt.getNewValue())
-                        .getString("settings.title"));
-            }
-        };
-        ServiceLocator.get(ConfigurationManager.class).get().addPropertyChangeListener("locale", l);
-        l.propertyChange(new PropertyChangeEvent(this, "locale", null, ServiceLocator.get(ConfigurationManager.class)
-                .get().getLocale()));
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "settings.title") {
+                    @Override
+                    protected void updateText(String text)
+                    {
+                        setTitle(text);
+                    }
+                });
 
         appLocaleComboBox = new JLocaleComboBox(getAppSuggestedLocales());
         diagramLocaleComboBox = new JLocaleComboBox(getDiagramSuggestedLocales());

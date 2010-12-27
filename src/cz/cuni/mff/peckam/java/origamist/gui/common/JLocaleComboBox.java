@@ -61,7 +61,10 @@ public class JLocaleComboBox extends JComboBox
             setModel(new DefaultComboBoxModel(moveSuggestedLocalesToTop(getLocales(), suggested)));
         }
 
-        setSelectedItem(selected);
+        if (selected != null)
+            setSelectedItem(selected);
+        else
+            setSelectedIndex(0);
     }
 
     /**
