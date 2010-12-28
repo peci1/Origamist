@@ -3,9 +3,17 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
@@ -16,36 +24,52 @@ import java.net.URL;
 import java.security.Permission;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ResourceBundle;
 
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.InputVerifier;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.JFileInput;
 import javax.swing.origamist.JImage;
+import javax.swing.origamist.JLocalizedButton;
+import javax.swing.origamist.JLocalizedLabel;
 
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.gui.common.DefaultLangStringListTextArea;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JDiagramPaperInput;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JModelPaperInput;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -131,20 +155,58 @@ public class OrigamiPropertiesFrame extends JDialog
     /** Input for configuring model paper. */
     protected JModelPaperInput                     modelPaper;
 
+    /** Dialog button. */
+    protected JButton                              okButton, cancelButton;
+
+    /** Label. */
+    protected JLabel                               dialogTitle, nameLabel, yearLabel, shortDescLabel, authorNameLabel,
+            authorHomepageLabel, licenseNameLabel, licenseHomepageLabel, licenseContentLabel, originalLabel,
+            thumbnailFileInputLabel, thumbnailPreviewLabel;
+
     /**
      * @param tempOrigami If <code>null</code>, indicates that the dialog should display texts for creating a model
      *            metadata, otherwise it displays texts for editing an existing model's metadata.
      */
     public OrigamiPropertiesFrame(Origami origami)
     {
-        setModalityType(ModalityType.APPLICATION_MODAL);
-
         setOrigami(origami);
+
+        final ComponentListener resizeListener = new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e)
+            {
+                maybePack();
+            }
+        };
+
+        getContentPane().addContainerListener(new ContainerListener() {
+            @Override
+            public void componentRemoved(ContainerEvent e)
+            {
+                e.getChild().removeComponentListener(resizeListener);
+            }
+
+            @Override
+            public void componentAdded(ContainerEvent e)
+            {
+                e.getChild().addComponentListener(resizeListener);
+            }
+        });
 
         createComponents();
         buildLayout();
 
-        setTitle("title"); // TODO
+        setModalityType(ModalityType.APPLICATION_MODAL);
+
+        String titleKey = (isCreating ? "OrigamiPropertiesFrame.title.create" : "OrigamiPropertiesFrame.title.edit");
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addAndRunResourceBundleListener(new Configuration.LocaleListener("application", titleKey) {
+                    @Override
+                    protected void updateText(String text)
+                    {
+                        setTitle(text);
+                    }
+                });
     }
 
     /**
@@ -152,6 +214,24 @@ public class OrigamiPropertiesFrame extends JDialog
      */
     protected void createComponents()
     {
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+
+        String titleKey = (isCreating ? "OrigamiPropertiesFrame.title.create" : "OrigamiPropertiesFrame.title.edit");
+        dialogTitle = new JLocalizedLabel("application", titleKey);
+        dialogTitle.setFont(dialogTitle.getFont().deriveFont(Font.BOLD, 20f));
+
+        nameLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.nameLabel");
+        yearLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.yearLabel");
+        shortDescLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.shortDescLabel");
+        authorNameLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.authorNameLabel");
+        authorHomepageLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.authorHomepageLabel");
+        licenseNameLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.licenseNameLabel");
+        licenseHomepageLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.licenseHomepageLabel");
+        licenseContentLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.licenseContentLabel");
+        originalLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.originalLabel");
+        thumbnailFileInputLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.thumbnailFileInputLabel");
+        thumbnailPreviewLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.thumbnailPreviewLabel");
+
         name = new JLangStringListTextField<JTextField>(tempOrigami.getName(), new JTextField(20));
 
         year = new JSpinner(new SpinnerNumberModel(tempOrigami.getYear() != null ? tempOrigami.getYear().getYear()
@@ -169,6 +249,16 @@ public class OrigamiPropertiesFrame extends JDialog
         shortDesc = new JLangStringListTextField<JTextField>(tempOrigami.getShortdesc(), new JTextField(20));
 
         description = new DefaultLangStringListTextArea(tempOrigami.getDescription());
+        final TitledBorder descriptionBorder = BorderFactory.createTitledBorder(description.getBorder(), "");
+        description.setBorder(descriptionBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.descriptionLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                descriptionBorder.setTitle(text);
+            }
+        });
 
         authorName = new JTextField(20);
         authorName.getDocument().addDocumentListener(new UniversalDocumentListener() {
@@ -210,6 +300,8 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         licenseContent = new JTextArea(5, 20);
+        licenseContent.setLineWrap(true);
+        licenseContent.setWrapStyleWord(true);
         licenseContent.getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
             protected void update(DocumentEvent e)
@@ -220,7 +312,15 @@ public class OrigamiPropertiesFrame extends JDialog
 
         ButtonGroup licenseChooseGroup = new ButtonGroup();
 
-        licenseChooseHomepage = new JRadioButton("homepage");
+        licenseChooseHomepage = new JRadioButton();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.licenseChooseHomepageLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                licenseChooseHomepage.setText(text);
+            }
+        });
         licenseChooseHomepage.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e)
@@ -234,7 +334,15 @@ public class OrigamiPropertiesFrame extends JDialog
         });
         licenseChooseGroup.add(licenseChooseHomepage);
 
-        licenseChooseContent = new JRadioButton("content");
+        licenseChooseContent = new JRadioButton();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.licenseChooseContentLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                licenseChooseContent.setText(text);
+            }
+        });
         licenseChooseContent.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e)
@@ -250,11 +358,25 @@ public class OrigamiPropertiesFrame extends JDialog
 
         licenseChooseHomepage.setSelected(true);
 
-        licensePermissionDoNothing = new JCheckBox("do nothing");
+        licensePermissionDoNothing = new JCheckBox();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.doNothing") {
+            @Override
+            protected void updateText(String text)
+            {
+                licensePermissionDoNothing.setText(text);
+            }
+        });
         licensePermissionDoNothing.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionEdit.setSelected(!licensePermissionDoNothing.isSelected());
+                if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionExport.setSelected(!licensePermissionDoNothing.isSelected());
+                if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionDistribute.setSelected(!licensePermissionDoNothing.isSelected());
+
                 Permission perm = PermissionConverter.parse("doNothing");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
                 if (licensePermissionDoNothing.isSelected()) {
@@ -266,11 +388,21 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        licensePermissionEdit = new JCheckBox("edit");
+        licensePermissionEdit = new JCheckBox();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.edit") {
+            @Override
+            protected void updateText(String text)
+            {
+                licensePermissionEdit.setText(text);
+            }
+        });
         licensePermissionEdit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionDoNothing.setSelected(!licensePermissionEdit.isSelected());
+
                 Permission perm = PermissionConverter.parse("edit");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
                 if (licensePermissionDoNothing.isSelected()) {
@@ -282,11 +414,21 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        licensePermissionExport = new JCheckBox("export");
+        licensePermissionExport = new JCheckBox();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.export") {
+            @Override
+            protected void updateText(String text)
+            {
+                licensePermissionExport.setText(text);
+            }
+        });
         licensePermissionExport.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionDoNothing.setSelected(!licensePermissionExport.isSelected());
+
                 Permission perm = PermissionConverter.parse("export");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
                 if (licensePermissionDoNothing.isSelected()) {
@@ -298,11 +440,21 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        licensePermissionDistribute = new JCheckBox("distribute");
+        licensePermissionDistribute = new JCheckBox();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.distribute") {
+            @Override
+            protected void updateText(String text)
+            {
+                licensePermissionDistribute.setText(text);
+            }
+        });
         licensePermissionDistribute.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
             {
+                if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
+                    licensePermissionDoNothing.setSelected(!licensePermissionDistribute.isSelected());
+
                 Permission perm = PermissionConverter.parse("distribute");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
                 if (licensePermissionDoNothing.isSelected()) {
@@ -330,7 +482,15 @@ public class OrigamiPropertiesFrame extends JDialog
 
         ButtonGroup thumbnailChooseGroup = new ButtonGroup();
 
-        thumbnailLoadFromModel = new JRadioButton("loadFromModel");
+        thumbnailLoadFromModel = new JRadioButton();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.thumbnailLoadFromModelLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                thumbnailLoadFromModel.setText(text);
+            }
+        });
         thumbnailLoadFromModel.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e)
@@ -344,7 +504,15 @@ public class OrigamiPropertiesFrame extends JDialog
         });
         thumbnailChooseGroup.add(thumbnailLoadFromModel);
 
-        thumbnailLoadFromFile = new JRadioButton("loadFromFile");
+        thumbnailLoadFromFile = new JRadioButton();
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.thumbnailLoadFromFileLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                thumbnailLoadFromFile.setText(text);
+            }
+        });
         thumbnailLoadFromFile.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e)
@@ -360,14 +528,31 @@ public class OrigamiPropertiesFrame extends JDialog
         thumbnailFileInput = new JFileInput(ServiceLocator.get(ConfigurationManager.class).get().getLastOpenPath()
                 .toString(), 20);
         thumbnailFileInput.getFileChooser().setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-        thumbnailFileInput.getFileChooser().setFileFilter(
-                new FileNameExtensionFilter("images", "BMP", "JPG", "PNG", "GIF"));
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "fileFilter.images") {
+            @Override
+            protected void updateText(String text)
+            {
+                thumbnailFileInput.getFileChooser().setFileFilter(
+                        new FileNameExtensionFilter(text, "BMP", "JPG", "PNG", "GIF"));
+            }
+        });
         thumbnailFileInput.getFileChooser().setDialogType(JFileChooser.OPEN_DIALOG);
-        thumbnailFileInput.getFileChooser().setApproveButtonText("open");
-        thumbnailFileInput.getFileChooser().setApproveButtonMnemonic(KeyStroke.getKeyStroke("O").getKeyCode());
-        thumbnailFileInput.getFileChooser().setApproveButtonToolTipText(
-                ServiceLocator.get(TooltipFactory.class).getDecorated("open", "openTitle", "open-file-32.png",
-                        KeyStroke.getKeyStroke("alt O")));
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.thumbnailFileDialog.approve.text") {
+            @Override
+            protected void updateText(String text)
+            {
+                String mnemonic = bundle.getString("OrigamiPropertiesFrame.thumbnailFileDialog.approve.mnemonic");
+                String tooltip = bundle.getString("OrigamiPropertiesFrame.thumbnailFileDialog.approve.tooltip");
+
+                thumbnailFileInput.getFileChooser().setApproveButtonText(text);
+                thumbnailFileInput.getFileChooser().setApproveButtonMnemonic(
+                        KeyStroke.getKeyStroke(mnemonic).getKeyCode());
+                thumbnailFileInput.getFileChooser().setApproveButtonToolTipText(
+                        ServiceLocator.get(TooltipFactory.class).getDecorated(tooltip, text, "open-file-32.png",
+                                KeyStroke.getKeyStroke("alt " + mnemonic)));
+            }
+        });
         thumbnailFileInput.getTextField().getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
             protected void update(DocumentEvent e)
@@ -391,8 +576,49 @@ public class OrigamiPropertiesFrame extends JDialog
         thumbnailLoadFromModel.setSelected(true);
 
         diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
+        final TitledBorder diagramPaperBorder = BorderFactory.createTitledBorder(diagramPaper.getBorder(), "");
+        diagramPaper.setBorder(diagramPaperBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.diagramPaperLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                diagramPaperBorder.setTitle(text);
+            }
+        });
 
         modelPaper = new JModelPaperInput(tempOrigami.getModel().getPaper());
+        final TitledBorder modelPaperBorder = BorderFactory.createTitledBorder(modelPaper.getBorder(), "");
+        modelPaper.setBorder(modelPaperBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.modelPaperLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                modelPaperBorder.setTitle(text);
+            }
+        });
+
+        String okKey = "OrigamiPropertiesFrame.okButton." + (isCreating ? "create" : "edit");
+        okButton = new JLocalizedButton("application", okKey);
+        okButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                if (verifyForm())
+                    setVisible(false);
+            }
+        });
+
+        cancelButton = new JLocalizedButton("application", "buttons.cancel");
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                tempOrigami = null;
+                setVisible(false);
+            }
+        });
     }
 
     /**
@@ -400,28 +626,144 @@ public class OrigamiPropertiesFrame extends JDialog
      */
     protected void buildLayout()
     {
-        setLayout(new GridLayout(0, 1));
-        // add(name);
-        // add(year);
-        // add(shortDesc);
-        // add(description);
-        // add(authorName);
-        // add(authorHomepage);
-        // add(licenseName);
-        // add(licenseChooseHomepage);
-        // add(licenseChooseContent);
-        // add(licenseHomepage);
-        // add(licenseContent);
-        // add(licensePermissionDoNothing);
-        // add(licensePermissionEdit);
-        // add(licensePermissionExport);
-        // add(licensePermissionDistribute);
-        // add(original);
-        // add(thumbnailLoadFromModel);
-        // add(thumbnailLoadFromFile);
-        // add(thumbnailFileInput);
-        // add(thumbnailPreview);
-        add(modelPaper);
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+
+        CellConstraints cc = new CellConstraints();
+
+        JPanel basicPanel = new JPanel(new FormLayout("right:pref,$lcgap,pref:grow",
+                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
+        final TitledBorder basicPanelBorder = BorderFactory.createTitledBorder("");
+        basicPanel.setBorder(basicPanelBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.basicPanelTitle") {
+            @Override
+            protected void updateText(String text)
+            {
+                basicPanelBorder.setTitle(text);
+            }
+        });
+
+        basicPanel.add(nameLabel, cc.xy(1, 1));
+        basicPanel.add(name, cc.xy(3, 1));
+        basicPanel.add(yearLabel, cc.xy(1, 3));
+        basicPanel.add(year, cc.xy(3, 3));
+        basicPanel.add(authorNameLabel, cc.xy(1, 5));
+        basicPanel.add(authorName, cc.xy(3, 5));
+        basicPanel.add(authorHomepageLabel, cc.xy(1, 7));
+        basicPanel.add(authorHomepage, cc.xy(3, 7));
+        basicPanel.add(shortDescLabel, cc.xy(1, 9));
+        basicPanel.add(shortDesc, cc.xy(3, 9));
+        basicPanel.add(originalLabel, cc.xy(1, 11));
+        basicPanel.add(original, cc.xy(3, 11));
+
+        JPanel thumbnailPanel = new JPanel(new FormLayout("center:pref,$ugap,pref,$ugap,pref", "pref,$lgap,pref"));
+        final TitledBorder thumbnailPanelBorder = BorderFactory.createTitledBorder("");
+        thumbnailPanel.setBorder(thumbnailPanelBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.thumbnailPanelTitle") {
+            @Override
+            protected void updateText(String text)
+            {
+                thumbnailPanelBorder.setTitle(text);
+            }
+        });
+
+        thumbnailPanel.add(thumbnailPreviewLabel, cc.xy(1, 1));
+        thumbnailPanel.add(thumbnailPreview, cc.xy(1, 3));
+        thumbnailPanel.add(thumbnailLoadFromModel, cc.xy(3, 1));
+        thumbnailPanel.add(thumbnailLoadFromFile, cc.xy(5, 1));
+        thumbnailPanel.add(thumbnailFileInputLabel, cc.xy(3, 3));
+        thumbnailPanel.add(thumbnailFileInput, cc.xy(5, 3));
+
+        final JScrollPane licenseContentScrollPane = new JScrollPane(licenseContent,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        JPanel licenseNamePanel = new JPanel(new FormLayout("pref,$lcgap,pref:grow", "pref"));
+        licenseNamePanel.add(licenseNameLabel, cc.xy(1, 1));
+        licenseNamePanel.add(licenseName, cc.xy(3, 1));
+
+        licenseChooseContent.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e)
+            {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    licenseHomepageLabel.setVisible(false);
+                    licenseContentLabel.setVisible(true);
+                    licenseContentScrollPane.setVisible(true);
+                }
+            }
+        });
+        licenseChooseHomepage.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e)
+            {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    licenseContentLabel.setVisible(false);
+                    licenseHomepageLabel.setVisible(true);
+                    licenseContentScrollPane.setVisible(false);
+                }
+            }
+        });
+        licenseHomepageLabel.setVisible(licenseHomepage.isVisible());
+        licenseContentLabel.setVisible(licenseContent.isVisible());
+        licenseContentScrollPane.setVisible(licenseContent.isVisible());
+
+        JPanel licenseContentPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        licenseContentPanel.add(licenseChooseContent);
+        licenseContentPanel.add(licenseChooseHomepage);
+
+        JPanel licenseHomepagePanel = new JPanel(new FormLayout("pref,$lcgap,pref:grow", "pref"));
+        licenseHomepagePanel.add(licenseHomepageLabel, cc.xy(1, 1));
+        licenseHomepagePanel.add(licenseHomepage, cc.xy(3, 1));
+
+        JPanel licensePermissionPanel = new JPanel(new GridLayout(0, 1));
+        licensePermissionPanel.add(licensePermissionDoNothing);
+        licensePermissionPanel.add(licensePermissionEdit);
+        licensePermissionPanel.add(licensePermissionExport);
+        licensePermissionPanel.add(licensePermissionDistribute);
+
+        JPanel licensePanel = new JPanel(new FormLayout("pref:grow",
+                "pref,$lgap,pref,$lgap,pref,$rgap,pref,$lgap,pref,$lgap,pref"));
+        final TitledBorder licensePanelBorder = BorderFactory.createTitledBorder("");
+        licensePanel.setBorder(licensePanelBorder);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.licensePanelTitle") {
+            @Override
+            protected void updateText(String text)
+            {
+                licensePanelBorder.setTitle(text);
+            }
+        });
+
+        licensePanel.add(licenseNamePanel, cc.xy(1, 1));
+        licensePanel.add(licenseContentPanel, cc.xy(1, 3));
+        licensePanel.add(licenseContentLabel, cc.xy(1, 5));
+        licensePanel.add(licenseContentScrollPane, cc.xy(1, 7));
+        licensePanel.add(licenseHomepagePanel, cc.xy(1, 9));
+        licensePanel.add(licensePermissionPanel, cc.xy(1, 11));
+
+        JPanel leftPanel = new JPanel(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref"));
+        leftPanel.add(basicPanel, cc.xy(1, 1));
+        leftPanel.add(thumbnailPanel, cc.xy(1, 3));
+        leftPanel.add(licensePanel, cc.xy(1, 5));
+
+        JPanel rightPanel = new JPanel(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref"));
+        rightPanel.add(description, cc.xy(1, 1));
+        rightPanel.add(diagramPaper, cc.xy(1, 3));
+        rightPanel.add(modelPaper, cc.xy(1, 5));
+
+        JPanel dialogButtonsPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+        dialogButtonsPanel.add(cancelButton);
+        dialogButtonsPanel.add(okButton);
+
+        setLayout(new FormLayout("$dmargin,pref,$ugap,pref,$dmargin",
+                "$dmargin,pref,$lgap,top:pref,$lgap,bottom:pref:grow,$dmargin"));
+
+        add(dialogTitle, cc.xyw(2, 2, 3));
+        add(leftPanel, cc.xy(2, 4));
+        add(rightPanel, cc.xy(4, 4));
+        add(dialogButtonsPanel, cc.xyw(2, 6, 3));
+
         pack();
     }
 
@@ -456,6 +798,67 @@ public class OrigamiPropertiesFrame extends JDialog
         }
 
         isCreating = (origami == null);
+    }
+
+    /**
+     * Pack the window if it is smaller than it needs.
+     */
+    protected void maybePack()
+    {
+        Dimension layoutSize = getLayout().preferredLayoutSize(this);
+        Dimension currentSize = getSize();
+
+        if (layoutSize.width > currentSize.width || layoutSize.height > currentSize.height)
+            pack();
+    }
+
+    /**
+     * @return Whether all the fields are filled correctly and required fields are filled.
+     */
+    protected boolean verifyForm()
+    {
+        ResourceBundle messages = ResourceBundle.getBundle("application", ServiceLocator
+                .get(ConfigurationManager.class).get().getLocale());
+        List<String> errors = new LinkedList<String>();
+
+        if (name.getStrings().size() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.nameEmpty"));
+        if (shortDesc.getStrings().size() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.shortDescEmpty"));
+        if (description.getStrings().size() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.descriptionEmpty"));
+        if (authorName.getText().length() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.authorNameEmpty"));
+        if (licenseName.getText().length() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.licenseNameEmpty"));
+        if (licenseChooseHomepage.isSelected() && licenseHomepage.getText().length() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.licenseHomepageEmpty"));
+        if (licenseChooseContent.isSelected() && licenseContent.getText().length() == 0)
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.licenseContentEmpty"));
+        if (thumbnailLoadFromFile.isSelected() && !new File(thumbnailFileInput.getTextField().getText()).exists())
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.thumbnailFileNotExists"));
+
+        UnitDimension dSize = diagramPaper.getPaper().getSize();
+        if (dSize.getWidth() == 0d || dSize.getHeight() == 0d
+                || (dSize.getUnit() == Unit.REL && dSize.getReferenceLength() == 0d))
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.diagramPaperSizeZero"));
+
+        UnitDimension mSize = modelPaper.getPaper().getSize();
+        if (mSize.getWidth() == 0d || mSize.getHeight() == 0d
+                || (mSize.getUnit() == Unit.REL && mSize.getReferenceLength() == 0d))
+            errors.add(messages.getString("OrigamiPropertiesFrame.errors.modelPaperSizeZero"));
+
+        if (!errors.isEmpty()) {
+            StringBuilder errMessage = new StringBuilder();
+            for (String err : errors) {
+                errMessage.append(err).append("\n");
+            }
+            JOptionPane.showMessageDialog(this, errMessage.toString(),
+                    messages.getString("OrigamiPropertiesFrame.errors.title"), JOptionPane.ERROR_MESSAGE);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**

@@ -3,9 +3,18 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Vector;
 
 import javax.swing.JCheckBox;
@@ -16,6 +25,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.UnitListCellRenderer;
 
@@ -42,41 +52,58 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 public class JUnitDimensionInput extends JPanel
 {
     /** */
-    private static final long serialVersionUID   = 3259320166895060569L;
+    private static final long      serialVersionUID           = 3259320166895060569L;
 
     /** Aspect ratio of the entered dimension. If this is 0, the ratio is undefined. */
-    protected double          aspectRatio        = 0d;
+    protected double               aspectRatio                = 0d;
 
     /** The value of this input. */
-    protected UnitDimension   value              = new UnitDimension();
+    protected UnitDimension        value                      = new UnitDimension();
 
     /**
      * If <code>true</code>, setting values to width or height won't affect the other even if the preserve ratio
      * checkbox is checked.
      */
-    protected boolean         ignoreAscpectRatio = false;
+    protected boolean              ignoreAscpectRatio         = false;
 
     /**
      * If <code>true</code>, setting the value fro width and height components only sets its value without performing
      * actions in the custom change listners.
      */
-    protected boolean         setRawValue        = false;
+    protected boolean              setRawValue                = false;
+
+    /** The list of change listeners. */
+    protected List<ChangeListener> changeListeners            = new LinkedList<ChangeListener>();
+
+    /** It <code>true</code>, the change listeners are not notified of changes. */
+    protected boolean              disableChangeListeners     = false;
+
+    /**
+     * If <code>true</code>, setValue() will just set the value and will do no other side-effects. Not used in this
+     * class, but can be handy in subclasses.
+     */
+    protected boolean              setValueWithoutSideEffects = false;
 
     /** Input for width. */
-    protected JSpinner        width;
+    protected JSpinner             width;
     /** Input for height. */
-    protected JSpinner        height;
+    protected JSpinner             height;
     /** Input for unit. */
-    protected JComboBox       unit;
+    protected JComboBox            unit;
     /** Checkbox for selecting, whether the aspect ratio should be preserved. */
-    protected JCheckBox       preserveRatio;
+    protected JCheckBox            preserveRatio;
     /** Input for reference length. */
-    protected JSpinner        refLength;
+    protected JSpinner             refLength;
     /** Input for reference unit. */
-    protected JComboBox       refUnit;
+    protected JComboBox            refUnit;
+    /** The label displaying the current aspect ratio. */
+    protected JLabel               aspectRatioDisplay;
+    /** The button for rotating the paper 90 degrees. */
+    protected JLocalizedButton     rotatePaper;
 
     /** Label. */
-    protected JLabel          widthLabel, heightLabel, unitLabel, refLabel, refLengthLabel, refUnitLabel;
+    protected JLabel               widthLabel, heightLabel, unitLabel, refLabel, refLengthLabel, refUnitLabel,
+            aspectRatioLabel;
 
     /**
      * 
@@ -100,9 +127,24 @@ public class JUnitDimensionInput extends JPanel
         refLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLabel");
         refLengthLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refLength");
         refUnitLabel = new JLocalizedLabel("application", "JUnitDimensionInput.refUnit");
+        aspectRatioLabel = new JLocalizedLabel("application", "JUnitDimensionInput.aspectRatioLabel");
+
+        aspectRatioDisplay = new JLabel();
+        final ChangeListener aspectRatioListener = new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e)
+            {
+                NumberFormat format = NumberFormat.getInstance(ServiceLocator.get(ConfigurationManager.class).get()
+                        .getLocale());
+                format.setMaximumFractionDigits(5);
+                format.setMinimumFractionDigits(1);
+                aspectRatioDisplay.setText(format.format(aspectRatio));
+                aspectRatioDisplay.repaint();
+            }
+        };
 
         width = new JSpinner(new SpinnerNumberModel(0.0d, 0.0d, null, 0.1d));
-        JSpinner.NumberEditor widthEditor = new JSpinner.NumberEditor(width, "0.0######");
+        final JSpinner.NumberEditor widthEditor = new JSpinner.NumberEditor(width, "0.0######");
         widthEditor.getTextField().setColumns(9);
         width.setEditor(widthEditor);
         width.setValue(0.0d);
@@ -111,10 +153,13 @@ public class JUnitDimensionInput extends JPanel
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                if (setRawValue)
-                    return;
-
                 Double newVal = (Double) width.getValue();
+
+                if (setRawValue) {
+                    value.setWidth(newVal);
+                    return;
+                }
+
                 boolean refRescaled = false;
                 if (value.getUnit() == Unit.REL) {
                     newVal /= 100d;
@@ -144,24 +189,31 @@ public class JUnitDimensionInput extends JPanel
                 if (newVal != value.getWidth() || refRescaled) {
                     value.setWidth(newVal);
 
+                    boolean oldDisable = disableChangeListeners;
+                    disableChangeListeners = true;
+
                     if (!ignoreAscpectRatio && preserveRatio.isSelected() && aspectRatio > 0.0d && !refRescaled) {
                         double newHeight = (value.getUnit() != Unit.REL ? newVal : (newVal * 100d)) / aspectRatio;
                         ignoreAscpectRatio = true;
                         height.setValue(newHeight);
                         ignoreAscpectRatio = false;
-                    } else {
-                        if (value.getWidth() == 0.0d || value.getHeight() == 0.0d) {
-                            aspectRatio = 0.0d;
-                        } else {
-                            aspectRatio = value.getWidth() / value.getHeight();
-                        }
                     }
+                    disableChangeListeners = oldDisable;
+                    notifyChangeListeners();
                 }
+
+                if (value.getWidth() == 0.0d || value.getHeight() == 0.0d) {
+                    aspectRatio = 0.0d;
+                } else {
+                    aspectRatio = value.getWidth() / value.getHeight();
+                }
+
+                aspectRatioListener.stateChanged(e);
             }
         });
 
         height = new JSpinner(new SpinnerNumberModel(0.0d, 0.0d, null, 0.1d));
-        JSpinner.NumberEditor heightEditor = new JSpinner.NumberEditor(height, "0.0######");
+        final JSpinner.NumberEditor heightEditor = new JSpinner.NumberEditor(height, "0.0######");
         heightEditor.getTextField().setColumns(9);
         height.setEditor(heightEditor);
         height.setValue(0.0d);
@@ -170,10 +222,13 @@ public class JUnitDimensionInput extends JPanel
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                if (setRawValue)
-                    return;
-
                 Double newVal = (Double) height.getValue();
+
+                if (setRawValue) {
+                    value.setHeight(newVal);
+                    return;
+                }
+
                 boolean refRescaled = false;
                 if (value.getUnit() == Unit.REL) {
                     newVal /= 100d;
@@ -203,19 +258,27 @@ public class JUnitDimensionInput extends JPanel
                 if (newVal != value.getHeight() || refRescaled) {
                     value.setHeight(newVal);
 
+                    boolean oldDisable = disableChangeListeners;
+                    disableChangeListeners = true;
+
                     if (!ignoreAscpectRatio && preserveRatio.isSelected() && aspectRatio > 0.0d && !refRescaled) {
                         double newWidth = (value.getUnit() != Unit.REL ? newVal : (newVal * 100d)) * aspectRatio;
                         ignoreAscpectRatio = true;
                         width.setValue(newWidth);
                         ignoreAscpectRatio = false;
-                    } else {
-                        if (value.getWidth() == 0.0d || value.getHeight() == 0.0d) {
-                            aspectRatio = 0.0d;
-                        } else {
-                            aspectRatio = value.getWidth() / value.getHeight();
-                        }
                     }
+
+                    disableChangeListeners = oldDisable;
+                    notifyChangeListeners();
                 }
+
+                if (value.getWidth() == 0.0d || value.getHeight() == 0.0d) {
+                    aspectRatio = 0.0d;
+                } else {
+                    aspectRatio = value.getWidth() / value.getHeight();
+                }
+
+                aspectRatioListener.stateChanged(e);
             }
         });
 
@@ -233,7 +296,9 @@ public class JUnitDimensionInput extends JPanel
 
                     UnitDimension newValue = value.convertTo(newUnit);
 
+                    setValueWithoutSideEffects = true;
                     setValue(newValue);
+                    setValueWithoutSideEffects = false;
 
                     refLength.setVisible(isRel);
                     refLengthLabel.setVisible(isRel);
@@ -260,6 +325,19 @@ public class JUnitDimensionInput extends JPanel
                             }
                         });
 
+        rotatePaper = new JLocalizedButton("application", "JUnitDimensionInput.rotatePaperLabel");
+        rotatePaper.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                UnitDimension value = getValue();
+                double height = value.getHeight();
+                value.setHeight(value.getWidth());
+                value.setWidth(height);
+                setValue(value);
+            }
+        });
+
         refLength = new JSpinner(new SpinnerNumberModel(0.0d, 0.0d, null, 0.1d));
         JSpinner.NumberEditor refLengthEditor = new JSpinner.NumberEditor(refLength, "0.0######");
         refLengthEditor.getTextField().setColumns(9);
@@ -270,6 +348,7 @@ public class JUnitDimensionInput extends JPanel
             public void stateChanged(ChangeEvent e)
             {
                 value.setReference(value.getReferenceUnit(), (Double) refLength.getValue());
+                notifyChangeListeners();
             }
         });
 
@@ -282,6 +361,7 @@ public class JUnitDimensionInput extends JPanel
             {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     value.setReference((Unit) refUnit.getSelectedItem(), value.getReferenceLength());
+                    notifyChangeListeners();
                 }
             }
         };
@@ -291,6 +371,21 @@ public class JUnitDimensionInput extends JPanel
 
         unitItemListener.itemStateChanged(new ItemEvent(unit, 0, unit.getSelectedItem(), ItemEvent.SELECTED));
         refUnitItemListener.itemStateChanged(new ItemEvent(refUnit, 0, refUnit.getSelectedItem(), ItemEvent.SELECTED));
+        aspectRatioListener.stateChanged(new ChangeEvent(this));
+        
+        PropertyChangeListener localeListener = new PropertyChangeListener() {;
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                //TODO this should localize the spinners, but it doesn't work...
+                Locale l = (Locale) evt.getNewValue();
+                widthEditor.getFormat().setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(l));
+                heightEditor.getFormat().setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(l));
+            }
+        };
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+        conf.addPropertyChangeListener("locale", localeListener);
+        localeListener.propertyChange(new PropertyChangeEvent(this, "locale", null, conf.getLocale()));
     }
 
     /**
@@ -299,7 +394,7 @@ public class JUnitDimensionInput extends JPanel
     protected void buildLayout()
     {
         setLayout(new FormLayout("pref,$lcgap,min(60dlu;pref),$ugap,pref,$lcgap,pref",
-                "pref,$lgap,pref,$lgap,pref,$lgap,pref"));
+                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
         CellConstraints cc = new CellConstraints();
 
         add(widthLabel, cc.xy(1, 1));
@@ -313,13 +408,17 @@ public class JUnitDimensionInput extends JPanel
 
         add(preserveRatio, cc.xyw(5, 3, 3));
 
-        add(refLabel, cc.xyw(1, 5, 5));
+        add(aspectRatioLabel, cc.xy(1, 5));
+        add(aspectRatioDisplay, cc.xy(3, 5));
+        add(rotatePaper, cc.xyw(5, 5, 3));
 
-        add(refLengthLabel, cc.xy(1, 7));
-        add(refLength, cc.xy(3, 7));
+        add(refLabel, cc.xyw(1, 7, 5));
 
-        add(refUnitLabel, cc.xy(5, 7));
-        add(refUnit, cc.xy(7, 7));
+        add(refLengthLabel, cc.xy(1, 9));
+        add(refLength, cc.xy(3, 9));
+
+        add(refUnitLabel, cc.xy(5, 9));
+        add(refUnit, cc.xy(7, 9));
     }
 
     /**
@@ -359,15 +458,17 @@ public class JUnitDimensionInput extends JPanel
         if (value.getUnit() == null)
             value.setUnit(Unit.values()[0]);
 
-        this.value.setWidth(value.getWidth());
-        this.value.setHeight(value.getHeight());
-        this.value.setUnit(value.getUnit());
+        disableChangeListeners = true;
+
+        Unit oldUnit = this.value.getUnit();
+
+        this.value = value;
 
         if (value.getReferenceLength() != null && value.getReferenceUnit() != null) {
-            this.value.setReference(value.getReferenceUnit(), value.getReferenceLength());
             refLength.setValue(value.getReferenceLength());
             refUnit.setSelectedItem(value.getReferenceUnit());
         }
+        value.setReference((Unit) refUnit.getSelectedItem(), (Double) refLength.getValue());
 
         unit.setSelectedItem(value.getUnit());
 
@@ -378,6 +479,11 @@ public class JUnitDimensionInput extends JPanel
         } else {
             double newWidth = value.getWidth();
             double newHeight = value.getHeight();
+            // if we convert between a relative and relative value, we must normalize the value
+            if (oldUnit == Unit.REL) {
+                newWidth /= 100d;
+                newHeight /= 100d;
+            }
 
             if (newWidth > 1.0d || newHeight > 1.0d) {
                 double ratio = 1.0d / Math.max(newWidth, newHeight);
@@ -393,6 +499,9 @@ public class JUnitDimensionInput extends JPanel
             setRawValue = false;
         }
         ignoreAscpectRatio = false;
+
+        disableChangeListeners = false;
+        notifyChangeListeners();
     }
 
     @Override
@@ -405,6 +514,40 @@ public class JUnitDimensionInput extends JPanel
         preserveRatio.setEnabled(enabled);
         refLength.setEnabled(enabled);
         refUnit.setEnabled(enabled);
+    }
+
+    /**
+     * Add a change listener.
+     * 
+     * @param listener The listener to add.
+     */
+    public void addChangeListener(ChangeListener listener)
+    {
+        changeListeners.add(listener);
+    }
+
+    /**
+     * Remove the given change listener.
+     * 
+     * @param listener The listener to remove.
+     */
+    public void removeChangeListener(ChangeListener listener)
+    {
+        changeListeners.remove(listener);
+    }
+
+    /**
+     * Notify change listeners that a value has changed.
+     */
+    protected void notifyChangeListeners()
+    {
+        if (disableChangeListeners)
+            return;
+
+        ChangeEvent e = new ChangeEvent(this);
+        for (ChangeListener l : changeListeners) {
+            l.stateChanged(e);
+        }
     }
 
 }

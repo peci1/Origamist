@@ -3,6 +3,13 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.RenderingHints;
+
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,8 +54,11 @@ public class JModelPaperInput extends JPanel
     /** The note on the paper. */
     protected JLangStringListTextField<JTextArea> note;
 
+    /** The preview of the paper. */
+    protected ModelPaperPreview                   paperPreview;
+
     /** Label. */
-    protected JLabel                              backgroundLabel, foregroundLabel, weightLabel;
+    protected JLabel                              backgroundLabel, foregroundLabel, weightLabel, paperPreviewLabel;
 
     /**
      * @param paper The paper that is the value of this input.
@@ -71,16 +81,25 @@ public class JModelPaperInput extends JPanel
         backgroundLabel = new JLocalizedLabelWithTooltip("application", "JModelPaperInput.backgroundLabel");
         foregroundLabel = new JLocalizedLabelWithTooltip("application", "JModelPaperInput.foregroundLabel");
         weightLabel = new JLocalizedLabelWithTooltip("application", "JModelPaperInput.weightLabel");
+        paperPreviewLabel = new JLocalizedLabelWithTooltip("application", "JModelPaperInput.paperPreviewLabel");
 
         size = new JPaperSizeInput();
         size.setValue(paper.getSize());
+        size.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e)
+            {
+                paperPreview.repaint();
+            }
+        });
 
         background = new JSimpleColorChooser(paper.getBackgroundColor());
         background.getColorChooser().getSelectionModel().addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                paper.setBackgroundColor(background.getColor());
+                paper.setBackgroundColor(background.getColorChooser().getColor());
+                paperPreview.repaint();
             }
         });
         foreground = new JSimpleColorChooser(paper.getForegroundColor());
@@ -88,7 +107,8 @@ public class JModelPaperInput extends JPanel
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                paper.setForegroundColor(foreground.getColor());
+                paper.setForegroundColor(foreground.getColorChooser().getColor());
+                paperPreview.repaint();
             }
         });
 
@@ -151,6 +171,7 @@ public class JModelPaperInput extends JPanel
                             }
                         });
 
+        paperPreview = new ModelPaperPreview();
     }
 
     /**
@@ -162,7 +183,7 @@ public class JModelPaperInput extends JPanel
         setLayout(new FormLayout("pref", "pref,$lgap,pref"));
 
         JPanel panel1 = new JPanel(new FormLayout("pref,$ugap,pref", "top:pref"));
-        JPanel panel2 = new JPanel(new FormLayout("pref,$lcgap,pref", "pref,$lgap,pref,$lgap,pref"));
+        JPanel panel2 = new JPanel(new FormLayout("pref,$lcgap,pref", "pref,$lgap,pref,$lgap,pref,$lgap,pref"));
 
         add(panel1, cc.xy(1, 1));
         panel1.add(size, cc.xy(1, 1));
@@ -173,6 +194,8 @@ public class JModelPaperInput extends JPanel
         panel2.add(foreground, cc.xy(3, 3));
         panel2.add(weightLabel, cc.xy(1, 5));
         panel2.add(weight, cc.xy(3, 5));
+        panel2.add(paperPreviewLabel, cc.xy(1, 7));
+        panel2.add(paperPreview, cc.xy(3, 7));
         add(note, cc.xy(1, 3));
 
     }
@@ -199,5 +222,73 @@ public class JModelPaperInput extends JPanel
     public void setPaper(ModelPaper paper)
     {
         this.paper = paper;
+    }
+
+    /**
+     * A preview of the model paper.
+     * 
+     * @author Martin Pecka
+     */
+    protected class ModelPaperPreview extends JPanel
+    {
+        /** */
+        private static final long serialVersionUID = 3495666034159392170L;
+
+        public ModelPaperPreview()
+        {
+            setPreferredSize(new Dimension(48, 48));
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g)
+        {
+            Graphics2D g2 = (Graphics2D) g.create();
+
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            double pWidth = (Double) size.width.getValue();
+            double pHeight = (Double) size.height.getValue();
+
+            if (pWidth == 0d || pHeight == 0d)
+                return;
+
+            double relWidth, relHeight;
+            if (pWidth >= pHeight) {
+                relWidth = 1d;
+                relHeight = pHeight / pWidth;
+            } else {
+                relWidth = pWidth / pHeight;
+                relHeight = 1d;
+            }
+
+            int width = (int) (48 * relWidth);
+            int height = (int) (48 * relHeight) - 1; // the -1 is important
+
+            int left = (int) Math.floor((48 - width) / 2d);
+            int top = (int) Math.floor((48 - height) / 2d);
+
+            Polygon triangle = new Polygon();
+            triangle.addPoint(left + width / 2, top);
+            triangle.addPoint(left + width / 2, top + height / 2);
+            triangle.addPoint(left + width, top + height / 2);
+
+            Polygon page = new Polygon();
+            page.addPoint(left, top);
+            page.addPoint(left, top + height);
+            page.addPoint(left + width, top + height);
+            page.addPoint(left + width, top + height / 2);
+            page.addPoint(left + width / 2, top);
+
+            g2.setColor(paper.getForegroundColor() != null ? paper.getForegroundColor() : Color.WHITE);
+            g2.fillPolygon(page);
+
+            g2.setColor(paper.getBackgroundColor() != null ? paper.getBackgroundColor() : Color.WHITE);
+            g2.fillPolygon(triangle);
+
+            g2.setColor(Color.BLACK);
+            g2.drawPolygon(page);
+            g2.drawPolygon(triangle);
+        }
     }
 }

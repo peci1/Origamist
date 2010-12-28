@@ -186,14 +186,17 @@ public class Configuration extends PropertyChangeSource
     public abstract static class ResourceBundleListener implements PropertyChangeListener
     {
         /** The bundle to monitor. */
-        protected String        bundleName;
+        protected String         bundleName;
         /** The key from the monitored bundle. */
-        protected String        key;
+        protected String         key;
         /** The name of the property of the monitored {@link Locale}. */
-        protected String        propertyName;
+        protected String         propertyName;
+
+        /** The actual resource bundle. */
+        protected ResourceBundle bundle;
 
         /** Configuration for static access "hacking". */
-        protected Configuration config = ServiceLocator.get(ConfigurationManager.class).get();
+        protected Configuration  config = ServiceLocator.get(ConfigurationManager.class).get();
 
         /**
          * @param bundleName The bundle to monitor.
@@ -230,7 +233,8 @@ public class Configuration extends PropertyChangeSource
         @Override
         public void propertyChange(PropertyChangeEvent evt)
         {
-            updateText(ResourceBundle.getBundle(bundleName, getProperty()).getString(key));
+            bundle = ResourceBundle.getBundle(bundleName, getProperty());
+            updateText(bundle.getString(key));
         }
     }
 

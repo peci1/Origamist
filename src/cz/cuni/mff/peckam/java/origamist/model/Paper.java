@@ -20,7 +20,7 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
      */
     public DoubleDimension getRelativeDimensions()
     {
-        if (this.size.getWidth() == this.size.getHeight()) {
+        if (this.size.getWidth() >= this.size.getHeight()) {
             return new DoubleDimension(1.0, size.getHeight() / size.getWidth());
         } else {
             return new DoubleDimension(size.getWidth() / size.getHeight(), 1.0);

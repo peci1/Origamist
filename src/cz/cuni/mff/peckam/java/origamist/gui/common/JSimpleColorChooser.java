@@ -69,6 +69,7 @@ public class JSimpleColorChooser extends JPanel
         setColorChooser(new JColorChooser(initialColor != null ? initialColor : Color.WHITE));
         colorChooser.removeChooserPanel(colorChooser.getChooserPanels()[1]); // removes HSV panel
         colorChooser.setPreviewPanel(noPreview);
+        previewArea.setBackground(colorChooser.getColor());
 
         ActionListener okListener = new ActionListener() {
             @Override

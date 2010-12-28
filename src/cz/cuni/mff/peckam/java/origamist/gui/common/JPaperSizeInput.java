@@ -46,7 +46,7 @@ public class JPaperSizeInput extends JUnitDimensionInput
     protected JComboBox              paperSizes;
 
     /** The item that stands for custom size. */
-    protected UnitDimensionWithLabel customSize       = null;
+    protected UnitDimensionWithLabel customSize;
 
     @Override
     protected void createComponents()
@@ -126,7 +126,7 @@ public class JPaperSizeInput extends JUnitDimensionInput
     protected void buildLayout()
     {
         setLayout(new FormLayout("pref,$lcgap,min(60dlu;pref),$ugap,pref,$lcgap,pref",
-                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
+                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
         CellConstraints cc = new CellConstraints();
 
         add(paperSizes, cc.xyw(1, 1, 7));
@@ -142,20 +142,24 @@ public class JPaperSizeInput extends JUnitDimensionInput
 
         add(preserveRatio, cc.xyw(5, 5, 3));
 
-        add(refLabel, cc.xyw(1, 7, 5));
+        add(aspectRatioLabel, cc.xy(1, 7));
+        add(aspectRatioDisplay, cc.xy(3, 7));
+        add(rotatePaper, cc.xyw(5, 7, 3));
 
-        add(refLengthLabel, cc.xy(1, 9));
-        add(refLength, cc.xy(3, 9));
+        add(refLabel, cc.xyw(1, 9, 5));
 
-        add(refUnitLabel, cc.xy(5, 9));
-        add(refUnit, cc.xy(7, 9));
+        add(refLengthLabel, cc.xy(1, 11));
+        add(refLength, cc.xy(3, 11));
+
+        add(refUnitLabel, cc.xy(5, 11));
+        add(refUnit, cc.xy(7, 11));
     }
 
     @Override
     public void setValue(UnitDimension value)
     {
         super.setValue(value);
-        if (customSize != null)
+        if (!setValueWithoutSideEffects && customSize != null)
             paperSizes.setSelectedItem(customSize);
     }
 
