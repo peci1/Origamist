@@ -7,6 +7,7 @@ import java.applet.AppletContext;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
@@ -33,8 +35,10 @@ import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
 import javax.swing.origamist.JDropDownButton;
 import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
+import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
 import javax.swing.origamist.JToolBarWithBgImage;
+import javax.swing.origamist.MessageBar;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -46,10 +50,12 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 
 /**
  * The editor of the origami model. <br />
@@ -73,11 +79,17 @@ public class OrigamiEditor extends CommonGui
     /** The currently displayed origami. May be <code>null</code>. */
     protected Origami             origami                 = null;
 
+    /** The currently selected operation. */
+    protected Operations          currentOperation        = null;
+
     /** Reflects whether alternative action buttons are shown. */
     protected boolean             alternativeActionsShown = false;
 
     /** The main application toolbar. */
     protected JToolBarWithBgImage toolbar                 = null;
+
+    /** The dropdown button for saving the model. */
+    protected JDropDownButton     saveButton              = null;
 
     /** Toolbar buttons for model operations. */
     protected JToggleButton       operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
@@ -88,6 +100,9 @@ public class OrigamiEditor extends CommonGui
 
     /** Toolbar buttons for model operations. */
     protected JToggleMenuItem     operationRabbitFold, operationSquashFold;
+
+    /** The status bar. */
+    protected JStatusBar          statusBar               = null;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -122,6 +137,14 @@ public class OrigamiEditor extends CommonGui
         });
     }
 
+    @Override
+    public void init()
+    {
+        super.init();
+
+        setOrigami(null);
+    }
+
     /**
      * Create and setup all the form components.
      */
@@ -129,6 +152,9 @@ public class OrigamiEditor extends CommonGui
     protected void createComponents()
     {
         toolbar = createToolbar();
+
+        statusBar = new JStatusBar();
+        statusBar.showMessage(" ");
     }
 
     /**
@@ -137,11 +163,13 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void buildLayout()
     {
-        setLayout(new FormLayout("pref:grow", "pref"));
+        setLayout(new FormLayout("pref:grow", "pref,$lgap,pref:grow,$lgap,bottom:pref"));
 
         CellConstraints cc = new CellConstraints();
 
         add(toolbar, cc.xy(1, 1));
+
+        add(statusBar, cc.xy(1, 5));
     }
 
     /**
@@ -192,6 +220,25 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
+        JDropDownButton dropDown = toolbar.createToolbarDropdownButton(null, "menu.save", "save-32.png");
+        toolbar.add(dropDown);
+
+        dropDown.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.editable"));
+        dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.XML), "menu.save.asXML",
+                "xml-32.png"));
+        dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.SVG), "menu.save.asSVG",
+                "svg-32.png"));
+
+        dropDown.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.non-editable"));
+        dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.PDF), "menu.save.asPDF",
+                "pdf-32.png"));
+        dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.PNG), "menu.save.asPNG",
+                "png-32.png"));
+
+        saveButton = dropDown;
+
+        toolbar.add(new JToolBar.Separator());
+
         toolbar.add(toolbar.createToolbarButton(new SettingsAction(), "menu.settings", "settings-32.png"));
 
         toolbar.add(new JToolBar.Separator());
@@ -200,42 +247,93 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(operationMountainFold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.mountain", "folds/mountain-32.png"));
+        operationMountainFold.addActionListener(new OperationActionListener(Operations.MOUNTAIN_FOLD, "editor",
+                "menu.operation.mountain"));
+
         toolbar.add(operationValleyFold = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.valley",
                 "folds/valley-32.png"));
+        operationValleyFold.addActionListener(new OperationActionListener(Operations.VALLEY_FOLD, "editor",
+                "menu.operation.valley"));
+
         toolbar.add(operationMountainFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.mountainFoldUnfold", "folds/mountain-fold-unfold-32.png"));
+        operationMountainFoldUnfold.addActionListener(new OperationActionListener(
+                Operations.MOUNTAIN_VALLEY_FOLD_UNFOLD, "editor", "menu.operation.mountainFoldUnfold"));
+
         toolbar.add(operationValleyFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.valleyFoldUnfold", "folds/valley-fold-unfold-32.png"));
+        operationValleyFoldUnfold.addActionListener(new OperationActionListener(Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD,
+                "editor", "menu.operation.valleyFoldUnfold"));
+
         toolbar.add(operationThunderboltFoldMountainFirst = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.thunderboltMountainFirst", "folds/thunderbolt-mountain-first-32.png"));
+        operationThunderboltFoldMountainFirst.addActionListener(new OperationActionListener(
+                Operations.THUNDERBOLT_FOLD, "editor", "menu.operation.thunderboltMountainFirst"));
+
+        // TODO make a difference between this and the following operation
+
         toolbar.add(operationThunderboltFoldValleyFirst = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.thunderboltValleyFirst", "folds/thunderbolt-valley-first-32.png"));
+        operationThunderboltFoldValleyFirst.addActionListener(new OperationActionListener(Operations.THUNDERBOLT_FOLD,
+                "editor", "menu.operation.thunderboltValleyFirst"));
+
         toolbar.add(operationTurnOver = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.turnOver",
                 "folds/turn-over-32.png"));
+        operationTurnOver.addActionListener(new OperationActionListener(Operations.TURN_OVER, "editor",
+                "menu.operation.turnOver"));
+
         toolbar.add(operationRotate = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.rotate",
                 "folds/rotate-32.png"));
+        operationRotate.addActionListener(new OperationActionListener(Operations.ROTATE, "editor",
+                "menu.operation.rotate"));
+
         toolbar.add(operationPull = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.pull",
                 "folds/pull-32.png"));
+        operationPull.addActionListener(new OperationActionListener(Operations.PULL, "editor", "menu.operation.pull"));
+
         toolbar.add(operationCrimpFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.crimpInside", "folds/crimp-inside-32.png"));
+        operationCrimpFoldInside.addActionListener(new OperationActionListener(Operations.INSIDE_CRIMP_FOLD, "editor",
+                "menu.operation.crimpInside"));
+
         toolbar.add(operationCrimpFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.crimpOutside", "folds/crimp-outside-32.png"));
+        operationCrimpFoldOutside.addActionListener(new OperationActionListener(Operations.OUTSIDE_CRIMP_FOLD,
+                "editor", "menu.operation.crimpOutside"));
+
         toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open",
                 "folds/open-32.png"));
+        operationOpen.addActionListener(new OperationActionListener(Operations.OPEN, "editor", "menu.operation.open"));
+
         toolbar.add(operationReverseFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.reverseInside", "folds/reverse-inside-32.png"));
+        operationReverseFoldInside.addActionListener(new OperationActionListener(Operations.INSIDE_REVERSE_FOLD,
+                "editor", "menu.operation.reverseInside"));
+
         toolbar.add(operationReverseFoldOutside = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.reverseOutside", "folds/reverse-outside-32.png"));
+        operationReverseFoldOutside.addActionListener(new OperationActionListener(Operations.OUTSIDE_REVERSE_FOLD,
+                "editor", "menu.operation.reverseOutside"));
+
         toolbar.add(operationRepeatAction = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.repeat", "folds/repeat-32.png"));
+        operationRepeatAction.addActionListener(new OperationActionListener(Operations.REPEAT_ACTION, "editor",
+                "menu.operation.repeat"));
 
         operationRabbitFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.rabbit",
                 "folds/rabbit-32.png");
+        operationRabbitFold.addActionListener(new OperationActionListener(Operations.RABBIT_FOLD, "editor",
+                "menu.operation.rabbit"));
+
         operationSquashFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.squash",
                 "folds/squash-32.png");
+        operationSquashFold.addActionListener(new OperationActionListener(Operations.SQUASH_FOLD, "editor",
+                "menu.operation.squash"));
 
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
                 "folds/mark-32.png"));
+        operationMark.addActionListener(new OperationActionListener(null, "editor", "menu.operation.mark"));
+        // TODO add Mark operation
 
         operationGroup.add(operationMountainFold);
         operationGroup.add(operationValleyFold);
@@ -282,6 +380,7 @@ public class OrigamiEditor extends CommonGui
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
+        // saveButton.setEnabled(origami != null); //TODO
     }
 
     @Override
@@ -301,6 +400,13 @@ public class OrigamiEditor extends CommonGui
     {
         super.registerServices();
         ServiceLocator.add(OrigamiEditor.class, this);
+    }
+
+    @Override
+    protected void registerServicesAfterComponentsAreCreated()
+    {
+        super.registerServicesAfterComponentsAreCreated();
+        ServiceLocator.add(MessageBar.class, statusBar);
     }
 
     // bootstrapping support
@@ -510,6 +616,128 @@ public class OrigamiEditor extends CommonGui
                 JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
                         appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
                 Logger.getLogger("application").error(e1);
+            }
+        }
+
+    }
+
+    /**
+     * Exports the currently displayed origami to the given format.
+     * 
+     * @author Martin Pecka
+     */
+    class ExportAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -399462365929673938L;
+
+        /** The format to export to. */
+        protected ExportFormat    format;
+
+        /**
+         * @param format The format to export to.
+         */
+        public ExportAction(ExportFormat format)
+        {
+            this.format = format;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            JFileChooser chooser = new JFileChooser();
+            File defaultFile = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
+            chooser.setCurrentDirectory(defaultFile);
+            chooser.setFileFilter(new FileNameExtensionFilter("*." + format.toString().toLowerCase(), format.toString()));
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogType(JFileChooser.SAVE_DIALOG);
+            chooser.setApproveButtonText(appMessages.getString("exportDialog.approve"));
+            chooser.setApproveButtonMnemonic(KeyStroke.getKeyStroke(
+                    appMessages.getString("exportDialog.approve.mnemonic")).getKeyCode());
+            chooser.setApproveButtonToolTipText(ServiceLocator.get(TooltipFactory.class).getDecorated(
+                    appMessages.getString("exportDialog.approve.tooltip.message"),
+                    appMessages.getString("exportDialog.approve.tooltip.title"), "save.png",
+                    KeyStroke.getKeyStroke("alt " + appMessages.getString("exportDialog.approve.mnemonic"))));
+            if (chooser.showDialog(OrigamiEditor.this, null) == JFileChooser.APPROVE_OPTION) {
+                File f = chooser.getSelectedFile();
+                if (!chooser.accept(f)) {
+                    f = new File(f.toString() + "." + format.toString().toLowerCase());
+                }
+                ServiceLocator.get(ConfigurationManager.class).get().setLastExportPath(f);
+
+                if (f.exists()) {
+                    OrigamiEditor.this.format.applyPattern(appMessages.getString("exportDialog.overwrite"));
+                    if (JOptionPane.showConfirmDialog(OrigamiEditor.this,
+                            OrigamiEditor.this.format.format(new Object[] { f }),
+                            appMessages.getString("exportDialog.overwrite.title"), JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE, null) != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                }
+
+                try {
+                    ServiceLocator.get(OrigamiHandler.class).export(origami, f, format);
+                    OrigamiEditor.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
+                    JOptionPane.showMessageDialog(getRootPane(),
+                            OrigamiEditor.this.format.format(new Object[] { f.toString() }),
+                            appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE, null);
+                } catch (IOException e1) {
+                    OrigamiEditor.this.format.applyPattern(appMessages.getString("failedToExport.message"));
+                    JOptionPane.showMessageDialog(getRootPane(),
+                            OrigamiEditor.this.format.format(new Object[] { f.toString() }),
+                            appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
+                    Logger.getLogger("application").warn("Unable to export origami.", e1);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * This listener selects the current operation and displays a tooltip in the statusbar.
+     * 
+     * @author Martin Pecka
+     */
+    protected class OperationActionListener implements ActionListener
+    {
+        /** The operation that belongs to the button. */
+        protected Operations operation;
+        /** The name of the resource bundle where we get the strings from. */
+        protected String     bundleName;
+        /** The name of the base key for string getting from resource bundle. */
+        protected String     key;
+
+        /**
+         * @param operation The operation that belongs to the button.
+         * @param bundleName The name of the resource bundle where we get the strings from.
+         * @param key The name of the base key for string getting from resource bundle.
+         */
+        public OperationActionListener(Operations mountainFold, String bundleName, String key)
+        {
+            this.operation = mountainFold;
+            this.bundleName = bundleName;
+            this.key = key;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            currentOperation = operation;
+
+            MessageBar statusBar = ServiceLocator.get(MessageBar.class);
+            if (statusBar != null) {
+                ResourceBundle b = ResourceBundle.getBundle(bundleName, ServiceLocator.get(ConfigurationManager.class)
+                        .get().getLocale());
+                String statusText = "";
+                try {
+                    statusText += b.getString(key);
+                } catch (MissingResourceException ex) {}
+                try {
+                    statusText += ": " + b.getString(key + ".description");
+                } catch (MissingResourceException ex) {}
+
+                statusBar.showMessage(statusText);
             }
         }
 

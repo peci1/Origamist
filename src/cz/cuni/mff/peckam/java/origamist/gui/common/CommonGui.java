@@ -103,6 +103,7 @@ public abstract class CommonGui extends JApplet
                 {
                     createComponents();
                     buildLayout();
+                    registerServicesAfterComponentsAreCreated();
                 }
             });
         } catch (InterruptedException e) {
@@ -132,6 +133,14 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
         ServiceLocator.add(HashCodeAndEqualsHelper.class, new HashCodeAndEqualsHelperImpl());
         ServiceLocator.add(TooltipFactory.class, new TooltipFactory());
+    }
+
+    /**
+     * Register services after the components are created.
+     */
+    protected void registerServicesAfterComponentsAreCreated()
+    {
+
     }
 
     /**
