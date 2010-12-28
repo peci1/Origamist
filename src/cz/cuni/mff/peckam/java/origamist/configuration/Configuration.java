@@ -23,6 +23,8 @@ import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
  * diagramLocale
  * lastExportPath
  * preferredUnit
+ * defaultAuthorName
+ * defaultAuthorHomepage
  * 
  * @author Martin Pecka
  */
@@ -32,28 +34,34 @@ public class Configuration extends PropertyChangeSource
     /**
      * General locale of the program.
      */
-    protected Locale locale         = Locale.getDefault();
+    protected Locale locale                = Locale.getDefault();
 
     /**
      * The preferred locale for diagrams. If null, means that it is the same as
      * locale.
      */
-    protected Locale diagramLocale  = null;
+    protected Locale diagramLocale         = null;
 
     /** The path that was last used for exporting a model/listing. */
-    protected File   lastExportPath = null;
+    protected File   lastExportPath        = null;
 
     /** The path that was last used for opening a model/listing. */
-    protected File   lastOpenPath   = null;
+    protected File   lastOpenPath          = null;
 
     /** The URL that was last used for opening a model/listing. */
-    protected URL    lastOpenURL    = null;
+    protected URL    lastOpenURL           = null;
 
     /**
      * The preferred measurement unit. <code>null</code> means that the unit defined in the corresponding
      * {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension} should be used for printing.
      */
-    protected Unit   preferredUnit  = null;
+    protected Unit   preferredUnit         = null;
+
+    /** The name the author uses for diagrams created by him/her. */
+    protected String defaultAuthorName     = null;
+
+    /** The homepage the author uses for diagrams created by him/her. */
+    protected String defaultAuthorHomepage = null;
 
     /**
      * @return the locale
@@ -164,6 +172,42 @@ public class Configuration extends PropertyChangeSource
         Unit oldUnit = this.preferredUnit;
         this.preferredUnit = preferredUnit;
         firePropertyChange("preferredUnit", oldUnit, preferredUnit);
+    }
+
+    /**
+     * @return the defaultAuthorName
+     */
+    public String getDefaultAuthorName()
+    {
+        return defaultAuthorName;
+    }
+
+    /**
+     * @param defaultAuthorName the defaultAuthorName to set
+     */
+    public void setDefaultAuthorName(String defaultAuthorName)
+    {
+        String oldName = this.defaultAuthorName;
+        this.defaultAuthorName = defaultAuthorName;
+        firePropertyChange("defaultAuthorName", oldName, defaultAuthorName);
+    }
+
+    /**
+     * @return the defaultAuthorHomepage
+     */
+    public String getDefaultAuthorHomepage()
+    {
+        return defaultAuthorHomepage;
+    }
+
+    /**
+     * @param defaultAuthorHomepage the defaultAuthorHomepage to set
+     */
+    public void setDefaultAuthorHomepage(String defaultAuthorHomepage)
+    {
+        String oldHomepage = this.defaultAuthorHomepage;
+        this.defaultAuthorHomepage = defaultAuthorHomepage;
+        firePropertyChange("defaultAuthorHomepage", oldHomepage, defaultAuthorHomepage);
     }
 
     /**

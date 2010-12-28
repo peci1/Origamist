@@ -196,6 +196,9 @@ public class OrigamiPropertiesFrame extends JDialog
         createComponents();
         buildLayout();
 
+        if (isCreating)
+            fillDefaults();
+
         setModalityType(ModalityType.APPLICATION_MODAL);
 
         String titleKey = (isCreating ? "OrigamiPropertiesFrame.title.create" : "OrigamiPropertiesFrame.title.edit");
@@ -605,8 +608,11 @@ public class OrigamiPropertiesFrame extends JDialog
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                if (verifyForm())
+                if (verifyForm()) {
+                    if (isCreating)
+                        saveDefaults();
                     setVisible(false);
+                }
             }
         });
 
@@ -798,6 +804,33 @@ public class OrigamiPropertiesFrame extends JDialog
         }
 
         isCreating = (origami == null);
+    }
+
+    /**
+     * Where applicable, fills a default value. Empty default values are not filled.
+     */
+    protected void fillDefaults()
+    {
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+
+        year.setValue(new GregorianCalendar().get(Calendar.YEAR));
+
+        String authorName = conf.getDefaultAuthorName();
+        this.authorName.setText(authorName);
+
+        String authorHomepage = conf.getDefaultAuthorHomepage();
+        this.authorHomepage.setText(authorHomepage);
+    }
+
+    /**
+     * Save all values that can be further used as default values.
+     */
+    protected void saveDefaults()
+    {
+        Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
+
+        conf.setDefaultAuthorName(this.authorName.getText());
+        conf.setDefaultAuthorHomepage(this.authorHomepage.getText());
     }
 
     /**

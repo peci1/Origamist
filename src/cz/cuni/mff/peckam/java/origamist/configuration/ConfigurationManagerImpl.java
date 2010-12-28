@@ -44,6 +44,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         File lastOpenPath = null;
         URL lastOpenURL = null;
         Unit preferredUnit = null;
+        String defaultAuthorName = null;
+        String defaultAuthorHomepage = null;
 
         try {
             prefs = Preferences.userNodeForPackage(ConfigurationManager.class);
@@ -61,6 +63,9 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
             try {
                 preferredUnit = Enum.valueOf(Unit.class, prefs.get("preferredUnit", null));
             } catch (NullPointerException e) {} catch (IllegalArgumentException e) {}
+
+            defaultAuthorName = prefs.get("defaultAuthorName", System.getProperty("user.name", ""));
+            defaultAuthorHomepage = prefs.get("defaultAuthorHomepage", "");
         } catch (SecurityException e) {
             System.err
                     .println("Couldn't load configuration because of security constraints. Using default configuration.");
@@ -80,6 +85,8 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         configuration.setLastOpenURL(lastOpenURL);
 
         configuration.setPreferredUnit(preferredUnit);
+        configuration.setDefaultAuthorName(defaultAuthorName);
+        configuration.setDefaultAuthorHomepage(defaultAuthorHomepage);
     }
 
     @Override
@@ -115,6 +122,9 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         } else {
             prefs.put("preferredUnit", configuration.getPreferredUnit().toString());
         }
+
+        prefs.put("defaultAuthorName", configuration.getDefaultAuthorName());
+        prefs.put("defaultAuthorHomepage", configuration.getDefaultAuthorHomepage());
 
         prefs.flush();
     }
