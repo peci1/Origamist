@@ -13,7 +13,9 @@ import java.util.ResourceBundle;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.PropertyChangeSource;
+import cz.cuni.mff.peckam.java.origamist.utils.UnitDimensionWithLabel;
 
 /**
  * A configuration of the program.
@@ -34,34 +36,37 @@ public class Configuration extends PropertyChangeSource
     /**
      * General locale of the program.
      */
-    protected Locale locale                = Locale.getDefault();
+    protected Locale                                 locale                = Locale.getDefault();
 
     /**
      * The preferred locale for diagrams. If null, means that it is the same as
      * locale.
      */
-    protected Locale diagramLocale         = null;
+    protected Locale                                 diagramLocale         = null;
 
     /** The path that was last used for exporting a model/listing. */
-    protected File   lastExportPath        = null;
+    protected File                                   lastExportPath        = null;
 
     /** The path that was last used for opening a model/listing. */
-    protected File   lastOpenPath          = null;
+    protected File                                   lastOpenPath          = null;
 
     /** The URL that was last used for opening a model/listing. */
-    protected URL    lastOpenURL           = null;
+    protected URL                                    lastOpenURL           = null;
 
     /**
      * The preferred measurement unit. <code>null</code> means that the unit defined in the corresponding
      * {@link cz.cuni.mff.peckam.java.origamist.model.UnitDimension} should be used for printing.
      */
-    protected Unit   preferredUnit         = null;
+    protected Unit                                   preferredUnit         = null;
 
     /** The name the author uses for diagrams created by him/her. */
-    protected String defaultAuthorName     = null;
+    protected String                                 defaultAuthorName     = null;
 
     /** The homepage the author uses for diagrams created by him/her. */
-    protected String defaultAuthorHomepage = null;
+    protected String                                 defaultAuthorHomepage = null;
+
+    /** The list of user-defined papers. */
+    protected ObservableList<UnitDimensionWithLabel> papers                = new ObservableList<UnitDimensionWithLabel>();
 
     /**
      * @return the locale
@@ -208,6 +213,14 @@ public class Configuration extends PropertyChangeSource
         String oldHomepage = this.defaultAuthorHomepage;
         this.defaultAuthorHomepage = defaultAuthorHomepage;
         firePropertyChange("defaultAuthorHomepage", oldHomepage, defaultAuthorHomepage);
+    }
+
+    /**
+     * @return the papers
+     */
+    public ObservableList<UnitDimensionWithLabel> getPapers()
+    {
+        return papers;
     }
 
     /**

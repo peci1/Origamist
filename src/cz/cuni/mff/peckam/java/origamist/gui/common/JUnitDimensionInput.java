@@ -105,6 +105,9 @@ public class JUnitDimensionInput extends JPanel
     protected JLabel               widthLabel, heightLabel, unitLabel, refLabel, refLengthLabel, refUnitLabel,
             aspectRatioLabel;
 
+    /** Listener for aspect ratio changes. */
+    protected ChangeListener aspectRatioListener;
+
     /**
      * 
      */
@@ -112,6 +115,18 @@ public class JUnitDimensionInput extends JPanel
     {
         createComponents();
         buildLayout();
+        
+        ItemEvent unitEvent = new ItemEvent(unit, 0, unit.getSelectedItem(), ItemEvent.SELECTED);
+        for (ItemListener l : unit.getItemListeners()) {
+            l.itemStateChanged(unitEvent);
+        }
+        
+        ItemEvent refUnitEvent = new ItemEvent(refUnit, 0, refUnit.getSelectedItem(), ItemEvent.SELECTED);
+        for (ItemListener l : refUnit.getItemListeners()) {
+            l.itemStateChanged(refUnitEvent);
+        }
+        
+        aspectRatioListener.stateChanged(new ChangeEvent(this));
     }
 
     /**
@@ -130,7 +145,7 @@ public class JUnitDimensionInput extends JPanel
         aspectRatioLabel = new JLocalizedLabel("application", "JUnitDimensionInput.aspectRatioLabel");
 
         aspectRatioDisplay = new JLabel();
-        final ChangeListener aspectRatioListener = new ChangeListener() {
+        aspectRatioListener = new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e)
             {
@@ -368,10 +383,6 @@ public class JUnitDimensionInput extends JPanel
         refUnit.addItemListener(refUnitItemListener);
 
         value.setReference((Unit) refUnit.getSelectedItem(), (Double) refLength.getValue());
-
-        unitItemListener.itemStateChanged(new ItemEvent(unit, 0, unit.getSelectedItem(), ItemEvent.SELECTED));
-        refUnitItemListener.itemStateChanged(new ItemEvent(refUnit, 0, refUnit.getSelectedItem(), ItemEvent.SELECTED));
-        aspectRatioListener.stateChanged(new ChangeEvent(this));
         
         PropertyChangeListener localeListener = new PropertyChangeListener() {;
             @Override

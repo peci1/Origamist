@@ -4,6 +4,8 @@
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.beans.PropertyChangeEvent;
@@ -11,6 +13,7 @@ import java.beans.PropertyChangeListener;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -18,9 +21,15 @@ import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.origamist.JLocalizedButton;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
@@ -30,6 +39,9 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
+import cz.cuni.mff.peckam.java.origamist.utils.UnitDimensionWithLabel;
 
 /**
  * An input for {@link UnitDimension} which also provides a set of predefined sizes.
@@ -40,13 +52,32 @@ public class JPaperSizeInput extends JUnitDimensionInput
 {
 
     /** */
-    private static final long        serialVersionUID = 727058655215687837L;
+    private static final long              serialVersionUID = 727058655215687837L;
+
+    /** The list of user-defined papers. */
+    protected List<UnitDimensionWithLabel> userPapers;
 
     /** Combobox for predefined paper sizes. */
-    protected JComboBox              paperSizes;
+    protected JComboBox                    paperSizes;
+
+    /** The button for saving a custom paper. */
+    protected JButton                      savePaper;
+    /** The button for removing a saved custom paper. */
+    protected JButton                      removePaper;
 
     /** The item that stands for custom size. */
-    protected UnitDimensionWithLabel customSize;
+    protected UnitDimensionWithLabel       customSize;
+
+    /**
+     * 
+     */
+    public JPaperSizeInput()
+    {
+        ItemEvent evt = new ItemEvent(paperSizes, 0, paperSizes.getSelectedItem(), ItemEvent.SELECTED);
+        for (ItemListener l : paperSizes.getItemListeners()) {
+            l.itemStateChanged(evt);
+        }
+    }
 
     @Override
     protected void createComponents()
@@ -98,6 +129,15 @@ public class JPaperSizeInput extends JUnitDimensionInput
                     if (newItem.getDimension() != null)
                         JPaperSizeInput.super.setValue(newItem.getDimension());
                     JPaperSizeInput.super.setEnabled(newItem.getDimension() == null);
+                    if (newItem.getDimension() == null) {
+                        removePaper.setVisible(false);
+                        savePaper.setVisible(true);
+                        savePaper.setEnabled(true);
+                    } else {
+                        savePaper.setVisible(false);
+                        removePaper.setVisible(true);
+                        removePaper.setEnabled(userPapers.contains(newItem));
+                    }
                 }
             }
         });
@@ -120,39 +160,144 @@ public class JPaperSizeInput extends JUnitDimensionInput
 
             }
         });
+
+        ServiceLocator.get(ConfigurationManager.class).get().getPapers()
+                .addObserver(new Observer<UnitDimensionWithLabel>() {
+                    @Override
+                    public void changePerformed(ChangeNotification<UnitDimensionWithLabel> change)
+                    {
+                        Object selected = paperSizes.getSelectedItem();
+
+                        Vector<UnitDimensionWithLabel> papers = getPapers();
+
+                        paperSizes.setModel(new DefaultComboBoxModel(papers));
+                        if (!papers.contains(selected)) {
+                            selected = paperSizes.getModel().getElementAt(0);
+                        }
+                        paperSizes.setSelectedItem(selected);
+
+                        ItemEvent evt = new ItemEvent(paperSizes, 0, selected, ItemEvent.SELECTED);
+                        for (ItemListener l : paperSizes.getItemListeners())
+                            l.itemStateChanged(evt);
+                    }
+                });
+
+        Icon saveIcon = new ImageIcon(getClass().getResource("/resources/images/add-24.png"));
+        savePaper = new JLocalizedButton("application", "JPaperSizeInput.savePaper", saveIcon);
+        savePaper.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                ResourceBundle messages = ResourceBundle.getBundle("application",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+
+                String name = null;
+                while (true) {
+                    name = (String) JOptionPane.showInputDialog(JPaperSizeInput.this,
+                            messages.getString("JPaperSizeInput.savePaper.message"),
+                            messages.getString("JPaperSizeInput.savePaper.title"), JOptionPane.QUESTION_MESSAGE, null,
+                            null, name != null ? name : "");
+                    if (name == null)
+                        break;
+
+                    boolean nameExists = false;
+                    for (UnitDimensionWithLabel dim : userPapers) {
+                        if (dim.getLabel().equals(name)) {
+                            nameExists = true;
+                            break;
+                        }
+                    }
+
+                    if (nameExists) {
+                        JOptionPane.showMessageDialog(JPaperSizeInput.this,
+                                messages.getString("JPaperSizeInput.savePaper.nameExists.message"),
+                                messages.getString("JPaperSizeInput.savePaper.nameExists.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        UnitDimension dim = getValue();
+                        UnitDimensionWithLabel newDim = new UnitDimensionWithLabel(dim, name);
+                        userPapers.add(newDim);
+
+                        UnitDimensionWithLabel selected = null;
+                        for (UnitDimensionWithLabel udim : getPapers()) {
+                            if (udim.equals(newDim)) {
+                                selected = udim;
+                            }
+                        }
+                        if (selected != null)
+                            paperSizes.setSelectedItem(selected);
+
+                        break;
+                    }
+                }
+            }
+        });
+
+        Icon removeIcon = new ImageIcon(getClass().getResource("/resources/images/remove-24.png"));
+        removePaper = new JLocalizedButton("application", "JPaperSizeInput.removePaper", removeIcon);
+        removePaper.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                ResourceBundle messages = ResourceBundle.getBundle("application",
+                        ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+
+                if (JOptionPane.showConfirmDialog(JPaperSizeInput.this,
+                        messages.getString("JPaperSizeInput.removePaper.message"),
+                        messages.getString("JPaperSizeInput.removePaper.title"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+                    userPapers.remove(paperSizes.getSelectedItem());
+                    paperSizes.setSelectedItem(customSize);
+                }
+            }
+        });
     }
 
     @Override
     protected void buildLayout()
     {
-        setLayout(new FormLayout("pref,$lcgap,min(60dlu;pref),$ugap,pref,$lcgap,pref",
-                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
         CellConstraints cc = new CellConstraints();
 
-        add(paperSizes, cc.xyw(1, 1, 7));
+        JPanel paperPanel = new JPanel(new FormLayout("pref,$ugap,pref,pref", "pref"));
+        paperPanel.add(paperSizes, cc.xy(1, 1));
+        paperPanel.add(savePaper, cc.xy(3, 1));
+        paperPanel.add(removePaper, cc.xy(4, 1));
 
-        add(widthLabel, cc.xy(1, 3));
-        add(width, cc.xy(3, 3));
+        JPanel widthPanel = new JPanel(new FormLayout("pref:grow,$lcgap,pref", "pref"));
+        widthPanel.add(widthLabel, cc.xy(1, 1));
+        widthPanel.add(width, cc.xy(3, 1));
 
-        add(heightLabel, cc.xy(1, 5));
-        add(height, cc.xy(3, 5));
+        JPanel heightPanel = new JPanel(new FormLayout("pref:grow,$lcgap,pref", "pref"));
+        heightPanel.add(heightLabel, cc.xy(1, 1));
+        heightPanel.add(height, cc.xy(3, 1));
 
-        add(unitLabel, cc.xy(5, 3));
-        add(unit, cc.xy(7, 3));
+        JPanel unitPanel = new JPanel(new FormLayout("pref:grow,$lcgap,pref", "pref"));
+        unitPanel.add(unitLabel, cc.xy(1, 1));
+        unitPanel.add(unit, cc.xy(3, 1));
 
-        add(preserveRatio, cc.xyw(5, 5, 3));
+        JPanel unitDimPanel = new JPanel(new FormLayout("pref,$ugap:grow,pref", "pref,$lgap,pref"));
+        unitDimPanel.add(widthPanel, cc.xy(1, 1));
+        unitDimPanel.add(heightPanel, cc.xy(1, 3));
+        unitDimPanel.add(unitPanel, cc.xy(3, 1));
+        unitDimPanel.add(preserveRatio, cc.xy(3, 3));
 
-        add(aspectRatioLabel, cc.xy(1, 7));
-        add(aspectRatioDisplay, cc.xy(3, 7));
-        add(rotatePaper, cc.xyw(5, 7, 3));
+        JPanel aspectPanel = new JPanel(new FormLayout("pref,$lcgap,pref,0px:grow,pref", "pref"));
+        aspectPanel.add(aspectRatioLabel, cc.xy(1, 1));
+        aspectPanel.add(aspectRatioDisplay, cc.xy(3, 1));
+        aspectPanel.add(rotatePaper, cc.xy(5, 1));
 
-        add(refLabel, cc.xyw(1, 9, 5));
+        JPanel refDimPanel = new JPanel(new FormLayout("pref,$lcgap,pref,$ugap:grow,pref,$lcgap,pref", "pref"));
+        refDimPanel.add(refLengthLabel, cc.xy(1, 1));
+        refDimPanel.add(refLength, cc.xy(3, 1));
+        refDimPanel.add(refUnitLabel, cc.xy(5, 1));
+        refDimPanel.add(refUnit, cc.xy(7, 1));
 
-        add(refLengthLabel, cc.xy(1, 11));
-        add(refLength, cc.xy(3, 11));
-
-        add(refUnitLabel, cc.xy(5, 11));
-        add(refUnit, cc.xy(7, 11));
+        setLayout(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
+        add(paperPanel, cc.xy(1, 1));
+        add(unitDimPanel, cc.xy(1, 3));
+        add(aspectPanel, cc.xy(1, 5));
+        add(refLabel, cc.xy(1, 7));
+        add(refDimPanel, cc.xy(1, 9));
     }
 
     @Override
@@ -227,6 +372,10 @@ public class JPaperSizeInput extends JUnitDimensionInput
             }
         }
 
+        if (userPapers == null)
+            userPapers = ServiceLocator.get(ConfigurationManager.class).get().getPapers();
+        result.addAll(userPapers);
+
         UnitDimensionWithLabel[] items = result.toArray(new UnitDimensionWithLabel[] {});
         Arrays.sort(items, new Comparator<UnitDimensionWithLabel>() {
             @Override
@@ -242,59 +391,6 @@ public class JPaperSizeInput extends JUnitDimensionInput
         });
         result = new Vector<UnitDimensionWithLabel>(Arrays.asList(items));
         return result;
-    }
-
-    /**
-     * A {@link UnitDimension} with a textual label.
-     * 
-     * @author Martin Pecka
-     */
-    protected class UnitDimensionWithLabel
-    {
-        protected UnitDimension dimension;
-        protected String        label;
-
-        /**
-         * @param dimension
-         * @param label
-         */
-        public UnitDimensionWithLabel(UnitDimension dimension, String label)
-        {
-            this.dimension = dimension;
-            this.label = label;
-        }
-
-        /**
-         * @return the dimension
-         */
-        public UnitDimension getDimension()
-        {
-            return dimension;
-        }
-
-        /**
-         * @param dimension the dimension to set
-         */
-        public void setDimension(UnitDimension dimension)
-        {
-            this.dimension = dimension;
-        }
-
-        /**
-         * @return the label
-         */
-        public String getLabel()
-        {
-            return label;
-        }
-
-        /**
-         * @param label the label to set
-         */
-        public void setLabel(String label)
-        {
-            this.label = label;
-        }
     }
 
 }
