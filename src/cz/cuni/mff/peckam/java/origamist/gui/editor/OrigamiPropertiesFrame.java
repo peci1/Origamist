@@ -16,6 +16,8 @@ import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -263,7 +265,7 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        authorName = new JTextField(20);
+        authorName = new JTextField(tempOrigami.getAuthor().getName(), 20);
         authorName.getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
             protected void update(DocumentEvent e)
@@ -272,7 +274,8 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        authorHomepage = new JTextField(20);
+        authorHomepage = new JTextField(tempOrigami.getAuthor().getHomepage() != null ? tempOrigami.getAuthor()
+                .getHomepage().toString() : "", 20);
         authorHomepage.setInputVerifier(new URIInputVerifier());
         authorHomepage.getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
@@ -286,9 +289,10 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        licenseName = new JTextField(20);
+        licenseName = new JTextField(tempOrigami.getLicense().getName(), 20);
 
-        licenseHomepage = new JTextField(20);
+        licenseHomepage = new JTextField(tempOrigami.getLicense().getHomepage() != null ? tempOrigami.getLicense()
+                .getHomepage().toString() : "", 20);
         licenseHomepage.setInputVerifier(new URIInputVerifier());
         licenseHomepage.getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
@@ -302,7 +306,7 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        licenseContent = new JTextArea(5, 20);
+        licenseContent = new JTextArea(tempOrigami.getLicense().getContent(), 5, 20);
         licenseContent.setLineWrap(true);
         licenseContent.setWrapStyleWord(true);
         licenseContent.getDocument().addDocumentListener(new UniversalDocumentListener() {
@@ -359,9 +363,17 @@ public class OrigamiPropertiesFrame extends JDialog
         });
         licenseChooseGroup.add(licenseChooseContent);
 
-        licenseChooseHomepage.setSelected(true);
+        if (tempOrigami.getLicense().getHomepage() != null)
+            licenseChooseHomepage.setSelected(true);
+        else
+            licenseChooseContent.setSelected(true);
+
+        List<String> selectedPermissions = new LinkedList<String>();
+        for (Permission p : tempOrigami.getLicense().getPermission())
+            selectedPermissions.add(p.getName());
 
         licensePermissionDoNothing = new JCheckBox();
+        licensePermissionDoNothing.setSelected(selectedPermissions.contains("doNothing"));
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.doNothing") {
             @Override
             protected void updateText(String text)
@@ -392,6 +404,7 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         licensePermissionEdit = new JCheckBox();
+        licensePermissionEdit.setSelected(selectedPermissions.contains("edit"));
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.edit") {
             @Override
             protected void updateText(String text)
@@ -418,6 +431,7 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         licensePermissionExport = new JCheckBox();
+        licensePermissionExport.setSelected(selectedPermissions.contains("export"));
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.export") {
             @Override
             protected void updateText(String text)
@@ -444,6 +458,7 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         licensePermissionDistribute = new JCheckBox();
+        licensePermissionDistribute.setSelected(selectedPermissions.contains("distribute"));
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application", "permission.distribute") {
             @Override
             protected void updateText(String text)
@@ -469,7 +484,7 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        original = new JTextField(20);
+        original = new JTextField(tempOrigami.getOriginal() != null ? tempOrigami.getOriginal().toString() : "", 20);
         original.setInputVerifier(new URIInputVerifier());
         original.getDocument().addDocumentListener(new UniversalDocumentListener() {
             @Override
@@ -500,8 +515,8 @@ public class OrigamiPropertiesFrame extends JDialog
             {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     thumbnailFileInput.setEnabled(false);
-                    thumbnailPreview.setVisible(false); // TODO maybe some better behavior
-                    tempOrigami.getThumbnail().getImage().setImageIcon(null);
+                    // thumbnailPreview.setVisible(false); // TODO maybe some better behavior
+                    // tempOrigami.getThumbnail().getImage().setImageIcon(null);
                 }
             }
         });
@@ -574,11 +589,15 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        thumbnailPreview = new JImage(null);
+        thumbnailPreview = new JImage(tempOrigami.getThumbnail().getImage().getValue() != null ? tempOrigami
+                .getThumbnail().getImage().getImageIcon().getImage() : null);
 
         thumbnailLoadFromModel.setSelected(true);
 
         diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
+        if (!isCreating)
+            // TODO maybe allow changes not affecting aspect ratio
+            diagramPaper.lockSize();
         final TitledBorder diagramPaperBorder = BorderFactory.createTitledBorder(diagramPaper.getBorder(), "");
         diagramPaper.setBorder(diagramPaperBorder);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
@@ -591,6 +610,9 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         modelPaper = new JModelPaperInput(tempOrigami.getModel().getPaper());
+        if (!isCreating)
+            // TODO maybe allow changes not affecting aspect ratio
+            modelPaper.lockSize();
         final TitledBorder modelPaperBorder = BorderFactory.createTitledBorder(modelPaper.getBorder(), "");
         modelPaper.setBorder(modelPaperBorder);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
@@ -623,6 +645,14 @@ public class OrigamiPropertiesFrame extends JDialog
             {
                 tempOrigami = null;
                 setVisible(false);
+            }
+        });
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                tempOrigami = null;
             }
         });
     }
@@ -662,7 +692,8 @@ public class OrigamiPropertiesFrame extends JDialog
         basicPanel.add(originalLabel, cc.xy(1, 11));
         basicPanel.add(original, cc.xy(3, 11));
 
-        JPanel thumbnailPanel = new JPanel(new FormLayout("center:pref,$ugap,pref,$ugap,pref", "pref,$lgap,pref"));
+        JPanel thumbnailPanel = new JPanel(new FormLayout("center:min(pref;50dlu),$ugap,pref,$ugap,pref",
+                "pref,$lgap,pref"));
         final TitledBorder thumbnailPanelBorder = BorderFactory.createTitledBorder("");
         thumbnailPanel.setBorder(thumbnailPanelBorder);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",

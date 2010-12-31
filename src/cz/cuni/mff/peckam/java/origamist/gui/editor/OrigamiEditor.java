@@ -91,6 +91,9 @@ public class OrigamiEditor extends CommonGui
     /** The dropdown button for saving the model. */
     protected JDropDownButton     saveButton              = null;
 
+    /** The button for displaying model properties. */
+    protected JButton             propertiesButton        = null;
+
     /** Toolbar buttons for model operations. */
     protected JToggleButton       operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
             operationValleyFoldUnfold, operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst,
@@ -217,6 +220,7 @@ public class OrigamiEditor extends CommonGui
         toolbar.add(open);
         open.addComponent(toolbar.createToolbarDropdownItem(new OpenFileAction(), "menu.open.file", "open-file-32.png"));
         open.addComponent(toolbar.createToolbarDropdownItem(new OpenURLAction(), "menu.open.url", "open-url-32.png"));
+        // TODO add the possibility to load a model from a listing
 
         toolbar.add(new JToolBar.Separator());
 
@@ -236,6 +240,11 @@ public class OrigamiEditor extends CommonGui
                 "png-32.png"));
 
         saveButton = dropDown;
+
+        toolbar.add(new JToolBar.Separator());
+
+        toolbar.add(propertiesButton = toolbar.createToolbarButton(new PropertiesAction(), "menu.properties",
+                "properties-32.png"));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -380,7 +389,8 @@ public class OrigamiEditor extends CommonGui
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
-        // saveButton.setEnabled(origami != null); //TODO
+        saveButton.setEnabled(origami != null);
+        propertiesButton.setEnabled(origami != null);
     }
 
     @Override
@@ -689,6 +699,29 @@ public class OrigamiEditor extends CommonGui
                             appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
                     Logger.getLogger("application").warn("Unable to export origami.", e1);
                 }
+            }
+        }
+
+    }
+
+    /**
+     * Display the origami properties dialog.
+     * 
+     * @author Martin Pecka
+     */
+    protected class PropertiesAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -3808672661069071582L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(origami);
+            propertiesFrame.setVisible(true);
+            Origami result = propertiesFrame.getOrigami();
+            if (origami == null) {
+                setOrigami(result);
             }
         }
 

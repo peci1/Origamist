@@ -184,6 +184,14 @@ public class JDiagramPaperInput extends JPanel
     }
 
     /**
+     * Disable changes to the size of the paper.
+     */
+    public void lockSize()
+    {
+        size.setEnabled(false);
+    }
+
+    /**
      * @return The paper that is the value of this input.
      */
     public DiagramPaper getPaper()

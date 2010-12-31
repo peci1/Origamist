@@ -372,12 +372,19 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         initStructure();
         getModel().setSteps(oldSteps);
 
+        getName().addAll(from.getName());
+        setYear(from.getYear());
+        getShortdesc().addAll(from.getShortdesc()); // BUG adds only en_US when both en_US and cs_CZ are available
+        getDescription().addAll(from.getDescription()); // BUG adds only en_US when both en_US and cs_CZ are available
+        setOriginal(from.getOriginal());
+
         getAuthor().setName(from.getAuthor().getName());
         getAuthor().setHomepage(from.getAuthor().getHomepage());
 
         getLicense().setContent(from.getLicense().getContent());
         getLicense().setHomepage(from.getLicense().getHomepage());
         getLicense().setName(from.getLicense().getName());
+        getLicense().getPermission().addAll(from.getLicense().getPermission());
 
         getThumbnail().getImage().setValue(from.getThumbnail().getImage().getValue());
         getThumbnail().getImage().setType(from.getThumbnail().getImage().getType());

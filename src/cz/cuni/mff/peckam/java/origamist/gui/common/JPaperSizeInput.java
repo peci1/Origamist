@@ -313,6 +313,9 @@ public class JPaperSizeInput extends JUnitDimensionInput
     {
         super.setEnabled(enabled);
         paperSizes.setEnabled(enabled);
+        rotatePaper.setEnabled(enabled);
+        savePaper.setEnabled(enabled);
+        removePaper.setEnabled(enabled);
     }
 
     /**

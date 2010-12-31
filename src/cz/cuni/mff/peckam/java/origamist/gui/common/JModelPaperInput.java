@@ -217,6 +217,14 @@ public class JModelPaperInput extends JPanel
     }
 
     /**
+     * Disable changes to the size of the paper.
+     */
+    public void lockSize()
+    {
+        size.setEnabled(false);
+    }
+
+    /**
      * @param paper The paper that is the value of this input.
      */
     public void setPaper(ModelPaper paper)
