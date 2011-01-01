@@ -144,8 +144,10 @@ public class ObservableList<T> extends ArrayList<T>
             add(c.iterator().next());
         } else {
             Iterator<? extends T> it = c.iterator();
-            for (T item = it.next(); it.hasNext(); item = it.next())
+            while (it.hasNext()) {
+                T item = it.next();
                 add(item);
+            }
         }
 
         return true;
@@ -163,8 +165,10 @@ public class ObservableList<T> extends ArrayList<T>
             add(i, c.iterator().next());
         } else {
             Iterator<? extends T> it = c.iterator();
-            for (T item = it.next(); it.hasNext(); item = it.next())
+            while (it.hasNext()) {
+                T item = it.next();
                 add(i++, item);
+            }
         }
 
         return true;

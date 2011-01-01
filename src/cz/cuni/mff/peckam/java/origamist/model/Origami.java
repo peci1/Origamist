@@ -374,8 +374,8 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
 
         getName().addAll(from.getName());
         setYear(from.getYear());
-        getShortdesc().addAll(from.getShortdesc()); // BUG adds only en_US when both en_US and cs_CZ are available
-        getDescription().addAll(from.getDescription()); // BUG adds only en_US when both en_US and cs_CZ are available
+        getShortdesc().addAll(from.getShortdesc());
+        getDescription().addAll(from.getDescription());
         setOriginal(from.getOriginal());
 
         getAuthor().setName(from.getAuthor().getName());
