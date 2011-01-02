@@ -27,7 +27,6 @@ import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
-import cz.cuni.mff.peckam.java.origamist.model.jaxb.Steps;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
@@ -352,7 +351,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         this.getModel().setPaper((ModelPaper) new ObjectFactory().createModelPaper());
         this.getModel().getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
         this.getModel().getPaper().setColors(new ObjectFactory().createModelColors());
-        this.getModel().setSteps(new ObjectFactory().createSteps());
+        this.getModel().setSteps((cz.cuni.mff.peckam.java.origamist.model.Steps) new ObjectFactory().createSteps());
         this.setPaper((DiagramPaper) new ObjectFactory().createDiagramPaper());
         this.getPaper().setColor(new ObjectFactory().createDiagramColors());
         this.getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
@@ -367,7 +366,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     public void getMetadataFrom(Origami from)
     {
         // initStucture() also clears steps, but we are only resetting metadata
-        Steps oldSteps = getModel().getSteps();
+        cz.cuni.mff.peckam.java.origamist.model.Steps oldSteps = getModel().getSteps();
         // reset the metadata to the empty ones
         initStructure();
         getModel().setSteps(oldSteps);

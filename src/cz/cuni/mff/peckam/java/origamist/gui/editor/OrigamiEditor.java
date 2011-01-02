@@ -15,19 +15,23 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
-import javax.swing.BoxLayout;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
@@ -43,17 +47,22 @@ import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
 import javax.swing.origamist.JToolBarWithBgImage;
 import javax.swing.origamist.MessageBar;
+import javax.swing.origamist.OrigamistToolBar;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
+import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
+import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
+import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
@@ -61,7 +70,11 @@ import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
@@ -129,6 +142,15 @@ public class OrigamiEditor extends CommonGui
     /** The string displaying the current position in the list of steps. */
     protected ParametrizedLocalizedString stepXofY;
 
+    /** Observer for the number of steps. */
+    protected Observer<Step>              stepsObserver;
+
+    /** Observer for the number of steps. */
+    protected Observer<Operation>         operationsObserver;
+
+    /** The list of operations defined for the current step. */
+    protected JList                       operationsList;
+
     /**
      * Instantiate the origami viewer without a bootstrapper.
      */
@@ -165,6 +187,36 @@ public class OrigamiEditor extends CommonGui
     @Override
     public void init()
     {
+        stepsObserver = new Observer<Step>() {
+            @Override
+            public void changePerformed(ChangeNotification<Step> change)
+            {
+                stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
+                updateOperationsModel();
+                getContentPane().repaint();
+            }
+        };
+
+        operationsObserver = new Observer<Operation>() {
+            @Override
+            public void changePerformed(ChangeNotification<Operation> change)
+            {
+                if (step == null || origami == null)
+                    return;
+                addStep.setEnabled(step.getOperation().size() > 0);
+                cancelLastOperation.setEnabled(step.getOperation().size() > 0);
+
+                DefaultListModel model = ((DefaultListModel) operationsList.getModel());
+                if (change.getChangeType() == ChangeTypes.REMOVE || change.getChangeType() == ChangeTypes.CHANGE) {
+                    model.removeElement(change.getItem());
+                }
+                if (change.getChangeType() == ChangeTypes.ADD || change.getChangeType() == ChangeTypes.CHANGE) {
+                    model.addElement(change.getItem());
+                }
+            }
+
+        };
+
         super.init();
 
         setOrigami(null);
@@ -180,7 +232,7 @@ public class OrigamiEditor extends CommonGui
 
         leftPanel = createLeftPanel();
 
-        stepRenderer = new StepRenderer();
+        // stepRenderer = new StepRenderer(); // TODO
 
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");
@@ -192,17 +244,17 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void buildLayout()
     {
-        setLayout(new FormLayout("pref,$ugap,pref:grow", "pref,$lgap,top:pref:grow,$lgap,bottom:pref"));
+        setLayout(new FormLayout("left:pref,$ugap,pref:grow", "pref,fill:pref:grow,bottom:pref"));
 
         CellConstraints cc = new CellConstraints();
 
         add(toolbar, cc.xyw(1, 1, 3));
 
-        add(leftPanel, cc.xy(1, 3));
+        add(leftPanel, cc.xy(1, 2));
 
-        // add(stepRenderer, cc.xy(3, 3)); // TODO
+        // add(stepRenderer, cc.xy(3, 2)); // TODO
 
-        add(statusBar, cc.xyw(1, 5, 3));
+        add(statusBar, cc.xyw(1, 3, 3));
     }
 
     /**
@@ -411,32 +463,51 @@ public class OrigamiEditor extends CommonGui
     protected JPanel createLeftPanel()
     {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY));
 
-        panel.add(new JLocalizedLabel(stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0)));
+        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("fill:min(pref;80dlu)", ""), panel);
 
-        JToolBarWithBgImage toolbar = new JToolBarWithBgImage("editor");
+        JLabel stepsLabel = new JLocalizedLabel(stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0));
+        stepsLabel.setFont(stepsLabel.getFont().deriveFont(16f));
+        builder.append(stepsLabel);
+
+        OrigamistToolBar toolbar = new OrigamistToolBar("editor");
+        toolbar.setLayout(new FormLayout("$ugap,pref,$ugap,pref,pref,$ugap,pref,$ugap", "$ugap,pref,$lgap,pref,$ugap"));
         toolbar.setFloatable(false);
-        toolbar.setBackground(new Color(231, 231, 184, 230));
-        toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
-                .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
-        toolbar.setOrientation(JToolBar.VERTICAL);
 
-        toolbar.add(addStep = toolbar.createToolbarButton(null, "leftPanel.addStep", "step-add-24.png"));
-        toolbar.add(nextStep = toolbar.createToolbarButton(null, "leftPanel.nextStep", "step-next-24.png"));
-        toolbar.add(prevStep = toolbar.createToolbarButton(null, "leftPanel.prevStep", "step-prev-24.png"));
-        toolbar.add(removeStep = toolbar.createToolbarButton(null, "leftPanel.removeStep", "step-remove-24.png"));
+        CellConstraints cc = new CellConstraints();
 
-        toolbar.add(new JToolBar.Separator());
+        toolbar.add(addStep = toolbar.createToolbarButton(new AddStepAction(), "leftPanel.addStep", "step-add-24.png"),
+                cc.xy(4, 2));
+        toolbar.add(
+                nextStep = toolbar.createToolbarButton(new NextStepAction(), "leftPanel.nextStep", "step-next-24.png"),
+                cc.xy(5, 2));
+        toolbar.add(
+                prevStep = toolbar.createToolbarButton(new PrevStepAction(), "leftPanel.prevStep", "step-prev-24.png"),
+                cc.xy(2, 2));
+        toolbar.add(
+                removeStep = toolbar.createToolbarButton(new RemoveStepAction(), "leftPanel.removeStep",
+                        "step-remove-24.png"), cc.xy(7, 2));
 
-        toolbar.add(cancelLastOperation = toolbar.createToolbarButton(null, "leftPanel.cancelLastOperation",
-                "lastOperation-cancel-24.png"));
+        toolbar.add(
+                cancelLastOperation = toolbar.createToolbarButton(new CancelOperationAction(),
+                        "leftPanel.cancelLastOperation", "lastOperation-cancel-24.png"), cc.xy(2, 4));
 
-        panel.add(toolbar);
+        builder.append(toolbar);
 
-        JList operations = new JList();
+        builder.append(new JLocalizedLabel("editor", "leftPanel.operations.label"));
+        builder.appendRelatedComponentsGapRow();
+        builder.nextLine(2);
 
-        panel.add(operations);
+        operationsList = new JList();
+        operationsList.setCellRenderer(new OperationListCellRenderer());
+        operationsList.setBorder(BorderFactory.createEmptyBorder());
+        updateOperationsModel();
+
+        JScrollPane operationsListScroll = new JScrollPane(operationsList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        builder.appendRow("fill:pref:grow");
+        builder.append(operationsListScroll);
 
         return panel;
     }
@@ -454,17 +525,21 @@ public class OrigamiEditor extends CommonGui
      */
     public void setOrigami(Origami origami)
     {
+        if (this.origami != null)
+            ((ObservableList<Step>) this.origami.getModel().getSteps().getStep()).removeObserver(stepsObserver);
+
         this.origami = origami;
 
         saveButton.setEnabled(origami != null);
         propertiesButton.setEnabled(origami != null);
 
-        stepRenderer.setOrigami(origami);
+        // stepRenderer.setOrigami(origami); //TODO
 
         stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
 
         if (origami != null) {
             setStep(origami.getModel().getSteps().getStep().get(0));
+            ((ObservableList<Step>) origami.getModel().getSteps().getStep()).addObserver(stepsObserver);
         } else {
             setStep(null);
         }
@@ -485,16 +560,57 @@ public class OrigamiEditor extends CommonGui
      */
     public void setStep(Step step)
     {
+        if (this.step != null)
+            ((ObservableList<Operation>) this.step.getOperation()).removeObserver(operationsObserver);
+
         this.step = step;
-        stepRenderer.setStep(step);
-        int index = 0;
+        // stepRenderer.setStep(step); //TODO
+
+        int index = 0, numSteps = 0, numOperations = 0;
+
         if (origami != null) {
             index = origami.getModel().getSteps().getStep().indexOf(step);
             index++;
+            numSteps = origami.getModel().getSteps().getStep().size();
+        }
+        if (step != null) {
+            numOperations = step.getOperation().size();
+            ((ObservableList<Operation>) step.getOperation()).addObserver(operationsObserver);
         }
         stepXofY.setParameter(0, index);
+        updateOperationsModel();
 
-        // TODO disable/enable left panel buttons
+        if (index == numSteps && index != 0) {
+            addStep.setVisible(true);
+            addStep.setEnabled(numOperations > 0);
+            nextStep.setVisible(false);
+            nextStep.setEnabled(false);
+            removeStep.setEnabled(true);
+            cancelLastOperation.setEnabled(numOperations > 0);
+        } else {
+            addStep.setVisible(false);
+            nextStep.setVisible(true);
+            nextStep.setEnabled(numSteps > 0);
+            removeStep.setEnabled(false);
+            cancelLastOperation.setEnabled(false);
+        }
+
+        prevStep.setEnabled(index > 1);
+
+        getContentPane().repaint();
+    }
+
+    /**
+     * Update the operations list to reflect the operations of the current step.
+     */
+    protected void updateOperationsModel()
+    {
+        DefaultListModel model = new DefaultListModel();
+        if (step != null) {
+            for (Operation o : step.getOperation())
+                model.addElement(o);
+        }
+        operationsList.setModel(model);
     }
 
     @Override
@@ -878,5 +994,139 @@ public class OrigamiEditor extends CommonGui
             }
         }
 
+    }
+
+    /**
+     * Action for selecting the next step in the current model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class NextStepAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -6606989835699225730L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (step != null && step.getNext() != null) {
+                setStep(step.getNext());
+            }
+        }
+    }
+
+    /**
+     * Action for selecting the previous step in the current model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class PrevStepAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -2065950879596721316L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (step != null && step.getPrevious() != null) {
+                setStep(step.getPrevious());
+            }
+        }
+    }
+
+    /**
+     * Action for adding a new step in the current model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class AddStepAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 7388070768713032084L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (origami == null)
+                return;
+
+            List<Step> steps = origami.getModel().getSteps().getStep();
+            if (step == null && steps.size() > 0)
+                setStep(steps.get(steps.size() - 1));
+
+            Step newStep = (Step) new ObjectFactory().createStep();
+            newStep.setPrevious(step);
+            newStep.setNext(null);
+            if (step != null) {
+                step.setNext(newStep);
+                newStep.setId(step.getId() + 1);
+            }
+            steps.add(newStep);
+
+            setStep(newStep);
+        }
+    }
+
+    /**
+     * Action for removing the last step in the current model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class RemoveStepAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -1758965284633881226L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (origami == null || step == null)
+                return;
+
+            List<Step> steps = origami.getModel().getSteps().getStep();
+
+            Step newStep = null;
+            if (steps.size() == 0) {
+                return;
+            } else if (steps.size() == 1) {
+                steps.clear();
+                newStep = (Step) new ObjectFactory().createStep();
+                newStep.setId(1);
+                steps.add(newStep);
+                origami.initSteps();
+            } else {
+                steps.remove(steps.size() - 1);
+                newStep = steps.get(steps.size() - 1);
+                newStep.setNext(null);
+            }
+
+            setStep(newStep);
+        }
+    }
+
+    /**
+     * Action for removing the last operation in the current step.
+     * 
+     * @author Martin Pecka
+     */
+    protected class CancelOperationAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 2326569539259850378L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (step == null)
+                return;
+
+            List<Operation> operations = step.getOperation();
+
+            if (operations.size() == 0) {
+                return;
+            } else {
+                operations.remove(operations.size() - 1);
+            }
+        }
     }
 }
