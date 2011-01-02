@@ -46,11 +46,7 @@ public class ObservableList<T> extends ArrayList<T>
         super();
         if (c.size() == 0)
             return;
-
-        Iterator<? extends T> it = c.iterator();
-        for (T item = it.next(); it.hasNext(); item = it.next()) {
-            add(item);
-        }
+        addAll(c);
     }
 
     /**
