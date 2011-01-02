@@ -19,11 +19,14 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -35,6 +38,7 @@ import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
 import javax.swing.origamist.JDropDownButton;
 import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
+import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
 import javax.swing.origamist.JToolBarWithBgImage;
@@ -48,14 +52,17 @@ import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
+import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
  * The editor of the origami model. <br />
@@ -71,41 +78,56 @@ import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long     serialVersionUID        = -6853141518719373854L;
+    private static final long             serialVersionUID        = -6853141518719373854L;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet             bootstrap               = null;
+    protected JApplet                     bootstrap               = null;
 
     /** The currently displayed origami. May be <code>null</code>. */
-    protected Origami             origami                 = null;
+    protected Origami                     origami                 = null;
+
+    /** The currently displayed step. */
+    protected Step                        step                    = null;
 
     /** The currently selected operation. */
-    protected Operations          currentOperation        = null;
+    protected Operations                  currentOperation        = null;
 
     /** Reflects whether alternative action buttons are shown. */
-    protected boolean             alternativeActionsShown = false;
+    protected boolean                     alternativeActionsShown = false;
 
     /** The main application toolbar. */
-    protected JToolBarWithBgImage toolbar                 = null;
+    protected JToolBarWithBgImage         toolbar                 = null;
 
     /** The dropdown button for saving the model. */
-    protected JDropDownButton     saveButton              = null;
+    protected JDropDownButton             saveButton              = null;
 
     /** The button for displaying model properties. */
-    protected JButton             propertiesButton        = null;
+    protected JButton                     propertiesButton        = null;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleButton       operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
+    protected JToggleButton               operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
             operationValleyFoldUnfold, operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst,
             operationTurnOver, operationRotate, operationPull, operationCrimpFoldInside, operationCrimpFoldOutside,
             operationOpen, operationReverseFoldInside, operationReverseFoldOutside, operationRepeatAction,
             operationMark;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleMenuItem     operationRabbitFold, operationSquashFold;
+    protected JToggleMenuItem             operationRabbitFold, operationSquashFold;
+
+    /** The panel with step tools. */
+    protected JPanel                      leftPanel;
+
+    /** The component used to render the step. */
+    protected StepRenderer                stepRenderer;
 
     /** The status bar. */
-    protected JStatusBar          statusBar               = null;
+    protected JStatusBar                  statusBar               = null;
+
+    /** Toolbar button. */
+    protected JButton                     addStep, nextStep, prevStep, removeStep, cancelLastOperation;
+
+    /** The string displaying the current position in the list of steps. */
+    protected ParametrizedLocalizedString stepXofY;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -156,6 +178,10 @@ public class OrigamiEditor extends CommonGui
     {
         toolbar = createToolbar();
 
+        leftPanel = createLeftPanel();
+
+        stepRenderer = new StepRenderer();
+
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");
     }
@@ -166,13 +192,17 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void buildLayout()
     {
-        setLayout(new FormLayout("pref:grow", "pref,$lgap,pref:grow,$lgap,bottom:pref"));
+        setLayout(new FormLayout("pref,$ugap,pref:grow", "pref,$lgap,top:pref:grow,$lgap,bottom:pref"));
 
         CellConstraints cc = new CellConstraints();
 
-        add(toolbar, cc.xy(1, 1));
+        add(toolbar, cc.xyw(1, 1, 3));
 
-        add(statusBar, cc.xy(1, 5));
+        add(leftPanel, cc.xy(1, 3));
+
+        // add(stepRenderer, cc.xy(3, 3)); // TODO
+
+        add(statusBar, cc.xyw(1, 5, 3));
     }
 
     /**
@@ -376,6 +406,42 @@ public class OrigamiEditor extends CommonGui
     }
 
     /**
+     * @return The panel with step tools.
+     */
+    protected JPanel createLeftPanel()
+    {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        panel.add(new JLocalizedLabel(stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0)));
+
+        JToolBarWithBgImage toolbar = new JToolBarWithBgImage("editor");
+        toolbar.setFloatable(false);
+        toolbar.setBackground(new Color(231, 231, 184, 230));
+        toolbar.setBackgroundImage(new BackgroundImageSupport(getClass()
+                .getResource("/resources/images/tooltip-bg.png"), toolbar, 0, 0, BackgroundRepeat.REPEAT_X));
+        toolbar.setOrientation(JToolBar.VERTICAL);
+
+        toolbar.add(addStep = toolbar.createToolbarButton(null, "leftPanel.addStep", "step-add-24.png"));
+        toolbar.add(nextStep = toolbar.createToolbarButton(null, "leftPanel.nextStep", "step-next-24.png"));
+        toolbar.add(prevStep = toolbar.createToolbarButton(null, "leftPanel.prevStep", "step-prev-24.png"));
+        toolbar.add(removeStep = toolbar.createToolbarButton(null, "leftPanel.removeStep", "step-remove-24.png"));
+
+        toolbar.add(new JToolBar.Separator());
+
+        toolbar.add(cancelLastOperation = toolbar.createToolbarButton(null, "leftPanel.cancelLastOperation",
+                "lastOperation-cancel-24.png"));
+
+        panel.add(toolbar);
+
+        JList operations = new JList();
+
+        panel.add(operations);
+
+        return panel;
+    }
+
+    /**
      * @return the origami
      */
     public Origami getOrigami()
@@ -389,8 +455,46 @@ public class OrigamiEditor extends CommonGui
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
+
         saveButton.setEnabled(origami != null);
         propertiesButton.setEnabled(origami != null);
+
+        stepRenderer.setOrigami(origami);
+
+        stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
+
+        if (origami != null) {
+            setStep(origami.getModel().getSteps().getStep().get(0));
+        } else {
+            setStep(null);
+        }
+
+        getContentPane().repaint();
+    }
+
+    /**
+     * @return the step
+     */
+    public Step getStep()
+    {
+        return step;
+    }
+
+    /**
+     * @param step the step to set
+     */
+    public void setStep(Step step)
+    {
+        this.step = step;
+        stepRenderer.setStep(step);
+        int index = 0;
+        if (origami != null) {
+            index = origami.getModel().getSteps().getStep().indexOf(step);
+            index++;
+        }
+        stepXofY.setParameter(0, index);
+
+        // TODO disable/enable left panel buttons
     }
 
     @Override

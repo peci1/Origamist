@@ -17,7 +17,7 @@ public class ParametrizedLocalizedString extends LocalizedString
 {
 
     /** The parameters of the string. */
-    protected Object[] parameters = null;
+    protected Object[] parameters = new Object[0];
 
     /**
      * Create a localized string by reading <code>key</code> from a resource bundle with name <code>name</code> and
@@ -39,8 +39,35 @@ public class ParametrizedLocalizedString extends LocalizedString
      */
     public void setParameters(Object... parameters)
     {
-        this.parameters = parameters;
+        if (parameters != null)
+            this.parameters = parameters;
+        else
+            this.parameters = new Object[0];
         updateText();
+    }
+
+    /**
+     * Set the parameter with the given index.
+     * 
+     * @param index The index of the parameter in the list of parameters.
+     * @param parameter The new value to set.
+     * 
+     * @throws ArrayIndexOutOfBoundsException If <code>index</code> is &lt;0 or is greather than or equal to the size of
+     *             the parameters array that was last set in the constructor or in the
+     *             {@link ParametrizedLocalizedString#setParameters(Object...)} method.
+     */
+    public void setParameter(int index, Object parameter) throws ArrayIndexOutOfBoundsException
+    {
+        parameters[index] = parameter;
+        updateText();
+    }
+
+    /**
+     * @return The array of parameters of the string. Never returns <code>null</code>.
+     */
+    public Object[] getParameters()
+    {
+        return parameters;
     }
 
     @Override

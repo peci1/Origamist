@@ -160,8 +160,12 @@ public class StepRenderer extends JPanelWithOverlay
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                descLabel.setText(step.getDescription(ServiceLocator.get(ConfigurationManager.class).get()
-                        .getDiagramLocale()));
+                if (step != null) {
+                    descLabel.setText(step.getDescription(ServiceLocator.get(ConfigurationManager.class).get()
+                            .getDiagramLocale()));
+                } else {
+                    descLabel.setText("");
+                }
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get()
@@ -228,7 +232,10 @@ public class StepRenderer extends JPanelWithOverlay
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
-        setBackground(origami.getPaper().getColor().getBackground());
+        if (origami != null)
+            setBackground(origami.getPaper().getColor().getBackground());
+        else
+            setBackground(Color.GRAY);
     }
 
     /**
@@ -251,6 +258,9 @@ public class StepRenderer extends JPanelWithOverlay
                 synchronized (StepRenderer.this) {
                     StepRenderer.this.step = step;
                     updateText();
+
+                    if (step == null)
+                        return;
 
                     // TODO refactor from now on
 
