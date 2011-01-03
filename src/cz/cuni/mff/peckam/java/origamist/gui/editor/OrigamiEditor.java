@@ -74,7 +74,6 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
-import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
@@ -145,8 +144,8 @@ public class OrigamiEditor extends CommonGui
     /** The panel with step tools. */
     protected JPanel                               leftPanel;
 
-    /** The component used to render the step. */
-    protected StepRenderer                         stepRenderer;
+    /** The component used to render and edit the step. */
+    protected StepEditor                           stepEditor;
 
     /** The status bar. */
     protected JStatusBar                           statusBar               = null;
@@ -256,12 +255,12 @@ public class OrigamiEditor extends CommonGui
 
         leftPanel = createLeftPanel();
 
-        stepRenderer = new StepRenderer();
-        stepRenderer.addPropertyChangeListener("zoom", new PropertyChangeListener() {
+        stepEditor = new StepEditor();
+        stepEditor.addPropertyChangeListener("zoom", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                zoomSlider.setValue((int) stepRenderer.getZoom());
+                zoomSlider.setValue((int) stepEditor.getZoom());
             }
         });
 
@@ -304,7 +303,7 @@ public class OrigamiEditor extends CommonGui
 
         add(leftPanel, cc.xywh(1, 2, 1, 2));
 
-        add(stepRenderer, cc.xy(3, 2));
+        add(stepEditor, cc.xy(3, 2));
 
         JPanel descPanel = new JPanel(new FormLayout("pref,$lcgap,pref:grow", "pref"));
         descPanel.add(new JLocalizedLabel("editor", "description.label"), cc.xy(1, 1));
@@ -562,9 +561,9 @@ public class OrigamiEditor extends CommonGui
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                if (step != null && stepRenderer != null && !zoomSlider.getSlider().getModel().getValueIsAdjusting()) {
-                    stepRenderer.setZoom((double) zoomSlider.getValue());
-                    step.setZoom(stepRenderer.getZoom());
+                if (step != null && stepEditor != null && !zoomSlider.getSlider().getModel().getValueIsAdjusting()) {
+                    stepEditor.setZoom((double) zoomSlider.getValue());
+                    step.setZoom(stepEditor.getZoom());
                 }
             }
         });
@@ -657,7 +656,7 @@ public class OrigamiEditor extends CommonGui
         saveButton.setEnabled(origami != null);
         propertiesButton.setEnabled(origami != null);
 
-        stepRenderer.setOrigami(origami);
+        stepEditor.setOrigami(origami);
 
         stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
 
@@ -692,7 +691,7 @@ public class OrigamiEditor extends CommonGui
             ((ObservableList<Operation>) this.step.getOperation()).removeObserver(operationsObserver);
 
         this.step = step;
-        stepRenderer.setStep(step);
+        stepEditor.setStep(step);
 
         int index = 0, numSteps = 0, numOperations = 0;
 
@@ -735,7 +734,7 @@ public class OrigamiEditor extends CommonGui
 
         prevStep.setEnabled(index > 1);
 
-        stepRenderer.setEnabled(step != null);
+        stepEditor.setEnabled(step != null);
         zoomSlider.setEnabled(step != null);
         description.setEnabled(step != null);
         colSpan.setEnabled(step != null);
