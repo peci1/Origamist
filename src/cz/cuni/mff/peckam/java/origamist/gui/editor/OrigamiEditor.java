@@ -10,12 +10,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -32,10 +37,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
@@ -56,8 +66,13 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
+import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
+import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
@@ -91,65 +106,74 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long             serialVersionUID        = -6853141518719373854L;
+    private static final long                      serialVersionUID        = -6853141518719373854L;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet                     bootstrap               = null;
+    protected JApplet                              bootstrap               = null;
 
     /** The currently displayed origami. May be <code>null</code>. */
-    protected Origami                     origami                 = null;
+    protected Origami                              origami                 = null;
 
     /** The currently displayed step. */
-    protected Step                        step                    = null;
+    protected Step                                 step                    = null;
 
     /** The currently selected operation. */
-    protected Operations                  currentOperation        = null;
+    protected Operations                           currentOperation        = null;
 
     /** Reflects whether alternative action buttons are shown. */
-    protected boolean                     alternativeActionsShown = false;
+    protected boolean                              alternativeActionsShown = false;
 
     /** The main application toolbar. */
-    protected JToolBarWithBgImage         toolbar                 = null;
+    protected JToolBarWithBgImage                  toolbar                 = null;
 
     /** The dropdown button for saving the model. */
-    protected JDropDownButton             saveButton              = null;
+    protected JDropDownButton                      saveButton              = null;
 
     /** The button for displaying model properties. */
-    protected JButton                     propertiesButton        = null;
+    protected JButton                              propertiesButton        = null;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleButton               operationMountainFold, operationValleyFold, operationMountainFoldUnfold,
-            operationValleyFoldUnfold, operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst,
-            operationTurnOver, operationRotate, operationPull, operationCrimpFoldInside, operationCrimpFoldOutside,
-            operationOpen, operationReverseFoldInside, operationReverseFoldOutside, operationRepeatAction,
-            operationMark;
+    protected JToggleButton                        operationMountainFold, operationValleyFold,
+            operationMountainFoldUnfold, operationValleyFoldUnfold, operationThunderboltFoldMountainFirst,
+            operationThunderboltFoldValleyFirst, operationTurnOver, operationRotate, operationPull,
+            operationCrimpFoldInside, operationCrimpFoldOutside, operationOpen, operationReverseFoldInside,
+            operationReverseFoldOutside, operationRepeatAction, operationMark;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleMenuItem             operationRabbitFold, operationSquashFold;
+    protected JToggleMenuItem                      operationRabbitFold, operationSquashFold;
 
     /** The panel with step tools. */
-    protected JPanel                      leftPanel;
+    protected JPanel                               leftPanel;
 
     /** The component used to render the step. */
-    protected StepRenderer                stepRenderer;
+    protected StepRenderer                         stepRenderer;
 
     /** The status bar. */
-    protected JStatusBar                  statusBar               = null;
+    protected JStatusBar                           statusBar               = null;
+
+    /** The slider for zoom. */
+    protected JEditableSlider                      zoomSlider;
 
     /** Toolbar button. */
-    protected JButton                     addStep, nextStep, prevStep, removeStep, cancelLastOperation;
+    protected JButton                              addStep, nextStep, prevStep, removeStep, cancelLastOperation;
 
     /** The string displaying the current position in the list of steps. */
-    protected ParametrizedLocalizedString stepXofY;
+    protected ParametrizedLocalizedString          stepXofY;
 
     /** Observer for the number of steps. */
-    protected Observer<Step>              stepsObserver;
+    protected Observer<Step>                       stepsObserver;
 
     /** Observer for the number of steps. */
-    protected Observer<Operation>         operationsObserver;
+    protected Observer<Operation>                  operationsObserver;
 
     /** The list of operations defined for the current step. */
-    protected JList                       operationsList;
+    protected JList                                operationsList;
+
+    /** The description of the step. */
+    protected JLangStringListTextField<JTextField> description;
+
+    /** Span of the step. */
+    protected JSpinner                             colSpan, rowSpan;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -232,7 +256,35 @@ public class OrigamiEditor extends CommonGui
 
         leftPanel = createLeftPanel();
 
-        stepRenderer = new StepRenderer();// TODO
+        stepRenderer = new StepRenderer();
+        stepRenderer.addPropertyChangeListener("zoom", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                zoomSlider.setValue((int) stepRenderer.getZoom());
+            }
+        });
+
+        description = new JLangStringListTextField<JTextField>(new LinkedList<LangString>(), new JTextField()) {
+            /** */
+            private static final long serialVersionUID = 3780617567174115127L;
+
+            @Override
+            protected LinkedHashSet<Locale> getSuggestedLocales()
+            {
+                LinkedHashSet<Locale> result = super.getSuggestedLocales();
+                // TODO may be slow for large and well-localized models; if the tests confirm this, create a Locale
+                // cache somewhere in Origami or so
+                if (origami != null) {
+                    for (Step s : origami.getModel().getSteps().getStep()) {
+                        for (LangString ls : s.getDescription()) {
+                            result.add(ls.getLang());
+                        }
+                    }
+                }
+                return result;
+            }
+        };
 
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");
@@ -244,17 +296,23 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected void buildLayout()
     {
-        setLayout(new FormLayout("left:pref,$ugap,pref:grow", "pref,fill:pref:grow,bottom:pref"));
+        setLayout(new FormLayout("left:pref,$ugap,pref:grow", "pref,fill:pref:grow,pref,bottom:pref"));
 
         CellConstraints cc = new CellConstraints();
 
         add(toolbar, cc.xyw(1, 1, 3));
 
-        add(leftPanel, cc.xy(1, 2));
+        add(leftPanel, cc.xywh(1, 2, 1, 2));
 
-        add(stepRenderer, cc.xy(3, 2)); // TODO
+        add(stepRenderer, cc.xy(3, 2));
 
-        add(statusBar, cc.xyw(1, 3, 3));
+        JPanel descPanel = new JPanel(new FormLayout("pref,$lcgap,pref:grow", "pref"));
+        descPanel.add(new JLocalizedLabel("editor", "description.label"), cc.xy(1, 1));
+        descPanel.add(description, cc.xy(3, 1));
+
+        add(descPanel, cc.xy(3, 3));
+
+        add(statusBar, cc.xyw(1, 4, 3));
     }
 
     /**
@@ -465,7 +523,7 @@ public class OrigamiEditor extends CommonGui
         JPanel panel = new JPanel();
         panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY));
 
-        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("fill:min(pref;80dlu)", ""), panel);
+        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("fill:min(pref;100dlu)", ""), panel);
 
         JLabel stepsLabel = new JLocalizedLabel(stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0));
         stepsLabel.setFont(stepsLabel.getFont().deriveFont(16f));
@@ -495,6 +553,23 @@ public class OrigamiEditor extends CommonGui
 
         builder.append(toolbar);
 
+        builder.append(new JLocalizedLabel("editor", "leftPanel.zoomSlider.label"));
+        builder.appendRelatedComponentsGapRow();
+        builder.nextLine(2);
+
+        zoomSlider = new JZoomSlider();
+        zoomSlider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e)
+            {
+                if (step != null && stepRenderer != null && !zoomSlider.getSlider().getModel().getValueIsAdjusting()) {
+                    stepRenderer.setZoom((double) zoomSlider.getValue());
+                    step.setZoom(stepRenderer.getZoom());
+                }
+            }
+        });
+        builder.append(zoomSlider);
+
         builder.append(new JLocalizedLabel("editor", "leftPanel.operations.label"));
         builder.appendRelatedComponentsGapRow();
         builder.nextLine(2);
@@ -508,6 +583,55 @@ public class OrigamiEditor extends CommonGui
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         builder.appendRow("fill:pref:grow");
         builder.append(operationsListScroll);
+
+        colSpan = new JSpinner(new SpinnerNumberModel(1, 1, null, 1));
+        JPanel colSpanPanel = new JPanel(new FormLayout("pref:grow,$lcgap,pref", "pref"));
+        final JLabel colSpanLabel;
+        colSpanPanel.add(colSpanLabel = new JLocalizedLabel("editor", "leftPanel.colSpan.label"), cc.xy(1, 1));
+        colSpanPanel.add(colSpan, cc.xy(3, 1));
+        builder.append(colSpanPanel);
+
+        rowSpan = new JSpinner(new SpinnerNumberModel(1, 1, null, 1));
+        JPanel rowSpanPanel = new JPanel(new FormLayout("pref:grow,$lcgap,pref", "pref"));
+        final JLabel rowSpanLabel;
+        rowSpanPanel.add(rowSpanLabel = new JLocalizedLabel("editor", "leftPanel.rowSpan.label"), cc.xy(1, 1));
+        rowSpanPanel.add(rowSpan, cc.xy(3, 1));
+        builder.append(rowSpanPanel);
+
+        ServiceLocator
+                .get(ConfigurationManager.class)
+                .get()
+                .addAndRunResourceBundleListener(
+                        new Configuration.LocaleListener("editor", "leftPanel.colSpan.tooltip") {
+                            @Override
+                            protected void updateText(String text)
+                            {
+                                colSpanLabel.setToolTipText(text);
+                                colSpan.setToolTipText(colSpanLabel.getToolTipText());
+                                rowSpanLabel.setToolTipText(bundle.getString("leftPanel.rowSpan.tooltip"));
+                                rowSpan.setToolTipText(rowSpanLabel.getToolTipText());
+                            }
+                        });
+
+        colSpan.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e)
+            {
+                if (step != null) {
+                    step.setColspan((Integer) colSpan.getValue());
+                }
+            }
+        });
+
+        rowSpan.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e)
+            {
+                if (step != null) {
+                    step.setRowspan((Integer) rowSpan.getValue());
+                }
+            }
+        });
 
         return panel;
     }
@@ -533,13 +657,17 @@ public class OrigamiEditor extends CommonGui
         saveButton.setEnabled(origami != null);
         propertiesButton.setEnabled(origami != null);
 
-        stepRenderer.setOrigami(origami); // TODO
+        stepRenderer.setOrigami(origami);
 
         stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
 
         if (origami != null) {
-            setStep(origami.getModel().getSteps().getStep().get(0));
             ((ObservableList<Step>) origami.getModel().getSteps().getStep()).addObserver(stepsObserver);
+            if (origami.getModel().getSteps().getStep().size() == 0) {
+                // we have just created the origami, so initialize the first step
+                new AddStepAction().actionPerformed(new ActionEvent(this, 0, ""));
+            }
+            setStep(origami.getModel().getSteps().getStep().get(0));
         } else {
             setStep(null);
         }
@@ -564,7 +692,7 @@ public class OrigamiEditor extends CommonGui
             ((ObservableList<Operation>) this.step.getOperation()).removeObserver(operationsObserver);
 
         this.step = step;
-        stepRenderer.setStep(step); // TODO
+        stepRenderer.setStep(step);
 
         int index = 0, numSteps = 0, numOperations = 0;
 
@@ -573,10 +701,20 @@ public class OrigamiEditor extends CommonGui
             index++;
             numSteps = origami.getModel().getSteps().getStep().size();
         }
+
         if (step != null) {
             numOperations = step.getOperation().size();
             ((ObservableList<Operation>) step.getOperation()).addObserver(operationsObserver);
+            zoomSlider.setValue((int) ((double) step.getZoom()));
+            description.setStrings(step.getDescription());
+            colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
+            rowSpan.setValue(step.getRowspan() != null ? step.getRowspan() : 1);
+        } else {
+            description.setStrings(new LinkedList<LangString>());
+            colSpan.setValue(1);
+            rowSpan.setValue(1);
         }
+
         stepXofY.setParameter(0, index);
         updateOperationsModel();
 
@@ -596,6 +734,12 @@ public class OrigamiEditor extends CommonGui
         }
 
         prevStep.setEnabled(index > 1);
+
+        stepRenderer.setEnabled(step != null);
+        zoomSlider.setEnabled(step != null);
+        description.setEnabled(step != null);
+        colSpan.setEnabled(step != null);
+        rowSpan.setEnabled(step != null);
 
         getContentPane().repaint();
     }
@@ -1062,6 +1206,11 @@ public class OrigamiEditor extends CommonGui
                 newStep.setId(step.getId() + 1);
             }
             steps.add(newStep);
+
+            if (steps.size() == 1) {
+                // we have just created the very first step
+                origami.initSteps();
+            }
 
             setStep(newStep);
         }

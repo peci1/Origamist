@@ -237,6 +237,8 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
     public void setStrings(List<LangString> strings)
     {
         this.strings = strings;
+        updateLocales();
+        locales.setSelectedIndex(0);
     }
 
     /**
@@ -263,4 +265,13 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
         return scrollPane;
     }
 
+    @Override
+    public void setEnabled(boolean enabled)
+    {
+        super.setEnabled(enabled);
+        locales.setEnabled(enabled);
+        value.setEnabled(enabled);
+        if (scrollPane != null)
+            scrollPane.setEnabled(enabled);
+    }
 }

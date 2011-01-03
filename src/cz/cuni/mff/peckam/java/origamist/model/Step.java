@@ -188,4 +188,22 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         if (this.next != null)
             this.next.invalidateModelState();
     }
+
+    @Override
+    public void setColspan(Integer value)
+    {
+        if (!value.equals(1))
+            super.setColspan(value);
+        else
+            super.setColspan(null);
+    }
+
+    @Override
+    public void setRowspan(Integer value)
+    {
+        if (!value.equals(1))
+            super.setRowspan(value);
+        else
+            super.setRowspan(null);
+    }
 }

@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
@@ -35,30 +37,38 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 /**
  * The panel for rendering a step.
  * 
+ * Provides the following properties:
+ * <ul>
+ * <li>zoom</li>
+ * </ul>
+ * 
  * @author Martin Pecka
  */
 public class StepRenderer extends JPanel
 {
     /** */
-    private static final long serialVersionUID = 9198803673578003101L;
+    private static final long       serialVersionUID = 9198803673578003101L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami         origami          = null;
+    protected Origami               origami          = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step            step             = null;
+    protected Step                  step             = null;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D       canvas;
+    protected JCanvas3D             canvas;
 
     /** The zoom of the step. */
-    protected double          zoom             = 100d;
+    protected double                zoom             = 100d;
+
+    /** The helper for properties. */
+    protected PropertyChangeSupport listeners        = new PropertyChangeSupport(this);
 
     /**
      * 
@@ -204,7 +214,12 @@ public class StepRenderer extends JPanel
      */
     public void setZoom(double zoom)
     {
+        if (!isEnabled())
+            return;
+
+        double oldZoom = this.zoom;
         this.zoom = zoom;
+        listeners.firePropertyChange("zoom", oldZoom, zoom);
         // reload the step
         setStep(step); // TODO refactor
     }
@@ -234,6 +249,65 @@ public class StepRenderer extends JPanel
         canvas.setOpaque(false);
         canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
         return canvas;
+    }
+
+    /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener)
+    {
+        listeners.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener)
+    {
+        listeners.removePropertyChangeListener(listener);
+    }
+
+    /**
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners()
+    {
+        return listeners.getPropertyChangeListeners();
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        listeners.addPropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @param listener
+     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
+     *      java.beans.PropertyChangeListener)
+     */
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        listeners.removePropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * @param propertyName
+     * @return
+     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
+    {
+        return listeners.getPropertyChangeListeners(propertyName);
     }
 
     /**

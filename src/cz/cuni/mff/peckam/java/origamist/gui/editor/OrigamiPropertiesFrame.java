@@ -595,9 +595,6 @@ public class OrigamiPropertiesFrame extends JDialog
         thumbnailLoadFromModel.setSelected(true);
 
         diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
-        if (!isCreating)
-            // TODO maybe allow changes not affecting aspect ratio
-            diagramPaper.lockSize();
         final TitledBorder diagramPaperBorder = BorderFactory.createTitledBorder(diagramPaper.getBorder(), "");
         diagramPaper.setBorder(diagramPaperBorder);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
@@ -811,6 +808,11 @@ public class OrigamiPropertiesFrame extends JDialog
      */
     public Origami getOrigami()
     {
+        if (tempOrigami != null) {
+            tempOrigami.setPaper(diagramPaper.getPaper());
+            tempOrigami.getModel().setPaper(modelPaper.getPaper());
+        }
+
         if (origami != null && tempOrigami != null) {
             origami.getMetadataFrom(tempOrigami);
             return origami;
