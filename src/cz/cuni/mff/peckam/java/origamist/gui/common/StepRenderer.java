@@ -146,7 +146,8 @@ public class StepRenderer extends JPanel
                     add(canvas, BorderLayout.CENTER);
                     canvas.setSize(new Dimension(20, 20));
                     canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
-                    canvas.setSize(getWidth(), getHeight());
+                    if (getWidth() > 0 && getHeight() > 0)
+                        canvas.setSize(getWidth(), getHeight());
 
                     SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
 

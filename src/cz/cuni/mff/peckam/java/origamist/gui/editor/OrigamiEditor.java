@@ -14,6 +14,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,6 +44,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -242,7 +244,39 @@ public class OrigamiEditor extends CommonGui
 
         super.init();
 
-        setOrigami(null);
+        processParams();
+    }
+
+    protected void processParams()
+    {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run()
+                {
+                    setOrigami(null);
+                    if (getParameter("file") != null) {
+                        try {
+                            Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(
+                                    new File(getParameter("file")).toURI(), false);
+                            setOrigami(o);
+                        } catch (UnsupportedDataFormatException e1) {
+                            JOptionPane.showMessageDialog(rootPane,
+                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            Logger.getLogger("application").error(e1);
+                        } catch (IOException e1) {
+                            JOptionPane.showMessageDialog(rootPane,
+                                    appMessages.getString("exception.IOException.loadModel"),
+                                    appMessages.getString("exception.IOException.loadModel.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            Logger.getLogger("application").error(e1);
+                        }
+                    }
+                }
+            });
+        } catch (InterruptedException e) {} catch (InvocationTargetException e) {}
     }
 
     /**
