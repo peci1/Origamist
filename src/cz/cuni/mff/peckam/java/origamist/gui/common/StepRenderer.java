@@ -130,6 +130,8 @@ public class StepRenderer extends JPanel
                     ModelState state = step.getModelState();
 
                     remove(canvas);
+                    canvas = null;
+
                     canvas = createCanvas();
                     add(canvas, BorderLayout.CENTER);
                     canvas.setSize(new Dimension(20, 20));
@@ -244,7 +246,6 @@ public class StepRenderer extends JPanel
         @Override
         public void mouseWheelMoved(MouseWheelEvent e)
         {
-            super.mouseWheelMoved(e);
             int steps = e.getWheelRotation();
             if (steps > 0) {
                 for (int i = 0; i < steps; i++)

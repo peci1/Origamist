@@ -89,7 +89,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
         setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
         addMouseListener(new MouseListener());
-        addMouseWheelListener(new MouseListener()); // TODO the wheel listener doesn't work
+        addMouseWheelListener(new MouseListener());
 
         renderer = new StepRenderer();
         renderer.addMouseListener(new MouseListener());
@@ -421,7 +421,6 @@ public class StepRendererWithControls extends JPanelWithOverlay
         @Override
         public void mouseClicked(MouseEvent e)
         {
-            super.mouseClicked(e);
             if (displayMode.equals(DisplayMode.PAGE) && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() > 1) {
                 new FullscreenAction().actionPerformed(new ActionEvent(StepRendererWithControls.this,
                         ActionEvent.ACTION_LAST, "fullscreen"));
@@ -431,7 +430,6 @@ public class StepRendererWithControls extends JPanelWithOverlay
         @Override
         public void mouseWheelMoved(MouseWheelEvent e)
         {
-            super.mouseWheelMoved(e);
             int steps = e.getWheelRotation();
             if (steps > 0) {
                 for (int i = 0; i < steps; i++)

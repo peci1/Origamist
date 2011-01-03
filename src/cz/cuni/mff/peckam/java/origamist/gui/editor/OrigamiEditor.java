@@ -59,7 +59,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
-import cz.cuni.mff.peckam.java.origamist.gui.viewer.StepRendererWithControls;
+import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
@@ -131,7 +131,7 @@ public class OrigamiEditor extends CommonGui
     protected JPanel                      leftPanel;
 
     /** The component used to render the step. */
-    protected StepRendererWithControls                stepRenderer;
+    protected StepRenderer                stepRenderer;
 
     /** The status bar. */
     protected JStatusBar                  statusBar               = null;
@@ -232,7 +232,7 @@ public class OrigamiEditor extends CommonGui
 
         leftPanel = createLeftPanel();
 
-        // stepRenderer = new StepRendererWithControls(); // TODO
+        stepRenderer = new StepRenderer();// TODO
 
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");
@@ -252,7 +252,7 @@ public class OrigamiEditor extends CommonGui
 
         add(leftPanel, cc.xy(1, 2));
 
-        // add(stepRenderer, cc.xy(3, 2)); // TODO
+        add(stepRenderer, cc.xy(3, 2)); // TODO
 
         add(statusBar, cc.xyw(1, 3, 3));
     }
@@ -533,7 +533,7 @@ public class OrigamiEditor extends CommonGui
         saveButton.setEnabled(origami != null);
         propertiesButton.setEnabled(origami != null);
 
-        // stepRenderer.setOrigami(origami); //TODO
+        stepRenderer.setOrigami(origami); // TODO
 
         stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
 
@@ -564,7 +564,7 @@ public class OrigamiEditor extends CommonGui
             ((ObservableList<Operation>) this.step.getOperation()).removeObserver(operationsObserver);
 
         this.step = step;
-        // stepRenderer.setStep(step); //TODO
+        stepRenderer.setStep(step); // TODO
 
         int index = 0, numSteps = 0, numOperations = 0;
 
