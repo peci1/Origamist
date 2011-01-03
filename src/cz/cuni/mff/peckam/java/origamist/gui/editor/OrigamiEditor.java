@@ -59,7 +59,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
-import cz.cuni.mff.peckam.java.origamist.gui.common.StepRenderer;
+import cz.cuni.mff.peckam.java.origamist.gui.viewer.StepRendererWithControls;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
@@ -131,7 +131,7 @@ public class OrigamiEditor extends CommonGui
     protected JPanel                      leftPanel;
 
     /** The component used to render the step. */
-    protected StepRenderer                stepRenderer;
+    protected StepRendererWithControls                stepRenderer;
 
     /** The status bar. */
     protected JStatusBar                  statusBar               = null;
@@ -232,7 +232,7 @@ public class OrigamiEditor extends CommonGui
 
         leftPanel = createLeftPanel();
 
-        // stepRenderer = new StepRenderer(); // TODO
+        // stepRenderer = new StepRendererWithControls(); // TODO
 
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");

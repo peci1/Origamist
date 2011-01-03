@@ -39,6 +39,7 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.DisplayMode;
+import cz.cuni.mff.peckam.java.origamist.gui.viewer.StepRendererWithControls;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
@@ -71,12 +72,12 @@ public class DiagramRenderer extends JPanelWithOverlay
     protected PropertyChangeListener      localeListener;
 
     /** The actually displayed step renderers. */
-    protected final List<StepRenderer>    stepRenderers       = new LinkedList<StepRenderer>();
+    protected final List<StepRendererWithControls>    stepRenderers       = new LinkedList<StepRendererWithControls>();
 
     /** The basic zoom of all StepRenderers. */
     protected double                      zoom                = 100d;
 
-    /** The listener to be attached to {@link StepRenderer} to listen when the fullscreen is requested. */
+    /** The listener to be attached to {@link StepRendererWithControls} to listen when the fullscreen is requested. */
     protected PropertyChangeListener      stepFullscreenListener;
 
     // COMPONENTS
@@ -254,9 +255,9 @@ public class DiagramRenderer extends JPanelWithOverlay
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (evt.getSource() instanceof StepRenderer) {
+                if (evt.getSource() instanceof StepRendererWithControls) {
                     setDisplayMode(DisplayMode.DIAGRAM);
-                    setStep(((StepRenderer) evt.getSource()).getStep());
+                    setStep(((StepRendererWithControls) evt.getSource()).getStep());
                 }
             }
         };
@@ -471,7 +472,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                         Step step = firstStep;
                         for (int i = 0; i < numSteps; i++) {
                             if (step != null) {
-                                StepRenderer r = new StepRenderer(origami, step);
+                                StepRendererWithControls r = new StepRendererWithControls(origami, step);
                                 r.setDisplayMode(getDisplayMode());
                                 r.addPropertyChangeListener("fullscreenModeRequested", stepFullscreenListener);
                                 diagramPane.add(r);
@@ -495,7 +496,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                         if (mode.equals(DisplayMode.DIAGRAM)) {
                             // in DIAGRAM view we want to add the step's toolbar to the toolbar of this renderer
                             stepToolbar = stepRenderers.get(0).getToolbar();
-                            // also detaches the toolbar from the StepRenderer
+                            // also detaches the toolbar from the StepRendererWithControls
                             toolbarPane.add(stepToolbar);
                             stepToolbar.setVisible(true);
                         }
@@ -534,7 +535,7 @@ public class DiagramRenderer extends JPanelWithOverlay
             @Override
             public void run()
             {
-                for (StepRenderer r : stepRenderers) {
+                for (StepRendererWithControls r : stepRenderers) {
                     r.setZoom(r.getZoom() + zoomDelta);
                 }
             }
