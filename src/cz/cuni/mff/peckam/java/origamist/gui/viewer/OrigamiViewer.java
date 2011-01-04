@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
 import java.applet.AppletContext;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -736,6 +737,15 @@ public class OrigamiViewer extends CommonGui
     {
         super.registerServices();
         ServiceLocator.add(OrigamiViewer.class, this);
+    }
+
+    @Override
+    protected Component getTopmostComponent()
+    {
+        Component parent = (bootstrap != null ? bootstrap : this);
+        while (parent.getParent() != null)
+            parent = parent.getParent();
+        return parent;
     }
 
     // bootstrapping support

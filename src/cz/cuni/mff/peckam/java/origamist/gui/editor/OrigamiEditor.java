@@ -7,8 +7,6 @@ import java.applet.AppletContext;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Frame;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -21,19 +19,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.FocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -146,6 +148,9 @@ public class OrigamiEditor extends CommonGui
     /** Toolbar buttons for model operations. */
     protected JToggleMenuItem                      operationRabbitFold, operationSquashFold;
 
+    /** The table of action alternatives. The key is the primary action and the value is its alternative. */
+    protected Hashtable<JComponent, JComponent>    alternativeActions      = new Hashtable<JComponent, JComponent>();
+
     /** The panel with step tools. */
     protected JPanel                               leftPanel;
 
@@ -196,20 +201,6 @@ public class OrigamiEditor extends CommonGui
     {
         super();
         this.bootstrap = bootstrap;
-
-        // make the frame resizable if the applet is run using JWS/JNLP (because at default it is run as a fixed-size
-        // window)
-        Component parent = (bootstrap != null ? bootstrap : this);
-        while (parent.getParent() != null)
-            parent = parent.getParent();
-        if (parent instanceof Frame) {
-            Frame frame = ((Frame) parent);
-            if (!frame.isResizable()) {
-                frame.setResizable(true);
-                // see http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true
-                frame.setLayout(new GridLayout());
-            }
-        }
 
         UIManager.getDefaults().addResourceBundle("editor");
 
@@ -374,23 +365,18 @@ public class OrigamiEditor extends CommonGui
     {
         alternativeActionsShown = show;
 
-        operationMountainFold.setVisible(!show);
-        operationValleyFold.setVisible(show);
+        Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
 
-        operationMountainFoldUnfold.setVisible(!show);
-        operationValleyFoldUnfold.setVisible(show);
+        for (Entry<JComponent, JComponent> e : alternativeActions.entrySet()) {
+            e.getKey().setVisible(!show);
+            e.getValue().setVisible(show);
 
-        operationThunderboltFoldMountainFirst.setVisible(!show);
-        operationThunderboltFoldValleyFirst.setVisible(show);
+            if (e.getKey().equals(focusOwner))
+                e.getValue().requestFocusInWindow();
 
-        operationTurnOver.setVisible(!show);
-        operationRotate.setVisible(show);
-
-        operationCrimpFoldInside.setVisible(!show);
-        operationCrimpFoldOutside.setVisible(show);
-
-        operationReverseFoldInside.setVisible(!show);
-        operationReverseFoldOutside.setVisible(show);
+            if (e.getValue().equals(focusOwner))
+                e.getKey().requestFocusInWindow();
+        }
     }
 
     /**
@@ -453,6 +439,8 @@ public class OrigamiEditor extends CommonGui
         operationValleyFold.addActionListener(new OperationActionListener(Operations.VALLEY_FOLD, "editor",
                 "menu.operation.valley"));
 
+        alternativeActions.put(operationMountainFold, operationValleyFold);
+
         toolbar.add(operationMountainFoldUnfold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.mountainFoldUnfold", "folds/mountain-fold-unfold-32.png"));
         operationMountainFoldUnfold.addActionListener(new OperationActionListener(
@@ -462,6 +450,8 @@ public class OrigamiEditor extends CommonGui
                 "menu.operation.valleyFoldUnfold", "folds/valley-fold-unfold-32.png"));
         operationValleyFoldUnfold.addActionListener(new OperationActionListener(Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD,
                 "editor", "menu.operation.valleyFoldUnfold"));
+
+        alternativeActions.put(operationMountainFoldUnfold, operationValleyFoldUnfold);
 
         toolbar.add(operationThunderboltFoldMountainFirst = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.thunderboltMountainFirst", "folds/thunderbolt-mountain-first-32.png"));
@@ -475,6 +465,8 @@ public class OrigamiEditor extends CommonGui
         operationThunderboltFoldValleyFirst.addActionListener(new OperationActionListener(Operations.THUNDERBOLT_FOLD,
                 "editor", "menu.operation.thunderboltValleyFirst"));
 
+        alternativeActions.put(operationThunderboltFoldMountainFirst, operationThunderboltFoldValleyFirst);
+
         toolbar.add(operationTurnOver = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.turnOver",
                 "folds/turn-over-32.png"));
         operationTurnOver.addActionListener(new OperationActionListener(Operations.TURN_OVER, "editor",
@@ -484,6 +476,8 @@ public class OrigamiEditor extends CommonGui
                 "folds/rotate-32.png"));
         operationRotate.addActionListener(new OperationActionListener(Operations.ROTATE, "editor",
                 "menu.operation.rotate"));
+
+        alternativeActions.put(operationTurnOver, operationRotate);
 
         toolbar.add(operationPull = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.pull",
                 "folds/pull-32.png"));
@@ -499,6 +493,8 @@ public class OrigamiEditor extends CommonGui
         operationCrimpFoldOutside.addActionListener(new OperationActionListener(Operations.OUTSIDE_CRIMP_FOLD,
                 "editor", "menu.operation.crimpOutside"));
 
+        alternativeActions.put(operationCrimpFoldInside, operationCrimpFoldOutside);
+
         toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open",
                 "folds/open-32.png"));
         operationOpen.addActionListener(new OperationActionListener(Operations.OPEN, "editor", "menu.operation.open"));
@@ -512,6 +508,8 @@ public class OrigamiEditor extends CommonGui
                 "menu.operation.reverseOutside", "folds/reverse-outside-32.png"));
         operationReverseFoldOutside.addActionListener(new OperationActionListener(Operations.OUTSIDE_REVERSE_FOLD,
                 "editor", "menu.operation.reverseOutside"));
+
+        alternativeActions.put(operationReverseFoldInside, operationReverseFoldOutside);
 
         toolbar.add(operationRepeatAction = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.repeat", "folds/repeat-32.png"));
@@ -830,6 +828,15 @@ public class OrigamiEditor extends CommonGui
     {
         super.registerServicesAfterComponentsAreCreated();
         ServiceLocator.add(MessageBar.class, statusBar);
+    }
+
+    @Override
+    protected Component getTopmostComponent()
+    {
+        Component parent = (bootstrap != null ? bootstrap : this);
+        while (parent.getParent() != null)
+            parent = parent.getParent();
+        return parent;
     }
 
     // bootstrapping support

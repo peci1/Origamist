@@ -5,6 +5,9 @@ package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.KeyListener;
@@ -60,6 +63,24 @@ public abstract class CommonGui extends JApplet
      * The common message formater that can be used over the GUI. It has its locale set to the configured one
      */
     protected MessageFormat   format           = null;
+
+    /**
+     * @throws HeadlessException
+     */
+    public CommonGui() throws HeadlessException
+    {
+        // make the frame resizable if the applet is run using JWS/JNLP (because at default it is run as a fixed-size
+        // window)
+        Component parent = getTopmostComponent();
+        if (parent instanceof Frame) {
+            Frame frame = ((Frame) parent);
+            if (!frame.isResizable()) {
+                frame.setResizable(true);
+                // see http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true
+                frame.setLayout(new GridLayout());
+            }
+        }
+    }
 
     @Override
     public void init()
@@ -172,7 +193,8 @@ public abstract class CommonGui extends JApplet
      */
     protected void addGlobalKeyListener(final KeyListener listener)
     {
-        new GlobalKeyListenerContainerListner(listener).add(getContentPane());
+        // new GlobalKeyListenerContainerListner(listener).add(getContentPane());
+        new GlobalKeyListenerContainerListner(listener).add(getTopmostComponent());
     }
 
     /**
@@ -262,4 +284,9 @@ public abstract class CommonGui extends JApplet
         } catch (BackingStoreException e) {}
         super.destroy();
     }
+
+    /**
+     * The component that is the highest in the component hierarchy. Will be either JApplet or a Frame.
+     */
+    protected abstract Component getTopmostComponent();
 }
