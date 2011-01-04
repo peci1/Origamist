@@ -82,3 +82,9 @@ files. WHY??? I thought Java runs exclusively on Unicode. Nope.
 If you implement a MouseListener's mouseWheelRotated event, adding the created
 listner with Component.addMouseListener() isn't sufficient. You must add it 
 using Component.addMouseWheelListener().
+
+-----------
+
+Did you think that making a JNLP window running a JApplet resizable is funny? 
+It isn't. But a (hacky) solution exists, see 
+http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true . 

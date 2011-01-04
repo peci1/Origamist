@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -202,8 +203,12 @@ public class OrigamiEditor extends CommonGui
         while (parent.getParent() != null)
             parent = parent.getParent();
         if (parent instanceof Frame) {
-            ((Frame) parent).setResizable(true);
-            // TODO the frame becomes resizable, but the layout doesn't resize the content
+            Frame frame = ((Frame) parent);
+            if (!frame.isResizable()) {
+                frame.setResizable(true);
+                // see http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true
+                frame.setLayout(new GridLayout());
+            }
         }
 
         UIManager.getDefaults().addResourceBundle("editor");
