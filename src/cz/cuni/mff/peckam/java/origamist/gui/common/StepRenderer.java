@@ -13,6 +13,7 @@ import java.beans.PropertyChangeSupport;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.PolygonAttributes;
@@ -64,6 +65,15 @@ public class StepRenderer extends JPanel
      */
     protected JCanvas3D             canvas;
 
+    /** The offscreen canvas used for drawing. */
+    protected Canvas3D              offscreenCanvas;
+
+    /** The universe we use. */
+    protected SimpleUniverse        universe;
+
+    /** The main transform used to display the step. */
+    protected Transform3D           transform        = new Transform3D();
+
     /** The zoom of the step. */
     protected double                zoom             = 100d;
 
@@ -76,7 +86,19 @@ public class StepRenderer extends JPanel
     public StepRenderer()
     {
         setLayout(new BorderLayout());
-        canvas = createCanvas();
+
+        canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
+        canvas.setOpaque(false);
+        canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
+        add(canvas, BorderLayout.CENTER);
+        canvas.setSize(new Dimension(20, 20));
+        canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
+        if (getWidth() > 0 && getHeight() > 0)
+            canvas.setSize(getWidth(), getHeight());
+
+        offscreenCanvas = canvas.getOffscreenCanvas3D();
+        universe = new SimpleUniverse(offscreenCanvas);
+
         setOpaque(false);
         addMouseWheelListener(new MouseListener());
     }
@@ -139,17 +161,8 @@ public class StepRenderer extends JPanel
 
                     ModelState state = step.getModelState();
 
-                    remove(canvas);
-                    canvas = null;
-
-                    canvas = createCanvas();
-                    add(canvas, BorderLayout.CENTER);
-                    canvas.setSize(new Dimension(20, 20));
-                    canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
                     if (getWidth() > 0 && getHeight() > 0)
                         canvas.setSize(getWidth(), getHeight());
-
-                    SimpleUniverse universe = new SimpleUniverse(canvas.getOffscreenCanvas3D());
 
                     Appearance appearance = new Appearance();
                     Appearance appearance2 = new Appearance();
@@ -169,7 +182,6 @@ public class StepRenderer extends JPanel
                             ColoringAttributes.NICEST);
                     appearance2.setColoringAttributes(colAttrs);
 
-                    Transform3D transform = new Transform3D();
                     transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
                     // TODO adjust zoom according to paper size and renderer size - this is placeholder code
                     transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
@@ -189,8 +201,14 @@ public class StepRenderer extends JPanel
                     contents.compile(); // may cause unexpected problems - any consequent change of contents
                     // (or even reading of them) will produce an error
 
+                    universe.getViewer().setViewingPlatform(null);
+                    universe.getViewer().getView().removeAllCanvas3Ds();
+
+                    universe = new SimpleUniverse(offscreenCanvas);
                     universe.getViewingPlatform().setNominalViewingTransform();
                     universe.addBranchGraph(contents);
+
+                    repaint();
                 }
             }
         };
@@ -221,8 +239,8 @@ public class StepRenderer extends JPanel
         double oldZoom = this.zoom;
         this.zoom = zoom;
         listeners.firePropertyChange("zoom", oldZoom, zoom);
-        // reload the step
-        setStep(step); // TODO refactor
+        // TODO this code is inefficient, probably the zoom may be implemented by behaviors
+        setStep(step);
     }
 
     /**
@@ -239,17 +257,6 @@ public class StepRenderer extends JPanel
     public void decZoom()
     {
         setZoom(getZoom() - 10d);
-    }
-
-    /**
-     * @return The configured <code>JCanvas3D</code>.
-     */
-    protected JCanvas3D createCanvas()
-    {
-        JCanvas3D canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
-        canvas.setOpaque(false);
-        canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
-        return canvas;
     }
 
     /**
