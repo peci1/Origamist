@@ -7,7 +7,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
 import java.awt.GridLayout;
-import java.awt.HeadlessException;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.KeyListener;
@@ -64,10 +63,8 @@ public abstract class CommonGui extends JApplet
      */
     protected MessageFormat   format           = null;
 
-    /**
-     * @throws HeadlessException
-     */
-    public CommonGui() throws HeadlessException
+    @Override
+    public void init()
     {
         // make the frame resizable if the applet is run using JWS/JNLP (because at default it is run as a fixed-size
         // window)
@@ -80,11 +77,7 @@ public abstract class CommonGui extends JApplet
                 frame.setLayout(new GridLayout());
             }
         }
-    }
 
-    @Override
-    public void init()
-    {
         super.init();
 
         registerServices();
