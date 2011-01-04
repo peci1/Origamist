@@ -5,7 +5,9 @@ package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
 import java.applet.AppletContext;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -194,6 +196,16 @@ public class OrigamiEditor extends CommonGui
         super();
         this.bootstrap = bootstrap;
 
+        // make the frame resizable if the applet is run using JWS/JNLP (because at default it is run as a fixed-size
+        // window)
+        Component parent = (bootstrap != null ? bootstrap : this);
+        while (parent.getParent() != null)
+            parent = parent.getParent();
+        if (parent instanceof Frame) {
+            ((Frame) parent).setResizable(true);
+            // TODO the frame becomes resizable, but the layout doesn't resize the content
+        }
+
         UIManager.getDefaults().addResourceBundle("editor");
 
         addGlobalKeyListener(new KeyAdapter() {
@@ -330,7 +342,6 @@ public class OrigamiEditor extends CommonGui
     protected void buildLayout()
     {
         setLayout(new FormLayout("left:pref,$ugap,pref:grow", "pref,fill:pref:grow,pref,bottom:pref"));
-
         CellConstraints cc = new CellConstraints();
 
         add(toolbar, cc.xyw(1, 1, 3));
@@ -614,7 +625,7 @@ public class OrigamiEditor extends CommonGui
 
         JScrollPane operationsListScroll = new JScrollPane(operationsList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        builder.appendRow("fill:pref:grow");
+        builder.appendRow("fill:min:grow");
         builder.append(operationsListScroll);
 
         colSpan = new JSpinner(new SpinnerNumberModel(1, 1, null, 1));
