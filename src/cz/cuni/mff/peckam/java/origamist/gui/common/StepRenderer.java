@@ -74,6 +74,9 @@ public class StepRenderer extends JPanel
     /** The main transform used to display the step. */
     protected Transform3D           transform        = new Transform3D();
 
+    /** The transform group containing the whole step. */
+    protected TransformGroup        tGroup;
+
     /** The zoom of the step. */
     protected double                zoom             = 100d;
 
@@ -188,7 +191,9 @@ public class StepRenderer extends JPanel
                     UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
                     transform
                             .setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
-                    TransformGroup tGroup = new TransformGroup();
+
+                    tGroup = new TransformGroup();
+                    tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
                     tGroup.setTransform(transform);
 
                     tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
@@ -236,11 +241,15 @@ public class StepRenderer extends JPanel
         if (!isEnabled())
             return;
 
+        if (zoom < 25d)
+            return;
+
         double oldZoom = this.zoom;
         this.zoom = zoom;
         listeners.firePropertyChange("zoom", oldZoom, zoom);
-        // TODO this code is inefficient, probably the zoom may be implemented by behaviors
-        setStep(step);
+
+        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+        tGroup.setTransform(transform);
     }
 
     /**
