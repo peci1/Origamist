@@ -88,3 +88,23 @@ using Component.addMouseWheelListener().
 Did you think that making a JNLP window running a JApplet resizable is funny? 
 It isn't. But a (hacky) solution exists, see 
 http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true . 
+
+-----------
+
+Mouse events (and probably key events, too) are not delivered to JCanvas3D's 
+Canvas3D by default. This results in mouse behaviors not working at all. It is
+caused due to the fact, that a component's processMouseEvent() and similar 
+methods are called only if the component has at least one listener of the type
+or if the appropriate mask was set using the component's enableEvents() method.
+Obviously, JCanvas3D doesn't add any own listeners, so the methods are not called
+by default. One can fix it by calling
+
+enableEvents(AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK
+                        | AWTEvent.MOUSE_WHEEL_EVENT_MASK);
+                        
+on the component (note that this method is protected, so subclassing is needed).
+
+As an "extra value" you lose all AWT events generated on the JCanvas3D, because it
+seems to consume all the events even if it does no action in response to them. So
+if you want a listener to be called on a containing component and its 
+subcomponents, you also need to add these listeners to the JCanvas3D.

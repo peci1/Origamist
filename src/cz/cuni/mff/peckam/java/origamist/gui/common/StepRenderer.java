@@ -3,15 +3,22 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.InputMethodListener;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
 import javax.media.j3d.Appearance;
+import javax.media.j3d.Behavior;
+import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
@@ -23,9 +30,11 @@ import javax.media.j3d.TransformGroup;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 import com.sun.j3d.exp.swing.JCanvas3D;
+import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -90,7 +99,18 @@ public class StepRenderer extends JPanel
     {
         setLayout(new BorderLayout());
 
-        canvas = new JCanvas3D(new GraphicsConfigTemplate3D());
+        // Subclassing JCanvas3D is needed to call the protected method.
+        // The call is needed because it is a workaround for the offscreen canvas not being notified of AWT events
+        // with no registered listeners.
+        canvas = new JCanvas3D(new GraphicsConfigTemplate3D()) {
+            /** */
+            private static final long serialVersionUID = 1159847610761430144L;
+            {
+                enableEvents(AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK
+                        | AWTEvent.MOUSE_WHEEL_EVENT_MASK);
+            }
+        };
+
         canvas.setOpaque(false);
         canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
         add(canvas, BorderLayout.CENTER);
@@ -194,6 +214,7 @@ public class StepRenderer extends JPanel
 
                     tGroup = new TransformGroup();
                     tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+                    tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
                     tGroup.setTransform(transform);
 
                     tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
@@ -203,8 +224,14 @@ public class StepRenderer extends JPanel
                     BranchGroup contents = new BranchGroup();
                     contents.addChild(tGroup);
 
+                    // TODO now these three lines enable rotating. Either make a whole concept of controlling the
+                    // displayed step, or delete them
+                    Behavior rotate = new MouseRotate(tGroup);
+                    rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
+                    contents.addChild(rotate);
+
                     contents.compile(); // may cause unexpected problems - any consequent change of contents
-                    // (or even reading of them) will produce an error
+                    // (or even reading of them) will produce an error if you don't set the proper capability
 
                     universe.getViewer().setViewingPlatform(null);
                     universe.getViewer().getView().removeAllCanvas3Ds();
@@ -325,6 +352,51 @@ public class StepRenderer extends JPanel
     public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
     {
         return listeners.getPropertyChangeListeners(propertyName);
+    }
+
+    /**
+     * @param l
+     * @see java.awt.Component#addKeyListener(java.awt.event.KeyListener)
+     */
+    public synchronized void addKeyListener(KeyListener l)
+    {
+        canvas.addKeyListener(l);
+    }
+
+    /**
+     * @param l
+     * @see java.awt.Component#addMouseListener(java.awt.event.MouseListener)
+     */
+    public synchronized void addMouseListener(java.awt.event.MouseListener l)
+    {
+        canvas.addMouseListener(l);
+    }
+
+    /**
+     * @param l
+     * @see java.awt.Component#addMouseMotionListener(java.awt.event.MouseMotionListener)
+     */
+    public synchronized void addMouseMotionListener(MouseMotionListener l)
+    {
+        canvas.addMouseMotionListener(l);
+    }
+
+    /**
+     * @param l
+     * @see java.awt.Component#addMouseWheelListener(java.awt.event.MouseWheelListener)
+     */
+    public synchronized void addMouseWheelListener(MouseWheelListener l)
+    {
+        canvas.addMouseWheelListener(l);
+    }
+
+    /**
+     * @param l
+     * @see java.awt.Component#addInputMethodListener(java.awt.event.InputMethodListener)
+     */
+    public synchronized void addInputMethodListener(InputMethodListener l)
+    {
+        canvas.addInputMethodListener(l);
     }
 
     /**
