@@ -27,6 +27,7 @@ import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.media.j3d.VirtualUniverse;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
@@ -180,65 +181,10 @@ public class StepRenderer extends JPanel
                     if (step == null)
                         return;
 
-                    // TODO refactor from now on
-
-                    ModelState state = step.getModelState();
-
                     if (getWidth() > 0 && getHeight() > 0)
                         canvas.setSize(getWidth(), getHeight());
 
-                    Appearance appearance = new Appearance();
-                    Appearance appearance2 = new Appearance();
-
-                    PolygonAttributes polyAttribs = new PolygonAttributes();
-                    polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
-                    // DEBUG IMPORTANT: The next line allows switching between wireframe and full filling mode
-                    polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_LINE);
-                    appearance.setPolygonAttributes(polyAttribs);
-                    appearance2.setPolygonAttributes(polyAttribs);
-
-                    ModelColors paperColors = origami.getModel().getPaper().getColors();
-                    ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getForeground()),
-                            ColoringAttributes.NICEST);
-                    appearance.setColoringAttributes(colAttrs);
-                    colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()),
-                            ColoringAttributes.NICEST);
-                    appearance2.setColoringAttributes(colAttrs);
-
-                    transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
-                    // TODO adjust zoom according to paper size and renderer size - this is placeholder code
-                    transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
-                    UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
-                    transform
-                            .setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
-
-                    tGroup = new TransformGroup();
-                    tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-                    tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-                    tGroup.setTransform(transform);
-
-                    tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
-                    tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
-                    // tGroup.addChild(new Shape3D(state.getLineArray()));
-
-                    BranchGroup contents = new BranchGroup();
-                    contents.addChild(tGroup);
-
-                    // TODO now these three lines enable rotating. Either make a whole concept of controlling the
-                    // displayed step, or delete them
-                    Behavior rotate = new MouseRotate(tGroup);
-                    rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
-                    contents.addChild(rotate);
-
-                    contents.compile(); // may cause unexpected problems - any consequent change of contents
-                    // (or even reading of them) will produce an error if you don't set the proper capability
-
-                    universe.getViewer().setViewingPlatform(null);
-                    universe.getViewer().getView().removeAllCanvas3Ds();
-
-                    universe = new SimpleUniverse(offscreenCanvas);
-                    universe.getViewingPlatform().setNominalViewingTransform();
-                    universe.addBranchGraph(contents);
+                    setupUniverse();
 
                     repaint();
                 }
@@ -250,6 +196,134 @@ public class StepRenderer extends JPanel
         } else {
             run.run();
         }
+    }
+
+    /**
+     * @return The common attributes of polygons to use for rendering.
+     */
+    protected PolygonAttributes createPolygonAttributes()
+    {
+        PolygonAttributes polyAttribs = new PolygonAttributes();
+        polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
+        // DEBUG IMPORTANT: The next line allows switching between wireframe and full filling mode
+        polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_LINE);
+        return polyAttribs;
+    }
+
+    /**
+     * @return The appearance of triangles that represent the foreground of the paper.
+     */
+    protected Appearance createNormalTrianglesAppearance()
+    {
+        Appearance appearance = new Appearance();
+
+        appearance.setPolygonAttributes(createPolygonAttributes());
+
+        ModelColors paperColors = origami.getModel().getPaper().getColors();
+        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getForeground()),
+                ColoringAttributes.NICEST);
+        appearance.setColoringAttributes(colAttrs);
+
+        return appearance;
+    }
+
+    /**
+     * @return The appearance of triangles that represent the background of the paper.
+     */
+    protected Appearance createInverseTrianglesAppearance()
+    {
+        Appearance appearance = new Appearance();
+
+        appearance.setPolygonAttributes(createPolygonAttributes());
+
+        ModelColors paperColors = origami.getModel().getPaper().getColors();
+        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()),
+                ColoringAttributes.NICEST);
+        appearance.setColoringAttributes(colAttrs);
+
+        return appearance;
+    }
+
+    /**
+     * Set this.transform to a new value.
+     * 
+     * @return The transform used for the step just after initialization.
+     */
+    protected Transform3D setupTransform()
+    {
+        ModelState state = step.getModelState();
+
+        transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
+        // TODO adjust zoom according to paper size and renderer size - this is placeholder code
+        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+        UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
+        transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
+
+        return transform;
+    }
+
+    /**
+     * Set this.tGroup to a new value.
+     * 
+     * @return The transform group that contains all nodes.
+     */
+    protected TransformGroup setupTGroup()
+    {
+        setupTransform();
+        Appearance appearance = createNormalTrianglesAppearance();
+        Appearance appearance2 = createInverseTrianglesAppearance();
+
+        ModelState state = step.getModelState();
+
+        tGroup = new TransformGroup();
+        tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        tGroup.setTransform(transform);
+
+        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
+        tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
+        // tGroup.addChild(new Shape3D(state.getLineArray()));
+
+        return tGroup;
+    }
+
+    /**
+     * @return The compiled BranchGroup containing this.tGroup and all defined top-level behaviors.
+     */
+    protected BranchGroup createBranchGraph()
+    {
+        setupTGroup();
+
+        BranchGroup contents = new BranchGroup();
+        contents.addChild(tGroup);
+
+        // TODO now these three lines enable rotating. Either make a whole concept of controlling the
+        // displayed step, or delete them
+        Behavior rotate = new MouseRotate(tGroup);
+        rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
+        contents.addChild(rotate);
+
+        contents.compile(); // may cause unexpected problems - any consequent change of contents
+        // (or even reading of them) will produce an error if you don't set the proper capability
+
+        return contents;
+    }
+
+    /**
+     * Set a new value to this.universe.
+     * 
+     * @return The universe corresponding to the current step.
+     */
+    protected VirtualUniverse setupUniverse()
+    {
+        universe.getViewer().setViewingPlatform(null);
+        universe.getViewer().getView().removeAllCanvas3Ds();
+
+        universe = new SimpleUniverse(offscreenCanvas);
+        universe.getViewingPlatform().setNominalViewingTransform();
+        universe.addBranchGraph(createBranchGraph());
+
+        return universe;
     }
 
     /**
