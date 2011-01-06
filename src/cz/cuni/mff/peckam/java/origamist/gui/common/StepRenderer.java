@@ -234,7 +234,9 @@ public class StepRenderer extends JPanel
     {
         Appearance appearance = new Appearance();
 
-        appearance.setPolygonAttributes(createPolygonAttributes());
+        PolygonAttributes attrs = createPolygonAttributes();
+        attrs.setCullFace(PolygonAttributes.CULL_FRONT);
+        appearance.setPolygonAttributes(attrs);
 
         ModelColors paperColors = origami.getModel().getPaper().getColors();
         ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(paperColors.getBackground()),
@@ -281,7 +283,7 @@ public class StepRenderer extends JPanel
         tGroup.setTransform(transform);
 
         tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
-        tGroup.addChild(new Shape3D(state.getInverseTrianglesArray(), appearance2));
+        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance2));
         // tGroup.addChild(new Shape3D(state.getLineArray()));
 
         return tGroup;

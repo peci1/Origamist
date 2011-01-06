@@ -50,50 +50,44 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ObservableList<Fold>          folds                 = new ObservableList<Fold>();
+    protected ObservableList<Fold>          folds                = new ObservableList<Fold>();
 
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                     foldLineArray         = null;
+    protected LineArray                     foldLineArray        = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                       foldLineArrayDirty    = true;
+    protected boolean                       foldLineArrayDirty   = true;
 
     /**
      * The triangles this model state consists of.
      */
-    protected ObservableList<ModelTriangle> triangles             = new ObservableList<ModelTriangle>();
+    protected ObservableList<ModelTriangle> triangles            = new ObservableList<ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                 trianglesArray        = null;
-
-    /**
-     * The triangles the model state consists of. This representation can be directly used by Java3D. The triangles face
-     * the other side than the corresponding ones in trianglesArray.
-     */
-    protected TriangleArray                 inverseTrianglesArray = null;
+    protected TriangleArray                 trianglesArray       = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                       trianglesArrayDirty   = true;
+    protected boolean                       trianglesArrayDirty  = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                        rotationAngle         = 0;
+    protected double                        rotationAngle        = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                        viewingAngle          = Math.PI / 2.0;
+    protected double                        viewingAngle         = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
@@ -108,7 +102,7 @@ public class ModelState implements Cloneable
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                           stepBlendingTreshold  = 5;
+    protected int                           stepBlendingTreshold = 5;
 
     public ModelState()
     {
@@ -255,7 +249,6 @@ public class ModelState implements Cloneable
     protected synchronized void updateTrianglesArray()
     {
         trianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
-        inverseTrianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
 
         UnitDimension paperSize = origami.getModel().getPaper().getSize();
         double ratio = 1.0 / UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
@@ -273,13 +266,8 @@ public class ModelState implements Cloneable
             p3.project(new Point4d(p3.x, p3.y, p3.z, ratio));
 
             trianglesArray.setCoordinate(3 * i, p1);
-            inverseTrianglesArray.setCoordinate(3 * i, (Point3d) p1.clone());
-
             trianglesArray.setCoordinate(3 * i + 1, p2);
-            inverseTrianglesArray.setCoordinate(3 * i + 1, (Point3d) p3.clone());
-
             trianglesArray.setCoordinate(3 * i + 2, p3);
-            inverseTrianglesArray.setCoordinate(3 * i + 2, (Point3d) p2.clone());
 
             i++;
         }
@@ -298,20 +286,6 @@ public class ModelState implements Cloneable
             updateTrianglesArray();
 
         return trianglesArray;
-    }
-
-    /**
-     * Return the inverse triangle array. (The triangles facing the other side than the ones returned by
-     * getTrianglesArray)
-     * 
-     * @return The inverse triangle array.
-     */
-    public synchronized TriangleArray getInverseTrianglesArray()
-    {
-        if (trianglesArrayDirty)
-            updateTrianglesArray();
-
-        return inverseTrianglesArray;
     }
 
     /**
