@@ -7,6 +7,7 @@ import java.applet.AppletContext;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -30,11 +31,14 @@ import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.FocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -114,6 +118,9 @@ public class OrigamiEditor extends CommonGui
 {
     private static final long                      serialVersionUID        = -6853141518719373854L;
 
+    /** The resource bundle with editor strings. */
+    protected ResourceBundle                       editorMessages;
+
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
     protected JApplet                              bootstrap               = null;
 
@@ -184,6 +191,9 @@ public class OrigamiEditor extends CommonGui
     /** Span of the step. */
     protected JSpinner                             colSpan, rowSpan;
 
+    /** The combobox for selecting the current step. */
+    protected JComboBox                            steps;
+
     /**
      * Instantiate the origami viewer without a bootstrapper.
      */
@@ -251,6 +261,15 @@ public class OrigamiEditor extends CommonGui
         };
 
         super.init();
+
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addAndRunResourceBundleListener(new Configuration.ResourceBundleLocaleListener("editor") {
+                    @Override
+                    public void bundleChanged()
+                    {
+                        editorMessages = bundle;
+                    }
+                });
 
         processParams();
     }
@@ -572,9 +591,45 @@ public class OrigamiEditor extends CommonGui
 
         DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("fill:min(pref;100dlu)", ""), panel);
 
-        JLabel stepsLabel = new JLocalizedLabel(stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0));
-        stepsLabel.setFont(stepsLabel.getFont().deriveFont(16f));
-        builder.append(stepsLabel);
+        stepXofY = new ParametrizedLocalizedString("editor", "stepXofY", 0, 0);
+
+        steps = new JComboBox();
+        steps.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                setStep((Step) steps.getSelectedItem());
+            }
+        });
+        final Font stepsPopupFont = steps.getFont();
+        Font stepsFont = stepsPopupFont.deriveFont(Font.BOLD, 16f);
+        steps.setFont(stepsFont);
+        steps.setRenderer(new DefaultListCellRenderer() {
+            /** */
+            private static final long serialVersionUID = -3935099215382824545L;
+
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus)
+            {
+                JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected,
+                        cellHasFocus);
+
+                if (origami == null)
+                    return result;
+
+                if (index != -1) {
+                    result.setText(new Integer(origami.getModel().getSteps().getStep().indexOf(value) + 1).toString());
+                    result.setFont(stepsPopupFont);
+                } else {
+                    result.setText(stepXofY.toString());
+                }
+
+                return result;
+            }
+        });
+
+        builder.append(steps);
 
         OrigamistToolBar toolbar = new OrigamistToolBar("editor");
         toolbar.setLayout(new FormLayout("$ugap,pref,$ugap,pref,pref,$ugap,pref,$ugap", "$ugap,pref,$lgap,pref,$ugap"));
@@ -756,10 +811,14 @@ public class OrigamiEditor extends CommonGui
             description.setStrings(step.getDescription());
             colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
             rowSpan.setValue(step.getRowspan() != null ? step.getRowspan() : 1);
+
+            steps.setEnabled(true);
+            steps.setModel(new DefaultComboBoxModel(origami.getModel().getSteps().getStep().toArray()));
         } else {
             description.setStrings(new LinkedList<LangString>());
             colSpan.setValue(1);
             rowSpan.setValue(1);
+            steps.setEnabled(false);
         }
 
         stepXofY.setParameter(0, index);
