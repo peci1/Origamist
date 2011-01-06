@@ -224,7 +224,7 @@ public class Configuration extends PropertyChangeSource
     }
 
     /**
-     * Adds a {@link ResourceBundleListener} as a {@link PropertyChangeListener} and runs it with the current locale.
+     * Adds a {@link ResourceBundleKeyListener} as a {@link PropertyChangeListener} and runs it with the current locale.
      * 
      * @param l The listener to add.
      */
@@ -235,8 +235,7 @@ public class Configuration extends PropertyChangeSource
     }
 
     /**
-     * A listener that calls <code>updateText</code> for the given <code>key</code> from a <code>resourceBundle</code>
-     * whenever the locale <code>propertyName</code> changes.
+     * A listener that calls <code>bundleChanged</code> whenever the locale <code>propertyName</code> changes.
      * 
      * @author Martin Pecka
      */
@@ -244,8 +243,6 @@ public class Configuration extends PropertyChangeSource
     {
         /** The bundle to monitor. */
         protected String         bundleName;
-        /** The key from the monitored bundle. */
-        protected String         key;
         /** The name of the property of the monitored {@link Locale}. */
         protected String         propertyName;
 
@@ -257,14 +254,24 @@ public class Configuration extends PropertyChangeSource
 
         /**
          * @param bundleName The bundle to monitor.
-         * @param key The key from the monitored bundle.
          * @param propertyName The name of the property of the monitored {@link Locale}.
          */
-        protected ResourceBundleListener(String bundleName, String key, String propertyName)
+        public ResourceBundleListener(String bundleName, String propertyName)
         {
             this.bundleName = bundleName;
-            this.key = key;
             this.propertyName = propertyName;
+        }
+
+        /**
+         * Called when the resource bundle changes.
+         */
+        public abstract void bundleChanged();
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            bundle = ResourceBundle.getBundle(bundleName, getProperty());
+            bundleChanged();
         }
 
         /**
@@ -279,6 +286,52 @@ public class Configuration extends PropertyChangeSource
          * @return The monitored {@link Locale}.
          */
         public abstract Locale getProperty();
+    }
+
+    /**
+     * A listener for changes of the locale configuration.
+     * 
+     * @author Martin Pecka
+     */
+    public abstract static class ResourceBundleLocaleListener extends ResourceBundleListener
+    {
+
+        /**
+         * @param bundleName The bundle to monitor.
+         */
+        public ResourceBundleLocaleListener(String bundleName)
+        {
+            super(bundleName, "locale");
+        }
+
+        @Override
+        public Locale getProperty()
+        {
+            return config.locale;
+        }
+    }
+
+    /**
+     * A listener that calls <code>updateText</code> for the given <code>key</code> from a <code>resourceBundle</code>
+     * whenever the locale <code>propertyName</code> changes.
+     * 
+     * @author Martin Pecka
+     */
+    public abstract static class ResourceBundleKeyListener extends ResourceBundleListener
+    {
+        /** The key from the monitored bundle. */
+        protected String key;
+
+        /**
+         * @param bundleName The bundle to monitor.
+         * @param key The key from the monitored bundle.
+         * @param propertyName The name of the property of the monitored {@link Locale}.
+         */
+        protected ResourceBundleKeyListener(String bundleName, String key, String propertyName)
+        {
+            super(bundleName, propertyName);
+            this.key = key;
+        }
 
         /**
          * Called when the resource bundle changes.
@@ -288,9 +341,8 @@ public class Configuration extends PropertyChangeSource
         protected abstract void updateText(String text);
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt)
+        public void bundleChanged()
         {
-            bundle = ResourceBundle.getBundle(bundleName, getProperty());
             updateText(bundle.getString(key));
         }
     }
@@ -301,7 +353,7 @@ public class Configuration extends PropertyChangeSource
      * 
      * @author Martin Pecka
      */
-    public abstract static class LocaleListener extends ResourceBundleListener
+    public abstract static class LocaleListener extends ResourceBundleKeyListener
     {
 
         /**
