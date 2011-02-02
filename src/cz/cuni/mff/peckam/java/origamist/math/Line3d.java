@@ -99,6 +99,22 @@ public class Line3d
         return (abs(vt.x) < EPSILON && abs(vt.y) < EPSILON && abs(vt.z) < EPSILON);
     }
 
+    /**
+     * @return A point on the line.
+     */
+    public Point3d getPoint()
+    {
+        return p;
+    }
+
+    /**
+     * @return The direction vector of the line.
+     */
+    public Vector3d getVector()
+    {
+        return v;
+    }
+
     @Override
     public String toString()
     {

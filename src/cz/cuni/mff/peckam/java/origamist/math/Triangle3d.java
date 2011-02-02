@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.math;
 
+import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +37,20 @@ public class Triangle3d implements Cloneable
         this.p2 = p2;
         this.p3 = p3;
 
+        recomputeDerivedItems();
+    }
+
+    public Triangle3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
+            double p3z)
+    {
+        this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z));
+    }
+
+    /**
+     * Compute new values of all the helper fields such as plane, s1, s2, s3 and so...
+     */
+    protected void recomputeDerivedItems()
+    {
         plane = new Plane3d(p1, p2, p3);
         hs1 = HalfSpace3d.createPerpendicularToTriangle(p1, p2, p3);
         hs2 = HalfSpace3d.createPerpendicularToTriangle(p2, p3, p1);
@@ -43,12 +59,6 @@ public class Triangle3d implements Cloneable
         s1 = new Segment3d(p1, p2);
         s2 = new Segment3d(p2, p3);
         s3 = new Segment3d(p1, p3);
-    }
-
-    public Triangle3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
-            double p3z)
-    {
-        this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z));
     }
 
     /**
@@ -66,6 +76,8 @@ public class Triangle3d implements Cloneable
             this.p2 = p2;
         if (p3 != null)
             this.p3 = p3;
+
+        recomputeDerivedItems();
     }
 
     /**
@@ -123,14 +135,44 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * @return The plane the triangle lies in.
+     */
+    public Plane3d getPlane()
+    {
+        return plane;
+    }
+
+    /**
      * Returns true if this triangle contains the given point.
      * 
      * @param point The point to check.
      * @return Whether this triangle contains the given point.
      */
-    public boolean cotains(Point3d point)
+    public boolean contains(Point3d point)
     {
         return plane.contains(point) && hs1.contains(point) && hs2.contains(point) && hs3.contains(point);
+    }
+
+    /**
+     * Return <code>true</code> if the given point lies in one of the sides of this triangle.
+     * 
+     * @param point The point to check.
+     * @return <code>true</code> if the given point lies in one of the sides of this triangle.
+     */
+    public boolean sidesContain(Point3d point)
+    {
+        return s1.contains(point) || s2.contains(point) || s3.contains(point);
+    }
+
+    /**
+     * Return <code>true</code> if the given point is a vertex of this triangle.
+     * 
+     * @param point The point to check.
+     * @return <code>true</code> if the given point is a vertex of this triangle.
+     */
+    public boolean isVertex(Point3d point)
+    {
+        return p1.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON) || p3.epsilonEquals(point, EPSILON);
     }
 
     /**
@@ -148,34 +190,68 @@ public class Triangle3d implements Cloneable
         return result;
     }
 
-    public List<Point3d> getIntersection(Line3d line)
+    /**
+     * Return the intersection points of this triangle and the given line.
+     * 
+     * @param line The line to get intersections with.
+     * @return A list of intersection points. It will be empty if no intersection is found, it will have one element if
+     *         the line intersects the interior of the triangle, and will contain two or three points if the line lies
+     *         in the same plane as the triangle and intersects it. If the line conincides with an edge of the triangle,
+     *         one of the returned intersection points will be (NaN,NaN,NaN). Intersection of a line and a vertex of the
+     *         triangle is taken as intersection with both sides. It can also have two elements if the line isn't
+     *         parallel to the triangle's plane, but intersects the triangle in a vertex. A segment start or end inside
+     *         the triangle is also taken as an intersection. None of the list elements will be <code>null</code>.
+     */
+    public List<Point3d> getIntersections(Line3d line)
     {
         List<Point3d> result = new ArrayList<Point3d>(3);
-        if (line instanceof Segment3d) {
-            result.add(s1.getIntersection((Segment3d) line));
-            result.add(s2.getIntersection((Segment3d) line));
-            result.add(s3.getIntersection((Segment3d) line));
-        } else {
-            result.add(s1.getIntersection(line));
-            result.add(s2.getIntersection(line));
-            result.add(s3.getIntersection(line));
-        }
+        Point3d intersection = null;
+        if (Math.abs(line.v.dot(getNormal())) < MathHelper.EPSILON) {
+            // the line is parallel to the triangle's plane
+            intersection = (line instanceof Segment3d) ? s1.getIntersection((Segment3d) line) : s1
+                    .getIntersection(line);
+            if (intersection != null)
+                result.add(intersection);
+            intersection = (line instanceof Segment3d) ? s2.getIntersection((Segment3d) line) : s2
+                    .getIntersection(line);
+            if (intersection != null)
+                result.add(intersection);
+            intersection = (line instanceof Segment3d) ? s3.getIntersection((Segment3d) line) : s3
+                    .getIntersection(line);
+            if (intersection != null)
+                result.add(intersection);
 
-        if (result.get(0) == null && result.get(1) == null && result.get(2) == null)
-            result.clear();
+            if (line instanceof Segment3d) {
+                // a segment can start or end inside the triangle
+                Point3d[] points = new Point3d[] { ((Segment3d) line).getP1(), ((Segment3d) line).getP2() };
+                for (Point3d p : points) {
+                    if (this.contains(p) && !sidesContain(p)) {
+                        result.add(p);
+                    }
+                }
+            }
+        } else {
+            // the line isn't parallel to the triangle's plane
+            intersection = plane.getIntersection(line);
+            // line.contains(...) is being called because the line can be also a Segment3d
+            if (intersection != null && this.contains(intersection) && line.contains(intersection)) {
+                result.add(intersection);
+                // if the line intersects the triangle in a vertex, add the intersection once more to the result
+                if (isVertex(intersection))
+                    result.add(intersection);
+            }
+        }
 
         return result;
     }
 
+    /**
+     * @return The normalized normal vector to the triangle's plane.
+     */
     public Vector3d getNormal()
     {
         Vector3d normal = new Vector3d();
-        Vector3d foo1 = new Vector3d(p3);
-        Vector3d foo2 = new Vector3d(p2);
-        foo1.sub(p1);
-        foo2.sub(p1);
-        normal.cross(foo1, foo2);
-        normal.normalize();
+        normal.normalize(plane.getNormal());
         return normal;
     }
 

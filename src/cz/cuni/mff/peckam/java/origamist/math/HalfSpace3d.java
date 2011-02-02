@@ -16,28 +16,10 @@ import javax.vecmath.Vector3d;
 public class HalfSpace3d
 {
     /**
-     * A coeficient in the general equation of the defining plane: ax + by + cz + d = 0. The halfspace is definaed as
-     * the set of points for which ax+by+cz+d >= 0 is true.
+     * The border plane of this halfspace. The points in the halfspace are defined as the points (x,y,z), for which ax +
+     * by + cz + d >= 0 holds, where a,b,c,d are the general form coefficients of the plane.
      */
-    protected double a;
-
-    /**
-     * A coeficient in the general equation of the defining plane: ax + by + cz + d = 0. The halfspace is definaed as
-     * the set of points for which ax+by+cz+d >= 0 is true.
-     */
-    protected double b;
-
-    /**
-     * A coeficient in the general equation of the defining plane: ax + by + cz + d = 0. The halfspace is definaed as
-     * the set of points for which ax+by+cz+d >= 0 is true.
-     */
-    protected double c;
-
-    /**
-     * A coeficient in the general equation of the defining plane: ax + by + cz + d = 0. The halfspace is definaed as
-     * the set of points for which ax+by+cz+d >= 0 is true.
-     */
-    protected double d;
+    protected Plane3d plane;
 
     /**
      * Create a halfspace defined by the plane containing p1,p2,p3. The halfspace contains a general point r.
@@ -49,17 +31,13 @@ public class HalfSpace3d
      */
     public HalfSpace3d(Point3d p1, Point3d p2, Point3d p3, Point3d r)
     {
-        Plane3d plane = new Plane3d(p1, p2, p3);
-        a = plane.a;
-        b = plane.b;
-        c = plane.c;
-        d = plane.d;
+        plane = new Plane3d(p1, p2, p3);
 
         if (!contains(r)) {
-            a = -a;
-            b = -b;
-            c = -c;
-            d = -d;
+            plane.setA(-plane.getA());
+            plane.setB(-plane.getB());
+            plane.setC(-plane.getC());
+            plane.setD(-plane.getD());
         }
     }
 
@@ -78,7 +56,7 @@ public class HalfSpace3d
      */
     public boolean contains(Point3d point)
     {
-        return a * point.x + b * point.y + c * point.z + d >= -EPSILON;
+        return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d >= -EPSILON;
     }
 
     /**
@@ -127,9 +105,17 @@ public class HalfSpace3d
                 ry, rz));
     }
 
+    /**
+     * @return The border plane of this halfspace.
+     */
+    public Plane3d getPlane()
+    {
+        return plane;
+    }
+
     @Override
     public String toString()
     {
-        return "HalfSpace3d [" + a + "x + " + b + "y + " + c + "z + " + d + " >= 0]";
+        return "HalfSpace3d [" + plane.a + "x + " + plane.b + "y + " + plane.c + "z + " + plane.d + " >= 0]";
     }
 }

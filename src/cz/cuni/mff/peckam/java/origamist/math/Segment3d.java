@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
-import static java.lang.Math.abs;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -44,7 +43,13 @@ public class Segment3d extends Line3d
         temp.sub(p);
 
         double t = temp.x / v.x;
-        if (t < -EPSILON || t > 1 + EPSILON)
+        if (Double.isNaN(t)) {
+            t = temp.y / v.y;
+            if (Double.isNaN(t))
+                t = temp.z / v.z;
+        }
+
+        if (Double.isNaN(t) || t < -EPSILON || t > 1 + EPSILON)
             return null;
         return i;
     }
@@ -65,10 +70,10 @@ public class Segment3d extends Line3d
         Point3d pt = new Point3d();
         pt.sub(point, p);
         Vector3d vt = new Vector3d();
-        vt.cross(vt, v);
+        vt.cross(new Vector3d(pt), v); // if this cross product is zero, the vectors are colinear
         Double quotient = MathHelper.vectorQuotient3d(new Vector3d(pt), v);
         // if vt and v are colinear (parallel), the point is contained in this line
-        return (abs(vt.x) < EPSILON && abs(vt.y) < EPSILON && abs(vt.z) < EPSILON && quotient != null && quotient >= 0 && quotient <= 1.0);
+        return (vt.epsilonEquals(new Vector3d(), EPSILON) && quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
     }
 
     @Override
