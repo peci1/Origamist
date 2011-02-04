@@ -13,7 +13,7 @@ import javax.vecmath.Vector3d;
  * 
  * @author Martin Pecka
  */
-public class HalfSpace3d
+public class HalfSpace3d implements Cloneable
 {
     /**
      * The border plane of this halfspace. The points in the halfspace are defined as the points (x,y,z), for which ax +
@@ -22,16 +22,33 @@ public class HalfSpace3d
     protected Plane3d plane;
 
     /**
+     * Create a halfspace with the given plane as the border plane and that contains the part of space where the planes
+     * normal points.
+     * 
+     * @param plane The border plane.
+     */
+    public HalfSpace3d(Plane3d plane)
+    {
+        this.plane = plane;
+    }
+
+    /**
      * Create a halfspace defined by the plane containing p1,p2,p3. The halfspace contains a general point r.
      * 
      * @param p1 A point in the border plane.
      * @param p2 A point in the border plane.
      * @param p3 A point in the border plane.
      * @param r A general point in the halfspace.
+     * 
+     * @throws IllegalArgumentException If r lies in the plane defined by p1, p2 and p3.
      */
-    public HalfSpace3d(Point3d p1, Point3d p2, Point3d p3, Point3d r)
+    public HalfSpace3d(Point3d p1, Point3d p2, Point3d p3, Point3d r) throws IllegalArgumentException
     {
         plane = new Plane3d(p1, p2, p3);
+
+        if (plane.contains(r)) {
+            throw new IllegalArgumentException("Trying to define a halfspace using a plane and a point lying in it.");
+        }
 
         if (!contains(r)) {
             plane.setA(-plane.getA());
@@ -41,8 +58,26 @@ public class HalfSpace3d
         }
     }
 
+    /**
+     * Create a halfspace defined by the plane containing p1,p2,p3. The halfspace contains a general point r.
+     * 
+     * @param p1x X coordinate of a point in the border plane.
+     * @param p1y Y coordinate of a point in the border plane.
+     * @param p1z Z coordinate of a point in the border plane.
+     * @param p2x X coordinate of a point in the border plane.
+     * @param p2y Y coordinate of a point in the border plane.
+     * @param p2z Z coordinate of a point in the border plane.
+     * @param p3x X coordinate of a point in the border plane.
+     * @param p3y Y coordinate of a point in the border plane.
+     * @param p3z Z coordinate of a point in the border plane.
+     * @param rx X coordinate of a general point in the halfspace.
+     * @param ry Y coordinate of a general point in the halfspace.
+     * @param rz Z coordinate of a general point in the halfspace.
+     * 
+     * @throws IllegalArgumentException If r lies in the plane defined by p1, p2 and p3.
+     */
     public HalfSpace3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
-            double p3z, double rx, double ry, double rz)
+            double p3z, double rx, double ry, double rz) throws IllegalArgumentException
     {
         this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z),
                 new Point3d(rx, ry, rz));
@@ -114,8 +149,54 @@ public class HalfSpace3d
     }
 
     @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((plane == null) ? 0 : plane.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        HalfSpace3d other = (HalfSpace3d) obj;
+        if (plane == null) {
+            if (other.plane != null)
+                return false;
+        } else if (!plane.equals(other.plane))
+            return false;
+        return true;
+    }
+
+    /**
+     * Return <code>true</code> if the given halfspance is almost equal to this one.
+     * 
+     * @param other The halfspace to compare.
+     * @return <code>true</code> if the given halfspace is almost equal to this one.
+     */
+    public boolean epsilonEquals(HalfSpace3d other)
+    {
+        if (other == null)
+            return false;
+        return plane.epsilonEquals(other.getPlane());
+    }
+
+    @Override
     public String toString()
     {
         return "HalfSpace3d [" + plane.a + "x + " + plane.b + "y + " + plane.c + "z + " + plane.d + " >= 0]";
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        return new HalfSpace3d(new Plane3d(plane));
     }
 }

@@ -36,44 +36,63 @@ public class Segment3d extends Line3d
     @Override
     public Point3d getIntersection(Line3d line)
     {
-        Point3d i = super.getIntersection(line);
-        if (i == null || Double.isNaN(i.x) || Double.isNaN(i.y) || Double.isNaN(i.z))
-            return i;
-        Point3d temp = new Point3d(i);
-        temp.sub(p);
+        Point3d intersection = super.getIntersection(line);
+        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y)
+                || Double.isNaN(intersection.z))
+            return intersection;
 
-        double t = temp.x / v.x;
-        if (Double.isNaN(t)) {
-            t = temp.y / v.y;
-            if (Double.isNaN(t))
-                t = temp.z / v.z;
+        if (contains(intersection)) {
+            return intersection;
         }
-
-        if (Double.isNaN(t) || t < -EPSILON || t > 1 + EPSILON)
-            return null;
-        return i;
+        return null;
     }
 
+    /**
+     * Return the intersection with another segment. Will be <code>null</code> if no intersection exists and will return
+     * (NaN, NaN, NaN) if the segments are perpendicular.
+     * 
+     * TODO should be able to differentiate if two perpendicular vectors have a common part or not
+     * 
+     * @param segment The other segment to find intersection with.
+     * @return the intersection with another segment. Will be <code>null</code> if no intersection exists and will
+     *         return (NaN, NaN, NaN) if the segments are perpendicular.
+     */
     public Point3d getIntersection(Segment3d segment)
     {
-        Point3d i = getIntersection((Line3d) segment);
-        if (i == null || Double.isNaN(i.x) || Double.isNaN(i.y) || Double.isNaN(i.z))
-            return i;
+        Point3d intersection = getIntersection((Line3d) segment);
+        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y)
+                || Double.isNaN(intersection.z))
+            return intersection;
 
-        Point3d i1 = segment.getIntersection((Line3d) this);
-        return i1;
+        if (segment.contains(intersection)) {
+            return intersection;
+        }
+        return null;
+    }
+
+    /**
+     * @return The length of the segment.
+     */
+    public double getLength()
+    {
+        return v.length();
     }
 
     @Override
     public boolean contains(Point3d point)
     {
-        Point3d pt = new Point3d();
-        pt.sub(point, p);
-        Vector3d vt = new Vector3d();
-        vt.cross(new Vector3d(pt), v); // if this cross product is zero, the vectors are colinear
-        Double quotient = MathHelper.vectorQuotient3d(new Vector3d(pt), v);
-        // if vt and v are colinear (parallel), the point is contained in this line
-        return (vt.epsilonEquals(new Vector3d(), EPSILON) && quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
+        // a vector from point p to the given point, we will compare this vector to the direction vector of the segment
+        Vector3d vec = new Vector3d(point);
+        vec.sub(p);
+        Double quotient = MathHelper.vectorQuotient3d(vec, v);
+        // if the quotient is between 0 and 1, the point lies inside the segment
+        return (quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        return new Segment3d(new Point3d(p), new Point3d(p2));
     }
 
     @Override

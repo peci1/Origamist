@@ -3,9 +3,6 @@
  */
 package cz.cuni.mff.peckam.java.origamist.math;
 
-import static java.lang.Math.abs;
-
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.vecmath.Matrix3d;
@@ -31,44 +28,21 @@ public class MathHelper
      */
     public static Double vectorQuotient3d(Vector3d v1, Vector3d v2)
     {
-        List<Double> v1NonZero = new LinkedList<Double>();
-        List<Double> v2NonZero = new LinkedList<Double>();
-        v1NonZero.add((abs(v1.x) >= EPSILON) ? v1.x : null);
-        v1NonZero.add((abs(v1.y) >= EPSILON) ? v1.y : null);
-        v1NonZero.add((abs(v1.z) >= EPSILON) ? v1.z : null);
-        v2NonZero.add((abs(v1.x) >= EPSILON) ? v2.x : null);
-        v2NonZero.add((abs(v1.y) >= EPSILON) ? v2.y : null);
-        v2NonZero.add((abs(v1.z) >= EPSILON) ? v2.z : null);
+        Vector3d cross = new Vector3d();
+        cross.cross(v1, v2);
+        if (!cross.epsilonEquals(new Vector3d(), EPSILON))
+            return null; // the vectors aren't parallel
 
-        if (v1NonZero.get(0) == null && v1NonZero.get(1) == null && v1NonZero.get(2) == null
-                && v2NonZero.get(0) == null && v2NonZero.get(1) == null && v2NonZero.get(2) == null)
-            return 1.0;
+        if (v2.x != 0)
+            return v1.x / v2.x;
 
-        Double result = null;
+        if (v2.y != 0)
+            return v1.y / v2.y;
 
-        for (int i = 0; i < 3; i++) {
-            if ((v1NonZero.get(i) == null && v2NonZero.get(i) != null)
-                    || (v1NonZero.get(i) != null && v2NonZero.get(i) == null)) {
-                result = null;
-                break;
-            } else if (v1NonZero.get(i) == null && v2NonZero.get(i) == null) {
-                continue;
-            } else {
-                double q = v1NonZero.get(i) / v2NonZero.get(i);
-                if (result == null) {
-                    result = q;
-                } else {
-                    if (abs(result - q) > EPSILON) {
-                        result = null;
-                        break;
-                    } else {
-                        continue;
-                    }
-                }
-            }
-        }
+        if (v2.z != 0)
+            return v1.z / v2.z;
 
-        return result;
+        return 1d; // all coordinates are 0, so the quotient may be any nonzero number
     }
 
     /**
@@ -99,5 +73,30 @@ public class MathHelper
         Point3d result = new Point3d(pr);
         result.add(axis.p);
         return result;
+    }
+
+    /**
+     * Provided a list of points, removes those points that are epsilon-equal so that no two remaining points are
+     * epsilon-equal. The changes are made directly to the provided list.
+     * 
+     * @param list The list to scan for duplicates.
+     * @return The input list after duplicate removal.
+     */
+    public static List<Point3d> removeEpsilonEqualPoints(List<Point3d> list)
+    {
+        int i = 0;
+        while (i < list.size() - 1) {
+            int j = i + 1;
+            Point3d iPoint = list.get(i);
+            while (j < list.size()) {
+                if (iPoint.epsilonEquals(list.get(j), EPSILON)) {
+                    list.remove(j);
+                } else {
+                    j++;
+                }
+            }
+            i++;
+        }
+        return list;
     }
 }

@@ -14,7 +14,7 @@ import javax.vecmath.Vector3d;
  * 
  * @author Martin Pecka
  */
-public class Line3d
+public class Line3d implements Cloneable
 {
     /**
      * A point this line goes through.
@@ -26,12 +26,37 @@ public class Line3d
      */
     protected Vector3d v;
 
+    /**
+     * Create a standalone copy (clone) of the given line.
+     * 
+     * @param line The line to copy.
+     */
+    public Line3d(Line3d line)
+    {
+        this.p = new Point3d(line.p);
+        this.v = new Vector3d(line.v);
+    }
+
+    /**
+     * Create the line going through the given point and with given direction.
+     * 
+     * A line with zero direction vector is allowed here, then it stands for a single point.
+     * 
+     * @param p A point the line goes through.
+     * @param v The direction vector of the line.
+     */
     public Line3d(Point3d p, Vector3d v)
     {
         this.p = p;
         this.v = v;
     }
 
+    /**
+     * Create a line going through the given points.
+     * 
+     * @param p1 A point on the line.
+     * @param p2 A point on the line.
+     */
     public Line3d(Point3d p1, Point3d p2)
     {
         this(p1, new Vector3d(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z));
@@ -96,7 +121,7 @@ public class Line3d
         Vector3d vt = new Vector3d(pt);
         vt.cross(vt, v);
         // if vt and v are colinear (parallel), the point is contained in this line
-        return (abs(vt.x) < EPSILON && abs(vt.y) < EPSILON && abs(vt.z) < EPSILON);
+        return vt.epsilonEquals(new Vector3d(), EPSILON);
     }
 
     /**
@@ -113,6 +138,56 @@ public class Line3d
     public Vector3d getVector()
     {
         return v;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((p == null) ? 0 : p.hashCode());
+        result = prime * result + ((v == null) ? 0 : v.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Line3d other = (Line3d) obj;
+        if (p == null) {
+            if (other.p != null)
+                return false;
+        } else if (!p.equals(other.p))
+            return false;
+        if (v == null) {
+            if (other.v != null)
+                return false;
+        } else if (!v.equals(other.v))
+            return false;
+        return true;
+    }
+
+    /**
+     * Return <code>true</code> if the given line is almost equal to this one.
+     * 
+     * @param other The line to compare.
+     * @return <code>true</code> if the given line is almost equal to this one.
+     */
+    public boolean epsilonEquals(Line3d other)
+    {
+        return p.epsilonEquals(other.p, EPSILON) && v.epsilonEquals(other.v, EPSILON);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        return new Line3d(this);
     }
 
     @Override

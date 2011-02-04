@@ -31,17 +31,45 @@ public class Triangle3d implements Cloneable
     protected Segment3d   s2;
     protected Segment3d   s3;
 
-    public Triangle3d(Point3d p1, Point3d p2, Point3d p3)
+    /**
+     * Create a triangle with the given vertices.
+     * 
+     * @param p1 A vertex.
+     * @param p2 A vertex.
+     * @param p3 A vertex.
+     * 
+     * @throws IllegalArgumentException If the given points lie in one line.
+     */
+    public Triangle3d(Point3d p1, Point3d p2, Point3d p3) throws IllegalArgumentException
     {
         this.p1 = p1;
         this.p2 = p2;
         this.p3 = p3;
 
+        if (new Line3d(p1, p2).contains(p3)) {
+            throw new IllegalArgumentException("Trying to create a triangle from colinear points.");
+        }
+
         recomputeDerivedItems();
     }
 
+    /**
+     * Create a triangle with the given vertices.
+     * 
+     * @param p1x A vertex's x coordinate.
+     * @param p1y A vertex's y coordinate.
+     * @param p1z A vertex's z coordinate.
+     * @param p2x A vertex's x coordinate.
+     * @param p2y A vertex's y coordinate.
+     * @param p2z A vertex's z coordinate.
+     * @param p3x A vertex's x coordinate.
+     * @param p3y A vertex's y coordinate.
+     * @param p3z A vertex's z coordinate.
+     * 
+     * @throws IllegalArgumentException If the given points lie in one line.
+     */
     public Triangle3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
-            double p3z)
+            double p3z) throws IllegalArgumentException
     {
         this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z));
     }
@@ -111,6 +139,15 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * @return An array of vertices of the triangle. Further modifications to this array will have no effect on the
+     *         triangle.
+     */
+    public Point3d[] getVertices()
+    {
+        return new Point3d[] { p1, p2, p3 };
+    }
+
+    /**
      * @return The first side of the triangle.
      */
     public Segment3d getS1()
@@ -132,6 +169,15 @@ public class Triangle3d implements Cloneable
     public Segment3d getS3()
     {
         return s3;
+    }
+
+    /**
+     * @return An array of all edges of the triangle. Further modifications to this array will have no effect on the
+     *         triangle.
+     */
+    public Segment3d[] getEdges()
+    {
+        return new Segment3d[] { s1, s2, s3 };
     }
 
     /**
@@ -259,6 +305,73 @@ public class Triangle3d implements Cloneable
     public Object clone()
     {
         return new Triangle3d(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((p1 == null) ? 0 : p1.hashCode());
+        result = prime * result + ((p2 == null) ? 0 : p2.hashCode());
+        result = prime * result + ((p3 == null) ? 0 : p3.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Triangle3d other = (Triangle3d) obj;
+        if (p1 == null) {
+            if (other.p1 != null)
+                return false;
+        } else if (!p1.equals(other.p1))
+            return false;
+        if (p2 == null) {
+            if (other.p2 != null)
+                return false;
+        } else if (!p2.equals(other.p2))
+            return false;
+        if (p3 == null) {
+            if (other.p3 != null)
+                return false;
+        } else if (!p3.equals(other.p3))
+            return false;
+        return true;
+    }
+
+    /**
+     * Return <code>true</code> if the given triangle is almost equal to this one.
+     * 
+     * @param other The triangle to compare.
+     * @return <code>true</code> if the given triangle is almost equal to this one.
+     */
+    public boolean epsilonEquals(Triangle3d other)
+    {
+        if (other == null)
+            return false;
+        if (p1 == null) {
+            if (other.p1 != null)
+                return false;
+        } else if (!p1.epsilonEquals(other.p1, EPSILON))
+            return false;
+        if (p2 == null) {
+            if (other.p2 != null)
+                return false;
+        } else if (!p2.epsilonEquals(other.p2, EPSILON))
+            return false;
+        if (p3 == null) {
+            if (other.p3 != null)
+                return false;
+        } else if (!p3.epsilonEquals(other.p3, EPSILON))
+            return false;
+        return true;
     }
 
     @Override

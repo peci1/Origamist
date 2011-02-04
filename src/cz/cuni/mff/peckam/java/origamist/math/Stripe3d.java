@@ -76,4 +76,64 @@ public class Stripe3d implements Cloneable
     {
         return plane;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((line1 == null) ? 0 : line1.hashCode());
+        result = prime * result + ((line2 == null) ? 0 : line2.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Stripe3d other = (Stripe3d) obj;
+        if (line1 == null) {
+            if (other.line1 != null)
+                return false;
+        } else if (!line1.equals(other.line1))
+            return false;
+        if (line2 == null) {
+            if (other.line2 != null)
+                return false;
+        } else if (!line2.equals(other.line2))
+            return false;
+        return true;
+    }
+
+    /**
+     * Return <code>true</code> if the given stripe is almost equal to this one.
+     * 
+     * @param other The stripe to compare.
+     * @return <code>true</code> if the given stripe is almost equal to this one.
+     */
+    public boolean epsilonEquals(Stripe3d other)
+    {
+        if (other == null)
+            return false;
+
+        return (line1.epsilonEquals(other.line1) && line2.epsilonEquals(other.line2))
+                || (line1.epsilonEquals(other.line2) && line2.epsilonEquals(other.line1));
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        return new Stripe3d(new Line3d(line1), new Line3d(line2));
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Stripe3d [line1=" + line1 + ", line2=" + line2 + "]";
+    }
 }

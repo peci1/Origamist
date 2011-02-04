@@ -4,42 +4,54 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+import static java.lang.Math.abs;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+import javax.vecmath.Vector4d;
 
 /**
  * A plane in 3D.
  * 
  * @author Martin Pecka
  */
-public class Plane3d
+public class Plane3d implements Cloneable
 {
     /**
      * A coeficient in the general equation of a plane: ax + by + cz + d = 0.
      */
-    protected double    a;
+    protected double   a;
 
     /**
      * A coeficient in the general equation of a plane: ax + by + cz + d = 0.
      */
-    protected double    b;
+    protected double   b;
 
     /**
      * A coeficient in the general equation of a plane: ax + by + cz + d = 0.
      */
-    protected double    c;
+    protected double   c;
 
     /**
      * A coeficient in the general equation of a plane: ax + by + cz + d = 0.
      */
-    protected double    d;
-
-    /** Three general points lying in the plane. */
-    protected Point3d[] anyPoint = new Point3d[3];
+    protected double   d;
 
     /** The normal of the plane. */
-    protected Vector3d  normal   = null;
+    protected Vector3d normal = null;
+
+    /**
+     * Constructs a standalone copy (clone) of this plane.
+     * 
+     * @param plane The plane to copy.
+     */
+    public Plane3d(Plane3d plane)
+    {
+        a = plane.a;
+        b = plane.b;
+        c = plane.c;
+        d = plane.d;
+    }
 
     /**
      * Constructs a plane containing the given three points.
@@ -47,12 +59,14 @@ public class Plane3d
      * @param p1 A point in the plane.
      * @param p2 A point in the plane.
      * @param p3 A point in the plane.
+     * 
+     * @throws IllegalArgumentException If the points are colinear.
      */
-    public Plane3d(Point3d p1, Point3d p2, Point3d p3)
+    public Plane3d(Point3d p1, Point3d p2, Point3d p3) throws IllegalArgumentException
     {
-        anyPoint[0] = p1;
-        anyPoint[1] = p2;
-        anyPoint[2] = p3;
+        if (new Line3d(p1, p2).contains(p3)) {
+            throw new IllegalArgumentException("Trying to define a plane using three colinear points.");
+        }
 
         a = p1.y * (p2.z - p3.z) + p2.y * (p3.z - p1.z) + p3.y * (p1.z - p2.z);
         b = p1.z * (p2.x - p3.x) + p2.z * (p3.x - p1.x) + p3.z * (p1.x - p2.x);
@@ -73,17 +87,18 @@ public class Plane3d
      * @param p3x x-coordinate of a point in the plane.
      * @param p3y y-coordinate of a point in the plane.
      * @param p3z z-coordinate of a point in the plane.
+     * 
+     * @throws IllegalArgumentException If the points are colinear.
      */
     public Plane3d(double p1x, double p1y, double p1z, double p2x, double p2y, double p2z, double p3x, double p3y,
-            double p3z)
+            double p3z) throws IllegalArgumentException
     {
         this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z));
     }
 
     public boolean contains(Point3d point)
     {
-        double res = a * point.x + b * point.y + c * point.z + d;
-        return -EPSILON <= res && res <= EPSILON;
+        return abs(a * point.x + b * point.y + c * point.z + d) < EPSILON;
     }
 
     /**
@@ -167,20 +182,6 @@ public class Plane3d
         return normal;
     }
 
-    /**
-     * Return a general point lying in the plane.
-     * 
-     * @param index Index of the point (0 to 2). Two points with different indices are not equal.
-     * @return A general point lying in the plane.
-     */
-    public Point3d getAnyPoint(int index)
-    {
-        if (anyPoint[index] == null)
-            throw new UnsupportedOperationException("Plane3d doesn't know about a general point with index " + index
-                    + "lying in the plane. Please, add this functionality.");
-        return anyPoint[index];
-    }
-
     @Override
     public int hashCode()
     {
@@ -217,6 +218,26 @@ public class Plane3d
         if (Double.doubleToLongBits(d) != Double.doubleToLongBits(other.d))
             return false;
         return true;
+    }
+
+    /**
+     * Return <code>true</code> if the given plane is almost equal to this one.
+     * 
+     * @param other The plane to compare.
+     * @return <code>true</code> if the given plane is almost equal to this one.
+     */
+    public boolean epsilonEquals(Plane3d other)
+    {
+        if (other == null)
+            return false;
+
+        return new Vector4d(a - other.a, b - other.b, c - other.c, d - other.d).epsilonEquals(new Vector4d(), EPSILON);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        return new Plane3d(this);
     }
 
     @Override
