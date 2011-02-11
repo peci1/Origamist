@@ -76,7 +76,7 @@ public class Line2d implements Cloneable
      */
     public boolean contains(Point2d p)
     {
-        return p.x * a + p.y * b + c >= 0 - EPSILON;
+        return abs(p.x * a + p.y * b + c) <= EPSILON;
     }
 
     @Override
