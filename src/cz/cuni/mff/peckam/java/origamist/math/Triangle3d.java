@@ -240,55 +240,67 @@ public class Triangle3d implements Cloneable
      * Return the intersection points of this triangle and the given line.
      * 
      * @param line The line to get intersections with.
-     * @return A list of intersection points. It will be empty if no intersection is found, it will have one element if
-     *         the line intersects the interior of the triangle, and will contain two or three points if the line lies
-     *         in the same plane as the triangle and intersects it. If the line conincides with an edge of the triangle,
-     *         one of the returned intersection points will be (NaN,NaN,NaN). Intersection of a line and a vertex of the
-     *         triangle is taken as intersection with both sides. It can also have two elements if the line isn't
-     *         parallel to the triangle's plane, but intersects the triangle in a vertex. A segment start or end inside
-     *         the triangle is also taken as an intersection. None of the list elements will be <code>null</code>.
+     * @return A segment that defines the intersection of the given line (or segment) and this triangle (the segment can
+     *         be zero-length), or <code>null</code>, if no intersection exists. A segment start or end inside the
+     *         triangle is also taken as an intersection.
      */
-    public List<Point3d> getIntersections(Line3d line)
+    public Segment3d getIntersection(Line3d line)
     {
-        List<Point3d> result = new ArrayList<Point3d>(3);
         Point3d intersection = null;
+
         if (Math.abs(line.v.dot(getNormal())) < MathHelper.EPSILON) {
             // the line is parallel to the triangle's plane
+
+            List<Point3d> intersections = new ArrayList<Point3d>(3);
+
             intersection = (line instanceof Segment3d) ? s1.getIntersection((Segment3d) line) : s1
                     .getIntersection(line);
-            if (intersection != null)
-                result.add(intersection);
+            // if an intersection exists and it isn't a whole side intersection, add it to the list of intersections
+            // (whole side intersections will be detected by intersections with the other sides)
+            if (intersection != null && !Double.isNaN(intersection.x))
+                intersections.add(intersection);
+
             intersection = (line instanceof Segment3d) ? s2.getIntersection((Segment3d) line) : s2
                     .getIntersection(line);
-            if (intersection != null)
-                result.add(intersection);
+            if (intersection != null && !Double.isNaN(intersection.x))
+                intersections.add(intersection);
+
             intersection = (line instanceof Segment3d) ? s3.getIntersection((Segment3d) line) : s3
                     .getIntersection(line);
-            if (intersection != null)
-                result.add(intersection);
+            if (intersection != null && !Double.isNaN(intersection.x))
+                intersections.add(intersection);
 
             if (line instanceof Segment3d) {
                 // a segment can start or end inside the triangle
-                Point3d[] points = new Point3d[] { ((Segment3d) line).getP1(), ((Segment3d) line).getP2() };
-                for (Point3d p : points) {
-                    if (this.contains(p) && !sidesContain(p)) {
-                        result.add(p);
+                for (Point3d p : ((Segment3d) line).getPoints()) {
+                    if (this.contains(p)) {
+                        intersections.add(p);
                     }
                 }
+            }
+
+            MathHelper.removeEpsilonEqualPoints(intersections);
+
+            if (intersections.size() == 2) {
+                return new Segment3d(intersections.get(0), intersections.get(1));
+            } else if (intersections.size() == 1) {
+                return new Segment3d(intersections.get(0), intersections.get(0));
+            } else if (intersections.size() == 0) {
+                return null;
+            } else {
+                throw new IllegalStateException("Illegal count of intersections of a line and triangle: "
+                        + intersections.size());
             }
         } else {
             // the line isn't parallel to the triangle's plane
             intersection = plane.getIntersection(line);
             // line.contains(...) is being called because the line can be also a Segment3d
             if (intersection != null && this.contains(intersection) && line.contains(intersection)) {
-                result.add(intersection);
-                // if the line intersects the triangle in a vertex, add the intersection once more to the result
-                if (isVertex(intersection))
-                    result.add(intersection);
+                return new Segment3d(intersection, intersection);
+            } else {
+                return null;
             }
         }
-
-        return result;
     }
 
     /**

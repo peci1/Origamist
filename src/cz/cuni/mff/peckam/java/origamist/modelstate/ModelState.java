@@ -329,9 +329,9 @@ public class ModelState implements Cloneable
             double angle)
     {
         // TODO implement some way of defining which part of the paper will stay on its place and which will move
-        List<List<IntersectionsWithTriangle>> layers = getLayers(startPoint, endPoint);
+        List<List<IntersectionWithTriangle>> layers = getLayers(startPoint, endPoint);
         int i = 1;
-        for (List<IntersectionsWithTriangle> layer : layers) {
+        for (List<IntersectionWithTriangle> layer : layers) {
             if (!affectedLayers.contains(i++))
                 continue;
             // TODO handle direction in some appropriate way
@@ -382,14 +382,14 @@ public class ModelState implements Cloneable
         }
 
         HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
-        List<List<IntersectionsWithTriangle>> layers = getLayers(startPoint, endPoint);
+        List<List<IntersectionWithTriangle>> layers = getLayers(startPoint, endPoint);
         List<ModelTriangle> trianglesToRotate = new LinkedList<ModelTriangle>();
         int i = 1;
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
-        for (List<IntersectionsWithTriangle> layer : layers) {
+        for (List<IntersectionWithTriangle> layer : layers) {
             if (!affectedLayers.contains(i++))
                 continue;
-            for (IntersectionsWithTriangle intWT : layer) {
+            for (IntersectionWithTriangle intWT : layer) {
                 ModelTriangle t = intWT.getTriangle();
                 if (!halfspace.contains(t.getP1()) || !halfspace.contains(t.getP2()) || !halfspace.contains(t.getP3()))
                     continue;
@@ -473,9 +473,9 @@ public class ModelState implements Cloneable
      * @param endPoint Ending point of the line.
      * @return A list of layers defined by the given line.
      */
-    protected List<List<IntersectionsWithTriangle>> getLayers(Point2d startPoint, Point2d endPoint)
+    protected List<List<IntersectionWithTriangle>> getLayers(Point2d startPoint, Point2d endPoint)
     {
-        List<List<IntersectionsWithTriangle>> result = new ArrayList<List<IntersectionsWithTriangle>>();
+        List<List<IntersectionWithTriangle>> result = new ArrayList<List<IntersectionWithTriangle>>();
 
         // finds the top layer
         Point3d p1 = locatePointFromPaperTo3D(startPoint);
@@ -516,7 +516,7 @@ public class ModelState implements Cloneable
             Segment3d intersectionSegment = new Segment3d(segmentPoint1, segmentPoint2);
             // TODO ineffective, better would be to be able to provide just a layer that has to be checked for
             // intersections, not all triangles
-            List<IntersectionsWithTriangle> layerInts = getIntersectionsWithTriangles(intersectionSegment);
+            List<IntersectionWithTriangle> layerInts = getIntersectionsWithTriangles(intersectionSegment);
             if (layerInts.size() > 0)
                 result.add(layerInts);
         }
@@ -524,7 +524,7 @@ public class ModelState implements Cloneable
         // sort the layers so that the first one will be the one nearest to the viewer
         // assuming that layers don't intersect, one can compare the order of layers by comparing the order of any two
         // triangles from the layers
-        Collections.sort(result, new Comparator<List<IntersectionsWithTriangle>>() {
+        Collections.sort(result, new Comparator<List<IntersectionWithTriangle>>() {
 
             /** The axis from the user's display to the center point. */
             private Line3d axis = null;
@@ -559,7 +559,7 @@ public class ModelState implements Cloneable
             }
 
             @Override
-            public int compare(List<IntersectionsWithTriangle> o1, List<IntersectionsWithTriangle> o2)
+            public int compare(List<IntersectionWithTriangle> o1, List<IntersectionWithTriangle> o2)
             {
                 if (o1.size() == 0 || o2.size() == 0)
                     return 0;
@@ -640,16 +640,14 @@ public class ModelState implements Cloneable
      * @param segment The segment or line to find intersections for.
      * @return The list of intersections of the given line or segment with all triangles.
      */
-    protected List<IntersectionsWithTriangle> getIntersectionsWithTriangles(Line3d segment)
+    protected List<IntersectionWithTriangle> getIntersectionsWithTriangles(Line3d segment)
     {
-        LinkedList<IntersectionsWithTriangle> result = new LinkedList<IntersectionsWithTriangle>();
+        LinkedList<IntersectionWithTriangle> result = new LinkedList<IntersectionWithTriangle>();
         // TODO possibly ineffective
         for (ModelTriangle t : triangles) {
-            List<Point3d> intersections = t.getIntersections(segment);
-            if (!intersections.isEmpty()) {
-                IntersectionsWithTriangle ints = new IntersectionsWithTriangle(t);
-                ints.addAll(intersections);
-                result.add(ints);
+            Segment3d intersection = t.getIntersection(segment);
+            if (intersection != null) {
+                result.add(new IntersectionWithTriangle(t, intersection));
             }
         }
         return result;
@@ -663,23 +661,29 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the line.
      * @param endPoint Ending point of the line.
      */
-    protected void makeFoldInLayer(List<IntersectionsWithTriangle> layer, Direction direction, Point2d startPoint,
+    protected void makeFoldInLayer(List<IntersectionWithTriangle> layer, Direction direction, Point2d startPoint,
             Point2d endPoint)
     {
-        for (IntersectionsWithTriangle ints : layer) {
-            if (ints.isWholeSideIntersection())
+        for (IntersectionWithTriangle intersection : layer) {
+            if (intersection == null) {
+                // no intersection with the triangle - something's weird (we loop over intersections with triangles)
+                throw new IllegalStateException(
+                        "Invalid diagram: no intersection found in IntersectionWithTriangle in step " + step.getId());
+            }
+
+            if (intersection.isWholeSideIntersection())
                 continue; // TODO maybe change the type of the fold or something
 
-            // find the two points of intersection - p1, p2
-            List<Point3d> intPoints = new LinkedList<Point3d>();
-            intPoints.addAll(ints);
-
-            ModelTriangle t = ints.getTriangle();
+            // cache the two points of intersection - p1, p2
+            Point3d p1 = intersection.getP1();
+            Point3d p2 = intersection.getP2();
+            // cache the triangle
+            ModelTriangle t = intersection.getTriangle();
 
             // not a case where one of the intersection points is a vertex (but two distinct intersection points exist);
             // if the line is a segment, neither the start point nor the end point lie inside the triangle
-            if (intPoints.size() == 2 && !intPoints.get(0).epsilonEquals(intPoints.get(1), EPSILON)
-                    && t.sidesContain(intPoints.get(0)) && t.sidesContain(intPoints.get(1))) {
+            if (!p1.epsilonEquals(p2, EPSILON) && !t.isVertex(p1) && !t.isVertex(p2) && t.sidesContain(p1)
+                    && t.sidesContain(p2)) {
 
                 /*
                  * _________________________|_p1______________________________________________________________________
@@ -701,20 +705,12 @@ public class ModelState implements Cloneable
                  * Please view this ASCII graphics without line-breaking (or break lines at minimum 120 characters)
                  */
 
-                Point3d p1 = intPoints.get(0);
-                Point3d p2 = intPoints.get(1);
-
                 // find the sides of 3D triangle which contain the intersection points p1, p2 - save them into "sides"
-                List<Segment3d> sides = new LinkedList<Segment3d>();
-                sides.add(new Segment3d(t.getP1(), t.getP2()));
-                sides.add(new Segment3d(t.getP2(), t.getP3()));
-                sides.add(new Segment3d(t.getP3(), t.getP1()));
-                Segment3d segToDelete = null;
-                for (Segment3d side : sides) {
-                    if (!side.contains(p1) && !side.contains(p2))
-                        segToDelete = side;
+                List<Segment3d> sides = new ArrayList<Segment3d>(2);
+                for (Segment3d edge : t.getEdges()) {
+                    if (edge.contains(p1) || edge.contains(p2))
+                        sides.add(edge);
                 }
-                sides.remove(segToDelete);
 
                 // set v to the vertex of 3D triangle which lies alone in the halfplane defined by the triangle's plane
                 // and line p1p2
@@ -722,16 +718,11 @@ public class ModelState implements Cloneable
 
                 // tv1 is a vertex of 3D triangle such that p1 lies on the segment tv1v
                 // tv2 is a vertex of 3D triangle such that p2 lies on the segment tv2v
-                List<Point3d> triangleVertices = new LinkedList<Point3d>();
-                triangleVertices.add(t.getP1());
-                triangleVertices.add(t.getP2());
-                triangleVertices.add(t.getP3());
-                Point3d triangleVertToDelete = null;
-                for (Point3d vert : triangleVertices) {
-                    if (vert.epsilonEquals(v, EPSILON))
-                        triangleVertToDelete = vert;
+                List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
+                for (Point3d p : t.getVertices()) {
+                    if (!p.epsilonEquals(v, EPSILON))
+                        triangleVertices.add(p);
                 }
-                triangleVertices.remove(triangleVertToDelete);
                 Point3d tv1 = triangleVertices.get(0);
                 Point3d tv2 = triangleVertices.get(1);
                 if (!new Line3d(v, tv1).contains(p1)) {
@@ -742,27 +733,23 @@ public class ModelState implements Cloneable
 
                 // find the vertices of 2D triangle corresponding to the found 3D triangle vertices v, tv1, tv2; prefix
                 // them with 'p'
-                List<Point2d> paperVertices = new LinkedList<Point2d>();
-                paperVertices.add(t.getOriginalPosition().getP1());
-                paperVertices.add(t.getOriginalPosition().getP2());
-                paperVertices.add(t.getOriginalPosition().getP3());
-                Point2d pv = paperVertices.get(0);
-                for (Point2d vert : paperVertices) {
-                    if (locatePointFromPaperTo3D(vert).epsilonEquals(v, EPSILON))
-                        pv = vert;
-                }
-                paperVertices.remove(pv);
+                Point2d pv1, pv2, pv3;
+                pv1 = t.getOriginalPosition().getP1();
+                pv2 = t.getOriginalPosition().getP2();
+                pv3 = t.getOriginalPosition().getP3();
 
+                Point3d sp1, sp2/* , sp3 */;
+                sp1 = locatePointFromPaperTo3D(pv1);
+                sp2 = locatePointFromPaperTo3D(pv2);
+                // sp3 = locatePointFromPaperTo3D(pv3);
+
+                Point2d pv;
                 Point2d ptv1;
                 Point2d ptv2;
 
-                if (locatePointFromPaperTo3D(paperVertices.get(0)).epsilonEquals(tv1, EPSILON)) {
-                    ptv1 = paperVertices.get(0);
-                    ptv2 = paperVertices.get(1);
-                } else {
-                    ptv1 = paperVertices.get(1);
-                    ptv2 = paperVertices.get(0);
-                }
+                pv = (sp1.epsilonEquals(v, EPSILON) ? pv1 : (sp2.epsilonEquals(v, EPSILON) ? pv2 : pv3));
+                ptv1 = (sp1.epsilonEquals(tv1, EPSILON) ? pv1 : (sp2.epsilonEquals(tv1, EPSILON) ? pv2 : pv3));
+                ptv2 = (sp1.epsilonEquals(tv2, EPSILON) ? pv1 : (sp2.epsilonEquals(tv2, EPSILON) ? pv2 : pv3));
 
                 // find points pp1, pp2 in the 2D triangle which correspond to p1, p2
                 double v_tv1 = v.distance(tv1);
@@ -795,9 +782,9 @@ public class ModelState implements Cloneable
                     triangles.add(new ModelTriangle(p2, tv1, tv2, new Triangle2d(pp2, ptv1, ptv2)));
                 else
                     triangles.add(new ModelTriangle(p2, tv2, tv1, new Triangle2d(pp2, ptv2, ptv1)));
-            } else if (intPoints.size() == 3) { // one of the intersection points is a vertex; the other inters. point
-                                                // is distinct from that one
 
+            } else if (!p1.epsilonEquals(p2, EPSILON) && (t.isVertex(p1) || t.isVertex(p2))) {
+                // one of the intersection points is a vertex; the other inters. point is distinct from that one
                 /*
                  * ________________________________|__________________________________________________________________
                  * ________________tv1*------------*p-----------*tv2__________________________________________________
@@ -820,19 +807,12 @@ public class ModelState implements Cloneable
 
                 // v is the intersection point which is also a vertex; p is the other intersection point
                 Point3d v, p;
-                if (intPoints.get(0).epsilonEquals(intPoints.get(1), EPSILON)) {
-                    v = intPoints.get(0);
-                    p = intPoints.get(2);
-                } else if (intPoints.get(0).epsilonEquals(intPoints.get(2), EPSILON)) {
-                    v = intPoints.get(0);
-                    p = intPoints.get(1);
-                } else if (intPoints.get(1).epsilonEquals(intPoints.get(2), EPSILON)) {
-                    v = intPoints.get(1);
-                    p = intPoints.get(0);
+                if (t.isVertex(p1)) {
+                    v = p1;
+                    p = p2;
                 } else {
-                    throw new IllegalStateException(
-                            "ModelState#MakeFoldInLayer: three intersection points with a triangle, but no pair "
-                                    + "of them is equal");
+                    v = p2;
+                    p = p1;
                 }
 
                 if (!t.sidesContain(p)) {
@@ -843,42 +823,33 @@ public class ModelState implements Cloneable
                 }
 
                 // tv1, tv2 are the other vertices (v is the third one) of the 3D triangle
-                List<Point3d> triangleVertices = new LinkedList<Point3d>();
-                triangleVertices.add(t.getP1());
-                triangleVertices.add(t.getP2());
-                triangleVertices.add(t.getP3());
-                Point3d triangleVertToDelete = null;
-                for (Point3d vert : triangleVertices) {
-                    if (vert.epsilonEquals(v, EPSILON))
-                        triangleVertToDelete = vert;
+                List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
+                for (Point3d vert : t.getVertices()) {
+                    if (!vert.epsilonEquals(v, EPSILON))
+                        triangleVertices.add(vert);
                 }
-                triangleVertices.remove(triangleVertToDelete);
                 Point3d tv1 = triangleVertices.get(0);
                 Point3d tv2 = triangleVertices.get(1);
 
                 // find the vertices of 2D triangle corresponding to the found 3D triangle vertices v, tv1, tv2; prefix
                 // them with 'p'
-                List<Point2d> paperVertices = new LinkedList<Point2d>();
-                paperVertices.add(t.getOriginalPosition().getP1());
-                paperVertices.add(t.getOriginalPosition().getP2());
-                paperVertices.add(t.getOriginalPosition().getP3());
-                Point2d pv = paperVertices.get(0);
-                for (Point2d vert : paperVertices) {
-                    if (locatePointFromPaperTo3D(vert).epsilonEquals(v, EPSILON))
-                        pv = vert;
-                }
-                paperVertices.remove(pv);
+                Point2d pv1, pv2, pv3;
+                pv1 = t.getOriginalPosition().getP1();
+                pv2 = t.getOriginalPosition().getP2();
+                pv3 = t.getOriginalPosition().getP3();
 
+                Point3d sp1, sp2/* , sp3 */;
+                sp1 = locatePointFromPaperTo3D(pv1);
+                sp2 = locatePointFromPaperTo3D(pv2);
+                // sp3 = locatePointFromPaperTo3D(pv3);
+
+                Point2d pv;
                 Point2d ptv1;
                 Point2d ptv2;
 
-                if (locatePointFromPaperTo3D(paperVertices.get(0)).epsilonEquals(tv1, EPSILON)) {
-                    ptv1 = paperVertices.get(0);
-                    ptv2 = paperVertices.get(1);
-                } else {
-                    ptv1 = paperVertices.get(1);
-                    ptv2 = paperVertices.get(0);
-                }
+                pv = (sp1.epsilonEquals(v, EPSILON) ? pv1 : (sp2.epsilonEquals(v, EPSILON) ? pv2 : pv3));
+                ptv1 = (sp1.epsilonEquals(tv1, EPSILON) ? pv1 : (sp2.epsilonEquals(tv1, EPSILON) ? pv2 : pv3));
+                ptv2 = (sp1.epsilonEquals(tv2, EPSILON) ? pv1 : (sp2.epsilonEquals(tv2, EPSILON) ? pv2 : pv3));
 
                 // locate position corresponding to the 3D point p
                 double tv1_p = tv1.distance(p);
@@ -900,25 +871,17 @@ public class ModelState implements Cloneable
                     triangles.add(new ModelTriangle(v, p, tv2, new Triangle2d(pv, pp, ptv2)));
                 else
                     triangles.add(new ModelTriangle(v, tv2, p, new Triangle2d(pv, ptv2, pp)));
-            } else if (intPoints.size() == 2 && intPoints.get(0).epsilonEquals(intPoints.get(1), EPSILON)) {
+            } else if (p1.epsilonEquals(p2, EPSILON) && t.isVertex(p1)) {
                 continue; // the line intersects the triangle in a single vertex, no need to divide the triangle
-            } else if (intPoints.size() == 2) {
-                // the intersection is a segment both starting and ending inside the triangle
+            } else if (!p1.epsilonEquals(p2, EPSILON)) {
+                // the intersection is a segment either starting or ending inside the triangle
                 throw new IllegalStateException(
                         "Invalid diagram: a fold beginning or ending in the interior of a triangle in step "
                                 + step.getId());
-            } else if (intPoints.size() == 1) {
+            } else if (p1.epsilonEquals(p2, EPSILON)) {
                 // the fold isn't parallel to the triangle's plane - something's weird
                 throw new IllegalStateException(
                         "Invalid diagram: a fold not parallel to a layer's triangle's plane in step " + step.getId());
-            } else if (intPoints.size() == 0) {
-                // no intersection with the triangle - something's weird (we loop over intersections with triangles)
-                throw new IllegalStateException(
-                        "Invalid diagram: no intersection found in IntersectionsWithTriangle in step " + step.getId());
-            } else {
-                // 4 or more intersection points? is it possible? I think it's not
-                throw new IllegalStateException("Invalid diagram: too much intersections (" + intPoints.size()
-                        + ") found in IntersectionsWithTriangle in step " + step.getId());
             }
 
             // remove the old triangle
@@ -1030,18 +993,18 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * This is the list of intersections of a line/segment with a triangle.
+     * This represents an intersection of a line or segment with a triangle.
      * 
      * @author Martin Pecka
      */
-    protected class IntersectionsWithTriangle extends LinkedList<Point3d>
+    protected class IntersectionWithTriangle extends Segment3d
     {
-        private static final long serialVersionUID = -2223450103552164376L;
-        public ModelTriangle      triangle;
+        /** The triangle the intersection occurs on. */
+        public ModelTriangle triangle;
 
-        public IntersectionsWithTriangle(ModelTriangle triangle)
+        public IntersectionWithTriangle(ModelTriangle triangle, Segment3d segment)
         {
-            super();
+            super(segment.getP1(), segment.getP2());
             this.triangle = triangle;
         }
 
@@ -1051,12 +1014,17 @@ public class ModelState implements Cloneable
         }
 
         /**
-         * @return <code>true</code> if the intersection line coincides with an edge of the triangle.
+         * @return <code>true</code> if the intersection segment coincides with an edge of the triangle (even partly
+         *         coincides if the segment is shorter than the side).
          */
         public boolean isWholeSideIntersection()
         {
-            for (Point3d p : this) {
-                if (p != null && Double.isNaN(p.x) && Double.isNaN(p.y) && Double.isNaN(p.z))
+            if (v.epsilonEquals(new Vector3d(), EPSILON))
+                // a single point of intersection
+                return false;
+
+            for (Segment3d edge : triangle.getEdges()) {
+                if (this.isParallelTo(edge) && edge.contains(p))
                     return true;
             }
             return false;

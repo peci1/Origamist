@@ -114,6 +114,21 @@ public class Line3d implements Cloneable
 
     }
 
+    /**
+     * Return true if this line is parallel to the other line.
+     * 
+     * @param line The other line.
+     * @return True if this line is parallel to the other line.
+     */
+    public boolean isParallelTo(Line3d line)
+    {
+        Vector3d v1xv2 = new Vector3d();
+        v1xv2.cross(v, line.v);
+
+        // the cross product is zero iff the vectors are parallel or one of them is a zero vector
+        return v1xv2.epsilonEquals(new Vector3d(), EPSILON);
+    }
+
     public boolean contains(Point3d point)
     {
         Point3d pt = new Point3d();

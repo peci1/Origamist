@@ -33,6 +33,14 @@ public class Segment3d extends Line3d
         return this.p2;
     }
 
+    /**
+     * @return The both endpoints of the segment.
+     */
+    public Point3d[] getPoints()
+    {
+        return new Point3d[] { p, p2 };
+    }
+
     @Override
     public Point3d getIntersection(Line3d line)
     {
