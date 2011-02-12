@@ -115,6 +115,25 @@ public class Line3d implements Cloneable
     }
 
     /**
+     * Returns the parameter <code>t</code> such that <code>this.p + t*this.v == point</code>. If the point doesn't lie
+     * on this line, return <code>null</code>.
+     * 
+     * @param point The point to find parameter for.
+     * @return The parameter <code>t</code> such that <code>this.p + t*this.v == point</code>. If the point doesn't lie
+     *         on this line, return <code>null</code>.
+     */
+    public Double getParameterForPoint(Point3d point)
+    {
+        if (!contains(point))
+            return null;
+
+        Vector3d v = new Vector3d();
+        v.sub(this.p, point);
+
+        return MathHelper.vectorQuotient3d(v, this.v);
+    }
+
+    /**
      * Return true if this line is parallel to the other line.
      * 
      * @param line The other line.

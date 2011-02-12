@@ -7,6 +7,7 @@ import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -465,12 +466,79 @@ public class Polygon3d<T extends Triangle3d>
      * Return the segments that are the intersection of the given line and this polygon. If a part of the intersection
      * would be a point, then a segment with zero direction vector will appear in the list.
      * 
+     * No two returned segments will have a common point. All of them will have their direction vector pointing in the
+     * same direction (the same direction where points the line's direction vector).
+     * 
      * @param line The line we search intersections with.
      * @return the segments that are the intersection of the given line and this polygon. If a part of the intersection
      *         would be a point, then a segment with zero direction vector will appear in the list.
      */
-    public List<Segment3d> getIntersection(Line3d line)
+    public List<Segment3d> getIntersection(final Line3d line)
     {
-        // TODO
+        // idea: find intersections with triangles, sort them as they go along the line, and connect all segments that
+        // can be connected into one new segment
+
+        class SegmentWithParameters
+        {
+            Segment3d segment;
+            double    p1p, p2p;
+
+            public SegmentWithParameters(Segment3d segment)
+            {
+                this.segment = segment;
+                p1p = line.getParameterForPoint(segment.p);
+                p2p = line.getParameterForPoint(segment.p2);
+
+                // make sure the segment is oriented in the same direction as the line's direction vector
+                if (p1p - p2p > EPSILON) {
+                    this.segment = new Segment3d(segment.p2, segment.p);
+                    double tmp = p2p;
+                    p2p = p1p;
+                    p1p = tmp;
+                }
+            }
+        }
+
+        List<SegmentWithParameters> intersections = new LinkedList<SegmentWithParameters>();
+        for (Triangle3d t : triangles) {
+            Segment3d intersection = t.getIntersection(line);
+            if (intersection != null)
+                intersections.add(new SegmentWithParameters(intersection));
+        }
+
+        if (intersections.size() == 0)
+            return new LinkedList<Segment3d>();
+        if (intersections.size() == 1)
+            return new LinkedList<Segment3d>(Arrays.asList(new Segment3d[] { intersections.get(0).segment }));
+
+        // sort the segments according to the parameters of the border points
+        // this means the segments will be ordered "as they go along the line"
+        Collections.sort(intersections, new Comparator<SegmentWithParameters>() {
+            @Override
+            public int compare(SegmentWithParameters o1, SegmentWithParameters o2)
+            {
+                double o1min = Math.min(o1.p1p, o1.p2p);
+                double o2min = Math.min(o2.p1p, o2.p2p);
+
+                double diff = o1min - o2min;
+                return (diff < -EPSILON ? -1 : (diff > EPSILON ? 1 : 0));
+            }
+        });
+
+        // with the segments sorted we can now take one each time and try to connect it with the previous segment to get
+        // only the longest segments possible
+        LinkedList<Segment3d> result = new LinkedList<Segment3d>();
+        for (SegmentWithParameters s : intersections) {
+            if (result.size() == 0 || !result.getLast().p2.epsilonEquals(s.segment.p, EPSILON)) {
+                result.add(s.segment);
+            } else {
+                Segment3d last = result.getLast();
+                last = new Segment3d(last.p, s.segment.p2);
+                result.removeLast();
+                result.add(last);
+            }
+        }
+
+        return result;
     }
 }
