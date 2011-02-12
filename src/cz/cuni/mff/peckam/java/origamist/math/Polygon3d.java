@@ -40,7 +40,7 @@ public class Polygon3d<T extends Triangle3d>
     protected Hashtable<Segment3d, List<T>> neighbors = new Hashtable<Segment3d, List<T>>();
 
     /**
-     * Create a new triangle consisting of the given triangles.
+     * Create a new polygon consisting of the given triangles.
      * 
      * @param triangles The triangles the polygon consists of. The list can be modified by this function.
      * @throws IllegalStateException If the resulting polygon either wouldn't be connected or one of the triangles
@@ -54,7 +54,7 @@ public class Polygon3d<T extends Triangle3d>
     }
 
     /**
-     * Create a new triangle consisting of the given triangles.
+     * Create a new polygon consisting of the given triangles.
      * 
      * @param triangles The triangles the polygon consists of. The list can be modified by this function.
      * @throws IllegalStateException If the resulting polygon either wouldn't be connected or one of the triangles
@@ -68,7 +68,7 @@ public class Polygon3d<T extends Triangle3d>
     }
 
     /**
-     * Create a new triangle consisting of the given triangles.
+     * Create a new polygon consisting of the given triangles.
      * 
      * @param triangles The triangles the polygon consists of. The set can be modified by this function.
      * @throws IllegalStateException If the resulting polygon either wouldn't be connected or one of the triangles
