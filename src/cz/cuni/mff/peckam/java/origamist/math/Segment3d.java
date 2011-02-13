@@ -56,14 +56,13 @@ public class Segment3d extends Line3d
     }
 
     /**
-     * Return the intersection with another segment. Will be <code>null</code> if no intersection exists and will return
-     * (NaN, NaN, NaN) if the segments are perpendicular.
+     * Return the intersection with another segment.
      * 
-     * TODO should be able to differentiate if two perpendicular vectors have a common part or not
+     * TODO should be able to differentiate if two parallel vectors have a common part or not
      * 
      * @param segment The other segment to find intersection with.
      * @return the intersection with another segment. Will be <code>null</code> if no intersection exists and will
-     *         return (NaN, NaN, NaN) if the segments are perpendicular.
+     *         return (NaN, NaN, NaN) if the segments lie on the same line.
      */
     public Point3d getIntersection(Segment3d segment)
     {
