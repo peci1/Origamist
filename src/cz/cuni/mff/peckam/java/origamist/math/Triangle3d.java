@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.math;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.vecmath.Point3d;
@@ -211,6 +212,33 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * Returns true if the given triangle has a common edge with this triangle.
+     * 
+     * If <code>strict</code> is true, then the edges must match exactly. If it is false, it is sufficient that the
+     * edges overlap.
+     * 
+     * @param t The triangle to try to find common edge with.
+     * @param strict If true, then the edges must match exactly. If it is false, it is sufficient that the edges
+     *            overlap.
+     * @return true if the given triangle has a common edge with this triangle.
+     */
+    public boolean hasCommonEdge(Triangle3d t, boolean strict)
+    {
+        for (Segment3d edge1 : getEdges()) {
+            for (Segment3d edge2 : t.getEdges()) {
+                if (strict) {
+                    if (edge1.epsilonEquals(edge2, true))
+                        return true;
+                } else {
+                    if (edge1.overlaps(edge2))
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Return <code>true</code> if the given point is a vertex of this triangle.
      * 
      * @param point The point to check.
@@ -234,6 +262,46 @@ public class Triangle3d implements Cloneable
         result.y = b.x * p1.y + b.y * p2.y + b.z * p3.y;
         result.z = b.x * p1.z + b.y * p2.z + b.z * p3.z;
         return result;
+    }
+
+    /**
+     * Return the barycentric coordinates of the given point.
+     * 
+     * @param p The point to compute coordinates of.
+     * @return The barycentric coordinates of the given point.
+     * 
+     * @see http://facultyfp.salisbury.edu/despickler/personal/C482/Resources/barycentric.pdf
+     */
+    public Vector3d getBarycentricCoordinates(Point3d p)
+    {
+        Vector3d c_a = new Vector3d(p3);
+        c_a.sub(p1);
+        Vector3d a_c = new Vector3d(p1);
+        a_c.sub(p3);
+        Vector3d c_b = new Vector3d(p3);
+        c_b.sub(p2);
+        Vector3d b_a = new Vector3d(p2);
+        b_a.sub(p1);
+        Vector3d p_a = new Vector3d(p);
+        p_a.sub(p1);
+        Vector3d p_b = new Vector3d(p);
+        p_b.sub(p2);
+        Vector3d p_c = new Vector3d(p);
+        p_c.sub(p3);
+
+        Vector3d n = new Vector3d();
+        Vector3d na = new Vector3d();
+        Vector3d nb = new Vector3d();
+        Vector3d nc = new Vector3d();
+
+        n.cross(b_a, c_a);
+        na.cross(c_b, p_b);
+        nb.cross(a_c, p_c);
+        nc.cross(b_a, p_a);
+
+        double nLengthSq = n.lengthSquared();
+
+        return new Vector3d(n.dot(na) / nLengthSq, n.dot(nb) / nLengthSq, n.dot(nc) / nLengthSq);
     }
 
     /**
@@ -301,6 +369,197 @@ public class Triangle3d implements Cloneable
                 return null;
             }
         }
+    }
+
+    /**
+     * "Cut" this triangle by the given segment and return the triangles that are created by the cut.
+     * 
+     * @param segment The segment to cut with.
+     * @return The newly created triangles.
+     * 
+     * @throws IllegalArgumentException If the segment doesn't define a cut of this triangle or if it doesn't relate to
+     *             this triangle.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends Triangle3d> List<T> subdivideTriangle(IntersectionWithTriangle<T> segment)
+            throws IllegalArgumentException
+    {
+        if (!this.epsilonEquals(segment.triangle)) {
+            throw new IllegalArgumentException(
+                    "Triangle3d#subdivideTriangle(): The given intersection segment doesn't relate to this triangle.");
+        }
+
+        if (!this.sidesContain(segment.p) || !this.sidesContain(segment.p2)) {
+            throw new IllegalArgumentException(
+                    "Triangle3d#subdivideTriangle(): Trying to subdivide a triangle by an invalid cut segment.");
+        }
+
+        List<T> triangles = new LinkedList<T>();
+
+        // a cut along a side doesn't subdivide the triangle
+        if (segment.isWholeSideIntersection()) {
+            triangles.add((T) this);
+            return triangles;
+        }
+
+        // cache the two points of intersection - p1, p2
+        Point3d p1 = segment.getP1();
+        Point3d p2 = segment.getP2();
+
+        // not a case where one of the intersection points is a vertex (but two distinct intersection points exist);
+        // if the line is a segment, neither the start point nor the end point lie inside the triangle
+        if (!p1.epsilonEquals(p2, EPSILON) && !this.isVertex(p1) && !this.isVertex(p2) && this.sidesContain(p1)
+                && this.sidesContain(p2)) {
+
+            /*
+             * _________________________|_p1______________________________________________________________________
+             * __________________v*-----*-------------------*tv1__________________________________________________
+             * ___________________\_____|___________________/_____________________________________________________
+             * ____________________\____|__________________/______________________________________________________
+             * _____________________\___|_________________/_______________________________________________________
+             * ______________________\__|________________/________________________________________________________
+             * _______________________\_|_______________/_________________________________________________________
+             * ________________________\|______________/__________________________________________________________
+             * _________________________*_p2__________/___________________________________________________________
+             * _________________________|\___________/____________________________________________________________
+             * _________________________|_\_________/_____________________________________________________________
+             * _________________________|__\_______/______________________________________________________________
+             * _____________________________\_____/_______________________________________________________________
+             * ______________________________\___/________________________________________________________________
+             * _______________________________\_/_________________________________________________________________
+             * ________________________________*tv2_______________________________________________________________
+             * Please view this ASCII graphics without line-breaking (or break lines at minimum 120 characters)
+             */
+
+            // find the sides of 3D triangle which contain the intersection points p1, p2 - save them into "sides"
+            List<Segment3d> sides = new ArrayList<Segment3d>(2);
+            for (Segment3d edge : this.getEdges()) {
+                if (edge.contains(p1) || edge.contains(p2))
+                    sides.add(edge);
+            }
+
+            // set v to the vertex of 3D triangle which lies alone in the halfplane defined by the triangle's plane
+            // and line p1p2
+            Point3d v = sides.get(0).getIntersection(sides.get(1));
+
+            // tv1 is a vertex of 3D triangle such that p1 lies on the segment tv1v
+            // tv2 is a vertex of 3D triangle such that p2 lies on the segment tv2v
+            List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
+            for (Point3d p : this.getVertices()) {
+                if (!p.epsilonEquals(v, EPSILON))
+                    triangleVertices.add(p);
+            }
+            Point3d tv1 = triangleVertices.get(0);
+            Point3d tv2 = triangleVertices.get(1);
+            if (!new Line3d(v, tv1).contains(p1)) {
+                Point3d tmp = tv2;
+                tv2 = tv1;
+                tv1 = tmp;
+            }
+            // construct the three newly defined triangles
+            Vector3d tNormal = this.getNormal();
+
+            Vector3d normal = new Triangle3d(p1, p2, v).getNormal();
+            if (tNormal.angle(normal) < EPSILON)
+                triangles.add((T) createSubtriangle(p1, p2, v));
+            else
+                triangles.add((T) createSubtriangle(p1, v, p2));
+
+            normal = new Triangle3d(p1, p2, tv1).getNormal();
+            if (tNormal.angle(normal) < EPSILON)
+                triangles.add((T) createSubtriangle(p1, p2, tv1));
+            else
+                triangles.add((T) createSubtriangle(p1, tv1, p2));
+
+            normal = new Triangle3d(p2, tv1, tv2).getNormal();
+            if (tNormal.angle(normal) < EPSILON)
+                triangles.add((T) createSubtriangle(p1, tv1, tv2));
+            else
+                triangles.add((T) createSubtriangle(p1, tv2, tv1));
+
+        } else if (!p1.epsilonEquals(p2, EPSILON) && (this.isVertex(p1) || this.isVertex(p2))) {
+            // one of the intersection points is a vertex; the other inters. point is distinct from that one
+            /*
+             * ________________________________|__________________________________________________________________
+             * ________________tv1*------------*p-----------*tv2__________________________________________________
+             * ___________________\____________|____________/_____________________________________________________
+             * ____________________\___________|___________/______________________________________________________
+             * _____________________\__________|__________/_______________________________________________________
+             * ______________________\_________|_________/________________________________________________________
+             * _______________________\________|________/_________________________________________________________
+             * ________________________\_______|_______/__________________________________________________________
+             * _________________________\______|______/___________________________________________________________
+             * __________________________\_____|_____/____________________________________________________________
+             * ___________________________\____|____/_____________________________________________________________
+             * ____________________________\___|___/______________________________________________________________
+             * _____________________________\__|__/_______________________________________________________________
+             * ______________________________\_|_/________________________________________________________________
+             * _______________________________\|/_________________________________________________________________
+             * ________________________________*v_________________________________________________________________
+             * Please view this ASCII graphics without line-breaking (or break lines at minimum 120 characters)
+             */
+
+            // v is the intersection point which is also a vertex; p is the other intersection point
+            Point3d v, p;
+            if (this.isVertex(p1)) {
+                v = p1;
+                p = p2;
+            } else {
+                v = p2;
+                p = p1;
+            }
+
+            // tv1, tv2 are the other vertices (v is the third one) of the 3D triangle
+            List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
+            for (Point3d vert : this.getVertices()) {
+                if (!vert.epsilonEquals(v, EPSILON))
+                    triangleVertices.add(vert);
+            }
+            Point3d tv1 = triangleVertices.get(0);
+            Point3d tv2 = triangleVertices.get(1);
+
+            Vector3d tNormal = this.getNormal();
+            Vector3d normal = new Triangle3d(v, p, tv1).getNormal();
+            // add two new triangles
+            if (tNormal.angle(normal) < EPSILON)
+                triangles.add((T) createSubtriangle(v, p, tv1));
+            else
+                triangles.add((T) createSubtriangle(v, tv1, p));
+
+            normal = new Triangle3d(v, p, tv2).getNormal();
+            if (tNormal.angle(normal) < EPSILON)
+                triangles.add((T) createSubtriangle(v, p, tv2));
+            else
+                triangles.add((T) createSubtriangle(v, tv2, p));
+        } else if (p1.epsilonEquals(p2, EPSILON) && this.isVertex(p1)) {
+            // the line intersects the triangle in a single vertex, no need to divide the triangle
+            triangles.add((T) this);
+        } else if (p1.epsilonEquals(p2, EPSILON)) {
+            // the fold isn't parallel to the triangle's plane - something's weird
+            throw new IllegalArgumentException(
+                    "Triangle3d#subdivideTriangle(): a cut segment not parallel to the triangle's plane");
+        } else {
+            assert false : "Triangle3d#subdivideTriangle(): unexpected branch taken.";
+        }
+
+        return triangles;
+    }
+
+    /**
+     * Creates a triangle from the given points.
+     * 
+     * The given points should define a triangle that is whole contained in this triangle.
+     * <b>This method should be overriden in all subclasses and must return a triangle castable to this triangle's
+     * type.</b>
+     * 
+     * @param p1 A vertex of the triangle.
+     * @param p2 A vertex of the triangle.
+     * @param p3 A vertex of the triangle.
+     * @return A triangle from the given points.
+     */
+    protected Triangle3d createSubtriangle(Point3d p1, Point3d p2, Point3d p3)
+    {
+        return new Triangle3d(p1, p2, p3);
     }
 
     /**

@@ -124,11 +124,8 @@ public class Line3d implements Cloneable
      */
     public Double getParameterForPoint(Point3d point)
     {
-        if (!contains(point))
-            return null;
-
         Vector3d v = new Vector3d();
-        v.sub(this.p, point);
+        v.sub(point, this.p);
 
         return MathHelper.vectorQuotient3d(v, this.v);
     }
@@ -215,7 +212,10 @@ public class Line3d implements Cloneable
      */
     public boolean epsilonEquals(Line3d other)
     {
-        return p.epsilonEquals(other.p, EPSILON) && v.epsilonEquals(other.v, EPSILON);
+        if (!getClass().equals(other.getClass()))
+            return false;
+        Point3d intersection = getIntersection(other);
+        return intersection != null && Double.isNaN(intersection.x);
     }
 
     @Override

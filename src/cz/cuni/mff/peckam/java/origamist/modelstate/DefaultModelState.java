@@ -3,10 +3,9 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
-import java.awt.geom.Line2D;
-
 import javax.vecmath.Point2d;
 
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -42,27 +41,28 @@ public class DefaultModelState extends ModelState
                 dr.y, ul.x, ul.y)));
         triangles.add(new ModelTriangle(ur.x, ur.y, 0, ul.x, ul.y, 0, dr.x, dr.y, 0, new Triangle2d(ur.x, ur.y, ul.x,
                 ul.y, dr.x, dr.y)));
+        layers.add(new Layer(triangles));
 
         Fold fold = new Fold();
 
-        FoldLine line = fold.new FoldLine();
+        FoldLine line = new FoldLine();
         line.direction = null;
-        line.line = new Line2D.Double(ul.x, ul.y, ur.x, ur.y);
+        line.line = new Segment2d(ul, ur);
         fold.lines.add(line);
 
-        line = fold.new FoldLine();
+        line = new FoldLine();
         line.direction = null;
-        line.line = new Line2D.Double(ur.x, ur.y, dr.x, dr.y);
+        line.line = new Segment2d(ur, dr);
         fold.lines.add(line);
 
-        line = fold.new FoldLine();
+        line = new FoldLine();
         line.direction = null;
-        line.line = new Line2D.Double(dr.x, dr.y, dl.x, dl.y);
+        line.line = new Segment2d(dr, dl);
         fold.lines.add(line);
 
-        line = fold.new FoldLine();
+        line = new FoldLine();
         line.direction = null;
-        line.line = new Line2D.Double(dl.x, dl.y, ul.x, ul.y);
+        line.line = new Segment2d(dl, ul);
         fold.lines.add(line);
 
         fold.originatingStepId = 0;

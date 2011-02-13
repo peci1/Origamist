@@ -3,11 +3,14 @@
  */
 package cz.cuni.mff.peckam.java.origamist.math;
 
+import static java.lang.Math.abs;
+
 import java.util.List;
 
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Quat4d;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 /**
@@ -24,7 +27,7 @@ public class MathHelper
      * 
      * @param v1 The vector to compare.
      * @param v2 The vector to compare.
-     * @return The "quotient" ("v1/v2")
+     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel.
      */
     public static Double vectorQuotient3d(Vector3d v1, Vector3d v2)
     {
@@ -43,6 +46,29 @@ public class MathHelper
             return v1.z / v2.z;
 
         return 1d; // all coordinates are 0, so the quotient may be any nonzero number
+    }
+
+    /**
+     * Checks if v2 is a scalar multiple of v1. If it is, returns the scalar s such that v1 = s*v2.
+     * 
+     * @param v1 The vector to compare.
+     * @param v2 The vector to compare.
+     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel.
+     */
+    public static Double vectorQuotient2d(Vector2d v1, Vector2d v2)
+    {
+        Vector2d v2perp = new Vector2d(-v2.y, v2.x); // a vector perpendicular to v2
+        if (abs(v2perp.dot(v1)) < EPSILON) { // v1 is parallel to v2
+            if (v2.x != 0)
+                return v1.x / v2.x;
+
+            if (v2.y != 0)
+                return v1.y / v2.y;
+
+            return 1d; // all coordinates are 0, so the quotient may be any nonzero number
+        }
+
+        return null;
     }
 
     /**

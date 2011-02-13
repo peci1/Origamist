@@ -69,6 +69,57 @@ public class Line2d implements Cloneable
     }
 
     /**
+     * Constructs a clone of the given line.
+     * 
+     * @param line
+     */
+    public Line2d(Line2d line)
+    {
+        this(new Point2d(line.p), new Vector2d(line.v));
+    }
+
+    /**
+     * Return the intersection with the line.
+     * 
+     * @param line The line to find intersection with.
+     * @return The intersection point; <code>null</code> if no intersection point was found; <code>(NaN, NaN)</code> if
+     *         the lines are equal.
+     * 
+     * @see http://sputsoft.com/blog/2010/03/line-line-intersection.html
+     */
+    public Point2d getIntersection(Line2d line)
+    {
+        double a = line.v.x * v.y - line.v.y * v.x;
+        double b = line.v.x * (line.p.y - p.y) - line.v.y * (line.p.x - p.x);
+
+        if (abs(a) < EPSILON) {
+            if (abs(b) < EPSILON) {
+                return new Point2d(Double.NaN, Double.NaN);
+            } else {
+                return null;
+            }
+        }
+
+        return new Point2d(p.x + b / a * v.x, p.y + b / a * v.y);
+    }
+
+    /**
+     * Returns the parameter <code>t</code> such that <code>this.p + t*this.v == point</code>. If the point doesn't lie
+     * on this line, return <code>null</code>.
+     * 
+     * @param point The point to find parameter for.
+     * @return The parameter <code>t</code> such that <code>this.p + t*this.v == point</code>. If the point doesn't lie
+     *         on this line, return <code>null</code>.
+     */
+    public Double getParameterForPoint(Point2d point)
+    {
+        Vector2d v = new Vector2d();
+        v.sub(this.p, point);
+
+        return MathHelper.vectorQuotient2d(v, this.v);
+    }
+
+    /**
      * Returns true if this line contains the given point.
      * 
      * @param p The point to check.
@@ -103,7 +154,7 @@ public class Line2d implements Cloneable
             return false;
         if (getClass() != obj.getClass())
             return false;
-        HalfPlane2d other = (HalfPlane2d) obj;
+        Line2d other = (Line2d) obj;
         if (Double.doubleToLongBits(a) != Double.doubleToLongBits(other.a))
             return false;
         if (Double.doubleToLongBits(b) != Double.doubleToLongBits(other.b))
@@ -119,11 +170,14 @@ public class Line2d implements Cloneable
      * @param other The halfplane to compare.
      * @return <code>true</code> if the given halfplane is almost equal to this one.
      */
-    public boolean epsilonEquals(HalfPlane2d other)
+    public boolean epsilonEquals(Line2d other)
     {
         if (other == null)
             return false;
-        return abs(a - other.a) < EPSILON && abs(b - other.b) < EPSILON && abs(c - other.c) < EPSILON;
+        if (!getClass().equals(other.getClass()))
+            return false;
+        Point2d intersection = getIntersection(other);
+        return Double.isNaN(intersection.x);
     }
 
     @Override
@@ -135,7 +189,7 @@ public class Line2d implements Cloneable
     @Override
     protected Object clone() throws CloneNotSupportedException
     {
-        return new Line2d(p, v);
+        return new Line2d(this);
     }
 
 }

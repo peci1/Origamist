@@ -12,10 +12,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.media.j3d.GeometryArray;
 import javax.media.j3d.LineArray;
@@ -29,10 +30,15 @@ import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
 
+import cz.cuni.mff.peckam.java.origamist.math.CanonicLine2d;
+import cz.cuni.mff.peckam.java.origamist.math.CanonicLine3d;
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
+import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
-import cz.cuni.mff.peckam.java.origamist.math.Plane3d;
+import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Stripe3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
@@ -59,62 +65,88 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ObservableList<Fold>          folds                = new ObservableList<Fold>();
+    protected ObservableList<Fold>                          folds                 = new ObservableList<Fold>();
 
     /** The list of fold lines converted to 3D. Use getFoldLines3d() to get the list. */
-    protected List<Line3d>                  foldLines3d          = new LinkedList<Line3d>();
+    protected List<Segment3d>                               foldLines3d           = new LinkedList<Segment3d>();
 
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                     foldLineArray        = null;
+    protected LineArray                                     foldLineArray         = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                       foldLineArrayDirty   = true;
+    protected boolean                                       foldLineArrayDirty    = true;
 
     /**
      * The triangles this model state consists of.
      */
-    protected ObservableList<ModelTriangle> triangles            = new ObservableList<ModelTriangle>();
+    protected ObservableList<ModelTriangle>                 triangles             = new ObservableList<ModelTriangle>();
+
+    /** The triangles on the paper. Automatically updated when <code>triangles</code> change. */
+    protected List<Triangle2d>                              triangles2d           = new LinkedList<Triangle2d>();
+
+    /**
+     * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
+     * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
+     * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
+     */
+    protected Hashtable<CanonicLine3d, List<ModelTriangle>> neighbors             = new Hashtable<CanonicLine3d, List<ModelTriangle>>();
+
+    /**
+     * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
+     * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
+     * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
+     */
+    protected Hashtable<CanonicLine2d, List<Triangle2d>>    neighbors2d           = new Hashtable<CanonicLine2d, List<Triangle2d>>();
+
+    /** The layers of the paper. */
+    protected List<Layer>                                   layers                = new LinkedList<Layer>();
+
+    /**
+     * A cache for quick finding of a 3D triangle corresponding to the given 2D triangle. Automatically updated when
+     * <code>triangles</code> change.
+     */
+    protected Hashtable<Triangle2d, ModelTriangle>          paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                 trianglesArray       = null;
+    protected TriangleArray                                 trianglesArray        = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                       trianglesArrayDirty  = true;
+    protected boolean                                       trianglesArrayDirty   = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                        rotationAngle        = 0;
+    protected double                                        rotationAngle         = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                        viewingAngle         = Math.PI / 2.0;
+    protected double                                        viewingAngle          = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
      */
-    protected Step                          step;
+    protected Step                                          step;
 
     /**
      * The origami model which is this the state of.
      */
-    protected Origami                       origami;
+    protected Origami                                       origami;
 
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                           stepBlendingTreshold = 5;
+    protected int                                           stepBlendingTreshold  = 5;
 
     public ModelState()
     {
@@ -141,6 +173,39 @@ public class ModelState implements Cloneable
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
                 ModelState.this.trianglesArrayDirty = true;
+                if (change.getChangeType() != ChangeTypes.ADD) {
+                    ModelTriangle t = change.getOldItem();
+                    paperToSpaceTriangles.remove(t.originalPosition);
+                    triangles2d.remove(t.originalPosition);
+                    for (Segment3d edge : t.getEdges()) {
+                        CanonicLine3d line = new CanonicLine3d(edge);
+                        neighbors.get(line).remove(t);
+                        if (neighbors.get(line).size() == 0)
+                            neighbors.remove(line);
+                    }
+                    for (Segment2d edge : t.originalPosition.getEdges()) {
+                        CanonicLine2d line = new CanonicLine2d(edge);
+                        neighbors2d.get(line).remove(t.originalPosition);
+                        if (neighbors2d.get(line).size() == 0)
+                            neighbors2d.remove(line);
+                    }
+                } else if (change.getChangeType() != ChangeTypes.REMOVE) {
+                    ModelTriangle t = change.getItem();
+                    paperToSpaceTriangles.put(t.originalPosition, t);
+                    triangles2d.add(t.originalPosition);
+                    for (Segment3d edge : t.getEdges()) {
+                        CanonicLine3d line = new CanonicLine3d(edge);
+                        if (neighbors.get(line) == null)
+                            neighbors.put(line, new LinkedList<ModelTriangle>());
+                        neighbors.get(line).add(t);
+                    }
+                    for (Segment2d edge : t.originalPosition.getEdges()) {
+                        CanonicLine2d line = new CanonicLine2d(edge);
+                        if (neighbors2d.get(line) == null)
+                            neighbors2d.put(line, new LinkedList<Triangle2d>());
+                        neighbors2d.get(line).add(t.originalPosition);
+                    }
+                }
             }
         });
     }
@@ -197,7 +262,7 @@ public class ModelState implements Cloneable
     /**
      * @return The list of all fold lines converted to 3D.
      */
-    protected List<Line3d> getFoldLines3d()
+    protected List<Segment3d> getFoldLines3d()
     {
         if (foldLineArrayDirty)
             updateLineArray();
@@ -223,17 +288,17 @@ public class ModelState implements Cloneable
         int i = 0;
         for (Fold fold : folds) {
             for (FoldLine line : fold.lines) {
-                Point2d startPoint = new Point2d(line.line.getX1(), line.line.getY1());
+                Point2d startPoint = line.line.getP1();
                 Point3d startPoint2 = locatePointFromPaperTo3D(startPoint);
                 startPoint2.scale(ratio);
                 foldLineArray.setCoordinate(2 * i, startPoint2);
 
-                Point2d endPoint = new Point2d(line.line.getX2(), line.line.getY2());
+                Point2d endPoint = line.line.getP2();
                 Point3d endPoint2 = locatePointFromPaperTo3D(endPoint);
                 endPoint2.scale(ratio);
                 foldLineArray.setCoordinate(2 * i + 1, endPoint2);
 
-                foldLines3d.add(new Line3d(startPoint2, endPoint2));
+                foldLines3d.add(new Segment3d(startPoint2, endPoint2));
 
                 // TODO implement some more line thickness and style possibilities
                 byte alpha = (byte) 255;
@@ -329,36 +394,35 @@ public class ModelState implements Cloneable
             double angle)
     {
         // TODO implement some way of defining which part of the paper will stay on its place and which will move
-        List<List<IntersectionWithTriangle>> layers = getLayers(startPoint, endPoint);
+        Point3d start = locatePointFromPaperTo3D(startPoint);
+        Point3d end = locatePointFromPaperTo3D(endPoint);
+        Segment3d segment = new Segment3d(start, end);
+
+        List<Layer> layers = getLayers(segment);
+
         int i = 1;
-        for (List<IntersectionWithTriangle> layer : layers) {
+        for (Layer layer : layers) {
             if (!affectedLayers.contains(i++))
                 continue;
             // TODO handle direction in some appropriate way
-            makeFoldInLayer(layer, direction, startPoint, endPoint);
+            makeFoldInLayer(layer, direction, segment);
         }
 
-        bendPaper(direction, startPoint, endPoint, affectedLayers, angle);
+        bendPaper(direction, segment, affectedLayers, angle);
     }
 
     /**
      * Bends the paper. Requires that the fold line goes only along triangle edges, not through the interiors of them.
      * 
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
-     * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
-     * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
+     * @param segment The segment to bend around.
      * @param affectedLayers The layers the fold will be performed on.
      * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
      *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
      *            paper will be moved.
      */
-    protected void bendPaper(Direction direction, Point2d startPoint, Point2d endPoint, List<Integer> affectedLayers,
-            double angle)
+    protected void bendPaper(Direction direction, Segment3d segment, List<Integer> affectedLayers, double angle)
     {
-        Point3d start3d = locatePointFromPaperTo3D(startPoint);
-        Point3d end3d = locatePointFromPaperTo3D(endPoint);
-        Segment3d segment = new Segment3d(start3d, end3d);
-
         double angle1 = angle;
         if (abs(angle1) < EPSILON)
             return;
@@ -382,37 +446,49 @@ public class ModelState implements Cloneable
         }
 
         HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
-        List<List<IntersectionWithTriangle>> layers = getLayers(startPoint, endPoint);
-        List<ModelTriangle> trianglesToRotate = new LinkedList<ModelTriangle>();
+        List<Layer> layers = getLayers(segment);
         int i = 1;
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
-        for (List<IntersectionWithTriangle> layer : layers) {
+        for (Layer layer : layers) {
             if (!affectedLayers.contains(i++))
                 continue;
-            for (IntersectionWithTriangle intWT : layer) {
-                ModelTriangle t = intWT.getTriangle();
-                if (!halfspace.contains(t.getP1()) || !halfspace.contains(t.getP2()) || !halfspace.contains(t.getP3()))
-                    continue;
-                queue.add(t);
+
+            Vector3d dir = new Vector3d();
+            dir.cross(segment.getVector(), layer.getNormal());
+            Point3d dirPoint = new Point3d(dir);
+
+            Segment3d seg = segment;
+            if (!halfspace.contains(dirPoint))
+                seg = new Segment3d(segment.getP2(), segment.getP1());
+
+            List<Polygon3d<ModelTriangle>> part1 = new LinkedList<Polygon3d<ModelTriangle>>();
+            List<Polygon3d<ModelTriangle>> part2 = new LinkedList<Polygon3d<ModelTriangle>>();
+            layer.splitPolygon(seg, part1, part2);
+
+            this.layers.remove(layer);
+            for (Polygon3d<ModelTriangle> l : part1)
+                this.layers.add(new Layer(l));
+            for (Polygon3d<ModelTriangle> l : part2)
+                this.layers.add(new Layer(l));
+
+            for (Polygon3d<ModelTriangle> l : part1) {
+                queue.addAll(l.getTriangles());
             }
         }
 
+        Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
         ModelTriangle t;
         while ((t = queue.poll()) != null) {
-            if (!trianglesToRotate.contains(t))
-                trianglesToRotate.add(t);
-            Vector3d tNormal = t.getNormal();
-            List<ModelTriangle> neighbours = findNeighbours(t);
-            for (ModelTriangle n : neighbours) {
+            trianglesToRotate.add(t);
+            List<ModelTriangle> neighbors = findNeighbors(t);
+            for (ModelTriangle n : neighbors) {
                 if (trianglesToRotate.contains(n))
                     continue;
 
                 if (!halfspace.contains(n.getP1()) || !halfspace.contains(n.getP2()) || !halfspace.contains(n.getP3()))
                     continue;
-                double a = tNormal.angle(n.getNormal());
-                if (a < EPSILON) {
-                    queue.add(n);
-                }
+
+                queue.add(n);
             }
         }
 
@@ -426,33 +502,21 @@ public class ModelState implements Cloneable
     /**
      * Returns a list of triangles having a common point with the given triangle.
      * 
-     * TODO probably will need some clever algorithm for speeding up.
-     * 
-     * @param t The triangle to find neighbours to.
-     * @return The list of neighbours of t.
+     * @param t The triangle to find neighbors to.
+     * @return The list of neighbors of t.
      */
-    protected List<ModelTriangle> findNeighbours(ModelTriangle triangle)
+    protected List<ModelTriangle> findNeighbors(ModelTriangle triangle)
     {
         List<ModelTriangle> result = new LinkedList<ModelTriangle>();
-        List<Segment3d> triangleSides = new LinkedList<Segment3d>();
-        triangleSides.add(triangle.getS1());
-        triangleSides.add(triangle.getS2());
-        triangleSides.add(triangle.getS3());
 
-        // TODO ineffective
-        for (ModelTriangle t : triangles) {
-            List<Segment3d> tSides = new LinkedList<Segment3d>();
-            tSides.add(t.getS1());
-            tSides.add(t.getS2());
-            tSides.add(t.getS3());
+        for (Segment3d edge : triangle.getEdges()) {
+            Line3d line = new CanonicLine3d(edge);
+            for (ModelTriangle t : neighbors.get(line)) {
+                if (t.hasCommonEdge(triangle, false)
+                // don't forget to check if the triangles are neighbors on the paper
+                        && t.originalPosition.hasCommonEdge(triangle.originalPosition, false)) {
 
-            out: for (Segment3d triangleSide : triangleSides) {
-                for (Segment3d tSide : tSides) {
-                    Point3d i = triangleSide.getIntersection(tSide);
-                    if (i != null && Double.isNaN(i.x) && Double.isNaN(i.y) && Double.isNaN(i.z)) {
-                        result.add(t);
-                        break out;
-                    }
+                    result.add(t);
                 }
             }
         }
@@ -461,7 +525,29 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Returns a sorted list of layers defined by the given line.
+     * Returns a list of triangles having a common point with the given triangle.
+     * 
+     * @param t The triangle to find neighbors to.
+     * @return The list of neighbors of t.
+     */
+    protected List<Triangle2d> findNeighbors(Triangle2d triangle)
+    {
+        List<Triangle2d> result = new LinkedList<Triangle2d>();
+
+        for (Segment2d edge : triangle.getEdges()) {
+            Line2d line = new CanonicLine2d(edge);
+            for (Triangle2d t : neighbors2d.get(line)) {
+                if (t.hasCommonEdge(triangle, false)) {
+                    result.add(t);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns a sorted list of layers defined by the given segment.
      * 
      * A layer is a part of the paper surrounded by either fold lines or paper boundaries.
      * This function returns the layers that intersect with a stripe defined by the two given points and and that is
@@ -469,44 +555,33 @@ public class ModelState implements Cloneable
      * The list is sorted in the order the layers intersect with the stripe. The very first layer is the one that is the
      * closest to the viewer.
      * 
-     * @param startPoint Starting point of the line.
-     * @param endPoint Ending point of the line.
+     * @param segment The segment we search layers for.
      * @return A list of layers defined by the given line.
      */
-    protected List<List<IntersectionWithTriangle>> getLayers(Point2d startPoint, Point2d endPoint)
+    protected List<Layer> getLayers(Segment3d segment)
     {
-        List<List<IntersectionWithTriangle>> result = new ArrayList<List<IntersectionWithTriangle>>();
+        List<Layer> result = new ArrayList<Layer>();
 
         // finds the top layer
-        Point3d p1 = locatePointFromPaperTo3D(startPoint);
-        Point3d p2 = locatePointFromPaperTo3D(endPoint);
+        Point3d center = new Point3d(segment.getP1());
+        center.add(segment.getP2());
+        center.scale(0.5d);
 
-        Point3d center = new Point3d(p1);
-        center.add(p2);
-        center.scale(0.5);
-
-        List<ModelTriangle> firstLayer = getLayerForPoint(center);
+        Layer firstLayer = getLayerForPoint(center);
+        if (firstLayer == null)
+            return result;
 
         // find another layers: is done by creating a stripe perpendicular to the first layer and finding intersections
         // of the stripe with triangles
 
-        Vector3d stripeDirection = firstLayer.get(0).getNormal();
-        Line3d p1line = new Line3d(p1, stripeDirection);
-        Line3d p2line = new Line3d(p2, stripeDirection);
+        Vector3d stripeDirection = firstLayer.getNormal();
+        Line3d p1line = new Line3d(segment.getP1(), stripeDirection);
+        Line3d p2line = new Line3d(segment.getP2(), stripeDirection);
 
         Stripe3d stripe = new Stripe3d(p1line, p2line);
 
-        HashSet<ModelTriangle> visited = new HashSet<ModelTriangle>();
-        for (ModelTriangle t : triangles) {
-            if (visited.contains(t))
-                continue;
-            visited.add(t);
-
-            List<ModelTriangle> layer = getLayerForPoint(t.getP1());
-            visited.addAll(layer);
-
-            Plane3d layerPlane = new Plane3d(t.getP1(), t.getP2(), t.getP3());
-            Line3d stripePlaneAndLayerPlaneInt = stripe.getPlane().getIntersection(layerPlane);
+        for (Layer l : layers) {
+            Line3d stripePlaneAndLayerPlaneInt = stripe.getPlane().getIntersection(l.getPlane());
             if (stripePlaneAndLayerPlaneInt == null)
                 continue; // the stripe and the layer are parallel
 
@@ -514,17 +589,15 @@ public class ModelState implements Cloneable
             Point3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndLayerPlaneInt);
 
             Segment3d intersectionSegment = new Segment3d(segmentPoint1, segmentPoint2);
-            // TODO ineffective, better would be to be able to provide just a layer that has to be checked for
-            // intersections, not all triangles
-            List<IntersectionWithTriangle> layerInts = getIntersectionsWithTriangles(intersectionSegment);
+            List<Segment3d> layerInts = l.getIntersections(intersectionSegment);
             if (layerInts.size() > 0)
-                result.add(layerInts);
+                result.add(l);
         }
 
         // sort the layers so that the first one will be the one nearest to the viewer
         // assuming that layers don't intersect, one can compare the order of layers by comparing the order of any two
         // triangles from the layers
-        Collections.sort(result, new Comparator<List<IntersectionWithTriangle>>() {
+        Collections.sort(result, new Comparator<Layer>() {
 
             /** The axis from the user's display to the center point. */
             private Line3d axis = null;
@@ -559,17 +632,14 @@ public class ModelState implements Cloneable
             }
 
             @Override
-            public int compare(List<IntersectionWithTriangle> o1, List<IntersectionWithTriangle> o2)
+            public int compare(Layer o1, Layer o2)
             {
-                if (o1.size() == 0 || o2.size() == 0)
-                    return 0;
+                Point3d int1 = o1.getPlane().getIntersection(axis);
+                Point3d int2 = o2.getPlane().getIntersection(axis);
 
-                Point3d int1 = o1.get(0).getTriangle().getPlane().getIntersection(axis);
-                Point3d int2 = o2.get(0).getTriangle().getPlane().getIntersection(axis);
-
-                double t1 = (int1.x - axis.getPoint().x) / axis.getVector().x;
-                double t2 = (int2.x - axis.getPoint().x) / axis.getVector().x;
-                return (t1 > t2) ? 1 : (t1 == t2 ? 0 : -1);
+                double t1 = axis.getParameterForPoint(int1);
+                double t2 = axis.getParameterForPoint(int2);
+                return (t1 - t2 > EPSILON) ? 1 : (t1 - t2 < -EPSILON ? -1 : 0);
             }
         });
 
@@ -582,75 +652,14 @@ public class ModelState implements Cloneable
      * @param point The point to find layer for.
      * @return The layer that contains the given point.
      */
-    protected List<ModelTriangle> getLayerForPoint(Point3d point)
+    protected Layer getLayerForPoint(Point3d point)
     {
-        List<ModelTriangle> result = new LinkedList<ModelTriangle>();
-
-        ModelTriangle containingTriangle = null;
-        // TODO ineffective
-        for (ModelTriangle t : triangles) {
-            if (t.contains(point)) {
-                containingTriangle = t;
-                break;
-            }
+        for (Layer l : layers) {
+            if (l.contains(point))
+                return l;
         }
-
-        if (containingTriangle == null) {
-            Logger.getLogger(getClass()).warn("getLayerForPoint: cannot find containing triangle for point " + point);
-            return result;
-        }
-
-        Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
-        queue.add(containingTriangle);
-
-        // this hash set is used as a cache for quick determining if the triangle should be added to the queue or not
-        HashSet<ModelTriangle> notToAdd = new HashSet<ModelTriangle>();
-        notToAdd.add(containingTriangle);
-
-        ModelTriangle t;
-        while ((t = queue.poll()) != null) {
-            result.add(t);
-            notToAdd.add(t);
-
-            List<ModelTriangle> neighbours = findNeighbours(t);
-            Iterator<ModelTriangle> it = neighbours.iterator();
-
-            while (it.hasNext()) {
-                ModelTriangle n = it.next();
-
-                if (notToAdd.contains(n)) {
-                    it.remove();
-                    continue;
-                }
-
-                // if the triangles have different normals, the neighbour doesn't lie in the same layer
-                if (!t.getNormal().epsilonEquals(n.getNormal(), EPSILON))
-                    it.remove();
-            }
-
-            queue.addAll(neighbours);
-        }
-
-        return result;
-    }
-
-    /**
-     * Return the list of intersections of the given line or segment with all triangles.
-     * 
-     * @param segment The segment or line to find intersections for.
-     * @return The list of intersections of the given line or segment with all triangles.
-     */
-    protected List<IntersectionWithTriangle> getIntersectionsWithTriangles(Line3d segment)
-    {
-        LinkedList<IntersectionWithTriangle> result = new LinkedList<IntersectionWithTriangle>();
-        // TODO possibly ineffective
-        for (ModelTriangle t : triangles) {
-            Segment3d intersection = t.getIntersection(segment);
-            if (intersection != null) {
-                result.add(new IntersectionWithTriangle(t, intersection));
-            }
-        }
-        return result;
+        Logger.getLogger(getClass()).warn("getLayerForPoint: cannot find layer for point " + point);
+        return null;
     }
 
     /**
@@ -661,232 +670,50 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the line.
      * @param endPoint Ending point of the line.
      */
-    protected void makeFoldInLayer(List<IntersectionWithTriangle> layer, Direction direction, Point2d startPoint,
-            Point2d endPoint)
+    protected void makeFoldInLayer(Layer layer, Direction direction, Segment3d segment)
     {
-        for (IntersectionWithTriangle intersection : layer) {
+        List<IntersectionWithTriangle<ModelTriangle>> intersections = layer.getIntersectionsWithTriangles(segment);
+
+        for (IntersectionWithTriangle<ModelTriangle> intersection : intersections) {
             if (intersection == null) {
                 // no intersection with the triangle - something's weird (we loop over intersections with triangles)
                 throw new IllegalStateException(
                         "Invalid diagram: no intersection found in IntersectionWithTriangle in step " + step.getId());
             }
 
-            if (intersection.isWholeSideIntersection())
-                continue; // TODO maybe change the type of the fold or something
-
-            // cache the two points of intersection - p1, p2
-            Point3d p1 = intersection.getP1();
-            Point3d p2 = intersection.getP2();
-            // cache the triangle
-            ModelTriangle t = intersection.getTriangle();
-
-            // not a case where one of the intersection points is a vertex (but two distinct intersection points exist);
-            // if the line is a segment, neither the start point nor the end point lie inside the triangle
-            if (!p1.epsilonEquals(p2, EPSILON) && !t.isVertex(p1) && !t.isVertex(p2) && t.sidesContain(p1)
-                    && t.sidesContain(p2)) {
-
-                /*
-                 * _________________________|_p1______________________________________________________________________
-                 * __________________v*-----*-------------------*tv1__________________________________________________
-                 * ___________________\_____|___________________/_____________________________________________________
-                 * ____________________\____|__________________/______________________________________________________
-                 * _____________________\___|_________________/_______________________________________________________
-                 * ______________________\__|________________/________________________________________________________
-                 * _______________________\_|_______________/_________________________________________________________
-                 * ________________________\|______________/__________________________________________________________
-                 * _________________________*_p2__________/___________________________________________________________
-                 * _________________________|\___________/____________________________________________________________
-                 * _________________________|_\_________/_____________________________________________________________
-                 * _________________________|__\_______/______________________________________________________________
-                 * _____________________________\_____/_______________________________________________________________
-                 * ______________________________\___/________________________________________________________________
-                 * _______________________________\_/_________________________________________________________________
-                 * ________________________________*tv2_______________________________________________________________
-                 * Please view this ASCII graphics without line-breaking (or break lines at minimum 120 characters)
-                 */
-
-                // find the sides of 3D triangle which contain the intersection points p1, p2 - save them into "sides"
-                List<Segment3d> sides = new ArrayList<Segment3d>(2);
-                for (Segment3d edge : t.getEdges()) {
-                    if (edge.contains(p1) || edge.contains(p2))
-                        sides.add(edge);
-                }
-
-                // set v to the vertex of 3D triangle which lies alone in the halfplane defined by the triangle's plane
-                // and line p1p2
-                Point3d v = sides.get(0).getIntersection(sides.get(1));
-
-                // tv1 is a vertex of 3D triangle such that p1 lies on the segment tv1v
-                // tv2 is a vertex of 3D triangle such that p2 lies on the segment tv2v
-                List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
-                for (Point3d p : t.getVertices()) {
-                    if (!p.epsilonEquals(v, EPSILON))
-                        triangleVertices.add(p);
-                }
-                Point3d tv1 = triangleVertices.get(0);
-                Point3d tv2 = triangleVertices.get(1);
-                if (!new Line3d(v, tv1).contains(p1)) {
-                    Point3d tmp = tv2;
-                    tv2 = tv1;
-                    tv1 = tmp;
-                }
-
-                // find the vertices of 2D triangle corresponding to the found 3D triangle vertices v, tv1, tv2; prefix
-                // them with 'p'
-                Point2d pv1, pv2, pv3;
-                pv1 = t.getOriginalPosition().getP1();
-                pv2 = t.getOriginalPosition().getP2();
-                pv3 = t.getOriginalPosition().getP3();
-
-                Point3d sp1, sp2/* , sp3 */;
-                sp1 = locatePointFromPaperTo3D(pv1);
-                sp2 = locatePointFromPaperTo3D(pv2);
-                // sp3 = locatePointFromPaperTo3D(pv3);
-
-                Point2d pv;
-                Point2d ptv1;
-                Point2d ptv2;
-
-                pv = (sp1.epsilonEquals(v, EPSILON) ? pv1 : (sp2.epsilonEquals(v, EPSILON) ? pv2 : pv3));
-                ptv1 = (sp1.epsilonEquals(tv1, EPSILON) ? pv1 : (sp2.epsilonEquals(tv1, EPSILON) ? pv2 : pv3));
-                ptv2 = (sp1.epsilonEquals(tv2, EPSILON) ? pv1 : (sp2.epsilonEquals(tv2, EPSILON) ? pv2 : pv3));
-
-                // find points pp1, pp2 in the 2D triangle which correspond to p1, p2
-                double v_tv1 = v.distance(tv1);
-                double v_tv2 = v.distance(tv2);
-                double v_p1 = v.distance(p1);
-                double v_p2 = v.distance(p2);
-
-                Point2d pp1 = new Point2d(pv.x + (v_p1 / v_tv1) * (tv1.x - pv.x), pv.y + (v_p1 / v_tv1)
-                        * (tv1.y - pv.y));
-                Point2d pp2 = new Point2d(pv.x + (v_p2 / v_tv2) * (tv2.x - pv.x), pv.y + (v_p2 / v_tv2)
-                        * (tv2.y - pv.y));
-
-                // construct the three newly defined triangles
-                Vector3d tNormal = t.getNormal();
-
-                Vector3d normal = new Triangle3d(p1, p2, v).getNormal();
-                if (tNormal.angle(normal) < EPSILON)
-                    triangles.add(new ModelTriangle(p1, p2, v, new Triangle2d(pp1, pp2, pv)));
-                else
-                    triangles.add(new ModelTriangle(p1, v, p2, new Triangle2d(pp1, pv, pp2)));
-
-                normal = new Triangle3d(p1, p2, tv1).getNormal();
-                if (tNormal.angle(normal) < EPSILON)
-                    triangles.add(new ModelTriangle(p1, p2, tv1, new Triangle2d(pp1, pp2, ptv1)));
-                else
-                    triangles.add(new ModelTriangle(p1, tv1, p2, new Triangle2d(pp1, ptv1, pp2)));
-
-                normal = new Triangle3d(p2, tv1, tv2).getNormal();
-                if (tNormal.angle(normal) < EPSILON)
-                    triangles.add(new ModelTriangle(p2, tv1, tv2, new Triangle2d(pp2, ptv1, ptv2)));
-                else
-                    triangles.add(new ModelTriangle(p2, tv2, tv1, new Triangle2d(pp2, ptv2, ptv1)));
-
-            } else if (!p1.epsilonEquals(p2, EPSILON) && (t.isVertex(p1) || t.isVertex(p2))) {
-                // one of the intersection points is a vertex; the other inters. point is distinct from that one
-                /*
-                 * ________________________________|__________________________________________________________________
-                 * ________________tv1*------------*p-----------*tv2__________________________________________________
-                 * ___________________\____________|____________/_____________________________________________________
-                 * ____________________\___________|___________/______________________________________________________
-                 * _____________________\__________|__________/_______________________________________________________
-                 * ______________________\_________|_________/________________________________________________________
-                 * _______________________\________|________/_________________________________________________________
-                 * ________________________\_______|_______/__________________________________________________________
-                 * _________________________\______|______/___________________________________________________________
-                 * __________________________\_____|_____/____________________________________________________________
-                 * ___________________________\____|____/_____________________________________________________________
-                 * ____________________________\___|___/______________________________________________________________
-                 * _____________________________\__|__/_______________________________________________________________
-                 * ______________________________\_|_/________________________________________________________________
-                 * _______________________________\|/_________________________________________________________________
-                 * ________________________________*v_________________________________________________________________
-                 * Please view this ASCII graphics without line-breaking (or break lines at minimum 120 characters)
-                 */
-
-                // v is the intersection point which is also a vertex; p is the other intersection point
-                Point3d v, p;
-                if (t.isVertex(p1)) {
-                    v = p1;
-                    p = p2;
-                } else {
-                    v = p2;
-                    p = p1;
-                }
-
-                if (!t.sidesContain(p)) {
-                    // a segment beginning or ending inside the triangle
-                    throw new IllegalStateException(
-                            "Invalid diagram: a fold beginning or ending in the interior of a triangle in step "
-                                    + step.getId());
-                }
-
-                // tv1, tv2 are the other vertices (v is the third one) of the 3D triangle
-                List<Point3d> triangleVertices = new ArrayList<Point3d>(2);
-                for (Point3d vert : t.getVertices()) {
-                    if (!vert.epsilonEquals(v, EPSILON))
-                        triangleVertices.add(vert);
-                }
-                Point3d tv1 = triangleVertices.get(0);
-                Point3d tv2 = triangleVertices.get(1);
-
-                // find the vertices of 2D triangle corresponding to the found 3D triangle vertices v, tv1, tv2; prefix
-                // them with 'p'
-                Point2d pv1, pv2, pv3;
-                pv1 = t.getOriginalPosition().getP1();
-                pv2 = t.getOriginalPosition().getP2();
-                pv3 = t.getOriginalPosition().getP3();
-
-                Point3d sp1, sp2/* , sp3 */;
-                sp1 = locatePointFromPaperTo3D(pv1);
-                sp2 = locatePointFromPaperTo3D(pv2);
-                // sp3 = locatePointFromPaperTo3D(pv3);
-
-                Point2d pv;
-                Point2d ptv1;
-                Point2d ptv2;
-
-                pv = (sp1.epsilonEquals(v, EPSILON) ? pv1 : (sp2.epsilonEquals(v, EPSILON) ? pv2 : pv3));
-                ptv1 = (sp1.epsilonEquals(tv1, EPSILON) ? pv1 : (sp2.epsilonEquals(tv1, EPSILON) ? pv2 : pv3));
-                ptv2 = (sp1.epsilonEquals(tv2, EPSILON) ? pv1 : (sp2.epsilonEquals(tv2, EPSILON) ? pv2 : pv3));
-
-                // locate position corresponding to the 3D point p
-                double tv1_p = tv1.distance(p);
-                double tv1_tv2 = tv1.distance(tv2);
-
-                Point2d pp = new Point2d(ptv1.x + (tv1_p / tv1_tv2) * (ptv2.x - ptv1.x), ptv1.y + (tv1_p / tv1_tv2)
-                        * (ptv2.y - ptv1.y));
-
-                Vector3d tNormal = t.getNormal();
-                Vector3d normal = new Triangle3d(v, p, tv1).getNormal();
-                // add two new triangles
-                if (tNormal.angle(normal) < EPSILON)
-                    triangles.add(new ModelTriangle(v, p, tv1, new Triangle2d(pv, pp, ptv1)));
-                else
-                    triangles.add(new ModelTriangle(v, tv1, p, new Triangle2d(pv, ptv1, pp)));
-
-                normal = new Triangle3d(v, p, tv2).getNormal();
-                if (tNormal.angle(normal) < EPSILON)
-                    triangles.add(new ModelTriangle(v, p, tv2, new Triangle2d(pv, pp, ptv2)));
-                else
-                    triangles.add(new ModelTriangle(v, tv2, p, new Triangle2d(pv, ptv2, pp)));
-            } else if (p1.epsilonEquals(p2, EPSILON) && t.isVertex(p1)) {
-                continue; // the line intersects the triangle in a single vertex, no need to divide the triangle
-            } else if (!p1.epsilonEquals(p2, EPSILON)) {
-                // the intersection is a segment either starting or ending inside the triangle
-                throw new IllegalStateException(
-                        "Invalid diagram: a fold beginning or ending in the interior of a triangle in step "
-                                + step.getId());
-            } else if (p1.epsilonEquals(p2, EPSILON)) {
-                // the fold isn't parallel to the triangle's plane - something's weird
-                throw new IllegalStateException(
-                        "Invalid diagram: a fold not parallel to a layer's triangle's plane in step " + step.getId());
+            List<ModelTriangle> newTriangles = layer.subdivideTriangle(intersection);
+            if (newTriangles.size() > 1) {
+                triangles.remove(intersection.triangle);
+                triangles.addAll(newTriangles);
             }
-
-            // remove the old triangle
-            triangles.remove(t);
         }
+
+        List<Segment3d> foldLines = layer.joinNeighboringSegments(intersections);
+        List<Segment2d> foldLines2d = new LinkedList<Segment2d>();
+        ModelTriangle triangle = layer.getTriangles().iterator().next();
+        for (Segment3d fold : foldLines) {
+            foldLines3d.add(fold);
+
+            // barycentric coordinates can handle even points outside the triangle, so it doesn't matter which triangle
+            // we choose - but it is important that all the triangles lie in one plane
+            Vector3d bp1 = triangle.getBarycentricCoordinates(fold.getP1());
+            Vector3d bp2 = triangle.getBarycentricCoordinates(fold.getP2());
+
+            Point2d p1 = triangle.getOriginalPosition().interpolatePointFromBarycentric(bp1);
+            Point2d p2 = triangle.getOriginalPosition().interpolatePointFromBarycentric(bp2);
+
+            foldLines2d.add(new Segment2d(p1, p2));
+        }
+
+        Fold fold = new Fold();
+        fold.originatingStepId = this.step.getId();
+        for (Segment2d line : foldLines2d) {
+            FoldLine fLine = new FoldLine();
+            fLine.direction = direction;
+            fLine.line = line;
+            fold.lines.add(fLine);
+        }
+        folds.add(fold);
     }
 
     /**
@@ -989,45 +816,9 @@ public class ModelState implements Cloneable
             result.triangles.add((ModelTriangle) t.clone());
         result.trianglesArrayDirty = true;
 
+        for (Layer l : layers)
+            result.layers.add(l);
+
         return result;
-    }
-
-    /**
-     * This represents an intersection of a line or segment with a triangle.
-     * 
-     * @author Martin Pecka
-     */
-    protected class IntersectionWithTriangle extends Segment3d
-    {
-        /** The triangle the intersection occurs on. */
-        public ModelTriangle triangle;
-
-        public IntersectionWithTriangle(ModelTriangle triangle, Segment3d segment)
-        {
-            super(segment.getP1(), segment.getP2());
-            this.triangle = triangle;
-        }
-
-        public ModelTriangle getTriangle()
-        {
-            return triangle;
-        }
-
-        /**
-         * @return <code>true</code> if the intersection segment coincides with an edge of the triangle (even partly
-         *         coincides if the segment is shorter than the side).
-         */
-        public boolean isWholeSideIntersection()
-        {
-            if (v.epsilonEquals(new Vector3d(), EPSILON))
-                // a single point of intersection
-                return false;
-
-            for (Segment3d edge : triangle.getEdges()) {
-                if (this.isParallelTo(edge) && edge.contains(p))
-                    return true;
-            }
-            return false;
-        }
     }
 }

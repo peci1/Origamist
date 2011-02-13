@@ -108,3 +108,18 @@ As an "extra value" you lose all AWT events generated on the JCanvas3D, because 
 seems to consume all the events even if it does no action in response to them. So
 if you want a listener to be called on a containing component and its 
 subcomponents, you also need to add these listeners to the JCanvas3D.
+
+------------
+
+If you want to have a hashtable of lines (Line3d or so), you must convert all the
+lines to a canonical form. If you don't, equal lines with inverted direction 
+vectors will be considered non-equal by the hashtable and so on. This is one
+possible solution, and there is probably another one - writing an own hashtable,
+which would compare the elements using epsilonEquals() and these functions would
+compare the lines logically. But what would be the hashCode() of such lines?
+I think I know - it would be the hashcode of the canonical line. 
+
+But none of these two solutions solves the problem of lines differing by less than 
+EPSILON. To solve this, one would think of some quantization of the space to 
+2*EPSILON large pieces. But the "relation" defined on this space wouldn't be a
+real relation, transitivity would be broken. So what to do with this???   

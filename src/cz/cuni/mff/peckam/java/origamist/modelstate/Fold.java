@@ -3,8 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
-import java.awt.geom.Line2D;
-
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
@@ -22,7 +21,7 @@ public class Fold implements Cloneable
     /**
      * Id of the step this fold originated in.
      */
-    protected Integer                       originatingStepId = null;
+    protected Integer                  originatingStepId = null;
 
     /**
      * @return the lines this fold consists of
@@ -48,7 +47,7 @@ public class Fold implements Cloneable
         result.lines = new ObservableList<FoldLine>();
         for (FoldLine l : lines) {
             FoldLine line = new FoldLine();
-            line.line = (Line2D) l.line.clone();
+            line.line = (Segment2d) l.line.clone();
             line.direction = l.direction;
             result.lines.add(line);
         }
@@ -61,12 +60,12 @@ public class Fold implements Cloneable
      * 
      * @author Martin Pecka
      */
-    protected class FoldLine
+    static class FoldLine
     {
         /**
          * The line this class holds
          */
-        public Line2D    line      = null;
+        public Segment2d line      = null;
 
         /**
          * The direction of the line this class holds

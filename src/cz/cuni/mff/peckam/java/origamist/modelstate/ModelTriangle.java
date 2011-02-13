@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
@@ -175,11 +176,26 @@ public class ModelTriangle extends Triangle3d
     }
 
     @Override
+    protected Triangle3d createSubtriangle(Point3d p1, Point3d p2, Point3d p3)
+    {
+        // recompute also the original position triangle
+        Vector3d bp1 = getBarycentricCoordinates(p1);
+        Vector3d bp2 = getBarycentricCoordinates(p2);
+        Vector3d bp3 = getBarycentricCoordinates(p3);
+
+        Point2d pp1 = originalPosition.interpolatePointFromBarycentric(bp1);
+        Point2d pp2 = originalPosition.interpolatePointFromBarycentric(bp2);
+        Point2d pp3 = originalPosition.interpolatePointFromBarycentric(bp3);
+
+        return new ModelTriangle(p1, p2, p3, new Triangle2d(pp1, pp2, pp3));
+    }
+
+    @Override
     public Object clone()
     {
         Triangle3d t = (Triangle3d) super.clone();
-        ModelTriangle result = new ModelTriangle(t.getP1(), t.getP2(), t.getP3(), (Triangle2d) this.originalPosition
-                .clone());
+        ModelTriangle result = new ModelTriangle(t.getP1(), t.getP2(), t.getP3(),
+                (Triangle2d) this.originalPosition.clone());
         return result;
     }
 

@@ -15,19 +15,17 @@ import javax.vecmath.Vector3d;
  */
 public class Triangle2d implements Cloneable
 {
-    protected Point2d     p1;
-    protected Point2d     p2;
-    protected Point2d     p3;
+    /** A vertex of the triangle. */
+    protected Point2d p1, p2, p3;
 
-    protected HalfPlane2d hp1;
-    protected HalfPlane2d hp2;
-    protected HalfPlane2d hp3;
+    /** A halfplane defined by one edge of the triangle. */
+    protected HalfPlane2d hp1, hp2, hp3;
 
-    // precomputed values for obtaining barycentric coordinates of points
-    protected double      b1;
-    protected double      b2;
-    protected double      b3;
-    protected double      b4;
+    /** Edge of the triangle. s_i = (p_(i+1 mod 3) - p_i). */
+    protected Segment2d   s1, s2, s3;
+
+    /** Precomputed values for obtaining barycentric coordinates of points. */
+    protected double      b1, b2, b3, b4;
 
     /**
      * Create a triangle from the given points.
@@ -81,6 +79,10 @@ public class Triangle2d implements Cloneable
             throw new IllegalArgumentException("Trying to define a triangle by three colinear points.");
         }
 
+        s1 = new Segment2d(p1, p2);
+        s2 = new Segment2d(p2, p3);
+        s3 = new Segment2d(p3, p1);
+
         hp1 = new HalfPlane2d(p1, p2, p3);
         hp2 = new HalfPlane2d(p2, p3, p1);
         hp3 = new HalfPlane2d(p3, p1, p2);
@@ -125,6 +127,46 @@ public class Triangle2d implements Cloneable
     }
 
     /**
+     * @return The vertices of the triangle.
+     */
+    public Point2d[] getVertices()
+    {
+        return new Point2d[] { p1, p2, p3 };
+    }
+
+    /**
+     * @return The edge of the triangle.
+     */
+    public Segment2d getS1()
+    {
+        return s1;
+    }
+
+    /**
+     * @return The edge of the triangle.
+     */
+    public Segment2d getS2()
+    {
+        return s2;
+    }
+
+    /**
+     * @return The edge of the triangle.
+     */
+    public Segment2d getS3()
+    {
+        return s3;
+    }
+
+    /**
+     * @return The edges of the triangle.
+     */
+    public Segment2d[] getEdges()
+    {
+        return new Segment2d[] { s1, s2, s3 };
+    }
+
+    /**
      * True if this triangle contains the given point (even on its border).
      * 
      * @param point The point to check.
@@ -133,6 +175,47 @@ public class Triangle2d implements Cloneable
     public boolean contains(Point2d point)
     {
         return hp1.contains(point) && hp2.contains(point) && hp3.contains(point);
+    }
+
+    /**
+     * Returns true if the given triangle has a common edge with this triangle.
+     * 
+     * If <code>strict</code> is true, then the edges must match exactly. If it is false, it is sufficient that the
+     * edges overlap.
+     * 
+     * @param t The triangle to try to find common edge with.
+     * @param strict If true, then the edges must match exactly. If it is false, it is sufficient that the edges
+     *            overlap.
+     * @return true if the given triangle has a common edge with this triangle.
+     */
+    public boolean hasCommonEdge(Triangle2d t, boolean strict)
+    {
+        for (Segment2d edge1 : getEdges()) {
+            for (Segment2d edge2 : t.getEdges()) {
+                if (strict) {
+                    if (edge1.epsilonEquals(edge2, true))
+                        return true;
+                } else {
+                    if (edge1.overlaps(edge2))
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return the point corresponding to the given barycentric coordinates in this triangle.
+     * 
+     * @param b The barycentric coordinates to convert.
+     * @return The point corresponding to the given barycentric coordinates in this triangle.
+     */
+    public Point2d interpolatePointFromBarycentric(Vector3d b)
+    {
+        Point2d result = new Point2d();
+        result.x = b.x * p1.x + b.y * p2.x + b.z * p3.x;
+        result.y = b.x * p1.y + b.y * p2.y + b.z * p3.y;
+        return result;
     }
 
     /**
