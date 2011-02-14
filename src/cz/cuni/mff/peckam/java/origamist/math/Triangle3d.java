@@ -473,9 +473,9 @@ public class Triangle3d implements Cloneable
 
             normal = new Triangle3d(p2, tv1, tv2).getNormal();
             if (tNormal.angle(normal) < EPSILON)
-                triangles.add((T) createSubtriangle(p1, tv1, tv2));
+                triangles.add((T) createSubtriangle(p2, tv1, tv2));
             else
-                triangles.add((T) createSubtriangle(p1, tv2, tv1));
+                triangles.add((T) createSubtriangle(p2, tv2, tv1));
 
         } else if (!p1.epsilonEquals(p2, EPSILON) && (this.isVertex(p1) || this.isVertex(p2))) {
             // one of the intersection points is a vertex; the other inters. point is distinct from that one
