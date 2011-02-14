@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
 /**
  * Represents a fold on the paper.
@@ -40,9 +41,11 @@ public class Fold implements Cloneable
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException
+    public Fold clone() throws CloneNotSupportedException
     {
-        Fold result = (Fold) super.clone();
+        Fold result = new Fold();
+
+        result.originatingStepId = (int) this.originatingStepId;
 
         result.lines = new ObservableList<FoldLine>();
         for (FoldLine l : lines) {
@@ -51,6 +54,8 @@ public class Fold implements Cloneable
             line.direction = l.direction;
             result.lines.add(line);
         }
+        for (Observer<FoldLine> o : lines.getObservers())
+            result.lines.addObserver(o);
 
         return result;
     }

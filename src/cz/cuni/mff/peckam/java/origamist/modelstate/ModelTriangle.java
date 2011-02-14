@@ -191,7 +191,7 @@ public class ModelTriangle extends Triangle3d
     }
 
     @Override
-    public Object clone()
+    public ModelTriangle clone()
     {
         Triangle3d t = (Triangle3d) super.clone();
         ModelTriangle result = new ModelTriangle(t.getP1(), t.getP2(), t.getP3(),

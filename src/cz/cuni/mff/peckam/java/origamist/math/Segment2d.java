@@ -138,7 +138,7 @@ public class Segment2d extends Line2d
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException
+    public Segment2d clone() throws CloneNotSupportedException
     {
         return new Segment2d(new Point2d(p), new Point2d(p2));
     }

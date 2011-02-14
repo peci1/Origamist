@@ -73,15 +73,29 @@ public class Layer extends Polygon3d<ModelTriangle>
     @Override
     protected boolean additionalAddTrianglesCheck(Set<ModelTriangle> triangles)
     {
-        return super.additionalAddTrianglesCheck(triangles);
-        // TODO Auto-generated method stub
+        // check if every two triangles neighboring in 3D are also neighbors on the paper
+        for (ModelTriangle t : triangles) {
+            List<ModelTriangle> neighbors = getNeighbors(t);
+            for (ModelTriangle n : neighbors) {
+                if (!t.originalPosition.hasCommonEdge(n.originalPosition, false))
+                    return false;
+            }
+        }
+        return true;
     }
 
     @Override
     protected boolean additionalRemoveTrianglesCheck(Set<ModelTriangle> triangles)
     {
-        return super.additionalRemoveTrianglesCheck(triangles);
-        // TODO Auto-generated method stub
+        // check if every two triangles neighboring in 3D are also neighbors on the paper
+        for (ModelTriangle t : this.triangles) {
+            List<ModelTriangle> neighbors = getNeighbors(t);
+            for (ModelTriangle n : neighbors) {
+                if (!t.originalPosition.hasCommonEdge(n.originalPosition, false))
+                    return false;
+            }
+        }
+        return true;
     }
 
 }

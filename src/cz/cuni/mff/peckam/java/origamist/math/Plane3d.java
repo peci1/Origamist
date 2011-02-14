@@ -235,7 +235,7 @@ public class Plane3d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Plane3d clone() throws CloneNotSupportedException
     {
         return new Plane3d(this);
     }

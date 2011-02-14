@@ -187,7 +187,7 @@ public class Line2d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Line2d clone() throws CloneNotSupportedException
     {
         return new Line2d(this);
     }

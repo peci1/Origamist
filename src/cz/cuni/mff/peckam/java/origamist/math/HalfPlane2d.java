@@ -161,7 +161,7 @@ public class HalfPlane2d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected HalfPlane2d clone() throws CloneNotSupportedException
     {
         return new HalfPlane2d(null, null, null);
     }

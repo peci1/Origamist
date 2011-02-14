@@ -219,7 +219,7 @@ public class Line3d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Line3d clone() throws CloneNotSupportedException
     {
         return new Line3d(this);
     }

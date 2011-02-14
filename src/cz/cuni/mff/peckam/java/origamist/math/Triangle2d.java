@@ -234,7 +234,7 @@ public class Triangle2d implements Cloneable
     }
 
     @Override
-    public Object clone()
+    public Triangle2d clone()
     {
         return new Triangle2d(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }

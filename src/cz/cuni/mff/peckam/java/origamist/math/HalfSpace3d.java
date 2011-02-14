@@ -195,7 +195,7 @@ public class HalfSpace3d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected HalfSpace3d clone() throws CloneNotSupportedException
     {
         return new HalfSpace3d(new Plane3d(plane));
     }

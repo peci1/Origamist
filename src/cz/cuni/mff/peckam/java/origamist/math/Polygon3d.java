@@ -20,6 +20,10 @@ import java.util.Set;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
+
 /**
  * A (possibly non-convex and hole-containing, but connected) polygon in 3D space. All the triangles the polygon
  * consists of must lie in the same plane.
@@ -31,13 +35,16 @@ import javax.vecmath.Vector3d;
 public class Polygon3d<T extends Triangle3d>
 {
     /** The triangles the polygon consists of. */
-    protected HashSet<T>                        triangles = new HashSet<T>();
+    protected HashSet<T>                        triangles          = new HashSet<T>();
 
     /** The plane the polygon lies in. */
-    protected Plane3d                           plane     = null;
+    protected Plane3d                           plane              = null;
 
     /** The list of all triangles that have an edge on a common line. */
-    protected Hashtable<CanonicLine3d, List<T>> neighbors = new Hashtable<CanonicLine3d, List<T>>();
+    protected Hashtable<CanonicLine3d, List<T>> neighbors          = new Hashtable<CanonicLine3d, List<T>>();
+
+    /** A list of observers of the triangles property. */
+    protected List<Observer<T>>                 trianglesObservers = new LinkedList<Observer<T>>();
 
     /**
      * Create a new polygon consisting of the given triangles.
@@ -217,6 +224,12 @@ public class Polygon3d<T extends Triangle3d>
             throw new IllegalStateException(
                     "The triangles newly added to this polygon don't conform to the rules for new triangles.");
         }
+
+        for (Observer<T> observer : trianglesObservers) {
+            for (T triangle : triangles) {
+                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
+            }
+        }
     }
 
     /**
@@ -301,6 +314,10 @@ public class Polygon3d<T extends Triangle3d>
             this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "The triangle newly added to this polygon doesn't conform to the rules for new triangles.");
+        }
+
+        for (Observer<T> observer : trianglesObservers) {
+            observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
         }
     }
 
@@ -391,6 +408,12 @@ public class Polygon3d<T extends Triangle3d>
             throw new IllegalStateException(
                     "The triangles removed from this polygon don't conform to the rules for removed triangles.");
         }
+
+        for (Observer<T> observer : trianglesObservers) {
+            for (T triangle : triangles) {
+                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.REMOVE));
+            }
+        }
     }
 
     /**
@@ -448,6 +471,10 @@ public class Polygon3d<T extends Triangle3d>
                 this.neighbors.remove(line);
         }
 
+        for (Observer<T> observer : trianglesObservers) {
+            observer.changePerformed(new ChangeNotification<T>(segment.triangle, ChangeTypes.REMOVE));
+        }
+
         this.triangles.addAll(triangles);
         // update the neighbors list
         for (T t : triangles) {
@@ -456,6 +483,12 @@ public class Polygon3d<T extends Triangle3d>
                 if (neighbors.get(line) == null)
                     neighbors.put(line, new LinkedList<T>());
                 neighbors.get(line).add(t);
+            }
+        }
+
+        for (Observer<T> observer : trianglesObservers) {
+            for (T triangle : triangles) {
+                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
             }
         }
 
@@ -641,7 +674,7 @@ public class Polygon3d<T extends Triangle3d>
      * 
      * This method requires that the line has either no intersection with a triangle or goes through its edge.
      * 
-     * The resulting polygons will be the maximal ones that can be joined.
+     * The resulting polygons will be the maximal ones that can be connected.
      * 
      * @param line The line to split around.
      * @param part1 The polygons that are in the direction of the cross product of the line direction vector and the
@@ -715,6 +748,29 @@ public class Polygon3d<T extends Triangle3d>
     }
 
     /**
+     * Rotate all triangles in this layer around the given axis by the given angle.
+     * 
+     * @param axis The axis to rotate around.
+     * @param angle The angle to rotate the triangles by.
+     */
+    public void rotate(Line3d axis, double angle)
+    {
+        List<T> oldTriangles = new LinkedList<T>();
+        oldTriangles.addAll(triangles);
+
+        // hashset needs the triangles to not change their hashcode, but setting points to something else will change it
+        // - on the other side, a LinkedList doesn't care about the hashcode
+        // so we need to remove all triangles, change the vertices and then add them back again - this will also "reset"
+        // the neighbors map
+        removeTriangles(triangles);
+        for (T t : triangles) {
+            t.setPoints(MathHelper.rotate(t.getP1(), axis, angle), MathHelper.rotate(t.getP2(), axis, angle),
+                    MathHelper.rotate(t.getP3(), axis, angle));
+        }
+        addTriangles(oldTriangles);
+    }
+
+    /**
      * @return
      * @see cz.cuni.mff.peckam.java.origamist.math.Plane3d#getNormal()
      */
@@ -729,6 +785,42 @@ public class Polygon3d<T extends Triangle3d>
     public Plane3d getPlane()
     {
         return plane;
+    }
+
+    /**
+     * @return the trianglesObservers
+     */
+    public List<Observer<T>> getTrianglesObservers()
+    {
+        return trianglesObservers;
+    }
+
+    /**
+     * Add new observer of the triangles property.
+     * 
+     * @param observer The observer to add.
+     */
+    public void addTrianglesObserver(Observer<T> observer)
+    {
+        trianglesObservers.add(observer);
+    }
+
+    /**
+     * Remove the given observer of the triangles property.
+     * 
+     * @param observer The observer to remove.
+     */
+    public void removeTrianglesObserver(Observer<T> observer)
+    {
+        trianglesObservers.remove(observer);
+    }
+
+    /**
+     * Remove all observers of the triangles property.
+     */
+    public void clearTrianglesObservers()
+    {
+        trianglesObservers.clear();
     }
 
 }

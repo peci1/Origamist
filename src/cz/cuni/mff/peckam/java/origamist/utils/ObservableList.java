@@ -82,6 +82,14 @@ public class ObservableList<T> extends ArrayList<T>
     }
 
     /**
+     * @return the observers
+     */
+    public List<Observer<T>> getObservers()
+    {
+        return observers;
+    }
+
+    /**
      * Notify all observers about the given change.
      * 
      * @param change The change that has happened.

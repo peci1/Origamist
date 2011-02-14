@@ -126,7 +126,7 @@ public class Stripe3d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Stripe3d clone() throws CloneNotSupportedException
     {
         return new Stripe3d(new Line3d(line1), new Line3d(line2));
     }

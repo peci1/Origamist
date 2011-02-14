@@ -139,7 +139,7 @@ public class Segment3d extends Line3d
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Segment3d clone() throws CloneNotSupportedException
     {
         return new Segment3d(new Point3d(p), new Point3d(p2));
     }

@@ -294,7 +294,7 @@ public class Rectangle3d implements Cloneable
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException
+    protected Rectangle3d clone() throws CloneNotSupportedException
     {
         return new Rectangle3d(new Point3d(p1), new Point3d(p2), new Point3d(p3), new Point3d(p4));
     }

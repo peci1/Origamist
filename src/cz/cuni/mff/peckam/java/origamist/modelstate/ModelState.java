@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
@@ -36,14 +37,12 @@ import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
-import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Stripe3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
-import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -103,7 +102,10 @@ public class ModelState implements Cloneable
     protected Hashtable<CanonicLine2d, List<Triangle2d>>    neighbors2d           = new Hashtable<CanonicLine2d, List<Triangle2d>>();
 
     /** The layers of the paper. */
-    protected List<Layer>                                   layers                = new LinkedList<Layer>();
+    protected ObservableList<Layer>                         layers                = new ObservableList<Layer>();
+
+    /** The mapping of triangles to their containing layer. Automatically updated when <code>layers</code> change */
+    protected Hashtable<ModelTriangle, Layer>               trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
 
     /**
      * A cache for quick finding of a 3D triangle corresponding to the given 2D triangle. Automatically updated when
@@ -207,6 +209,38 @@ public class ModelState implements Cloneable
                     }
                 }
             }
+        });
+
+        layers.addObserver(new Observer<Layer>() {
+            @Override
+            public void changePerformed(ChangeNotification<Layer> change)
+            {
+                if (change.getChangeType() != ChangeTypes.ADD) {
+                    Layer old = change.getOldItem();
+                    for (ModelTriangle t : old.getTriangles()) {
+                        trianglesToLayers.remove(t);
+                    }
+                    old.clearTrianglesObservers();
+                } else if (change.getChangeType() != ChangeTypes.REMOVE) {
+                    final Layer layer = change.getItem();
+                    for (ModelTriangle t : layer.getTriangles()) {
+                        trianglesToLayers.put(t, layer);
+                    }
+                    layer.addTrianglesObserver(new Observer<ModelTriangle>() {
+                        @Override
+                        public void changePerformed(ChangeNotification<ModelTriangle> change)
+                        {
+                            if (change.getChangeType() != ChangeTypes.ADD) {
+                                trianglesToLayers.remove(change.getOldItem());
+                            } else if (change.getChangeType() != ChangeTypes.REMOVE) {
+                                ModelTriangle triangle = change.getItem();
+                                trianglesToLayers.put(triangle, layer);
+                            }
+                        }
+                    });
+                }
+            }
+
         });
     }
 
@@ -401,27 +435,36 @@ public class ModelState implements Cloneable
         List<Layer> layers = getLayers(segment);
 
         int i = 1;
+        List<Segment3d> foldLines = new LinkedList<Segment3d>();
         for (Layer layer : layers) {
             if (!affectedLayers.contains(i++))
                 continue;
             // TODO handle direction in some appropriate way
-            makeFoldInLayer(layer, direction, segment);
+            List<Segment3d> layerFoldLines = makeFoldInLayer(layer, direction, segment);
+            foldLines.addAll(layerFoldLines);
         }
 
-        bendPaper(direction, segment, affectedLayers, angle);
+        bendPaper(direction, segment, foldLines, affectedLayers, angle);
     }
 
     /**
      * Bends the paper. Requires that the fold line goes only along triangle edges, not through the interiors of them.
      * 
+     * To specify the part of the paper that will be rotated, the segment's direction vector is used. Make cross product
+     * of the normal of the layer the segment lies in and the direction vector of the segment. The cross product points
+     * to the part of the paper that will be moved.
+     * 
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
-     * @param segment The segment to bend around.
+     * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
+     *            the paper will be rotated.
+     * @param foldLines The fold lines that were created by doing the last fold.
      * @param affectedLayers The layers the fold will be performed on.
      * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
      *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
      *            paper will be moved.
      */
-    protected void bendPaper(Direction direction, Segment3d segment, List<Integer> affectedLayers, double angle)
+    protected void bendPaper(Direction direction, Segment3d segment, List<Segment3d> foldLines,
+            List<Integer> affectedLayers, double angle)
     {
         double angle1 = angle;
         if (abs(angle1) < EPSILON)
@@ -430,22 +473,17 @@ public class ModelState implements Cloneable
         if (direction == Direction.MOUNTAIN)
             angle1 = -angle1;
 
-        DoubleDimension paperSize = origami.getModel().getPaper().getRelativeDimensions();
+        Point3d segCenter = new Point3d(segment.getP1());
+        segCenter.add(segment.getP2());
+        segCenter.scale(0.5d);
 
-        Point3d r = new Point3d();
-        if (angle1 > 0) {
-            r = locatePointFromPaperTo3D(new Point2d(paperSize.getWidth(), 0));
-            if (((Line3d) segment).contains(r)) {
-                r = locatePointFromPaperTo3D(new Point2d(0, 0));
-            }
-        } else {
-            r = locatePointFromPaperTo3D(new Point2d(0, paperSize.getHeight()));
-            if (((Line3d) segment).contains(r)) {
-                r = locatePointFromPaperTo3D(new Point2d(paperSize.getWidth(), paperSize.getHeight()));
-            }
-        }
+        Layer segLayer = getLayerForPoint(segCenter);
+        Vector3d layerNormalSegmentDirCross = new Vector3d();
+        layerNormalSegmentDirCross.cross(segLayer.getNormal(), segment.getVector());
+        Point3d r = new Point3d(layerNormalSegmentDirCross);
 
         HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
+
         List<Layer> layers = getLayers(segment);
         int i = 1;
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
@@ -453,17 +491,30 @@ public class ModelState implements Cloneable
             if (!affectedLayers.contains(i++))
                 continue;
 
-            Vector3d dir = new Vector3d();
-            dir.cross(segment.getVector(), layer.getNormal());
-            Point3d dirPoint = new Point3d(dir);
-
-            Segment3d seg = segment;
-            if (!halfspace.contains(dirPoint))
-                seg = new Segment3d(segment.getP2(), segment.getP1());
-
             List<Polygon3d<ModelTriangle>> part1 = new LinkedList<Polygon3d<ModelTriangle>>();
             List<Polygon3d<ModelTriangle>> part2 = new LinkedList<Polygon3d<ModelTriangle>>();
-            layer.splitPolygon(seg, part1, part2);
+            layer.splitPolygon(segment, part1, part2);
+
+            boolean swapParts = false;
+            if (part1.size() > 0) {
+                Triangle3d part1t = part1.get(0).getTriangles().iterator().next();
+                if (!(halfspace.contains(part1t.getP1()) && halfspace.contains(part1t.getP2()) && halfspace
+                        .contains(part1t.getP3()))) {
+                    swapParts = true;
+                }
+            } else {
+                Triangle3d part2t = part2.get(0).getTriangles().iterator().next();
+                if (!(halfspace.contains(part2t.getP1()) && halfspace.contains(part2t.getP2()) && halfspace
+                        .contains(part2t.getP3()))) {
+                    swapParts = true;
+                }
+            }
+
+            if (swapParts) {
+                List<Polygon3d<ModelTriangle>> tmp = part1;
+                part1 = part2;
+                part2 = tmp;
+            }
 
             this.layers.remove(layer);
             for (Polygon3d<ModelTriangle> l : part1)
@@ -476,25 +527,52 @@ public class ModelState implements Cloneable
             }
         }
 
+        // to find all triangles that have to be rotated, first add all triangles in "affected" layers that lie in the
+        // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
+        // doesn't lie on an opposite side of a fold line.
+
         Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
         ModelTriangle t;
         while ((t = queue.poll()) != null) {
             trianglesToRotate.add(t);
+            Hashtable<Segment3d, Segment3d> overlaps = new Hashtable<Segment3d, Segment3d>();
+            for (Segment3d edge : t.getEdges()) {
+                for (Segment3d foldLine : foldLines) {
+                    if (edge.overlaps(foldLine)) {
+                        overlaps.put(edge, foldLine);
+                    }
+                }
+            }
             List<ModelTriangle> neighbors = findNeighbors(t);
-            for (ModelTriangle n : neighbors) {
+            n: for (ModelTriangle n : neighbors) {
                 if (trianglesToRotate.contains(n))
                     continue;
 
-                if (!halfspace.contains(n.getP1()) || !halfspace.contains(n.getP2()) || !halfspace.contains(n.getP3()))
-                    continue;
+                for (Entry<Segment3d, Segment3d> overlap : overlaps.entrySet()) {
+                    if (n.getS1().overlaps(overlap.getValue()) || n.getS2().overlaps(overlap.getValue())
+                            || n.getS3().overlaps(overlap.getValue())) {
+                        if (!halfspace.contains(n.getP1()) || !halfspace.contains(n.getP2())
+                                || !halfspace.contains(n.getP3()))
+                            continue n;
+                    }
+                }
 
                 queue.add(n);
             }
         }
 
+        Set<Layer> layersToRotate = new HashSet<Layer>();
+
         for (ModelTriangle tr : trianglesToRotate) {
-            tr.setPoints(MathHelper.rotate(tr.getP1(), segment, angle1),
-                    MathHelper.rotate(tr.getP2(), segment, angle1), MathHelper.rotate(tr.getP3(), segment, angle1));
+            layersToRotate.add(trianglesToLayers.get(tr));
+        }
+
+        for (Layer l : layersToRotate) {
+            // remove, rotate, and then add the triangles back to make sure all caches and maps will hold the correct
+            // value
+            triangles.removeAll(l.getTriangles());
+            l.rotate(segment, angle1);
+            triangles.addAll(l.getTriangles());
         }
         trianglesArrayDirty = true;
     }
@@ -667,10 +745,11 @@ public class ModelState implements Cloneable
      * 
      * @param layer The triangles in the layer with the appropriate intersection points.
      * @param direction The direction of the created fold.
-     * @param startPoint Starting point of the line.
-     * @param endPoint Ending point of the line.
+     * @param segment The segment defining the fold.
+     * 
+     * @return The intersections of the given segment with the layer.
      */
-    protected void makeFoldInLayer(Layer layer, Direction direction, Segment3d segment)
+    protected List<Segment3d> makeFoldInLayer(Layer layer, Direction direction, Segment3d segment)
     {
         List<IntersectionWithTriangle<ModelTriangle>> intersections = layer.getIntersectionsWithTriangles(segment);
 
@@ -714,6 +793,8 @@ public class ModelState implements Cloneable
             fold.lines.add(fLine);
         }
         folds.add(fold);
+
+        return foldLines;
     }
 
     /**
@@ -799,7 +880,7 @@ public class ModelState implements Cloneable
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException
+    public ModelState clone() throws CloneNotSupportedException
     {
         ModelState result = new ModelState();
 
