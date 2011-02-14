@@ -763,7 +763,7 @@ public class Polygon3d<T extends Triangle3d>
         // so we need to remove all triangles, change the vertices and then add them back again - this will also "reset"
         // the neighbors map
         removeTriangles(triangles);
-        for (T t : triangles) {
+        for (T t : oldTriangles) {
             t.setPoints(MathHelper.rotate(t.getP1(), axis, angle), MathHelper.rotate(t.getP2(), axis, angle),
                     MathHelper.rotate(t.getP3(), axis, angle));
         }

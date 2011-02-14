@@ -531,6 +531,7 @@ public class ModelState implements Cloneable
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
 
+        Set<ModelTriangle> inQueue = new HashSet<ModelTriangle>(queue);
         Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
         ModelTriangle t;
         while ((t = queue.poll()) != null) {
@@ -545,7 +546,7 @@ public class ModelState implements Cloneable
             }
             List<ModelTriangle> neighbors = findNeighbors(t);
             n: for (ModelTriangle n : neighbors) {
-                if (trianglesToRotate.contains(n))
+                if (inQueue.contains(n))
                     continue;
 
                 for (Entry<Segment3d, Segment3d> overlap : overlaps.entrySet()) {
@@ -558,6 +559,7 @@ public class ModelState implements Cloneable
                 }
 
                 queue.add(n);
+                inQueue.add(n);
             }
         }
 
