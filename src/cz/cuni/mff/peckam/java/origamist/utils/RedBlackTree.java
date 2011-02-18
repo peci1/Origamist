@@ -1,9 +1,23 @@
-package java.util;
+package cz.cuni.mff.peckam.java.origamist.utils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 
 /**
  * A red-black tree implementation.
@@ -747,7 +761,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
      * 
      * @author Martin Pecka
      */
-    protected class SubMap implements SortedMap<K, V>
+    protected class SubMap extends AbstractMap<K, V> implements SortedMap<K, V>
     {
         /** Bounds. */
         protected K from, to;
@@ -931,9 +945,6 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             if (fromStart) {
                 return RedBlackTree.this.firstKey();
             } else {
-                if (entrySet().size() == 0)
-                    return null;
-
                 TreePath path = getPath(from);
                 while (path.size() > 0 && comparator.compare(path.getLast().getKey(), from) < (fromIncl ? 0 : 1))
                     path.moveToSuccesor();
@@ -949,12 +960,9 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         @Override
         public K lastKey()
         {
-            if (fromStart) {
+            if (toEnd) {
                 return RedBlackTree.this.lastKey();
             } else {
-                if (entrySet().size() == 0)
-                    return null;
-
                 TreePath path = getPath(to);
                 while (path.size() > 0 && comparator.compare(to, path.getLast().getKey()) < (toIncl ? 0 : 1))
                     path.moveToPredecessor();
@@ -1115,7 +1123,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
                 K last = SubMap.this.lastKey();
 
                 cachedSize = 0;
-                while (comparator.compare(path.getLast().getKey(), last) <= 0) {
+                while (path.size() > 0 && comparator.compare(path.getLast().getKey(), last) <= 0) {
                     cachedSize++;
                     path.moveToSuccesor();
                 }
@@ -1312,7 +1320,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         @Override
         public int size()
         {
-            return size();
+            return RedBlackTree.this.size();
         }
 
         @Override
@@ -1360,6 +1368,8 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         }
     }
 
+    private Set<K> keySet = null;
+
     @Override
     public Set<K> keySet()
     {
@@ -1367,6 +1377,8 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             keySet = new KeySet();
         return keySet;
     }
+
+    private Collection<V> values = null;
 
     @Override
     public Collection<V> values()
@@ -1777,9 +1789,10 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
                 while (size() > 0 && getLast(1) != null && getLast() == getLast(1).right) {
                     removeLast();
                 }
+                removeLast();
             }
 
-            return getLast();
+            return getLast(0);
         }
 
         /**
@@ -1802,9 +1815,10 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
                 while (size() > 0 && getLast(1) != null && getLast() == getLast(1).left) {
                     removeLast();
                 }
+                removeLast();
             }
 
-            return getLast();
+            return getLast(0);
         }
 
         /**
