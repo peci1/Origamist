@@ -39,10 +39,10 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
     protected transient Entry             root             = null;
 
     /** Number of elements of the tree. */
-    private transient int                 size             = 0;
+    protected transient int               size             = 0;
 
     /** Number of modifications, used for detecting concurrent modifications while using iterators. */
-    private transient int                 modCount         = 0;
+    protected transient int               modCount         = 0;
 
     /**
      * Colors of the tree's nodes.
@@ -558,6 +558,9 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
     protected void repairTreeAfterDeletion(RedBlackTree<K, V>.TreePath path)
     {
         boolean setColor = false;
+
+        Entry toDelete = path.getLast();
+
         while (path.size() > 1 && colorOf(path.getLast()) == Color.BLACK) {
             if (path.getLast() == leftOf(path.getLast(1))) {
                 Entry sib = rightOf(path.getLast(1));
@@ -638,6 +641,15 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
 
         if (setColor)
             setColor(path.getLast(), Color.BLACK);
+
+        // return to the initial endpoint
+        while (!path.endsWithKey(toDelete.getKey())) {
+            int cmp = comparator.compare(toDelete.getKey(), path.getLast().getKey());
+            if (path.getLast().left != null && cmp < 0)
+                path.addLast(path.getLast().left);
+            else if (path.getLast().right != null && cmp > 0)
+                path.addLast(path.getLast().right);
+        }
     }
 
     /**
