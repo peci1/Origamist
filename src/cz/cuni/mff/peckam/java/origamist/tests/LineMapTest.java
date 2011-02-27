@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import cz.cuni.mff.peckam.java.origamist.math.CanonicLine3d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
-import cz.cuni.mff.peckam.java.origamist.utils.LineMap;
+import cz.cuni.mff.peckam.java.origamist.utils.Line3dMap;
 
 /**
  * 
@@ -23,12 +23,12 @@ import cz.cuni.mff.peckam.java.origamist.utils.LineMap;
 public class LineMapTest
 {
     /**
-     * Test method for {@link cz.cuni.mff.peckam.java.origamist.utils.LineMap}.
+     * Test method for {@link cz.cuni.mff.peckam.java.origamist.utils.Line3dMap}.
      */
     @Test
     public void testTree()
     {
-        LineMap<Integer> map = new LineMap<Integer>();
+        Line3dMap<Integer> map = new Line3dMap<Integer>();
         map.epsilonPut(new Line3d(new Point3d(0, 0, 0), new Point3d(1, 1, 1)), 100);
         map.epsilonPut(new Line3d(new Point3d(0, 0, 0), new Point3d(-1, -1, -1)), 99);
         map.epsilonPut(new Line3d(new Point3d(0, 0, 0), new Point3d(0.5d, 0.5d, 0.5d)), 98);

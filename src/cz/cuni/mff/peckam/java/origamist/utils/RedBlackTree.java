@@ -1432,13 +1432,16 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         /**
          * Create the iterator with <code>first</code> as the first entry to be returned by next().
          * 
-         * @param first The first entry to return.
+         * @param first The first entry to return. Can be <code>null</code> (in that case the iterator will be empty).
          */
         public BaseEntryIterator(Entry first)
         {
             expectedModCount = modCount;
             pathToLastReturned = null;
-            pathToNext = getPath(first.getKey());
+            if (first != null)
+                pathToNext = getPath(first.getKey());
+            else
+                pathToNext = new TreePath();
         }
 
         @Override

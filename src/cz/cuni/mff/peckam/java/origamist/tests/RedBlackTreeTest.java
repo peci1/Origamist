@@ -4,6 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.tests;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,7 +79,7 @@ public class RedBlackTreeTest
 
         try {
             testMap.put(null, "a");
-            assert false : "Tree allowed to insert a null key with the default comparator.";
+            fail("Tree allowed to insert a null key with the default comparator.");
         } catch (NullPointerException e) {}
 
         assertTrue("Submaps aren't equal.", testMap.subMap(0, 6).keySet().equals(refMap.subMap(0, 6).keySet()));
@@ -103,7 +104,7 @@ public class RedBlackTreeTest
 
         try {
             testMap.put(null, "a");
-            assert false : "Tree allowed to insert a null key with a comparator not allowing null keys.";
+            fail("Tree allowed to insert a null key with a comparator not allowing null keys.");
         } catch (NullPointerException e) {}
 
         assertTrue("Submaps aren't equal.", testMap.subMap(6, 0).keySet().equals(refMap.subMap(6, 0).keySet()));
@@ -135,7 +136,13 @@ public class RedBlackTreeTest
         try {
             testMap.put(null, "a");
         } catch (NullPointerException e) {
-            assert false : "Tree didn't allow to insert a null key with a comparator allowing null keys.";
+            fail("Tree didn't allow to insert a null key with a comparator allowing null keys.");
+        }
+
+        try {
+            new RedBlackTree<Integer, Integer>().entrySet().iterator();
+        } catch (Exception e) {
+            fail("Empty entryset iterator threw exception: " + e);
         }
 
     }
