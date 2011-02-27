@@ -348,6 +348,10 @@ public class Triangle3d implements Cloneable
             }
 
             MathHelper.removeEpsilonEqualPoints(intersections);
+            // rounding erros may affect the method a lot, so ensure it is a little more tolerant
+            if (intersections.size() > 2) {
+                MathHelper.removeEpsilonEqualPoints(intersections, 2 * EPSILON);
+            }
 
             if (intersections.size() == 2) {
                 return new Segment3d(intersections.get(0), intersections.get(1));

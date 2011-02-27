@@ -21,6 +21,7 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
+import cz.cuni.mff.peckam.java.origamist.utils.Line3dMap;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
@@ -35,16 +36,16 @@ import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 public class Polygon3d<T extends Triangle3d>
 {
     /** The triangles the polygon consists of. */
-    protected HashSet<T>                        triangles          = new HashSet<T>();
+    protected HashSet<T>        triangles          = new HashSet<T>();
 
     /** The plane the polygon lies in. */
-    protected Plane3d                           plane              = null;
+    protected Plane3d           plane              = null;
 
     /** The list of all triangles that have an edge on a common line. */
-    protected Hashtable<CanonicLine3d, List<T>> neighbors          = new Hashtable<CanonicLine3d, List<T>>();
+    protected Line3dMap<List<T>>  neighbors          = new Line3dMap<List<T>>();
 
     /** A list of observers of the triangles property. */
-    protected List<Observer<T>>                 trianglesObservers = new LinkedList<Observer<T>>();
+    protected List<Observer<T>> trianglesObservers = new LinkedList<Observer<T>>();
 
     /**
      * Create a new polygon consisting of the given triangles.
@@ -127,6 +128,8 @@ public class Polygon3d<T extends Triangle3d>
      *             state will remain the same as before calling this function (eg. this will not try to add all "valid"
      *             triangles from the given list, but it either accepts all or none of them).
      */
+    static int i = 0;
+
     public void addTriangles(Set<T> triangles) throws IllegalStateException
     {
         if (triangles == null || triangles.size() == 0)
@@ -140,6 +143,7 @@ public class Polygon3d<T extends Triangle3d>
         if (plane == null)
             plane = triangles.iterator().next().getPlane();
 
+        i++;
         // check that all the new triangles lie in the polygon's plane
         for (T t : triangles) {
             Vector3d cross = new Vector3d();
@@ -153,13 +157,9 @@ public class Polygon3d<T extends Triangle3d>
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Hashtable<CanonicLine3d, List<T>> oldNeighbors = new Hashtable<CanonicLine3d, List<T>>(this.neighbors.size());
-        for (Entry<CanonicLine3d, List<T>> e : this.neighbors.entrySet()) {
-            oldNeighbors.put(e.getKey(), e.getValue() != null ? new LinkedList<T>() : null);
-            if (e.getValue() != null) {
-                oldNeighbors.get(e.getKey()).addAll(e.getValue());
-            }
-        }
+        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
+        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
+            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.addAll(triangles);
 
@@ -172,12 +172,12 @@ public class Polygon3d<T extends Triangle3d>
         for (T t : triangles) {
             for (Segment3d s : t.getEdges()) {
                 CanonicLine3d line = new CanonicLine3d(s);
-                if (neighbors.get(line) == null)
-                    neighbors.put(line, new LinkedList<T>());
-                neighbors.get(line).add(t);
+                if (neighbors.epsilonGet(line) == null)
+                    neighbors.epsilonPut(line, new LinkedList<T>());
+                neighbors.epsilonGet(line).add(t);
                 // try if we can set borderTriangle
-                if (borderTriangle == null && oldNeighbors.get(line) != null) {
-                    for (T n : oldNeighbors.get(line)) {
+                if (borderTriangle == null && oldNeighbors.epsilonGet(line) != null) {
+                    for (T n : oldNeighbors.epsilonGet(line)) {
                         if (n.hasCommonEdge(t, false)) {
                             borderTriangle = n;
                             break;
@@ -266,13 +266,9 @@ public class Polygon3d<T extends Triangle3d>
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Hashtable<CanonicLine3d, List<T>> oldNeighbors = new Hashtable<CanonicLine3d, List<T>>(this.neighbors.size());
-        for (Entry<CanonicLine3d, List<T>> e : this.neighbors.entrySet()) {
-            oldNeighbors.put(e.getKey(), e.getValue() != null ? new LinkedList<T>() : null);
-            if (e.getValue() != null) {
-                oldNeighbors.get(e.getKey()).addAll(e.getValue());
-            }
-        }
+        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
+        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
+            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.add(triangle);
 
@@ -284,10 +280,10 @@ public class Polygon3d<T extends Triangle3d>
         // update the neighbors list
         for (Segment3d s : triangle.getEdges()) {
             CanonicLine3d line = new CanonicLine3d(s);
-            if (neighbors.get(line) == null)
-                neighbors.put(line, new LinkedList<T>());
+            if (neighbors.epsilonGet(line) == null)
+                neighbors.epsilonPut(line, new LinkedList<T>());
 
-            List<T> sNeighbors = neighbors.get(line);
+            List<T> sNeighbors = neighbors.epsilonGet(line);
 
             if (sNeighbors.size() > 0) {
                 for (T n : sNeighbors) {
@@ -358,13 +354,9 @@ public class Polygon3d<T extends Triangle3d>
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Hashtable<CanonicLine3d, List<T>> oldNeighbors = new Hashtable<CanonicLine3d, List<T>>(this.neighbors.size());
-        for (Entry<CanonicLine3d, List<T>> e : this.neighbors.entrySet()) {
-            oldNeighbors.put(e.getKey(), e.getValue() != null ? new LinkedList<T>() : null);
-            if (e.getValue() != null) {
-                oldNeighbors.get(e.getKey()).addAll(e.getValue());
-            }
-        }
+        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
+        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
+            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.removeAll(triangles);
 
@@ -372,9 +364,9 @@ public class Polygon3d<T extends Triangle3d>
         for (T t : triangles) {
             for (Segment3d s : t.getEdges()) {
                 CanonicLine3d line = new CanonicLine3d(s);
-                this.neighbors.get(line).remove(t);
-                if (this.neighbors.get(line).size() == 0)
-                    this.neighbors.remove(line);
+                this.neighbors.epsilonGet(line).remove(t);
+                if (this.neighbors.epsilonGet(line).size() == 0)
+                    this.neighbors.epsilonRemove(line);
             }
         }
 
@@ -466,9 +458,9 @@ public class Polygon3d<T extends Triangle3d>
         // remove the triangle from the neighbors list
         for (Segment3d s : segment.triangle.getEdges()) {
             CanonicLine3d line = new CanonicLine3d(s);
-            this.neighbors.get(line).remove(segment.triangle);
-            if (this.neighbors.get(line).size() == 0)
-                this.neighbors.remove(line);
+            this.neighbors.epsilonGet(line).remove(segment.triangle);
+            if (this.neighbors.epsilonGet(line).size() == 0)
+                this.neighbors.epsilonRemove(line);
         }
 
         for (Observer<T> observer : trianglesObservers) {
@@ -480,9 +472,9 @@ public class Polygon3d<T extends Triangle3d>
         for (T t : triangles) {
             for (Segment3d s : t.getEdges()) {
                 CanonicLine3d line = new CanonicLine3d(s);
-                if (neighbors.get(line) == null)
-                    neighbors.put(line, new LinkedList<T>());
-                neighbors.get(line).add(t);
+                if (neighbors.epsilonGet(line) == null)
+                    neighbors.epsilonPut(line, new LinkedList<T>());
+                neighbors.epsilonGet(line).add(t);
             }
         }
 
@@ -532,8 +524,7 @@ public class Polygon3d<T extends Triangle3d>
     {
         HashSet<T> neighbors = new HashSet<T>(3);
         for (Segment3d s : triangle.getEdges()) {
-            CanonicLine3d line = new CanonicLine3d(s);
-            for (T n : this.neighbors.get(line)) {
+            for (T n : this.neighbors.epsilonGet(s)) {
                 if (n.hasCommonEdge(triangle, false))
                     neighbors.add(n);
             }
@@ -586,6 +577,44 @@ public class Polygon3d<T extends Triangle3d>
         // connect all segments that can be connected into one new segment
         List<IntersectionWithTriangle<T>> intersections = getIntersectionsWithTriangles(line);
         return joinNeighboringSegments(intersections);
+    }
+
+    /**
+     * Return the intersections of the given stripe and this polygon.
+     * 
+     * @param stripe The stripe to find intersections with.
+     * @return The intersections of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
+     *         this polygon (and if it lies in the same plane as the polygon).
+     */
+    public List<Segment3d> getIntersections(Stripe3d stripe)
+    {
+        Line3d stripePlaneAndPolygonPlaneInt = stripe.getPlane().getIntersection(getPlane());
+        if (stripePlaneAndPolygonPlaneInt == null)
+            return null; // the stripe and the polygon are parallel
+
+        Point3d segmentPoint1 = stripe.getHalfspace1().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
+        Point3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
+
+        Segment3d intersectionSegment = new Segment3d(segmentPoint1, segmentPoint2);
+        return getIntersections(intersectionSegment);
+    }
+
+    /**
+     * Return the single segment defining the intersection of the given stripe with this polygon (this segment joins the
+     * first and last segment returned by {@link Polygon3d#getIntersections}).
+     * 
+     * @param stripe The stripe to find the intersection with.
+     * @return The intersection of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
+     *         this polygon (and if it lies in the same plane as the polygon).
+     */
+    public Segment3d getIntersectionSegment(Stripe3d stripe)
+    {
+        List<Segment3d> ints = getIntersections(stripe);
+        if (ints == null)
+            return null;
+        Point3d int1 = ints.get(0).getP1();
+        Point3d int2 = ints.get(ints.size() - 1).getP2();
+        return new Segment3d(int1, int2);
     }
 
     /**

@@ -79,6 +79,22 @@ public class Line2d implements Cloneable
     }
 
     /**
+     * @return A point lying on the line.
+     */
+    public Point2d getPoint()
+    {
+        return p;
+    }
+
+    /**
+     * @return The direction vector of the line.
+     */
+    public Vector2d getVector()
+    {
+        return v;
+    }
+
+    /**
      * Return the intersection with the line.
      * 
      * @param line The line to find intersection with.
@@ -114,7 +130,7 @@ public class Line2d implements Cloneable
     public Double getParameterForPoint(Point2d point)
     {
         Vector2d v = new Vector2d();
-        v.sub(this.p, point);
+        v.sub(point, this.p);
 
         return MathHelper.vectorQuotient2d(v, this.v);
     }

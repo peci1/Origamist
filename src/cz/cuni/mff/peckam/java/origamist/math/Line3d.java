@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
-import static java.lang.Math.abs;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -67,44 +66,34 @@ public class Line3d implements Cloneable
      * 
      * @param line The line to find intersection with.
      * @return The intersection point; null if no intersection point was found; (NaN, NaN, NaN) if the lines are equal.
+     * 
+     * @see http://mathforum.org/library/drmath/view/62814.html
      */
     public Point3d getIntersection(Line3d line)
     {
         Vector3d v1xv2 = new Vector3d();
         v1xv2.cross(v, line.v);
 
+        if (v1xv2.epsilonEquals(new Vector3d(), EPSILON)) {
+            // the lines are parallel
+            if (line.contains(p)) {
+                // and equal
+                return new Point3d(Double.NaN, Double.NaN, Double.NaN);
+            } else {
+                // and different
+                return null;
+            }
+        }
+
         Point3d p2_p1 = new Point3d();
         p2_p1.sub(line.p, p);
         Vector3d p2_p1xv2 = new Vector3d();
         p2_p1xv2.cross(new Vector3d(p2_p1), line.v);
 
-        if (abs(v1xv2.x) < EPSILON && abs(v1xv2.y) < EPSILON && abs(v1xv2.z) < EPSILON && line.contains(p))
-            return new Point3d(Double.NaN, Double.NaN, Double.NaN);
-
-        double qx, qy, qz;
-        qx = p2_p1xv2.x / v1xv2.x;
-        qy = p2_p1xv2.y / v1xv2.y;
-        qz = p2_p1xv2.z / v1xv2.z;
-        if (Double.isNaN(qx) && !Double.isNaN(qy)) {
-            qx = qy;
-        } else if (Double.isNaN(qx)) {
-            qx = qz;
-        }
-        if (Double.isNaN(qy) && !Double.isNaN(qz)) {
-            qy = qz;
-        } else if (Double.isNaN(qy)) {
-            qy = qx;
-        }
-        if (Double.isNaN(qz) && !Double.isNaN(qx)) {
-            qz = qx;
-        } else if (Double.isNaN(qz)) {
-            qz = qy;
-        }
-
-        if (!(abs(qx - qy) <= EPSILON && abs(qy - qz) <= EPSILON && abs(qz - qx) <= EPSILON))
+        Double q = MathHelper.vectorQuotient3d(p2_p1xv2, v1xv2);
+        if (q == null)
+            // the lines are skew
             return null;
-
-        double q = qx;
 
         Point3d result = new Point3d(p);
         Vector3d vt = new Vector3d(v);

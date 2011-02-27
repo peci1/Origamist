@@ -131,10 +131,7 @@ public class Segment2d extends Line2d
      */
     public boolean overlaps(Segment2d segment)
     {
-        Point2d intersection = getIntersection(segment);
-        if (intersection == null || !Double.isNaN(intersection.x)) // NaN means segments on the same line
-            return false;
-        return contains(segment.p) || contains(segment.p2);
+        return contains(segment.p) || contains(segment.p2) || segment.contains(p) || segment.contains(p2);
     }
 
     @Override

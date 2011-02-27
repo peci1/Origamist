@@ -6,18 +6,20 @@ package cz.cuni.mff.peckam.java.origamist.utils;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import java.util.Comparator;
+import java.util.Map;
+import java.util.SortedMap;
 
-import javax.vecmath.Tuple3d;
+import javax.vecmath.Tuple2d;
 
-import cz.cuni.mff.peckam.java.origamist.math.CanonicLine3d;
-import cz.cuni.mff.peckam.java.origamist.math.Line3d;
+import cz.cuni.mff.peckam.java.origamist.math.CanonicLine2d;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 
 /**
- * A map that has lines as keys, and can be access by in epsilon-equals way.
+ * A map that has lines as keys, and can be accessed in epsilon-equals way.
  * 
  * @author Martin Pecka
  */
-public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
+public class Line2dMap<V> extends EpsilonRedBlackTree<CanonicLine2d, V>
 {
     /** */
     private static final long serialVersionUID = 1989427767196076752L;
@@ -25,9 +27,36 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
     /**
      * Create a new map with lines as keys.
      */
-    public LineMap()
+    public Line2dMap()
     {
         super(getEpsilonComparator(0d), getEpsilonComparator(EPSILON));
+    }
+
+    /**
+     * Create a new Line3dMap with entries from the given map. Use the default comparator to compare the keys. The keys
+     * must implement {@link Comparable}&lt;K&gt;.
+     * 
+     * @param m The map to take entries from.
+     * 
+     * @throws ClassCastException If a key from the given map doesn't implement the {@link Comparable}&lt;K&gt;
+     *             interface.
+     * @throws NullPointerException If <code>m == null</code> or if the map contains a <code>null</code> key and the
+     *             comparator doesn't support it.
+     */
+    public Line2dMap(Map<? extends CanonicLine2d, ? extends V> m)
+    {
+        super(m, getEpsilonComparator(EPSILON));
+    }
+
+    /**
+     * Create a new Line3dMap with entries from the given sorted map. The map's comparator is used. This is an effective
+     * (linear time) algorithm.
+     * 
+     * @param m The sorted map to take entries from.
+     */
+    public Line2dMap(SortedMap<CanonicLine2d, ? extends V> m)
+    {
+        super(m, getEpsilonComparator(EPSILON));
     }
 
     /**
@@ -36,11 +65,11 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * @param epsilon The epsilon to use.
      * @return A comparator comparing two epsilon-equal values as equal.
      */
-    protected static Comparator<? super CanonicLine3d> getEpsilonComparator(final double epsilon)
+    protected static Comparator<? super CanonicLine2d> getEpsilonComparator(final double epsilon)
     {
-        return new Comparator<CanonicLine3d>() {
+        return new Comparator<CanonicLine2d>() {
             @Override
-            public int compare(CanonicLine3d o1, CanonicLine3d o2)
+            public int compare(CanonicLine2d o1, CanonicLine2d o2)
             {
                 int cmp1 = compare(o1.getVector(), o2.getVector());
                 if (cmp1 != 0)
@@ -48,15 +77,12 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
                 return compare(o1.getPoint(), o2.getPoint());
             }
 
-            protected int compare(Tuple3d t1, Tuple3d t2)
+            protected int compare(Tuple2d t1, Tuple2d t2)
             {
                 int cmp1 = compare(t1.x, t2.x);
                 if (cmp1 != 0)
                     return cmp1;
-                int cmp2 = compare(t1.y, t2.y);
-                if (cmp2 != 0)
-                    return cmp2;
-                return compare(t1.z, t2.z);
+                return compare(t1.y, t2.y);
             }
 
             protected int compare(Double d1, Double d2)
@@ -78,9 +104,9 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * 
      * @see EpsilonMap#epsilonGet(Object)
      */
-    public V epsilonGet(Line3d key)
+    public V epsilonGet(Line2d key)
     {
-        return epsilonGet(new CanonicLine3d(key));
+        return epsilonGet(new CanonicLine2d(key));
     }
 
     /**
@@ -89,9 +115,9 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * 
      * @see EpsilonMap#epsilonPut(Object, Object)
      */
-    public V epsilonPut(Line3d key, V value)
+    public V epsilonPut(Line2d key, V value)
     {
-        return super.epsilonPut(new CanonicLine3d(key), value);
+        return super.epsilonPut(new CanonicLine2d(key), value);
     }
 
     /**
@@ -100,9 +126,9 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * 
      * @see EpsilonMap#epsilonRemove(Object)
      */
-    public V epsilonRemove(Line3d key)
+    public V epsilonRemove(Line2d key)
     {
-        return super.epsilonRemove(new CanonicLine3d(key));
+        return super.epsilonRemove(new CanonicLine2d(key));
     }
 
     /**
@@ -111,9 +137,9 @@ public class LineMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * 
      * @see EpsilonMap#epsilonContainsKey(Object)
      */
-    public boolean epsilonContainsKey(Line3d key)
+    public boolean epsilonContainsKey(Line2d key)
     {
-        return super.epsilonContainsKey(new CanonicLine3d(key));
+        return super.epsilonContainsKey(new CanonicLine2d(key));
     }
 
 }

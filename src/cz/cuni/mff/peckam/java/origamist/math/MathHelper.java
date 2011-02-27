@@ -27,25 +27,40 @@ public class MathHelper
      * 
      * @param v1 The vector to compare.
      * @param v2 The vector to compare.
-     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel.
+     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel or if v2 is a zero vector
+     *         and v1 isn't.
      */
     public static Double vectorQuotient3d(Vector3d v1, Vector3d v2)
     {
+        Vector3d zero = new Vector3d();
+        boolean v1zero = v1.epsilonEquals(zero, EPSILON);
+        boolean v2zero = v2.epsilonEquals(zero, EPSILON);
+        if (v1zero || v2zero) {
+            if (v1zero && v2zero) {
+                return 1d;
+            } else if (v1zero) {
+                return 0d;
+            } else {
+                return null;
+            }
+        }
+
         Vector3d cross = new Vector3d();
         cross.cross(v1, v2);
-        if (!cross.epsilonEquals(new Vector3d(), EPSILON))
+        if (!cross.epsilonEquals(zero, EPSILON))
             return null; // the vectors aren't parallel
 
-        if (v2.x != 0)
+        if (abs(v2.x) > EPSILON)
             return v1.x / v2.x;
 
-        if (v2.y != 0)
+        if (abs(v2.y) > EPSILON)
             return v1.y / v2.y;
 
-        if (v2.z != 0)
+        if (abs(v2.z) > EPSILON)
             return v1.z / v2.z;
 
-        return 1d; // all coordinates are 0, so the quotient may be any nonzero number
+        assert false : "Vector v2 is not a zero vector, but none of its coordinates is diffrent from zero???";
+        return null;
     }
 
     /**
@@ -53,19 +68,35 @@ public class MathHelper
      * 
      * @param v1 The vector to compare.
      * @param v2 The vector to compare.
-     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel.
+     * @return The "quotient" ("v1/v2") or <code>null</code> if the vectors aren't parallel or if v2 is a zero vector
+     *         and v1 isn't.
      */
     public static Double vectorQuotient2d(Vector2d v1, Vector2d v2)
     {
+        Vector2d zero = new Vector2d();
+        boolean v1zero = v1.epsilonEquals(zero, EPSILON);
+        boolean v2zero = v2.epsilonEquals(zero, EPSILON);
+
+        if (v1zero || v2zero) {
+            if (v1zero && v2zero) {
+                return 1d;
+            } else if (v1zero) {
+                return 0d;
+            } else {
+                return null;
+            }
+        }
+
         Vector2d v2perp = new Vector2d(-v2.y, v2.x); // a vector perpendicular to v2
         if (abs(v2perp.dot(v1)) < EPSILON) { // v1 is parallel to v2
-            if (v2.x != 0)
+            if (abs(v2.x) > EPSILON)
                 return v1.x / v2.x;
 
-            if (v2.y != 0)
+            if (abs(v2.y) > EPSILON)
                 return v1.y / v2.y;
 
-            return 1d; // all coordinates are 0, so the quotient may be any nonzero number
+            assert false : "Vector v2 is not a zero vector, but none of its coordinates is nonzero???";
+            return null;
         }
 
         return null;
@@ -110,12 +141,25 @@ public class MathHelper
      */
     public static List<Point3d> removeEpsilonEqualPoints(List<Point3d> list)
     {
+        return removeEpsilonEqualPoints(list, EPSILON);
+    }
+
+    /**
+     * Provided a list of points, removes those points that are epsilon-equal so that no two remaining points are
+     * epsilon-equal. The changes are made directly to the provided list.
+     * 
+     * @param list The list to scan for duplicates.
+     * @param epsilon The epsilon to use in epsilonEquals().
+     * @return The input list after duplicate removal.
+     */
+    public static List<Point3d> removeEpsilonEqualPoints(List<Point3d> list, double epsilon)
+    {
         int i = 0;
         while (i < list.size() - 1) {
             int j = i + 1;
             Point3d iPoint = list.get(i);
             while (j < list.size()) {
-                if (iPoint.epsilonEquals(list.get(j), EPSILON)) {
+                if (iPoint.epsilonEquals(list.get(j), epsilon)) {
                     list.remove(j);
                 } else {
                     j++;

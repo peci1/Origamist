@@ -132,10 +132,7 @@ public class Segment3d extends Line3d
      */
     public boolean overlaps(Segment3d segment)
     {
-        Point3d intersection = getIntersection(segment);
-        if (intersection == null || !Double.isNaN(intersection.x)) // NaN means segments on the same line
-            return false;
-        return contains(segment.p) || contains(segment.p2);
+        return contains(segment.p) || contains(segment.p2) || segment.contains(p) || segment.contains(p2);
     }
 
     @Override

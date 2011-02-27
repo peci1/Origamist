@@ -107,6 +107,8 @@ public class Plane3d implements Cloneable
      * @param other The other plane to find intersection with.
      * @return The intersection line or <code>null</code>, if the planes are equal or parallel (to distinguish these two
      *         states, use {@link Plane3d#equals(Object)}.)
+     * 
+     * @see http://local.wasp.uwa.edu.au/~pbourke/geometry/planeplane/
      */
     public Line3d getIntersection(Plane3d other)
     {
@@ -116,37 +118,29 @@ public class Plane3d implements Cloneable
         lineDir.cross(normal, oNormal);
         lineDir.normalize();
 
-        // get absolute values of the normal vector's coordinates
-        double anx = lineDir.x >= 0 ? lineDir.x : -lineDir.x;
-        double any = lineDir.y >= 0 ? lineDir.y : -lineDir.y;
-        double anz = lineDir.z >= 0 ? lineDir.z : -lineDir.z;
+        double d1 = -d;
+        double d2 = -other.d;
 
-        if (anx + any + anz < EPSILON) // planes are parallel
+        double n1n1 = normal.dot(normal);
+        double n2n2 = oNormal.dot(oNormal);
+        double n1n2 = normal.dot(oNormal);
+
+        double det = n1n1 * n2n2 - n1n2 * n1n2;
+        if (abs(det) < EPSILON)
             return null;
 
-        byte maxCoord; // identify the coordinate with the highest absolute value
-        if (anx > any) {
-            maxCoord = (byte) ((anx > anz) ? 1 : 3);
-        } else {
-            maxCoord = (byte) ((any > anz) ? 2 : 3);
-        }
+        double c1 = (d1 * n2n2 - d2 * n1n2) / det;
+        double c2 = (d2 * n1n1 - d1 * n1n2) / det;
 
-        Point3d point = new Point3d(); // find a point lying in both the planes
-        if (maxCoord == 1) {
-            point.x = 0;
-            point.y = (other.d * normal.z - d * oNormal.z) / lineDir.x;
-            point.z = (d * oNormal.y - other.d * normal.y) / lineDir.x;
-        } else if (maxCoord == 2) {
-            point.x = (d * oNormal.z - other.d * normal.z) / lineDir.y;
-            point.y = 0;
-            point.z = (other.d * normal.x - d * oNormal.x) / lineDir.y;
-        } else {
-            point.x = (other.d * normal.y - d * oNormal.y) / lineDir.z;
-            point.y = (d * oNormal.x - other.d * normal.x) / lineDir.z;
-            point.z = 0;
-        }
+        Point3d c1n1 = new Point3d(normal);
+        c1n1.scale(c1);
+        Point3d c2n2 = new Point3d(oNormal);
+        c2n2.scale(c2);
 
-        return new Line3d(point, lineDir);
+        Point3d linePoint = new Point3d(c1n1);
+        linePoint.add(c2n2);
+
+        return new Line3d(linePoint, lineDir);
     }
 
     /**

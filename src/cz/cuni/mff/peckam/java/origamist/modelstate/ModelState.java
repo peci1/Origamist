@@ -13,8 +13,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
@@ -35,7 +37,6 @@ import cz.cuni.mff.peckam.java.origamist.math.CanonicLine2d;
 import cz.cuni.mff.peckam.java.origamist.math.CanonicLine3d;
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
-import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
@@ -50,6 +51,8 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
+import cz.cuni.mff.peckam.java.origamist.utils.Line2dMap;
+import cz.cuni.mff.peckam.java.origamist.utils.Line3dMap;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.Observer;
@@ -64,91 +67,91 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ObservableList<Fold>                          folds                 = new ObservableList<Fold>();
+    protected ObservableList<Fold>                 folds                 = new ObservableList<Fold>();
 
     /** The list of fold lines converted to 3D. Use getFoldLines3d() to get the list. */
-    protected List<Segment3d>                               foldLines3d           = new LinkedList<Segment3d>();
+    protected List<Segment3d>                      foldLines3d           = new LinkedList<Segment3d>();
 
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                                     foldLineArray         = null;
+    protected LineArray                            foldLineArray         = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                                       foldLineArrayDirty    = true;
+    protected boolean                              foldLineArrayDirty    = true;
 
     /**
      * The triangles this model state consists of.
      */
-    protected ObservableList<ModelTriangle>                 triangles             = new ObservableList<ModelTriangle>();
+    protected ObservableList<ModelTriangle>        triangles             = new ObservableList<ModelTriangle>();
 
     /** The triangles on the paper. Automatically updated when <code>triangles</code> change. */
-    protected List<Triangle2d>                              triangles2d           = new LinkedList<Triangle2d>();
+    protected List<Triangle2d>                     triangles2d           = new LinkedList<Triangle2d>();
 
     /**
      * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
      * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
      * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
      */
-    protected Hashtable<CanonicLine3d, List<ModelTriangle>> neighbors             = new Hashtable<CanonicLine3d, List<ModelTriangle>>();
+    protected Line3dMap<List<ModelTriangle>>       neighbors             = new Line3dMap<List<ModelTriangle>>();
 
     /**
      * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
      * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
      * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
      */
-    protected Hashtable<CanonicLine2d, List<Triangle2d>>    neighbors2d           = new Hashtable<CanonicLine2d, List<Triangle2d>>();
+    protected Line2dMap<List<Triangle2d>>          neighbors2d           = new Line2dMap<List<Triangle2d>>();
 
     /** The layers of the paper. */
-    protected ObservableList<Layer>                         layers                = new ObservableList<Layer>();
+    protected ObservableList<Layer>                layers                = new ObservableList<Layer>();
 
     /** The mapping of triangles to their containing layer. Automatically updated when <code>layers</code> change */
-    protected Hashtable<ModelTriangle, Layer>               trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
+    protected Hashtable<ModelTriangle, Layer>      trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
 
     /**
      * A cache for quick finding of a 3D triangle corresponding to the given 2D triangle. Automatically updated when
      * <code>triangles</code> change.
      */
-    protected Hashtable<Triangle2d, ModelTriangle>          paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
+    protected Hashtable<Triangle2d, ModelTriangle> paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                                 trianglesArray        = null;
+    protected TriangleArray                        trianglesArray        = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                                       trianglesArrayDirty   = true;
+    protected boolean                              trianglesArrayDirty   = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                                        rotationAngle         = 0;
+    protected double                               rotationAngle         = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                                        viewingAngle          = Math.PI / 2.0;
+    protected double                               viewingAngle          = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
      */
-    protected Step                                          step;
+    protected Step                                 step;
 
     /**
      * The origami model which is this the state of.
      */
-    protected Origami                                       origami;
+    protected Origami                              origami;
 
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                                           stepBlendingTreshold  = 5;
+    protected int                                  stepBlendingTreshold  = 5;
 
     public ModelState()
     {
@@ -181,15 +184,15 @@ public class ModelState implements Cloneable
                     triangles2d.remove(t.originalPosition);
                     for (Segment3d edge : t.getEdges()) {
                         CanonicLine3d line = new CanonicLine3d(edge);
-                        neighbors.get(line).remove(t);
-                        if (neighbors.get(line).size() == 0)
-                            neighbors.remove(line);
+                        neighbors.epsilonGet(line).remove(t);
+                        if (neighbors.epsilonGet(line).size() == 0)
+                            neighbors.epsilonRemove(line);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
-                        neighbors2d.get(line).remove(t.originalPosition);
-                        if (neighbors2d.get(line).size() == 0)
-                            neighbors2d.remove(line);
+                        neighbors2d.epsilonGet(line).remove(t.originalPosition);
+                        if (neighbors2d.epsilonGet(line).size() == 0)
+                            neighbors2d.epsilonRemove(line);
                     }
                 } else if (change.getChangeType() != ChangeTypes.REMOVE) {
                     ModelTriangle t = change.getItem();
@@ -197,15 +200,15 @@ public class ModelState implements Cloneable
                     triangles2d.add(t.originalPosition);
                     for (Segment3d edge : t.getEdges()) {
                         CanonicLine3d line = new CanonicLine3d(edge);
-                        if (neighbors.get(line) == null)
-                            neighbors.put(line, new LinkedList<ModelTriangle>());
-                        neighbors.get(line).add(t);
+                        if (neighbors.epsilonGet(line) == null)
+                            neighbors.epsilonPut(line, new LinkedList<ModelTriangle>());
+                        neighbors.epsilonGet(line).add(t);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
-                        if (neighbors2d.get(line) == null)
-                            neighbors2d.put(line, new LinkedList<Triangle2d>());
-                        neighbors2d.get(line).add(t.originalPosition);
+                        if (neighbors2d.epsilonGet(line) == null)
+                            neighbors2d.epsilonPut(line, new LinkedList<Triangle2d>());
+                        neighbors2d.epsilonGet(line).add(t.originalPosition);
                     }
                 }
             }
@@ -432,19 +435,17 @@ public class ModelState implements Cloneable
         Point3d end = locatePointFromPaperTo3D(endPoint);
         Segment3d segment = new Segment3d(start, end);
 
-        List<Layer> layers = getLayers(segment);
+        LinkedHashMap<Layer, Segment3d> layerInts = getLayers(segment);
 
         int i = 1;
-        List<Segment3d> foldLines = new LinkedList<Segment3d>();
-        for (Layer layer : layers) {
+        for (Entry<Layer, Segment3d> entry : layerInts.entrySet()) {
             if (!affectedLayers.contains(i++))
                 continue;
             // TODO handle direction in some appropriate way
-            List<Segment3d> layerFoldLines = makeFoldInLayer(layer, direction, segment);
-            foldLines.addAll(layerFoldLines);
+            makeFoldInLayer(entry.getKey(), direction, entry.getValue());
         }
 
-        bendPaper(direction, segment, foldLines, affectedLayers, angle);
+        bendPaper(direction, segment, layerInts, angle);
     }
 
     /**
@@ -457,14 +458,12 @@ public class ModelState implements Cloneable
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
      * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
      *            the paper will be rotated.
-     * @param foldLines The fold lines that were created by doing the last fold.
-     * @param affectedLayers The layers the fold will be performed on.
+     * @param layerInts A map of affected layers and intersections of the fold stripe with them.
      * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
      *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
      *            paper will be moved.
      */
-    protected void bendPaper(Direction direction, Segment3d segment, List<Segment3d> foldLines,
-            List<Integer> affectedLayers, double angle)
+    protected void bendPaper(Direction direction, Segment3d segment, Map<Layer, Segment3d> layerInts, double angle)
     {
         double angle1 = angle;
         if (abs(angle1) < EPSILON)
@@ -484,16 +483,14 @@ public class ModelState implements Cloneable
 
         HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
 
-        List<Layer> layers = getLayers(segment);
-        int i = 1;
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
-        for (Layer layer : layers) {
-            if (!affectedLayers.contains(i++))
-                continue;
+        for (Entry<Layer, Segment3d> layerInt : layerInts.entrySet()) {
+            Layer layer = layerInt.getKey();
+            Segment3d splitSegment = layerInt.getValue();
 
             List<Polygon3d<ModelTriangle>> part1 = new LinkedList<Polygon3d<ModelTriangle>>();
             List<Polygon3d<ModelTriangle>> part2 = new LinkedList<Polygon3d<ModelTriangle>>();
-            layer.splitPolygon(segment, part1, part2);
+            layer.splitPolygon(splitSegment, part1, part2);
 
             boolean swapParts = false;
             if (part1.size() > 0) {
@@ -530,6 +527,11 @@ public class ModelState implements Cloneable
         // to find all triangles that have to be rotated, first add all triangles in "affected" layers that lie in the
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
+
+        List<Segment3d> foldLines = new LinkedList<Segment3d>();
+        for (Entry<Layer, Segment3d> entry : layerInts.entrySet()) {
+            foldLines.addAll(entry.getKey().getIntersections(entry.getValue()));
+        }
 
         Set<ModelTriangle> inQueue = new HashSet<ModelTriangle>(queue);
         Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
@@ -590,8 +592,7 @@ public class ModelState implements Cloneable
         List<ModelTriangle> result = new LinkedList<ModelTriangle>();
 
         for (Segment3d edge : triangle.getEdges()) {
-            Line3d line = new CanonicLine3d(edge);
-            for (ModelTriangle t : neighbors.get(line)) {
+            for (ModelTriangle t : neighbors.epsilonGet(edge)) {
                 if (t.hasCommonEdge(triangle, false)
                 // don't forget to check if the triangles are neighbors on the paper
                         && t.originalPosition.hasCommonEdge(triangle.originalPosition, false)) {
@@ -615,8 +616,7 @@ public class ModelState implements Cloneable
         List<Triangle2d> result = new LinkedList<Triangle2d>();
 
         for (Segment2d edge : triangle.getEdges()) {
-            Line2d line = new CanonicLine2d(edge);
-            for (Triangle2d t : neighbors2d.get(line)) {
+            for (Triangle2d t : neighbors2d.epsilonGet(edge)) {
                 if (t.hasCommonEdge(triangle, false)) {
                     result.add(t);
                 }
@@ -627,7 +627,7 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Returns a sorted list of layers defined by the given segment.
+     * Returns a sorted map of layers defined by the given segment.
      * 
      * A layer is a part of the paper surrounded by either fold lines or paper boundaries.
      * This function returns the layers that intersect with a stripe defined by the two given points and and that is
@@ -636,12 +636,10 @@ public class ModelState implements Cloneable
      * closest to the viewer.
      * 
      * @param segment The segment we search layers for.
-     * @return A list of layers defined by the given line.
+     * @return A list of layers defined by the given line and the intersections with the fold stripe with those layers.
      */
-    protected List<Layer> getLayers(Segment3d segment)
+    protected LinkedHashMap<Layer, Segment3d> getLayers(Segment3d segment)
     {
-        List<Layer> result = new ArrayList<Layer>();
-
         // finds the top layer
         Point3d center = new Point3d(segment.getP1());
         center.add(segment.getP2());
@@ -649,7 +647,7 @@ public class ModelState implements Cloneable
 
         Layer firstLayer = getLayerForPoint(center);
         if (firstLayer == null)
-            return result;
+            return new LinkedHashMap<Layer, Segment3d>();
 
         // find another layers: is done by creating a stripe perpendicular to the first layer and finding intersections
         // of the stripe with triangles
@@ -660,24 +658,22 @@ public class ModelState implements Cloneable
 
         Stripe3d stripe = new Stripe3d(p1line, p2line);
 
+        LinkedHashMap<Layer, Segment3d> result = new LinkedHashMap<Layer, Segment3d>();
+
         for (Layer l : layers) {
-            Line3d stripePlaneAndLayerPlaneInt = stripe.getPlane().getIntersection(l.getPlane());
-            if (stripePlaneAndLayerPlaneInt == null)
-                continue; // the stripe and the layer are parallel
-
-            Point3d segmentPoint1 = stripe.getHalfspace1().getPlane().getIntersection(stripePlaneAndLayerPlaneInt);
-            Point3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndLayerPlaneInt);
-
-            Segment3d intersectionSegment = new Segment3d(segmentPoint1, segmentPoint2);
-            List<Segment3d> layerInts = l.getIntersections(intersectionSegment);
-            if (layerInts.size() > 0)
-                result.add(l);
+            Segment3d intSegment = l.getIntersectionSegment(stripe);
+            if (intSegment == null) {
+                continue;
+            } else {
+                result.put(l, intSegment);
+            }
         }
 
+        List<Layer> keys = new ArrayList<Layer>(result.keySet());
         // sort the layers so that the first one will be the one nearest to the viewer
         // assuming that layers don't intersect, one can compare the order of layers by comparing the order of any two
         // triangles from the layers
-        Collections.sort(result, new Comparator<Layer>() {
+        Collections.sort(keys, new Comparator<Layer>() {
 
             /** The axis from the user's display to the center point. */
             private Line3d axis = null;
@@ -723,7 +719,12 @@ public class ModelState implements Cloneable
             }
         });
 
-        return result;
+        LinkedHashMap<Layer, Segment3d> sortedResult = new LinkedHashMap<Layer, Segment3d>(result.size());
+        for (Layer l : keys) {
+            sortedResult.put(l, result.get(l));
+        }
+
+        return sortedResult;
     }
 
     /**
@@ -747,7 +748,7 @@ public class ModelState implements Cloneable
      * 
      * @param layer The triangles in the layer with the appropriate intersection points.
      * @param direction The direction of the created fold.
-     * @param segment The segment defining the fold.
+     * @param segment The segments defining the fold directly in this layer.
      * 
      * @return The intersections of the given segment with the layer.
      */
