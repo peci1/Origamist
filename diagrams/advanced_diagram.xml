@@ -76,6 +76,9 @@
       		<startPoint><x>0.5</x><y>0.75</y></startPoint>
       		<endPoint><x>1</x><y>0.75</y></endPoint>
       		<layer>1</layer>
+      		<layer>2</layer>
+      		<layer>3</layer>
+      		<layer>4</layer>
       		<angle>3.14</angle>
       	</operation>   
       </step>
