@@ -544,6 +544,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
                     path.getLast(1).left = null;
                 else if (p == path.getLast(1).right)
                     path.getLast(1).right = null;
+                path.removeLast();
             }
         }
     }
@@ -643,12 +644,13 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             setColor(path.getLast(), Color.BLACK);
 
         // return to the initial endpoint
+
+        boolean goHigher = comparator.compare(toDelete.getKey(), path.getLast().getKey()) >= 0;
         while (!path.endsWithKey(toDelete.getKey())) {
-            int cmp = comparator.compare(toDelete.getKey(), path.getLast().getKey());
-            if (path.getLast().left != null && cmp < 0)
-                path.addLast(path.getLast().left);
-            else if (path.getLast().right != null && cmp > 0)
-                path.addLast(path.getLast().right);
+            if (goHigher)
+                path.moveToSuccesor();
+            else
+                path.moveToPredecessor();
         }
     }
 
