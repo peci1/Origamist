@@ -8,7 +8,6 @@ import static java.lang.Math.abs;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
-import javax.vecmath.Vector4d;
 
 /**
  * A plane in 3D.
@@ -106,7 +105,7 @@ public class Plane3d implements Cloneable
      * 
      * @param other The other plane to find intersection with.
      * @return The intersection line or <code>null</code>, if the planes are equal or parallel (to distinguish these two
-     *         states, use {@link Plane3d#equals(Object)}.)
+     *         states, use {@link Plane3d#epsilonEquals(Plane3d)}.)
      * 
      * @see http://local.wasp.uwa.edu.au/~pbourke/geometry/planeplane/
      */
@@ -147,23 +146,28 @@ public class Plane3d implements Cloneable
      * Return the intersection point of this plane and the given line.
      * 
      * @param line The line to search for intersection with.
-     * @return The intersection point, or <code>null</code> if the line is parallel to the plane. To determine if a
-     *         parallel line lies in the plane, call {@link Plane3d#contains(Point3d)} with a point lying on the line.
+     * @return The intersection point (as a line with zero direction vector), or <code>null</code> if the line is
+     *         parallel to the plane and not lying in it, or return <code>line</code> (if it lies in this plane).
      */
-    public Point3d getIntersection(Line3d line)
+    public Line3d getIntersection(Line3d line)
     {
         // just substitute the parametric equation of the line into the general equation of the plane and extract the
         // line parameter
 
         Vector3d normal = getNormal();
 
-        if (Math.abs(normal.dot(line.v)) < EPSILON) // the line is perpendicular to the plane
+        if (Math.abs(normal.dot(line.v)) < EPSILON) {// the line is perpendicular to the plane
+            if (this.contains(line.p)) {
+                return line;
+            }
             return null;
+        }
 
         Vector3d pVect = new Vector3d(line.p);
         double t = -((normal.dot(pVect) + d) / normal.dot(line.v));
 
-        return new Point3d(line.p.x + t * line.v.x, line.p.y + t * line.v.y, line.p.z + t * line.v.z);
+        Point3d p = new Point3d(line.p.x + t * line.v.x, line.p.y + t * line.v.y, line.p.z + t * line.v.z);
+        return new Line3d(p, new Vector3d());
     }
 
     /**
@@ -225,7 +229,11 @@ public class Plane3d implements Cloneable
         if (other == null)
             return false;
 
-        return new Vector4d(a - other.a, b - other.b, c - other.c, d - other.d).epsilonEquals(new Vector4d(), EPSILON);
+        Double quotient = MathHelper.vectorQuotient3d(normal, other.normal);
+        if (quotient == null)
+            return false;
+
+        return Math.abs(this.d - quotient * other.d) < MathHelper.EPSILON;
     }
 
     @Override

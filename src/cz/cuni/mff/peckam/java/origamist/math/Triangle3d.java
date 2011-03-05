@@ -4,6 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+import static java.lang.Math.abs;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -314,44 +315,65 @@ public class Triangle3d implements Cloneable
      */
     public Segment3d getIntersection(Line3d line)
     {
-        Point3d intersection = null;
-
-        if (Math.abs(line.v.dot(getNormal())) < MathHelper.EPSILON) {
+        if (abs(line.v.dot(getNormal())) < EPSILON) {
             // the line is parallel to the triangle's plane
 
+            if (!plane.contains(line.p))
+                return null; // the line doesn't lie in the triangle's plane
+
+            Segment3d intersection = null;
             List<Point3d> intersections = new ArrayList<Point3d>(3);
 
-            intersection = (line instanceof Segment3d) ? s1.getIntersection((Segment3d) line) : s1
-                    .getIntersection(line);
-            // if an intersection exists and it isn't a whole side intersection, add it to the list of intersections
-            // (whole side intersections will be detected by intersections with the other sides)
-            if (intersection != null && !Double.isNaN(intersection.x))
-                intersections.add(intersection);
-
-            intersection = (line instanceof Segment3d) ? s2.getIntersection((Segment3d) line) : s2
-                    .getIntersection(line);
-            if (intersection != null && !Double.isNaN(intersection.x))
-                intersections.add(intersection);
-
-            intersection = (line instanceof Segment3d) ? s3.getIntersection((Segment3d) line) : s3
-                    .getIntersection(line);
-            if (intersection != null && !Double.isNaN(intersection.x))
-                intersections.add(intersection);
+            for (Segment3d s : getEdges()) { // find intersections with edges
+                intersection = s.getIntersection(line);
+                if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
+                    intersections.add(intersection.p);
+                } else if (intersection != null) {
+                    // the line lies on the same line as the edge and they have nonempty intersection - we can return
+                    return intersection;
+                }
+            }
 
             if (line instanceof Segment3d) {
                 // a segment can start or end inside the triangle
                 for (Point3d p : ((Segment3d) line).getPoints()) {
-                    if (this.contains(p)) {
+                    if (this.contains(p) && !sidesContain(p)) {
                         intersections.add(p);
                     }
                 }
             }
 
-            MathHelper.removeEpsilonEqualPoints(intersections);
             // rounding erros may affect the method a lot, so ensure it is a little more tolerant
-            if (intersections.size() > 2) {
-                MathHelper.removeEpsilonEqualPoints(intersections, 2 * EPSILON);
+            MathHelper.removeEpsilonEqualPoints(intersections, 2d * EPSILON);
+
+            for (int i = 0; i < intersections.size(); i++) {
+                if (!sidesContain(intersections.get(i))) {
+                    Point3d substitution = null;
+                    for (int j = 0; j < intersections.size(); j++) {
+                        if (j == i)
+                            continue;
+                        if (sidesContain(intersections.get(j))
+                                && intersections.get(i).distance(intersections.get(j)) < 10d * EPSILON) {
+                            substitution = intersections.get(j);
+                            break;
+                        }
+                    }
+                    if (substitution != null) {
+                        intersections.remove(i--);
+                    }
+                }
             }
+
+            //
+            // double i = 2d;
+            // while (intersections.size() > 2 && i < 10d) {
+            // MathHelper.removeEpsilonEqualPoints(intersections, i++ * EPSILON);
+            // }
+            // if (i > 2d)
+            // Logger.getLogger(getClass()).warn(
+            // "Used " + (i - 1)
+            // + "*EPSILON for joining intersection points. The resulting intersection points are "
+            // + intersections);
 
             if (intersections.size() == 2) {
                 return new Segment3d(intersections.get(0), intersections.get(1));
@@ -365,11 +387,12 @@ public class Triangle3d implements Cloneable
             }
         } else {
             // the line isn't parallel to the triangle's plane
-            intersection = plane.getIntersection(line);
+            Line3d intersection = plane.getIntersection(line);
             // line.contains(...) is being called because the line can be also a Segment3d
-            if (intersection != null && this.contains(intersection) && line.contains(intersection)) {
-                return new Segment3d(intersection, intersection);
+            if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
+                return new Segment3d(intersection.p, intersection.p);
             } else {
+                assert false : "Triangle3d#getIntersection(Line3d): line not parallel to the triangle's plane, but its intersection with the plane isn't a single point";
                 return null;
             }
         }
@@ -444,7 +467,8 @@ public class Triangle3d implements Cloneable
 
             // set v to the vertex of 3D triangle which lies alone in the halfplane defined by the triangle's plane
             // and line p1p2
-            Point3d v = sides.get(0).getIntersection(sides.get(1));
+            Point3d v = sides.get(0).getIntersection(sides.get(1)).p; // we can assume the intersection is a single
+                                                                      // point
 
             // tv1 is a vertex of 3D triangle such that p1 lies on the segment tv1v
             // tv2 is a vertex of 3D triangle such that p2 lies on the segment tv2v
@@ -537,6 +561,9 @@ public class Triangle3d implements Cloneable
                 triangles.add((T) createSubtriangle(v, tv2, p));
         } else if (p1.epsilonEquals(p2, EPSILON) && this.isVertex(p1)) {
             // the line intersects the triangle in a single vertex, no need to divide the triangle
+            triangles.add((T) this);
+        } else if (p1.epsilonEquals(p2, EPSILON) && sidesContain(p2)) {
+            // the segment starts in the interior of a side, no need to divide the triangle
             triangles.add((T) this);
         } else if (p1.epsilonEquals(p2, EPSILON)) {
             // the fold isn't parallel to the triangle's plane - something's weird

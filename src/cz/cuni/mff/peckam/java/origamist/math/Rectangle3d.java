@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector2d;
+import javax.vecmath.Vector3d;
 
 /**
  * A rectangle in 3D space.
@@ -128,11 +129,11 @@ public class Rectangle3d implements Cloneable
     {
         List<Point3d> intList = new ArrayList<Point3d>(2);
         for (Segment3d s : getEdges()) {
-            Point3d intersection = (line instanceof Segment3d) ? ((Segment3d) line).getIntersection(s) : s
-                    .getIntersection(line);
-            // we ignore whole line intersection, because it will be detected by intersections with the other two sides
-            if (intersection != null && !Double.isNaN(intersection.x))
-                intList.add(intersection);
+            Segment3d intersection = s.getIntersection(line);
+            if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON))
+                intList.add(intersection.p);
+            else if (intersection != null) // a whole side intersection, we can return it
+                return intersection;
         }
 
         if (intList.size() == 0)

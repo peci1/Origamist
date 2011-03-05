@@ -36,16 +36,16 @@ import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 public class Polygon3d<T extends Triangle3d>
 {
     /** The triangles the polygon consists of. */
-    protected HashSet<T>        triangles          = new HashSet<T>();
+    protected HashSet<T>         triangles          = new HashSet<T>();
 
     /** The plane the polygon lies in. */
-    protected Plane3d           plane              = null;
+    protected Plane3d            plane              = null;
 
     /** The list of all triangles that have an edge on a common line. */
-    protected Line3dMap<List<T>>  neighbors          = new Line3dMap<List<T>>();
+    protected Line3dMap<List<T>> neighbors          = new Line3dMap<List<T>>();
 
     /** A list of observers of the triangles property. */
-    protected List<Observer<T>> trianglesObservers = new LinkedList<Observer<T>>();
+    protected List<Observer<T>>  trianglesObservers = new LinkedList<Observer<T>>();
 
     /**
      * Create a new polygon consisting of the given triangles.
@@ -584,7 +584,7 @@ public class Polygon3d<T extends Triangle3d>
      * 
      * @param stripe The stripe to find intersections with.
      * @return The intersections of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
-     *         this polygon (and if it lies in the same plane as the polygon).
+     *         this polygon.
      */
     public List<Segment3d> getIntersections(Stripe3d stripe)
     {
@@ -592,10 +592,14 @@ public class Polygon3d<T extends Triangle3d>
         if (stripePlaneAndPolygonPlaneInt == null)
             return null; // the stripe and the polygon are parallel
 
-        Point3d segmentPoint1 = stripe.getHalfspace1().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
-        Point3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
+        Line3d segmentPoint1 = stripe.getHalfspace1().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
+        Line3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
 
-        Segment3d intersectionSegment = new Segment3d(segmentPoint1, segmentPoint2);
+        // we can assume the computed segment points are regular points and that they exist - an intersection line of
+        // two non-parallel planes always exists; in addition the intersection line isn't parallel to any of the
+        // stripe's border lines (and lies in the same plane), so these lines must intersect
+
+        Segment3d intersectionSegment = new Segment3d(segmentPoint1.p, segmentPoint2.p);
         return getIntersections(intersectionSegment);
     }
 
@@ -671,7 +675,7 @@ public class Polygon3d<T extends Triangle3d>
                     parameters.put(intersection.p2, line.getParameterForPoint(intersection.p2));
                 double p1 = parameters.get(intersection.p);
                 double p2 = parameters.get(intersection.p2);
-                if (p1 - p2 > EPSILON) {
+                if (p1 > p2) { // here we don't want to compare using epsilon-equals
                     intersection = new Segment3d(intersection.p2, intersection.p);
                 }
                 intersections.add(new IntersectionWithTriangle<T>(t, intersection));
@@ -687,11 +691,17 @@ public class Polygon3d<T extends Triangle3d>
             @Override
             public int compare(IntersectionWithTriangle<T> o1, IntersectionWithTriangle<T> o2)
             {
-                double o1min = Math.min(parameters.get(o1.p), parameters.get(o1.p2));
-                double o2min = Math.min(parameters.get(o2.p), parameters.get(o2.p2));
-
-                double diff = o1min - o2min;
-                return (diff < -EPSILON ? -1 : (diff > EPSILON ? 1 : 0));
+                double diff = parameters.get(o1.p) - parameters.get(o2.p);
+                if (diff < -EPSILON) {
+                    return -1;
+                } else if (diff > EPSILON) {
+                    return 1;
+                } else {
+                    // if the segments have the same starts, one of them can be a zero-length segment - consider those
+                    // as less than "full"-length segments
+                    double maxDiff = parameters.get(o1.p2) - parameters.get(o2.p2);
+                    return (maxDiff < -EPSILON ? -1 : (maxDiff > EPSILON ? 1 : 0));
+                }
             }
         });
 

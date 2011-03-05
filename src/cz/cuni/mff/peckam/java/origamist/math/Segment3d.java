@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.math;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 /**
  * A line segment in 3D.
@@ -40,16 +41,26 @@ public class Segment3d extends Line3d
         return new Point3d[] { p, p2 };
     }
 
+    /**
+     * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
+     *         point was found; <code>this</code> if this lies on the given line and the line is not a segment; or a
+     *         (new instance of) segment of intersection of this segment and the given segment
+     */
     @Override
-    public Point3d getIntersection(Line3d line)
+    public Segment3d getIntersection(Line3d line)
     {
-        Point3d intersection = super.getIntersection(line);
-        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y)
-                || Double.isNaN(intersection.z))
-            return intersection;
+        if (line instanceof Segment3d) {
+            return getIntersection((Segment3d) line);
+        }
 
-        if (contains(intersection)) {
-            return intersection;
+        // line is a pure line, not a segment
+        Line3d intersection = super.getIntersection(line);
+        if (intersection == null || intersection == this)
+            // no intersection with this as a pure line, or this lies on line
+            return (Segment3d) intersection;
+
+        if (contains(intersection.p)) {
+            return new Segment3d(intersection.p, intersection.p);
         }
         return null;
     }
@@ -57,23 +68,51 @@ public class Segment3d extends Line3d
     /**
      * Return the intersection with another segment.
      * 
-     * TODO should be able to differentiate if two parallel vectors have a common part or not
-     * 
      * @param segment The other segment to find intersection with.
-     * @return the intersection with another segment. Will be <code>null</code> if no intersection exists and will
-     *         return (NaN, NaN, NaN) if the segments lie on the same line.
+     * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
+     *         point was found; or a (new instance of) segment of intersection of this segment and the given segment
      */
-    public Point3d getIntersection(Segment3d segment)
+    public Segment3d getIntersection(Segment3d segment)
     {
-        Point3d intersection = getIntersection((Line3d) segment);
-        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y)
-                || Double.isNaN(intersection.z))
-            return intersection;
+        // creating a new instance of line is necessary to avoid infinite call loop
+        Segment3d intersection = getIntersection(new Line3d(segment.p, segment.v));
+        if (intersection == null) {
+            return null;
+        } else if (intersection.v.epsilonEquals(new Vector3d(), EPSILON)) { // single point intersection
+            if (!segment.contains(intersection.p))
+                return null;
+            return new Segment3d(intersection.p, intersection.p);
+        } else { // the segments lie on the same line
+            Segment3d big = this;
+            Segment3d small = segment;
+            if (!this.contains(segment.p) && !this.contains(segment.p2)) {
+                big = segment;
+                small = this;
+            }
+            // if one segment is whole inside the other, big is the "containing" segment... otherwise it doesn't matter
 
-        if (segment.contains(intersection)) {
-            return intersection;
+            if (big.contains(small.p)) {
+                if (big.contains(small.p2)) {
+                    return small;
+                } else { // small has to contain either big.p or big.p2
+                    if (small.contains(big.p)) {
+                        return new Segment3d(big.p, small.p);
+                    } else {
+                        return new Segment3d(big.p2, small.p);
+                    }
+                }
+            } else if (big.contains(small.p2)) { // small has to contain either big.p or big.p2
+                if (small.contains(big.p)) {
+                    return new Segment3d(big.p, small.p2);
+                } else {
+                    return new Segment3d(big.p2, small.p2);
+                }
+            } else {
+                // big is the potentionally "containing" segment, and if it contains no points of small, the segments
+                // have no intersection
+                return null;
+            }
         }
-        return null;
     }
 
     /**

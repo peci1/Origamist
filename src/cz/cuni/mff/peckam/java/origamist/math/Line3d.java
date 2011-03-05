@@ -65,11 +65,12 @@ public class Line3d implements Cloneable
      * Get the intersection point of this line with the given line.
      * 
      * @param line The line to find intersection with.
-     * @return The intersection point; null if no intersection point was found; (NaN, NaN, NaN) if the lines are equal.
+     * @return The intersection point (as a line with zero direction vector); <code>null</code> if no intersection point
+     *         was found; <code>this</code> if the lines are epsilon-equal.
      * 
      * @see http://mathforum.org/library/drmath/view/62814.html
      */
-    public Point3d getIntersection(Line3d line)
+    public Line3d getIntersection(Line3d line)
     {
         Vector3d v1xv2 = new Vector3d();
         v1xv2.cross(v, line.v);
@@ -78,7 +79,7 @@ public class Line3d implements Cloneable
             // the lines are parallel
             if (line.contains(p)) {
                 // and equal
-                return new Point3d(Double.NaN, Double.NaN, Double.NaN);
+                return this;
             } else {
                 // and different
                 return null;
@@ -99,8 +100,7 @@ public class Line3d implements Cloneable
         Vector3d vt = new Vector3d(v);
         vt.scale(q);
         result.add(vt);
-        return result;
-
+        return new Line3d(result, new Vector3d());
     }
 
     /**
@@ -203,8 +203,8 @@ public class Line3d implements Cloneable
     {
         if (!getClass().equals(other.getClass()))
             return false;
-        Point3d intersection = getIntersection(other);
-        return intersection != null && Double.isNaN(intersection.x);
+        // getIntersection() returns this if the lines are epsilon-equal
+        return getIntersection(other) == this;
     }
 
     @Override

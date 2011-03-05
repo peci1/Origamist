@@ -710,11 +710,14 @@ public class ModelState implements Cloneable
             @Override
             public int compare(Layer o1, Layer o2)
             {
-                Point3d int1 = o1.getPlane().getIntersection(axis);
-                Point3d int2 = o2.getPlane().getIntersection(axis);
+                Line3d int1 = o1.getPlane().getIntersection(axis);
+                Line3d int2 = o2.getPlane().getIntersection(axis);
 
-                double t1 = axis.getParameterForPoint(int1);
-                double t2 = axis.getParameterForPoint(int2);
+                // we can assume int1 and int2 to be regular points, because intersections with layers parallel to the
+                // stripe are discarded
+
+                double t1 = axis.getParameterForPoint(int1.getPoint());
+                double t2 = axis.getParameterForPoint(int2.getPoint());
                 return (t1 - t2 > EPSILON) ? 1 : (t1 - t2 < -EPSILON ? -1 : 0);
             }
         });
