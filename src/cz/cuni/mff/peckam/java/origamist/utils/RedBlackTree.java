@@ -646,7 +646,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         // return to the initial endpoint
 
         boolean goHigher = comparator.compare(toDelete.getKey(), path.getLast().getKey()) >= 0;
-        while (!path.endsWithKey(toDelete.getKey())) {
+        while (path.size() > 0 && !path.endsWithKey(toDelete.getKey())) {
             if (goHigher)
                 path.moveToSuccesor();
             else
