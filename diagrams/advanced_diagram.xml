@@ -55,7 +55,7 @@
       		<startPoint><x>0</x><y>0.5</y></startPoint>
       		<endPoint><x>1</x><y>0.5</y></endPoint>
       		<layer>1</layer>
-      		<angle>3.14</angle>
+      		<angle>3.141592</angle>
       	</operation>   
       </step>
       <step id="2">
@@ -66,7 +66,7 @@
       		<endPoint><x>0.5</x><y>0.5</y></endPoint>
       		<layer>1</layer>
       		<layer>2</layer>
-      		<angle>3.14</angle>
+      		<angle>3.141592</angle>
       	</operation>   
       </step>
       <step id="3">
@@ -79,7 +79,7 @@
       		<layer>2</layer>
       		<layer>3</layer>
       		<layer>4</layer>
-      		<angle>3.14</angle>
+      		<angle>3.141592</angle>
       	</operation>   
       </step>
       <step id="4">
@@ -96,7 +96,7 @@
       		<layer>6</layer>
       		<layer>7</layer>
       		<layer>8</layer>
-      		<angle>3.14</angle>
+      		<angle>3.141592</angle>
       	</operation>   
       </step>
     </steps>
