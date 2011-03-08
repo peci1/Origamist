@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.SortedMap;
 
+import org.apache.log4j.Logger;
+
 /**
  * A red-black tree supporting searching for epsilon-equal values.
  * 
@@ -147,6 +149,65 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
         return null;
     }
 
+    /**
+     * If <code>surelyContains == false</code>, then this acts like {@link EpsilonRedBlackTree#epsilonGet(Object)}.
+     * Otherwise, if the standard epsilonGet() returns no result, it tries to scan the tree sequentially and find the
+     * epsilon-equal key.
+     * 
+     * This is needed due to rounding errors. Figure out the following situation:
+     * 
+     * <pre>
+     * 
+     *     (5,0)        a rotation  (0,EPS)         and then try to search for (5,-EPS)...
+     *     /   \        ==========>      \          although it is epsilon-equal to (5,0), -EPS isn't epsilon-equal to EPS
+     * (0,EPS) (X1,Y1)                   (5,0)      so the standard search algorithm would direct you to the left from the root
+     *                                     \
+     *                                   (X1,Y1)
+     * </pre>
+     * 
+     * @param key The key to search for.
+     * @param surelyContains If <code>true</code> and the standard epsilonGet() finds nothing, a sequential search is
+     *            performed.
+     * @return The value corresponding to the given key, or <code>null</code> if no such value exists.
+     */
+    public V epsilonGet(K key, boolean surelyContains)
+    {
+        V result = epsilonGet(key);
+        if (result != null || epsilonContainsKey(key))
+            return result;
+
+        if (surelyContains) {
+            Logger.getLogger(getClass()).warn("Performing sequential search.");
+
+            TreePath path = epsilonGetPathSequentially(key);
+            if (path.size() > 0)
+                return path.getLast().getValue();
+        }
+        return null;
+    }
+
+    /**
+     * Search sequentially for the entry with epsilon-equal key.
+     * 
+     * @param key The key to search for.
+     * @return The path to the entry with the epsilon-equal key.
+     */
+    protected TreePath epsilonGetPathSequentially(K key)
+    {
+        if (root == null)
+            return new TreePath();
+
+        TreePath path = epsilonGetPath(firstKey());
+
+        while (path.size() > 0) {
+            if (epsilonComparator.compare(path.getLast().key, key) == 0)
+                return path;
+            path.moveToSuccesor();
+        }
+
+        return path;
+    }
+
     @Override
     public V epsilonPut(K key, V value)
     {
@@ -185,6 +246,48 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
         V oldValue = path.getLast().value;
         deleteLastPathEntry(path);
         return oldValue;
+    }
+
+    /**
+     * If <code>surelyContains == false</code>, then this acts like {@link EpsilonRedBlackTree#epsilonRemove(Object)}.
+     * Otherwise, if the standard epsilonRemove() returns no result, it tries to scan the tree sequentially and find the
+     * epsilon-equal key.
+     * 
+     * This is needed due to rounding errors. Figure out the following situation:
+     * 
+     * <pre>
+     * 
+     *     (5,0)        a rotation  (0,EPS)         and then try to delete (5,-EPS)...
+     *     /   \        ==========>      \          although it is epsilon-equal to (5,0), -EPS isn't epsilon-equal to EPS
+     * (0,EPS) (X1,Y1)                   (5,0)      so the standard search algorithm would direct you to the left from the root
+     *                                     \
+     *                                   (X1,Y1)
+     * </pre>
+     * 
+     * @param key The key to delete.
+     * @param surelyContains If <code>true</code> and the standard epsilonRemove() finds nothing, a sequential search is
+     *            performed.
+     * @return The value corresponding to the removed key, or <code>null</code> if no such value exists.
+     */
+    public V epsilonRemove(K key, boolean surelyContains)
+    {
+        TreePath path = epsilonGetPath(key);
+        if (epsilonEquals(path.getLast().getKey(), key)) {
+            V oldValue = path.getLast().value;
+            deleteLastPathEntry(path);
+            return oldValue;
+        } else {
+            if (surelyContains) {
+                Logger.getLogger(getClass()).warn("Sequential search performed for remove.");
+                path = epsilonGetPathSequentially(key);
+                if (path.size() > 0) {
+                    V value = path.getLast().getValue();
+                    deleteLastPathEntry(path);
+                    return value;
+                }
+            }
+            return null;
+        }
     }
 
     /**

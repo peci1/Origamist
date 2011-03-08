@@ -123,3 +123,28 @@ But none of these two solutions solves the problem of lines differing by less th
 EPSILON. To solve this, one would think of some quantization of the space to 
 2*EPSILON large pieces. But the "relation" defined on this space wouldn't be a
 real relation, transitivity would be broken. So what to do with this???   
+
+-----------
+
+Related to the previous entry, I've implemented an EpsilonRedBlackTree. The 
+algorithms for getting, putting and removing a value by key have their epsilon-
+equals form, but the "raw" methods are also available. It could be tricky, that
+the epsilon-tree doesn't warn you if you unintentionally use the "raw" method,
+but I have no idea how to distinguish intentional and unintentional uses.
+Whatever... 
+
+There are more serious problems due to the lack of transitivity. Figure out the
+following situation:
+    (5,0)        a rotation  (0,EPS)         
+     /   \        ==========>      \          
+ (0,EPS) (X1,Y1)                   (5,0)      
+                                     \
+                                   (X1,Y1)
+and then try to search for (5,-EPS)...
+although it is epsilon-equal to (5,0), -EPS isn't epsilon-equal to EPS
+so the standard search algorithm would direct you to the left from the root
+
+So I've also implemented epsilon-methods with boolean argument surelyContains.
+This argument tells the method that it should perform a sequential search if 
+the standard epsilon-method fails to find an entry. It's just a workaround, but
+it seems to work for my needs. 

@@ -113,6 +113,14 @@ public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
     }
 
     /**
+     * @see EpsilonRedBlackTree#epsilonGet(Object, boolean)
+     */
+    public V epsilonGet(Line3d key, boolean surelyContains)
+    {
+        return super.epsilonGet(new CanonicLine3d(key), surelyContains);
+    }
+
+    /**
      * If the given line is not canonic, canonicalize it. Otherwise works the same way as
      * {@link EpsilonMap#epsilonPut(Object, Object)} does.
      * 
@@ -132,6 +140,14 @@ public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
     public V epsilonRemove(Line3d key)
     {
         return super.epsilonRemove(new CanonicLine3d(key));
+    }
+
+    /**
+     * @see EpsilonRedBlackTree#epsilonRemove(Object, boolean)
+     */
+    public V epsilonRemove(Line3d key, boolean surelyContains)
+    {
+        return super.epsilonRemove(new CanonicLine3d(key), surelyContains);
     }
 
     /**

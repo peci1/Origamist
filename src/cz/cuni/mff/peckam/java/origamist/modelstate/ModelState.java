@@ -38,6 +38,7 @@ import cz.cuni.mff.peckam.java.origamist.math.CanonicLine3d;
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
+import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
@@ -184,15 +185,15 @@ public class ModelState implements Cloneable
                     triangles2d.remove(t.originalPosition);
                     for (Segment3d edge : t.getEdges()) {
                         CanonicLine3d line = new CanonicLine3d(edge);
-                        neighbors.epsilonGet(line).remove(t);
-                        if (neighbors.epsilonGet(line).size() == 0)
-                            neighbors.epsilonRemove(line);
+                        neighbors.epsilonGet(line, true).remove(t);
+                        if (neighbors.epsilonGet(line, true).size() == 0)
+                            neighbors.epsilonRemove(line, true);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
-                        neighbors2d.epsilonGet(line).remove(t.originalPosition);
-                        if (neighbors2d.epsilonGet(line).size() == 0)
-                            neighbors2d.epsilonRemove(line);
+                        neighbors2d.epsilonGet(line, true).remove(t.originalPosition);
+                        if (neighbors2d.epsilonGet(line, true).size() == 0)
+                            neighbors2d.epsilonRemove(line, true);
                     }
                 } else if (change.getChangeType() != ChangeTypes.REMOVE) {
                     ModelTriangle t = change.getItem();
@@ -202,13 +203,13 @@ public class ModelState implements Cloneable
                         CanonicLine3d line = new CanonicLine3d(edge);
                         if (neighbors.epsilonGet(line) == null)
                             neighbors.epsilonPut(line, new LinkedList<ModelTriangle>());
-                        neighbors.epsilonGet(line).add(t);
+                        neighbors.epsilonGet(line, true).add(t);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
                         if (neighbors2d.epsilonGet(line) == null)
                             neighbors2d.epsilonPut(line, new LinkedList<Triangle2d>());
-                        neighbors2d.epsilonGet(line).add(t.originalPosition);
+                        neighbors2d.epsilonGet(line, true).add(t.originalPosition);
                     }
                 }
             }
@@ -592,7 +593,7 @@ public class ModelState implements Cloneable
         List<ModelTriangle> result = new LinkedList<ModelTriangle>();
 
         for (Segment3d edge : triangle.getEdges()) {
-            for (ModelTriangle t : neighbors.epsilonGet(edge)) {
+            for (ModelTriangle t : neighbors.epsilonGet(edge, true)) {
                 if (t.hasCommonEdge(triangle, false)
                 // don't forget to check if the triangles are neighbors on the paper
                         && t.originalPosition.hasCommonEdge(triangle.originalPosition, false)) {
@@ -662,7 +663,7 @@ public class ModelState implements Cloneable
 
         for (Layer l : layers) {
             Segment3d intSegment = l.getIntersectionSegment(stripe);
-            if (intSegment == null) {
+            if (intSegment == null || intSegment.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
                 continue;
             } else {
                 result.put(l, intSegment);

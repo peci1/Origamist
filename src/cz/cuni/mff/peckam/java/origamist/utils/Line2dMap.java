@@ -110,6 +110,14 @@ public class Line2dMap<V> extends EpsilonRedBlackTree<CanonicLine2d, V>
     }
 
     /**
+     * @see EpsilonRedBlackTree#epsilonGet(Object, boolean)
+     */
+    public V epsilonGet(Line2d key, boolean surelyContains)
+    {
+        return super.epsilonGet(new CanonicLine2d(key), surelyContains);
+    }
+
+    /**
      * If the given line is not canonic, canonicalize it. Otherwise works the same way as
      * {@link EpsilonMap#epsilonPut(Object, Object)} does.
      * 
@@ -129,6 +137,14 @@ public class Line2dMap<V> extends EpsilonRedBlackTree<CanonicLine2d, V>
     public V epsilonRemove(Line2d key)
     {
         return super.epsilonRemove(new CanonicLine2d(key));
+    }
+
+    /**
+     * @see EpsilonRedBlackTree#epsilonRemove(Object, boolean)
+     */
+    public V epsilonRemove(Line2d key, boolean surelyContains)
+    {
+        return super.epsilonRemove(new CanonicLine2d(key), surelyContains);
     }
 
     /**
