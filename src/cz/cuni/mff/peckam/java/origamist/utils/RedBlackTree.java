@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -444,58 +445,86 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
     /**
      * Repair the tree structure after insert.
      * 
+     * The algorithm is taken from http://en.wikipedia.org/wiki/Red-black_tree#Insertion . The first call to insert1()
+     * from the wiki page is already done in the put() method. All calls to methods insertI() are using tail-recursion,
+     * so no additional space on stack is needed to perform the repair.
+     * 
      * @param path The path to the newly added entry.
      */
     protected void repairTreeAfterInsert(RedBlackTree<K, V>.TreePath path)
     {
         path.getLast().color = Color.RED;
+        insert2(path);
+    }
 
-        while (path.size() > 1 && path.getLast(1).color == Color.RED) {
-            if (path.getLast(1) == leftOf(path.getLast(2))) {
-                Entry y = rightOf(path.getLast(2));
-                if (colorOf(y) == Color.RED) {
-                    setColor(path.getLast(2), Color.BLACK);
-                    setColor(y, Color.BLACK);
-                    setColor(path.getLast(2), Color.RED);
-                    path.removeLast();
-                    path.removeLast();
-                } else {
-                    if (path.getLast() == rightOf(path.getLast(1))) {
-                        path.removeLast();
-                        path.rotateLeft();
-                    }
-                    setColor(path.getLast(1), Color.BLACK);
-                    setColor(path.getLast(2), Color.RED);
-                    path.removeLast();
-                    path.removeLast();
-                    path.rotateRight();
-                }
-            } else {
-                Entry y = leftOf(path.getLast(2));
-                if (colorOf(y) == Color.RED) {
-                    setColor(path.getLast(1), Color.BLACK);
-                    setColor(y, Color.BLACK);
-                    setColor(path.getLast(2), Color.RED);
-                    path.removeLast();
-                    path.removeLast();
-                } else {
-                    if (path.getLast() == leftOf(path.getLast(1))) {
-                        path.removeLast();
-                        path.rotateRight();
-                    }
-                    setColor(path.getLast(1), Color.BLACK);
-                    setColor(path.getLast(2), Color.RED);
-                    path.removeLast();
-                    path.removeLast();
-                    path.rotateLeft();
-                }
-            }
+    private void insert1(RedBlackTree<K, V>.TreePath path)
+    {
+        if (path.size() == 1)
+            path.getLast().color = Color.BLACK;
+        else
+            insert2(path);
+    }
+
+    private void insert2(RedBlackTree<K, V>.TreePath path)
+    {
+        if (colorOf(path.getLast(1)) == Color.BLACK)
+            return;
+        insert3(path);
+    }
+
+    private void insert3(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry uncle = leftOf(path.getLast(2));
+        if (uncle == path.getLast(1))
+            uncle = rightOf(path.getLast(2));
+
+        if (colorOf(uncle) == Color.RED) {
+            path.getLast(1).color = Color.BLACK;
+            uncle.color = Color.BLACK;
+            path.getLast(2).color = Color.RED;
+            path.removeLast();
+            path.removeLast();
+            insert1(path);
+        } else {
+            insert4(path);
         }
-        root.color = Color.BLACK;
+    }
+
+    private void insert4(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry grand = path.getLast(2);
+        if (path.getLast() == rightOf(path.getLast(1)) && path.getLast(1) == leftOf(grand)) {
+            path.removeLast();
+            path.rotateLeft();
+        } else if (path.getLast() == leftOf(path.getLast(1)) && path.getLast(1) == rightOf(grand)) {
+            path.removeLast();
+            path.rotateRight();
+        }
+        insert5(path);
+    }
+
+    private void insert5(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry grand = path.getLast(2);
+        path.getLast(1).color = Color.BLACK;
+        grand.color = Color.RED;
+
+        if (leftOf(path.getLast(1)) == path.getLast() && path.getLast(1) == leftOf(grand)) {
+            path.removeLast();
+            path.removeLast();
+            path.rotateRight();
+        } else {
+            path.removeLast();
+            path.removeLast();
+            path.rotateLeft();
+        }
     }
 
     /**
      * Delete the path's last entry and repair the tree. The path will be returned in an undetermined state.
+     * 
+     * The algorithm is taken from http://en.wikipedia.org/wiki/Red-black_tree#Removal . All calls to methods deleteI()
+     * are using tail-recursion, so no additional space on stack is needed to perform the repair.
      * 
      * @param path The path to the entry to be deleted.
      */
@@ -507,7 +536,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         Entry p = path.getLast();
         // If p has 2 children, copy successor's element to p and then make p point to successor.
         if (p.left != null && p.right != null) {
-            path.moveToSuccesor();
+            path.moveToSuccesor(); // path will lead to a node in p's subtree, because p has a right child
             Entry s = path.getLast();
             p.key = s.key;
             p.value = s.value;
@@ -531,19 +560,40 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             path.addLast(replacement);
 
             // Fix replacement
-            if (p.color == Color.BLACK)
-                repairTreeAfterDeletion(path);
+            if (p.color == Color.BLACK) {
+                if (replacement.color == Color.RED)
+                    replacement.color = Color.BLACK;
+                else
+                    repairTreeAfterDeletion(path);
+            }
         } else if (path.size() == 1) { // return if we are the only node.
             root = null;
         } else { // No children. Use self as phantom replacement and unlink.
-            if (p.color == Color.BLACK)
+            if (p.color == Color.BLACK) {
                 repairTreeAfterDeletion(path);
 
-            if (path.size() > 1) {
-                if (p == path.getLast(1).left)
+                // p is surely still a leaf, so we can just remove it
+                TreePath newPath = getPath(p.key);
+                if (newPath.getLast().right != null) {
+                    // getPath just finds a path to the first occurence of the key, but we want to remove its second
+                    // occurence
+                    newPath.addLast(newPath.getLast().right);
+                    while (newPath.getLast().left != null) {
+                        newPath.addLast(newPath.getLast().left);
+                    }
+                }
+                if (newPath.size() > 1) {
+                    if (p == newPath.getLast(1).left)
+                        newPath.getLast(1).left = null;
+                    else
+                        newPath.getLast(1).right = null;
+                }
+            } else {
+                if (p == path.getLast(1).left) {
                     path.getLast(1).left = null;
-                else if (p == path.getLast(1).right)
+                } else {
                     path.getLast(1).right = null;
+                }
                 path.removeLast();
             }
         }
@@ -558,99 +608,121 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
      */
     protected void repairTreeAfterDeletion(RedBlackTree<K, V>.TreePath path)
     {
-        boolean setColor = false;
+        delete1(path);
+    }
 
-        Entry toDelete = path.getLast();
+    private void delete1(RedBlackTree<K, V>.TreePath path)
+    {
+        if (path.size() > 1)
+            delete2(path);
+        else
+            root = path.getLast();
+    }
 
-        while (path.size() > 1 && colorOf(path.getLast()) == Color.BLACK) {
+    private void delete2(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry sibling = leftOf(path.getLast(1));
+        if (sibling == path.getLast())
+            sibling = rightOf(path.getLast(1));
+
+        if (colorOf(sibling) == Color.RED) {
+            path.getLast(1).color = Color.RED;
+            sibling.color = Color.BLACK;
             if (path.getLast() == leftOf(path.getLast(1))) {
-                Entry sib = rightOf(path.getLast(1));
-
-                if (colorOf(sib) == Color.RED) {
-                    setColor(sib, Color.BLACK);
-                    setColor(path.getLast(1), Color.RED);
-                    Entry p = path.removeLast();
-                    path.rotateLeft(); // p still remains the left child of its original parent
-                    path.addLast(p);
-                    sib = rightOf(path.getLast(1));
-                }
-
-                if (colorOf(leftOf(sib)) == Color.BLACK && colorOf(rightOf(sib)) == Color.BLACK) {
-                    setColor(sib, Color.RED);
-                    path.removeLast();
-                    setColor = true;
-                } else {
-                    if (colorOf(rightOf(sib)) == Color.BLACK) {
-                        setColor(leftOf(sib), Color.BLACK);
-                        setColor(sib, Color.RED);
-                        Entry p = path.removeLast();
-                        path.addLast(sib);
-                        path.rotateRight(); // rotate p's sibling
-                        path.removeLast(); // and let path lead to p again
-                        path.removeLast();
-                        path.addLast(p);
-                        sib = rightOf(path.getLast(1));
-                    }
-                    setColor(sib, colorOf(path.getLast(1)));
-                    setColor(path.getLast(1), Color.BLACK);
-                    setColor(rightOf(sib), Color.BLACK);
-                    path.removeLast();
-                    path.rotateLeft();
-                    setColor(root, Color.BLACK);
-                    setColor = false;
-                    break;
-                }
-            } else { // symmetric
-                Entry sib = leftOf(path.getLast(1));
-
-                if (colorOf(sib) == Color.RED) {
-                    setColor(sib, Color.BLACK);
-                    setColor(path.getLast(1), Color.RED);
-                    Entry p = path.removeLast();
-                    path.rotateRight();
-                    path.addLast(p); // p still remains the left child of its original parent
-                    sib = leftOf(path.getLast(1));
-                }
-
-                if (colorOf(rightOf(sib)) == Color.BLACK && colorOf(leftOf(sib)) == Color.BLACK) {
-                    setColor(sib, Color.RED);
-                    path.removeLast();
-                    setColor = true;
-                } else {
-                    if (colorOf(leftOf(sib)) == Color.BLACK) {
-                        setColor(rightOf(sib), Color.BLACK);
-                        setColor(sib, Color.RED);
-                        Entry p = path.removeLast();
-                        path.addLast(sib);
-                        path.rotateLeft(); // rotate p's sibling
-                        path.removeLast(); // and let path lead to p again
-                        path.removeLast();
-                        path.addLast(p);
-                        sib = leftOf(path.getLast(1));
-                    }
-                    setColor(sib, colorOf(path.getLast(1)));
-                    setColor(path.getLast(1), Color.BLACK);
-                    setColor(leftOf(sib), Color.BLACK);
-                    path.removeLast();
-                    path.rotateRight();
-                    setColor(root, Color.BLACK);
-                    setColor = false;
-                    break;
-                }
+                path.removeLast();
+                path.rotateLeft();
+                path.addLast(path.getLast().left);
+                path.addLast(path.getLast().left);
+            } else {
+                path.removeLast();
+                path.rotateRight();
+                path.addLast(path.getLast().right);
+                path.addLast(path.getLast().right);
             }
         }
+        delete3(path);
+    }
 
-        if (setColor)
-            setColor(path.getLast(), Color.BLACK);
+    private void delete3(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry sibling = leftOf(path.getLast(1));
+        if (sibling == path.getLast())
+            sibling = rightOf(path.getLast(1));
 
-        // return to the initial endpoint
+        if (path.getLast(1).color == Color.BLACK && colorOf(sibling) == Color.BLACK
+                && colorOf(sibling.left) == Color.BLACK && colorOf(sibling.right) == Color.BLACK) {
+            sibling.color = Color.RED;
+            path.removeLast();
+            delete1(path);
+        } else {
+            delete4(path);
+        }
+    }
 
-        boolean goHigher = comparator.compare(toDelete.getKey(), path.getLast().getKey()) >= 0;
-        while (path.size() > 0 && !path.endsWithKey(toDelete.getKey())) {
-            if (goHigher)
-                path.moveToSuccesor();
-            else
-                path.moveToPredecessor();
+    private void delete4(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry sibling = leftOf(path.getLast(1));
+        if (sibling == path.getLast())
+            sibling = rightOf(path.getLast(1));
+
+        if (path.getLast(1).color == Color.RED && sibling.color == Color.BLACK && colorOf(sibling.left) == Color.BLACK
+                && colorOf(sibling.right) == Color.BLACK) {
+            sibling.color = Color.RED;
+            path.getLast(1).color = Color.BLACK;
+        } else {
+            delete5(path);
+        }
+    }
+
+    private void delete5(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry sibling = leftOf(path.getLast(1));
+        if (sibling == path.getLast())
+            sibling = rightOf(path.getLast(1));
+
+        if (sibling.color == Color.BLACK) {
+            if (path.getLast() == leftOf(path.getLast(1)) && colorOf(sibling.left) == Color.RED
+                    && colorOf(sibling.right) == Color.BLACK) {
+                sibling.color = Color.RED;
+                sibling.left.color = Color.BLACK;
+                path.removeLast();
+                path.addLast(path.getLast().right);
+                path.rotateRight();
+                path.removeLast();
+                path.removeLast();
+                path.addLast(path.getLast().left);
+            } else if (path.getLast() == rightOf(path.getLast(1)) && colorOf(sibling.left) == Color.BLACK
+                    && colorOf(sibling.right) == Color.RED) {
+                sibling.color = Color.RED;
+                sibling.right.color = Color.BLACK;
+                path.removeLast();
+                path.addLast(path.getLast().left);
+                path.rotateLeft();
+                path.removeLast();
+                path.removeLast();
+                path.addLast(path.getLast().right);
+            }
+        }
+        delete6(path);
+    }
+
+    private void delete6(RedBlackTree<K, V>.TreePath path)
+    {
+        Entry sibling = leftOf(path.getLast(1));
+        if (sibling == path.getLast())
+            sibling = rightOf(path.getLast(1));
+
+        sibling.color = path.getLast(1).color;
+        path.getLast(1).color = Color.BLACK;
+
+        if (path.getLast() == path.getLast(1).left) {
+            sibling.right.color = Color.BLACK;
+            path.removeLast();
+            path.rotateLeft();
+        } else {
+            sibling.left.color = Color.BLACK;
+            path.removeLast();
+            path.rotateRight();
         }
     }
 
@@ -1929,6 +2001,30 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             return oldValue;
         }
 
+        /**
+         * @return The color of this entry (either Color.BLACK or Color.RED).
+         */
+        public Color getColor()
+        {
+            return color;
+        }
+
+        /**
+         * @return The left child.
+         */
+        public Entry getLeft()
+        {
+            return left;
+        }
+
+        /**
+         * @return The right child.
+         */
+        public Entry getRight()
+        {
+            return right;
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -1952,5 +2048,62 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         {
             return key + "=" + value;
         }
+    }
+
+    public String treeKeysToString()
+    {
+        StringBuilder result = new StringBuilder();
+
+        class EntryOrNil
+        {
+            RedBlackTree<K, V>.Entry entry = null;
+
+            public EntryOrNil(RedBlackTree<K, V>.Entry e)
+            {
+                entry = e;
+            }
+
+            @Override
+            public String toString()
+            {
+                if (entry == null)
+                    return "NIL";
+                else
+                    return (entry.color == Color.BLACK ? "(B)" : "(R)")
+                            + (entry.key == null ? "null" : entry.key.toString());
+            }
+        }
+
+        EntryOrNil e = new EntryOrNil(root);
+        if (e.entry != null) {
+
+            Queue<EntryOrNil> currentLevel = new LinkedList<EntryOrNil>();
+            Queue<EntryOrNil> nextLevel = new LinkedList<EntryOrNil>();
+
+            currentLevel.add(e);
+
+            while (!currentLevel.isEmpty()) {
+                while (!currentLevel.isEmpty()) {
+                    EntryOrNil cur = currentLevel.remove();
+                    result.append(cur + " ");
+                    if (cur.entry == null)
+                        continue;
+
+                    e = new EntryOrNil(cur.entry.left);
+                    nextLevel.add(e);
+
+                    e = new EntryOrNil(cur.entry.right);
+                    nextLevel.add(e);
+                }
+
+                while (!nextLevel.isEmpty()) {
+                    currentLevel.add(nextLevel.remove());
+                }
+
+                result.append("\n");
+            }
+
+        }
+        return result.toString();
     }
 }
