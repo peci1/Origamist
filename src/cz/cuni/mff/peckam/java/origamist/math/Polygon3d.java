@@ -655,6 +655,10 @@ public class Polygon3d<T extends Triangle3d>
      * line's direction vector) and will be ordered along this vector.
      * Each segment will end at intersection with a triangle.
      * 
+     * Be aware that if you provide a segment as the argument and the segment starts or ends within a triangle, it will
+     * be virtually extended to intersect a side of the triangle. This is implemented as a specific need of the
+     * Origamist project to be robust against rounding errors.
+     * 
      * @param line The line we search intersections with.
      * @return the segments that are the intersection of the given line and this polygon. If a part of the intersection
      *         would be a point, then a segment with zero direction vector will appear in the list.
@@ -668,6 +672,14 @@ public class Polygon3d<T extends Triangle3d>
 
         for (T t : triangles) {
             Segment3d intersection = t.getIntersection(line);
+
+            // this is important to be robust against rounding errors - in most cases we don't handle segments starting
+            // or ending inside triangles, and if we encounter such a segment, it is probably due to rounding errors
+            if (line instanceof Segment3d && intersection != null
+                    && (!t.sidesContain(intersection.p) || !t.sidesContain(intersection.p2))) {
+                intersection = t.getIntersection(new Line3d(line));
+            }
+
             if (intersection != null) {
                 if (parameters.get(intersection.p) == null)
                     parameters.put(intersection.p, line.getParameterForPoint(intersection.p));
@@ -862,4 +874,9 @@ public class Polygon3d<T extends Triangle3d>
         trianglesObservers.clear();
     }
 
+    @Override
+    public String toString()
+    {
+        return "Polygon3d [" + triangles + "]";
+    }
 }

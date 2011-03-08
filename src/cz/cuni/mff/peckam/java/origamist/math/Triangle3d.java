@@ -13,6 +13,8 @@ import java.util.List;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import org.apache.log4j.Logger;
+
 /**
  * A representation of a 3D triangle.
  * 
@@ -337,7 +339,7 @@ public class Triangle3d implements Cloneable
             if (line instanceof Segment3d) {
                 // a segment can start or end inside the triangle
                 for (Point3d p : ((Segment3d) line).getPoints()) {
-                    if (this.contains(p) && !sidesContain(p)) {
+                    if (this.contains(p)/* && !sidesContain(p) */) {
                         intersections.add(p);
                     }
                 }
@@ -364,16 +366,15 @@ public class Triangle3d implements Cloneable
                 }
             }
 
-            //
-            // double i = 2d;
-            // while (intersections.size() > 2 && i < 10d) {
-            // MathHelper.removeEpsilonEqualPoints(intersections, i++ * EPSILON);
-            // }
-            // if (i > 2d)
-            // Logger.getLogger(getClass()).warn(
-            // "Used " + (i - 1)
-            // + "*EPSILON for joining intersection points. The resulting intersection points are "
-            // + intersections);
+            double i = 2d;
+            while (intersections.size() > 2 && i < 10d) {
+                MathHelper.removeEpsilonEqualPoints(intersections, i++ * EPSILON);
+            }
+            if (i > 2d)
+                Logger.getLogger(getClass()).warn(
+                        "Used " + (i - 1)
+                                + "*EPSILON for joining intersection points. The resulting intersection points are "
+                                + intersections);
 
             if (intersections.size() == 2) {
                 return new Segment3d(intersections.get(0), intersections.get(1));
@@ -433,10 +434,16 @@ public class Triangle3d implements Cloneable
         Point3d p1 = segment.getP1();
         Point3d p2 = segment.getP2();
 
+        Line3d segmentAsLine = new Line3d(p1, p2);
+
         // not a case where one of the intersection points is a vertex (but two distinct intersection points exist);
         // if the line is a segment, neither the start point nor the end point lie inside the triangle
         if (!p1.epsilonEquals(p2, EPSILON) && !this.isVertex(p1) && !this.isVertex(p2) && this.sidesContain(p1)
-                && this.sidesContain(p2)) {
+                && this.sidesContain(p2) && !segmentAsLine.contains(getP1()) && !segmentAsLine.contains(getP2())
+                && !segmentAsLine.contains(getP3())) {
+
+            // the checks with segmentAsLine may seem redundant, but it it shows it is needed due to the
+            // non-transitivity of floating point arithmetics
 
             /*
              * _________________________|_p1______________________________________________________________________
