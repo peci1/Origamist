@@ -632,11 +632,9 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
                 path.removeLast();
                 path.rotateLeft();
                 path.addLast(path.getLast().left);
-                path.addLast(path.getLast().left);
             } else {
                 path.removeLast();
                 path.rotateRight();
-                path.addLast(path.getLast().right);
                 path.addLast(path.getLast().right);
             }
         }
