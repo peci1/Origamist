@@ -7,9 +7,9 @@ import static java.lang.Math.abs;
 
 import java.util.List;
 
+import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
-import javax.vecmath.Quat4d;
 import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
@@ -105,8 +105,6 @@ public class MathHelper
     /**
      * Rotates the given point around the given line by the given angle.
      * 
-     * http://answers.google.com/answers/threadview/id/361441.html
-     * 
      * @param p The point to rotate.
      * @param axis The line to rotate around.
      * @param angle The angle to rotate.
@@ -114,22 +112,16 @@ public class MathHelper
      */
     public static Point3d rotate(Point3d p, Line3d axis, double angle)
     {
-        double sinA2 = Math.sin(angle / 2);
-        double cosA2 = Math.cos(angle / 2);
-        Vector3d axisV = new Vector3d(axis.v);
-        axisV.normalize();
-        Quat4d q = new Quat4d(cosA2, sinA2 * axisV.x, sinA2 * axisV.y, sinA2 * axisV.z);
-        Matrix3d m = new Matrix3d(q.x * q.x + q.y * q.y - q.z * q.z - q.w * q.w, 2 * (q.y * q.z - q.x * q.w), 2 * (q.y
-                * q.w + q.x * q.z), 2 * (q.z * q.y + q.x * q.w), q.x * q.x - q.y * q.y + q.z * q.z - q.w * q.w,
-                2 * (q.z * q.w - q.x * q.y), 2 * (q.w * q.y - q.x * q.z), 2 * (q.w * q.z + q.x * q.y), q.x * q.x - q.y
-                        * q.y - q.z * q.z + q.w * q.w);
+        Matrix3d mat = new Matrix3d(); // the rotation matrix
+        mat.set(new AxisAngle4d(axis.v, angle)); // set the rotation component from axis and angle
+
         Point3d pt = new Point3d(p);
-        pt.sub(axis.p);
-        Point3d pr = new Point3d(pt.x * m.m00 + pt.y * m.m01 + pt.z * m.m02,
-                pt.x * m.m10 + pt.y * m.m11 + pt.z * m.m12, pt.x * m.m20 + pt.y * m.m21 + pt.z * m.m22);
-        Point3d result = new Point3d(pr);
-        result.add(axis.p);
-        return result;
+        pt.sub(axis.p); // translate the point and axis so that the axis goes through the zero point
+
+        mat.transform(pt); // multiply the point with the rotation matrix
+
+        pt.add(axis.p); // translate back
+        return pt;
     }
 
     /**
