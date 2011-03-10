@@ -111,25 +111,29 @@ public class Plane3d implements Cloneable
      */
     public Line3d getIntersection(Plane3d other)
     {
-        Vector3d normal = getNormal();
-        Vector3d oNormal = other.getNormal();
+        Vector3d normal = new Vector3d(getNormal());
+        Vector3d oNormal = new Vector3d(other.getNormal());
+
         Vector3d lineDir = new Vector3d();
         lineDir.cross(normal, oNormal);
-        lineDir.normalize();
 
-        double d1 = -d;
-        double d2 = -other.d;
-
-        double n1n1 = normal.dot(normal);
-        double n2n2 = oNormal.dot(oNormal);
-        double n1n2 = normal.dot(oNormal);
-
-        double det = n1n1 * n2n2 - n1n2 * n1n2;
-        if (abs(det) < EPSILON)
+        if (lineDir.epsilonEquals(new Vector3d(), EPSILON))
             return null;
 
-        double c1 = (d1 * n2n2 - d2 * n1n2) / det;
-        double c2 = (d2 * n1n1 - d1 * n1n2) / det;
+        normal.normalize();
+        oNormal.normalize();
+        lineDir.normalize();
+
+        // the quotients must exist - they're just quotients of a vector and its normalized form
+        double d1 = -d * MathHelper.vectorQuotient3d(normal, getNormal());
+        double d2 = -other.d * MathHelper.vectorQuotient3d(oNormal, other.getNormal());
+
+        double n1n2 = normal.dot(oNormal);
+
+        double det = 1 - n1n2 * n1n2;
+
+        double c1 = (d1 - d2 * n1n2) / det;
+        double c2 = (d2 - d1 * n1n2) / det;
 
         Point3d c1n1 = new Point3d(normal);
         c1n1.scale(c1);
