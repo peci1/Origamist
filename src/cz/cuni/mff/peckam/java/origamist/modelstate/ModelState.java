@@ -579,7 +579,6 @@ public class ModelState implements Cloneable
             l.rotate(segment, angle1);
             triangles.addAll(l.getTriangles());
         }
-        trianglesArrayDirty = true;
     }
 
     /**

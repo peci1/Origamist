@@ -12,15 +12,19 @@ import org.apache.log4j.Logger;
 /**
  * A red-black tree supporting searching for epsilon-equal values.
  * 
+ * @param K Type of keys.
+ * @param V Type of values
+ * @param E Type of epsilon.
+ * 
  * @author Martin Pecka
  */
-public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements EpsilonMap<K, V>
+public class EpsilonRedBlackTree<K, V, E> extends RedBlackTree<K, V> implements EpsilonMap<K, V>
 {
     /** */
-    private static final long       serialVersionUID = -5978298665466857457L;
+    private static final long                 serialVersionUID = -5978298665466857457L;
 
     /** The comparator to be used for searching epsilon-equal keys. */
-    protected Comparator<? super K> epsilonComparator;
+    protected EpsilonComparator<? super K, E> epsilonComparator;
 
     /**
      * Construct a new EpsilonRedBlackTree with the default comparator. The default comparator needs all values inserted
@@ -30,7 +34,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * 
      * @param epsilon The epsilon used for defining epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(K epsilon)
+    public EpsilonRedBlackTree(E epsilon)
     {
         super();
         epsilonComparator = getDefaultEpsilonComparator(epsilon);
@@ -44,7 +48,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @param comparator The comparator to use for comparing this tree's element's keys.
      * @param epsilon The epsilon used for defining epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(Comparator<? super K> comparator, K epsilon)
+    public EpsilonRedBlackTree(Comparator<? super K> comparator, E epsilon)
     {
         super(comparator);
         epsilonComparator = getDefaultEpsilonComparator(epsilon);
@@ -63,7 +67,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @throws NullPointerException If <code>m == null</code> or if the map contains a <code>null</code> key and the
      *             comparator doesn't support it.
      */
-    public EpsilonRedBlackTree(Map<? extends K, ? extends V> m, K epsilon)
+    public EpsilonRedBlackTree(Map<? extends K, ? extends V> m, E epsilon)
     {
         super(m);
         epsilonComparator = getDefaultEpsilonComparator(epsilon);
@@ -77,7 +81,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @param m The sorted map to take entries from.
      * @param epsilon The epsilon used for defining epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(SortedMap<K, ? extends V> m, K epsilon)
+    public EpsilonRedBlackTree(SortedMap<K, ? extends V> m, E epsilon)
     {
         super(m);
         epsilonComparator = getDefaultEpsilonComparator(epsilon);
@@ -90,7 +94,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * 
      * @param epsilonComparator The comparator of epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(Comparator<? super K> epsilonComparator)
+    public EpsilonRedBlackTree(EpsilonComparator<? super K, E> epsilonComparator)
     {
         super();
         this.epsilonComparator = epsilonComparator;
@@ -103,7 +107,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @param comparator The comparator to use for comparing this tree's element's keys.
      * @param epsilonComparator The comparator of epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(Comparator<? super K> comparator, Comparator<? super K> epsilonComparator)
+    public EpsilonRedBlackTree(Comparator<? super K> comparator, EpsilonComparator<? super K, E> epsilonComparator)
     {
         super(comparator);
         this.epsilonComparator = epsilonComparator;
@@ -121,7 +125,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @throws NullPointerException If <code>m == null</code> or if the map contains a <code>null</code> key and the
      *             comparator doesn't support it.
      */
-    public EpsilonRedBlackTree(Map<? extends K, ? extends V> m, Comparator<? super K> epsilonComparator)
+    public EpsilonRedBlackTree(Map<? extends K, ? extends V> m, EpsilonComparator<? super K, E> epsilonComparator)
     {
         super(m);
         this.epsilonComparator = epsilonComparator;
@@ -134,7 +138,7 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
      * @param m The sorted map to take entries from.
      * @param epsilonComparator The comparator of epsilon-equal keys.
      */
-    public EpsilonRedBlackTree(SortedMap<K, ? extends V> m, Comparator<? super K> epsilonComparator)
+    public EpsilonRedBlackTree(SortedMap<K, ? extends V> m, EpsilonComparator<? super K, E> epsilonComparator)
     {
         super(m);
         this.epsilonComparator = epsilonComparator;
@@ -369,18 +373,29 @@ public class EpsilonRedBlackTree<K, V> extends RedBlackTree<K, V> implements Eps
     }
 
     /**
-     * A default comparator for epsilon-comparison. K must implement {@link Number}.
+     * A default comparator for epsilon-comparison. E must implement {@link Number}.
      * 
      * @param epsilon The epsilon to use for comparison.
-     * @return A default comparator for epsilon-comparison. K must implement {@link Number}.
+     * @return A default comparator for epsilon-comparison. E must implement {@link Number}.
      */
-    protected Comparator<? super K> getDefaultEpsilonComparator(final K epsilon)
+    protected EpsilonComparator<? super K, E> getDefaultEpsilonComparator(final E epsilon)
     {
-        return new Comparator<K>() {
+        return new EpsilonComparator<K, E>() {
             protected double eps = ((Number) epsilon).doubleValue();
 
             @Override
             public int compare(K o1, K o2)
+            {
+                return compare(o1, o2, eps);
+            }
+
+            @Override
+            public int compare(K o1, K o2, E epsilon)
+            {
+                return compare(o1, o2, ((Number) epsilon).doubleValue());
+            }
+
+            public int compare(K o1, K o2, double eps)
             {
                 if (o1 == null) {
                     if (o2 == null)

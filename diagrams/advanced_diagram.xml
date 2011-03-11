@@ -99,6 +99,31 @@
       		<angle>3.141592</angle>
       	</operation>   
       </step>
+      <step id="5">
+        <description>Make a valley fold parallel to the top side of the paper.</description>
+      	<description lang="cs-CZ">Rovnoběžně s horní hranou papíru udělejte dolní přehyb.</description>
+      	<operation type="VALLEY_FOLD">
+      		<startPoint><x>0.75</x><y>0.875</y></startPoint>
+      		<endPoint><x>1.0</x><y>0.875</y></endPoint>
+      		<layer>1</layer>
+      		<layer>2</layer>
+      		<layer>3</layer>
+      		<layer>4</layer>
+      		<layer>5</layer>
+      		<layer>6</layer>
+      		<layer>7</layer>
+      		<layer>8</layer>
+      		<layer>9</layer>
+      		<layer>10</layer>
+      		<layer>11</layer>
+      		<layer>12</layer>
+      		<layer>13</layer>
+      		<layer>14</layer>
+      		<layer>15</layer>
+      		<layer>16</layer>
+      		<angle>3.141592</angle>
+      	</operation>   
+      </step>
     </steps>
   </model>
 </m:origami>

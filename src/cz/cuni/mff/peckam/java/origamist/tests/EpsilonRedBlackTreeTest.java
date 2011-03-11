@@ -24,7 +24,7 @@ public class EpsilonRedBlackTreeTest
     @Test
     public void testTree()
     {
-        EpsilonRedBlackTree<Integer, Integer> map = new EpsilonRedBlackTree<Integer, Integer>(5);
+        EpsilonRedBlackTree<Integer, Integer, Integer> map = new EpsilonRedBlackTree<Integer, Integer, Integer>(5);
         map.epsilonPut(0, 100);
         map.epsilonPut(10, 100);
         map.epsilonPut(20, 100);

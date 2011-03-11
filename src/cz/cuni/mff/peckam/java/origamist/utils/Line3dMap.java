@@ -5,7 +5,6 @@ package cz.cuni.mff.peckam.java.origamist.utils;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
-import java.util.Comparator;
 import java.util.Map;
 import java.util.SortedMap;
 
@@ -19,7 +18,7 @@ import cz.cuni.mff.peckam.java.origamist.math.Line3d;
  * 
  * @author Martin Pecka
  */
-public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
+public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V, Double>
 {
     /** */
     private static final long serialVersionUID = 1989427767196076752L;
@@ -65,35 +64,41 @@ public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
      * @param epsilon The epsilon to use.
      * @return A comparator comparing two epsilon-equal values as equal.
      */
-    protected static Comparator<? super CanonicLine3d> getEpsilonComparator(final double epsilon)
+    protected static EpsilonComparator<? super CanonicLine3d, Double> getEpsilonComparator(final double epsilon)
     {
-        return new Comparator<CanonicLine3d>() {
+        return new EpsilonComparator<CanonicLine3d, Double>() {
             @Override
             public int compare(CanonicLine3d o1, CanonicLine3d o2)
             {
-                int cmp1 = compare(o1.getVector(), o2.getVector());
-                if (cmp1 != 0)
-                    return cmp1;
-                return compare(o1.getPoint(), o2.getPoint());
+                return compare(o1, o2, epsilon);
             }
 
-            protected int compare(Tuple3d t1, Tuple3d t2)
+            @Override
+            public int compare(CanonicLine3d o1, CanonicLine3d o2, Double eps)
             {
-                int cmp1 = compare(t1.x, t2.x);
+                int cmp1 = compare(o1.getVector(), o2.getVector(), eps);
                 if (cmp1 != 0)
                     return cmp1;
-                int cmp2 = compare(t1.y, t2.y);
+                return compare(o1.getPoint(), o2.getPoint(), eps);
+            }
+
+            protected int compare(Tuple3d t1, Tuple3d t2, Double eps)
+            {
+                int cmp1 = compare(t1.x, t2.x, eps);
+                if (cmp1 != 0)
+                    return cmp1;
+                int cmp2 = compare(t1.y, t2.y, eps);
                 if (cmp2 != 0)
                     return cmp2;
-                return compare(t1.z, t2.z);
+                return compare(t1.z, t2.z, eps);
             }
 
-            protected int compare(Double d1, Double d2)
+            protected int compare(Double d1, Double d2, Double eps)
             {
                 double diff = d1 - d2;
-                if (diff < -epsilon)
+                if (diff < -eps)
                     return -1;
-                else if (diff > epsilon)
+                else if (diff > eps)
                     return 1;
                 else
                     return 0;
@@ -159,6 +164,23 @@ public class Line3dMap<V> extends EpsilonRedBlackTree<CanonicLine3d, V>
     public boolean epsilonContainsKey(Line3d key)
     {
         return super.epsilonContainsKey(new CanonicLine3d(key));
+    }
+
+    @Override
+    protected RedBlackTree<CanonicLine3d, V>.TreePath epsilonGetPathSequentially(CanonicLine3d key)
+    {
+        if (root == null)
+            return new TreePath();
+
+        TreePath path = epsilonGetPath(firstKey());
+
+        while (path.size() > 0) {
+            if (epsilonComparator.compare(path.getLast().key, key, 2 * EPSILON) == 0)
+                return path;
+            path.moveToSuccesor();
+        }
+
+        return path;
     }
 
 }
