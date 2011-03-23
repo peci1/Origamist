@@ -120,7 +120,8 @@ public class IntervalTree<K extends Comparable<? super K>, V> extends RedBlackTr
     {
         IntervalEntry p = (IntervalEntry) root;
         while (p != null && !p.getKey().overlapsWith(key)) {
-            if (p.left != null && ((IntervalEntry) p.left).getMax().compareTo(key.getMin()) >= 0)
+            if (p.left != null && ((IntervalEntry) p.left).getMax() != null
+                    && ((IntervalEntry) p.left).getMax().compareTo(key.getMin()) >= 0)
                 p = (IntervalEntry) p.left;
             else
                 p = (IntervalEntry) p.right;
