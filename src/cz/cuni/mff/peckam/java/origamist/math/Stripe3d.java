@@ -4,6 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 /**
  * An infinite 3D stripe defined by two lines and the space between them.
@@ -32,11 +33,15 @@ public class Stripe3d implements Cloneable
         this.line2 = line2;
 
         Point3d point1 = (Point3d) line1.p.clone();
-        point1.add(line1.v);
+        Vector3d vector1 = new Vector3d(line1.v);
+        vector1.normalize();
+        point1.add(vector1);
         hs1 = HalfSpace3d.createPerpendicularToTriangle(line1.p, point1, line2.p);
 
         Point3d point2 = (Point3d) line2.p.clone();
-        point2.add(line2.v);
+        Vector3d vector2 = new Vector3d(line2.v);
+        vector2.normalize();
+        point2.add(vector2);
         hs2 = HalfSpace3d.createPerpendicularToTriangle(line2.p, point2, line1.p);
 
         plane = new Plane3d(line1.p, point1, line2.p);

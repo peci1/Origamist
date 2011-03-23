@@ -7,6 +7,7 @@ import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,18 +23,32 @@ import org.apache.log4j.Logger;
  */
 public class Triangle3d implements Cloneable
 {
-    protected Point3d     p1;
-    protected Point3d     p2;
-    protected Point3d     p3;
+    protected Point3d          p1;
+    protected Point3d          p2;
+    protected Point3d          p3;
 
-    protected HalfSpace3d hs1;
-    protected HalfSpace3d hs2;
-    protected HalfSpace3d hs3;
-    protected Plane3d     plane;
+    protected HalfSpace3d      hs1;
+    protected HalfSpace3d      hs2;
+    protected HalfSpace3d      hs3;
+    protected Plane3d          plane;
 
-    protected Segment3d   s1;
-    protected Segment3d   s2;
-    protected Segment3d   s3;
+    protected Segment3d        s1;
+    protected Segment3d        s2;
+    protected Segment3d        s3;
+
+    /** The list of neighbors. */
+    protected List<Triangle3d> neighbors   = new LinkedList<Triangle3d>();
+
+    /** The read-only view on the neighbors list. */
+    protected List<Triangle3d> neighborsRO = Collections.unmodifiableList(neighbors);
+
+    /**
+     * @return The list of neighbor triangles. The returned list is read-only.
+     */
+    public List<? extends Triangle3d> getNeighbors()
+    {
+        return neighborsRO;
+    }
 
     /**
      * Create a triangle with the given vertices.
@@ -578,6 +593,34 @@ public class Triangle3d implements Cloneable
                     "Triangle3d#subdivideTriangle(): a cut segment not parallel to the triangle's plane");
         } else {
             assert false : "Triangle3d#subdivideTriangle(): unexpected branch taken.";
+        }
+
+        if (triangles.size() > 1) {
+            // remove this triangle from the neighbors' neighbors lists and add new triangles as neighbors
+            for (Triangle3d n : neighbors) {
+                n.neighbors.remove(this);
+                for (T t : triangles) {
+                    if (n.hasCommonEdge(t, false)) {
+                        n.neighbors.add(t);
+                        t.neighbors.add(n);
+                    }
+                }
+            }
+
+            // find and add neighbors among the new triangles
+            int i = 0;
+            for (T t1 : triangles) {
+                if (i + 1 <= triangles.size() - 1) {
+                    for (T t2 : triangles.subList(i + 1, triangles.size())) {
+                        if (t1.hasCommonEdge(t2, false)) {
+                            t1.neighbors.add(t2);
+                            t2.neighbors.add(t1);
+                        }
+                    }
+                }
+                i++;
+            }
+
         }
 
         return triangles;

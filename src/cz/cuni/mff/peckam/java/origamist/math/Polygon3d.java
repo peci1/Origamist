@@ -21,7 +21,6 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
-import cz.cuni.mff.peckam.java.origamist.utils.Line3dMap;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
@@ -36,16 +35,16 @@ import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 public class Polygon3d<T extends Triangle3d>
 {
     /** The triangles the polygon consists of. */
-    protected HashSet<T>         triangles          = new HashSet<T>();
+    protected HashSet<T>        triangles          = new HashSet<T>();
+
+    /** The read-only view of triangles. */
+    protected Set<T>            trianglesRO        = Collections.unmodifiableSet(triangles);
 
     /** The plane the polygon lies in. */
-    protected Plane3d            plane              = null;
-
-    /** The list of all triangles that have an edge on a common line. */
-    protected Line3dMap<List<T>> neighbors          = new Line3dMap<List<T>>();
+    protected Plane3d           plane              = null;
 
     /** A list of observers of the triangles property. */
-    protected List<Observer<T>>  trianglesObservers = new LinkedList<Observer<T>>();
+    protected List<Observer<T>> trianglesObservers = new LinkedList<Observer<T>>();
 
     /**
      * Create a new polygon consisting of the given triangles.
@@ -130,6 +129,7 @@ public class Polygon3d<T extends Triangle3d>
      */
     static int i = 0;
 
+    @SuppressWarnings("unchecked")
     public void addTriangles(Set<T> triangles) throws IllegalStateException
     {
         if (triangles == null || triangles.size() == 0)
@@ -157,31 +157,19 @@ public class Polygon3d<T extends Triangle3d>
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
-        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
-            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.addAll(triangles);
 
         T borderTriangle = null; // the triangle from the "old" polygon which neighbors with a new triangle
-        if (oldTriangles.size() == 0)
+        if (oldTriangles.size() == 0) {
             // if we have had no triangles in the polygon yet, fake the borderTriangle with any new triangle
             borderTriangle = triangles.iterator().next();
-
-        // update the neighbors list
-        for (T t : triangles) {
-            for (Segment3d s : t.getEdges()) {
-                CanonicLine3d line = new CanonicLine3d(s);
-                if (neighbors.epsilonGet(line) == null)
-                    neighbors.epsilonPut(line, new LinkedList<T>());
-                neighbors.epsilonGet(line).add(t);
-                // try if we can set borderTriangle
-                if (borderTriangle == null && oldNeighbors.epsilonGet(line) != null) {
-                    for (T n : oldNeighbors.epsilonGet(line)) {
-                        if (n.hasCommonEdge(t, false)) {
-                            borderTriangle = n;
-                            break;
-                        }
+        } else {
+            outer: for (T t : triangles) {
+                for (Triangle3d n : t.getNeighbors()) {
+                    if (oldTriangles.contains(n)) {
+                        borderTriangle = (T) n;
+                        break outer;
                     }
                 }
             }
@@ -189,7 +177,6 @@ public class Polygon3d<T extends Triangle3d>
 
         if (borderTriangle == null) {
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "Trying to add triangles to polygon, but none of them neighbors to the polygon.");
         }
@@ -204,8 +191,7 @@ public class Polygon3d<T extends Triangle3d>
         T t;
         while ((t = toVisit.poll()) != null) {
             visited.add(t);
-            List<T> neighbors = getNeighbors(t);
-            for (T n : neighbors) {
+            for (T n : getNeighbors(t)) {
                 if (!visited.contains(n))
                     toVisit.add(n);
             }
@@ -214,13 +200,11 @@ public class Polygon3d<T extends Triangle3d>
         if (visited.size() != this.triangles.size()) {
             // if we didn't manage to visit all triangles, the resulting polygon wouldn't be connected
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException("Trying to construct a non-connected polygon.");
         }
 
         if (!additionalAddTrianglesCheck(triangles)) {
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "The triangles newly added to this polygon don't conform to the rules for new triangles.");
         }
@@ -266,48 +250,33 @@ public class Polygon3d<T extends Triangle3d>
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
-        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
-            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.add(triangle);
 
         boolean neighborsToOldPolygon = false;
-        if (oldTriangles.size() == 0)
+        if (oldTriangles.size() == 0) {
             // if we have had no triangles in the polygon yet, set this flag to true, since it's useless in this case
             neighborsToOldPolygon = true;
-
-        // update the neighbors list
-        for (Segment3d s : triangle.getEdges()) {
-            CanonicLine3d line = new CanonicLine3d(s);
-            if (neighbors.epsilonGet(line) == null)
-                neighbors.epsilonPut(line, new LinkedList<T>());
-
-            List<T> sNeighbors = neighbors.epsilonGet(line);
-
-            if (sNeighbors.size() > 0) {
-                for (T n : sNeighbors) {
-                    if (n.hasCommonEdge(triangle, false)) {
-                        neighborsToOldPolygon = true;
-                        break;
-                    }
+        } else {
+            for (Triangle3d n : triangle.getNeighbors()) {
+                if (oldTriangles.contains(n)) {
+                    neighborsToOldPolygon = true;
+                    break;
                 }
             }
-            sNeighbors.add(triangle);
         }
 
         if (!neighborsToOldPolygon) {
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "Trying to add a triangle to polygon, but it doesn't neighbor to the polygon.");
         }
 
         HashSet<T> set = new HashSet<T>(1);
         set.add(triangle);
+
         if (!additionalAddTrianglesCheck(set)) {
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "The triangle newly added to this polygon doesn't conform to the rules for new triangles.");
         }
@@ -347,28 +316,14 @@ public class Polygon3d<T extends Triangle3d>
         if (triangles.size() == this.triangles.size()) {
             // we want to remove all triangles
             this.triangles.clear();
-            this.neighbors.clear();
             plane = null;
             return;
         }
 
         // backup for the case that the resulting polygon is invalid
         HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
-        Line3dMap<List<T>> oldNeighbors = new Line3dMap<List<T>>(this.neighbors);
-        for (Entry<CanonicLine3d, List<T>> e : oldNeighbors.entrySet())
-            e.setValue(new LinkedList<T>(e.getValue()));
 
         this.triangles.removeAll(triangles);
-
-        // remove the triangles from the neighbors list
-        for (T t : triangles) {
-            for (Segment3d s : t.getEdges()) {
-                CanonicLine3d line = new CanonicLine3d(s);
-                this.neighbors.epsilonGet(line).remove(t);
-                if (this.neighbors.epsilonGet(line).size() == 0)
-                    this.neighbors.epsilonRemove(line);
-            }
-        }
 
         // check if the polygon is connected (doesn't consist of two or more parts)
         // this can be done by recursively traversing the neighbors of any one triangle and checking that we visited all
@@ -390,13 +345,11 @@ public class Polygon3d<T extends Triangle3d>
         if (visited.size() != this.triangles.size()) {
             // if we didn't manage to visit all triangles, the resulting polygon wouldn't be connected
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException("Trying to construct a non-connected polygon.");
         }
 
         if (!additionalRemoveTrianglesCheck(triangles)) {
             this.triangles = oldTriangles;
-            this.neighbors = oldNeighbors;
             throw new IllegalStateException(
                     "The triangles removed from this polygon don't conform to the rules for removed triangles.");
         }
@@ -455,28 +408,12 @@ public class Polygon3d<T extends Triangle3d>
             return triangles;
 
         this.triangles.remove(segment.triangle);
-        // remove the triangle from the neighbors list
-        for (Segment3d s : segment.triangle.getEdges()) {
-            CanonicLine3d line = new CanonicLine3d(s);
-            this.neighbors.epsilonGet(line).remove(segment.triangle);
-            if (this.neighbors.epsilonGet(line).size() == 0)
-                this.neighbors.epsilonRemove(line);
-        }
 
         for (Observer<T> observer : trianglesObservers) {
             observer.changePerformed(new ChangeNotification<T>(segment.triangle, ChangeTypes.REMOVE));
         }
 
         this.triangles.addAll(triangles);
-        // update the neighbors list
-        for (T t : triangles) {
-            for (Segment3d s : t.getEdges()) {
-                CanonicLine3d line = new CanonicLine3d(s);
-                if (neighbors.epsilonGet(line) == null)
-                    neighbors.epsilonPut(line, new LinkedList<T>());
-                neighbors.epsilonGet(line).add(t);
-            }
-        }
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
@@ -520,17 +457,17 @@ public class Polygon3d<T extends Triangle3d>
      * @param triangle The triangle to find neighbors for.
      * @return All triangles that have a common edge with the given triangle.
      */
+    @SuppressWarnings("unchecked")
     public List<T> getNeighbors(T triangle)
     {
-        HashSet<T> neighbors = new HashSet<T>(3);
-        for (Segment3d s : triangle.getEdges()) {
-            for (T n : this.neighbors.epsilonGet(s)) {
-                if (n.hasCommonEdge(triangle, false))
-                    neighbors.add(n);
-            }
+        List<T> result = new LinkedList<T>();
+
+        for (Triangle3d n : triangle.getNeighbors()) {
+            if (this.triangles.contains(n))
+                result.add((T) n);
         }
-        neighbors.remove(triangle);
-        return new LinkedList<T>(neighbors);
+
+        return result;
     }
 
     /**
@@ -538,7 +475,7 @@ public class Polygon3d<T extends Triangle3d>
      */
     public Set<T> getTriangles()
     {
-        return Collections.unmodifiableSet(triangles);
+        return trianglesRO;
     }
 
     /**

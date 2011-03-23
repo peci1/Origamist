@@ -45,8 +45,8 @@ public class DefaultModelState extends ModelState
                 ul.x, ul.y, dr.x, dr.y));
         triangles.add(mt2);
 
-        mt1.neighbors.add(mt2);
-        mt2.neighbors.add(mt1);
+        mt1.getRawNeighbors().add(mt2);
+        mt2.getRawNeighbors().add(mt1);
 
         layers.add(new Layer(triangles));
 

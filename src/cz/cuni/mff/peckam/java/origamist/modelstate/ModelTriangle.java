@@ -3,15 +3,13 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.AbstractList;
 import java.util.List;
 
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
-import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
 
@@ -27,13 +25,7 @@ public class ModelTriangle extends Triangle3d
     /**
      * The original position of this triangle on the sheet of paper.
      */
-    protected Triangle2d          originalPosition;
-
-    /** The list of neighbors. */
-    protected List<ModelTriangle> neighbors   = new LinkedList<ModelTriangle>();
-
-    /** The read-only view on the neighbors list. */
-    protected List<ModelTriangle> neighborsRO = Collections.unmodifiableList(neighbors);
+    protected Triangle2d originalPosition;
 
     /**
      * @param p1
@@ -186,54 +178,62 @@ public class ModelTriangle extends Triangle3d
         return originalPosition;
     }
 
-    /**
-     * @return The list of neighbor triangles. The returned list is read-only.
-     */
+    @Override
     public List<ModelTriangle> getNeighbors()
     {
-        return neighborsRO;
+        return new AbstractList<ModelTriangle>() {
+            @Override
+            public ModelTriangle get(int index)
+            {
+                return (ModelTriangle) neighborsRO.get(index);
+            }
+
+            @Override
+            public int size()
+            {
+                return neighborsRO.size();
+            }
+        };
     }
 
-    @Override
-    public <T extends Triangle3d> List<T> subdivideTriangle(IntersectionWithTriangle<T> segment)
-            throws IllegalArgumentException
+    /**
+     * @return The raw (modifiable) list of neighboring triangles.
+     */
+    List<ModelTriangle> getRawNeighbors()
     {
-        List<T> result = super.subdivideTriangle(segment);
-
-        // the second check is an alternative to find out if (T instanceof ModelTriangle)
-        if (result.size() > 1 && (result.get(0) instanceof ModelTriangle)) {
-
-            // remove this triangle from the neighbors' neighbors lists and add new triangles as neighbors
-            for (ModelTriangle n : neighbors) {
-                n.neighbors.remove(this);
-                for (T t : result) {
-                    if (n.hasCommonEdge(t, false)) {
-                        ModelTriangle mt = (ModelTriangle) t;
-                        n.neighbors.add(mt);
-                        mt.neighbors.add(n);
-                    }
-                }
+        return new AbstractList<ModelTriangle>() {
+            @Override
+            public ModelTriangle get(int index)
+            {
+                return (ModelTriangle) neighbors.get(index);
             }
 
-            // find and add neighbors among the new triangles
-            int i = 0;
-            for (T t1 : result) {
-                if (i + 1 <= result.size() - 1) {
-                    for (T t2 : result.subList(i + 1, result.size())) {
-                        if (t1.hasCommonEdge(t2, false)) {
-                            ModelTriangle mt1 = (ModelTriangle) t1;
-                            ModelTriangle mt2 = (ModelTriangle) t2;
-                            mt1.neighbors.add(mt2);
-                            mt2.neighbors.add(mt1);
-                        }
-                    }
-                }
-                i++;
+            @Override
+            public int size()
+            {
+                return neighbors.size();
             }
 
-        }
+            @Override
+            public ModelTriangle set(int index, ModelTriangle element)
+            {
+                return (ModelTriangle) neighbors.set(index, element);
+            }
 
-        return result;
+            @Override
+            public void add(int index, ModelTriangle element)
+            {
+                neighbors.add(index, element);
+            }
+
+            @Override
+            public ModelTriangle remove(int index)
+            {
+                return (ModelTriangle) neighbors.remove(index);
+            }
+
+        };
+
     }
 
     @Override
