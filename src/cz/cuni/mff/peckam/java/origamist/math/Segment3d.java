@@ -15,7 +15,10 @@ import javax.vecmath.Vector3d;
  */
 public class Segment3d extends Line3d
 {
-    protected Point3d p2;
+    /** */
+    private static final long serialVersionUID = -7131577422249930817L;
+
+    protected Point3d         p2;
 
     public Segment3d(Point3d p1, Point3d p2)
     {

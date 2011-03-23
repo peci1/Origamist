@@ -6,6 +6,8 @@ package cz.cuni.mff.peckam.java.origamist.math;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
+import java.util.Iterator;
+
 import javax.vecmath.Point2d;
 import javax.vecmath.Vector2d;
 
@@ -14,29 +16,32 @@ import javax.vecmath.Vector2d;
  * 
  * @author Martin Pecka
  */
-public class Line2d implements Cloneable
+public class Line2d implements Cloneable, Vector<Double>
 {
 
-    /**
-     * This is a coefficient in the general equation of the defining line (ax + by + c = 0).
-     */
-    protected double   a = 0;
+    /** */
+    private static final long serialVersionUID = -3849433499881284033L;
 
     /**
      * This is a coefficient in the general equation of the defining line (ax + by + c = 0).
      */
-    protected double   b = 0;
+    protected double          a                = 0;
 
     /**
      * This is a coefficient in the general equation of the defining line (ax + by + c = 0).
      */
-    protected double   c = 0;
+    protected double          b                = 0;
+
+    /**
+     * This is a coefficient in the general equation of the defining line (ax + by + c = 0).
+     */
+    protected double          c                = 0;
 
     /** A point on the line. */
-    protected Point2d  p;
+    protected Point2d         p;
 
     /** The direction vector of the line. */
-    protected Vector2d v;
+    protected Vector2d        v;
 
     /**
      * Constructs the line going through the given points.
@@ -206,6 +211,82 @@ public class Line2d implements Cloneable
     protected Line2d clone() throws CloneNotSupportedException
     {
         return new Line2d(this);
+    }
+
+    @Override
+    public Iterator<Double> iterator()
+    {
+        return new Iterator<Double>() {
+            private int i = 0;
+
+            @Override
+            public boolean hasNext()
+            {
+                return i + 1 < getDimension();
+            }
+
+            @Override
+            public Double next()
+            {
+                return get(i++);
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new UnsupportedOperationException("Cannot remove from a vector's iterator.");
+            }
+        };
+    }
+
+    @Override
+    public int getDimension()
+    {
+        return 4;
+    }
+
+    @Override
+    public Double get(int index)
+    {
+        switch (index) {
+            case 0:
+                return v.x;
+            case 1:
+                return v.y;
+            case 2:
+                return p.x;
+            case 3:
+                return p.y;
+            default:
+                throw new IndexOutOfBoundsException();
+        }
+    }
+
+    @Override
+    public Double set(int index, Double value)
+    {
+        Double oldVal;
+        switch (index) {
+            case 0:
+                oldVal = v.x;
+                v.x = value;
+                break;
+            case 1:
+                oldVal = v.y;
+                v.y = value;
+                break;
+            case 2:
+                oldVal = p.x;
+                p.x = value;
+                break;
+            case 3:
+                oldVal = p.y;
+                p.y = value;
+                break;
+            default:
+                throw new IndexOutOfBoundsException();
+        }
+        return oldVal;
     }
 
 }

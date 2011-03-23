@@ -45,6 +45,7 @@ import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Stripe3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
+import cz.cuni.mff.peckam.java.origamist.math.Vector;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -52,8 +53,9 @@ import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
-import cz.cuni.mff.peckam.java.origamist.utils.Line2dMap;
-import cz.cuni.mff.peckam.java.origamist.utils.Line3dMap;
+import cz.cuni.mff.peckam.java.origamist.utils.EpsilonMap;
+import cz.cuni.mff.peckam.java.origamist.utils.Line2dEpsilonMap;
+import cz.cuni.mff.peckam.java.origamist.utils.Line3dEpsilonMap;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.Observer;
@@ -68,91 +70,91 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ObservableList<Fold>                 folds                 = new ObservableList<Fold>();
+    protected ObservableList<Fold>                            folds                 = new ObservableList<Fold>();
 
     /** The list of fold lines converted to 3D. Use getFoldLines3d() to get the list. */
-    protected List<Segment3d>                      foldLines3d           = new LinkedList<Segment3d>();
+    protected List<Segment3d>                                 foldLines3d           = new LinkedList<Segment3d>();
 
     /**
      * Cache for array of the lines representing folds.
      */
-    protected LineArray                            foldLineArray         = null;
+    protected LineArray                                       foldLineArray         = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                              foldLineArrayDirty    = true;
+    protected boolean                                         foldLineArrayDirty    = true;
 
     /**
      * The triangles this model state consists of.
      */
-    protected ObservableList<ModelTriangle>        triangles             = new ObservableList<ModelTriangle>();
+    protected ObservableList<ModelTriangle>                   triangles             = new ObservableList<ModelTriangle>();
 
     /** The triangles on the paper. Automatically updated when <code>triangles</code> change. */
-    protected List<Triangle2d>                     triangles2d           = new LinkedList<Triangle2d>();
+    protected List<Triangle2d>                                triangles2d           = new LinkedList<Triangle2d>();
 
     /**
      * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
      * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
      * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
      */
-    protected Line3dMap<List<ModelTriangle>>       neighbors             = new Line3dMap<List<ModelTriangle>>();
+    protected EpsilonMap<Vector<Double>, List<ModelTriangle>> neighbors             = new Line3dEpsilonMap<List<ModelTriangle>>();
 
     /**
      * The list of triangles that have an edge on the line in key. <b>Note that these aren't real neighbors!</b> If a
      * triangle has no neighbor, the list will contain only 1 element. If there is no triangle with the given edge,
      * <code>null</code> is returned. Automatically updated when <code>triangles</code> change.
      */
-    protected Line2dMap<List<Triangle2d>>          neighbors2d           = new Line2dMap<List<Triangle2d>>();
+    protected EpsilonMap<Vector<Double>, List<Triangle2d>>    neighbors2d           = new Line2dEpsilonMap<List<Triangle2d>>();
 
     /** The layers of the paper. */
-    protected ObservableList<Layer>                layers                = new ObservableList<Layer>();
+    protected ObservableList<Layer>                           layers                = new ObservableList<Layer>();
 
     /** The mapping of triangles to their containing layer. Automatically updated when <code>layers</code> change */
-    protected Hashtable<ModelTriangle, Layer>      trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
+    protected Hashtable<ModelTriangle, Layer>                 trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
 
     /**
      * A cache for quick finding of a 3D triangle corresponding to the given 2D triangle. Automatically updated when
      * <code>triangles</code> change.
      */
-    protected Hashtable<Triangle2d, ModelTriangle> paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
+    protected Hashtable<Triangle2d, ModelTriangle>            paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                        trianglesArray        = null;
+    protected TriangleArray                                   trianglesArray        = null;
 
     /**
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                              trianglesArrayDirty   = true;
+    protected boolean                                         trianglesArrayDirty   = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                               rotationAngle         = 0;
+    protected double                                          rotationAngle         = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                               viewingAngle          = Math.PI / 2.0;
+    protected double                                          viewingAngle          = Math.PI / 2.0;
 
     /**
      * The step this state belongs to.
      */
-    protected Step                                 step;
+    protected Step                                            step;
 
     /**
      * The origami model which is this the state of.
      */
-    protected Origami                              origami;
+    protected Origami                                         origami;
 
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                                  stepBlendingTreshold  = 5;
+    protected int                                             stepBlendingTreshold  = 5;
 
     public ModelState()
     {
@@ -185,15 +187,15 @@ public class ModelState implements Cloneable
                     triangles2d.remove(t.originalPosition);
                     for (Segment3d edge : t.getEdges()) {
                         CanonicLine3d line = new CanonicLine3d(edge);
-                        neighbors.epsilonGet(line, true).remove(t);
-                        if (neighbors.epsilonGet(line, true).size() == 0)
-                            neighbors.epsilonRemove(line, true);
+                        neighbors.epsilonGet(line).remove(t);
+                        if (neighbors.epsilonGet(line).size() == 0)
+                            neighbors.epsilonRemove(line);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
-                        neighbors2d.epsilonGet(line, true).remove(t.originalPosition);
-                        if (neighbors2d.epsilonGet(line, true).size() == 0)
-                            neighbors2d.epsilonRemove(line, true);
+                        neighbors2d.epsilonGet(line).remove(t.originalPosition);
+                        if (neighbors2d.epsilonGet(line).size() == 0)
+                            neighbors2d.epsilonRemove(line);
                     }
                 } else if (change.getChangeType() != ChangeTypes.REMOVE) {
                     ModelTriangle t = change.getItem();
@@ -203,13 +205,13 @@ public class ModelState implements Cloneable
                         CanonicLine3d line = new CanonicLine3d(edge);
                         if (neighbors.epsilonGet(line) == null)
                             neighbors.epsilonPut(line, new LinkedList<ModelTriangle>());
-                        neighbors.epsilonGet(line, true).add(t);
+                        neighbors.epsilonGet(line).add(t);
                     }
                     for (Segment2d edge : t.originalPosition.getEdges()) {
                         CanonicLine2d line = new CanonicLine2d(edge);
                         if (neighbors2d.epsilonGet(line) == null)
                             neighbors2d.epsilonPut(line, new LinkedList<Triangle2d>());
-                        neighbors2d.epsilonGet(line, true).add(t.originalPosition);
+                        neighbors2d.epsilonGet(line).add(t.originalPosition);
                     }
                 }
             }
@@ -592,7 +594,7 @@ public class ModelState implements Cloneable
         List<ModelTriangle> result = new LinkedList<ModelTriangle>();
 
         for (Segment3d edge : triangle.getEdges()) {
-            for (ModelTriangle t : neighbors.epsilonGet(edge, true)) {
+            for (ModelTriangle t : neighbors.epsilonGet(edge)) {
                 if (t.hasCommonEdge(triangle, false)
                 // don't forget to check if the triangles are neighbors on the paper
                         && t.originalPosition.hasCommonEdge(triangle.originalPosition, false)) {

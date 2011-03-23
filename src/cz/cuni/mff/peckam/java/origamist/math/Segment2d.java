@@ -14,7 +14,10 @@ import javax.vecmath.Point2d;
  */
 public class Segment2d extends Line2d
 {
-    protected Point2d p2;
+    /** */
+    private static final long serialVersionUID = -118307867048129986L;
+
+    protected Point2d         p2;
 
     public Segment2d(Point2d p1, Point2d p2)
     {

@@ -45,6 +45,9 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
     /** Number of modifications, used for detecting concurrent modifications while using iterators. */
     protected transient int               modCount         = 0;
 
+    /** The factory object for creating new entries. */
+    protected EntryFactory                entryFactory     = new EntryFactory();
+
     /**
      * Colors of the tree's nodes.
      * 
@@ -289,7 +292,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
      */
     protected TreePath getPath(K key)
     {
-        TreePath path = new TreePath();
+        TreePath path = entryFactory.createTreePath();
         Entry p = root;
         while (p != null) {
             path.addLast(p);
@@ -314,13 +317,13 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
      */
     protected TreePath getPathForValue(V value)
     {
-        TreePath path = new TreePath();
+        TreePath path = entryFactory.createTreePath();
         path.add(root);
 
         if (searchPathForValue(value, path)) {
             return path;
         } else {
-            return new TreePath();
+            return entryFactory.createTreePath();
         }
     }
 
@@ -383,7 +386,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
     {
         if (root == null) {
             comparator.compare(key, key); // throws NPE if the comparator doesn't support null
-            root = new Entry(key, value);
+            root = entryFactory.createEntry(key, value);
             size = 1;
             modCount++;
             return null;
@@ -396,7 +399,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
 
         int cmp = comparator.compare(key, path.getLast().getKey());
         // now we have the new entry's parent as the last item on the path
-        Entry e = new Entry(key, value);
+        Entry e = entryFactory.createEntry(key, value);
         if (cmp < 0)
             path.getLast().left = e;
         else
@@ -663,8 +666,8 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         if (sibling == path.getLast())
             sibling = rightOf(path.getLast(1));
 
-        if (path.getLast(1).color == Color.RED && sibling.color == Color.BLACK && colorOf(sibling.left) == Color.BLACK
-                && colorOf(sibling.right) == Color.BLACK) {
+        if (path.getLast(1).color == Color.RED && colorOf(sibling) == Color.BLACK
+                && colorOf(sibling.left) == Color.BLACK && colorOf(sibling.right) == Color.BLACK) {
             sibling.color = Color.RED;
             path.getLast(1).color = Color.BLACK;
         } else {
@@ -794,7 +797,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         key = entry.getKey();
         value = entry.getValue();
 
-        Entry middle = new Entry(key, value);
+        Entry middle = entryFactory.createEntry(key, value);
 
         // color nodes in non-full bottommost level red
         if (level == redLevel)
@@ -1513,7 +1516,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             if (first != null)
                 pathToNext = getPath(first.getKey());
             else
-                pathToNext = new TreePath();
+                pathToNext = entryFactory.createTreePath();
         }
 
         @Override
@@ -1535,7 +1538,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             usedRemove = false;
 
             pathToLastReturned = pathToNext;
-            pathToNext = new TreePath();
+            pathToNext = entryFactory.createTreePath();
             pathToNext.addAll(pathToLastReturned);
 
             pathToNext.moveToSuccesor();
@@ -1556,7 +1559,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
             usedRemove = false;
 
             pathToLastReturned = pathToNext;
-            pathToNext = new TreePath();
+            pathToNext = entryFactory.createTreePath();
             pathToNext.addAll(pathToLastReturned);
 
             pathToNext.moveToPredecessor();
@@ -1797,7 +1800,7 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         for (int i = 0; i < size; i++) {
             K key = (K) s.readObject();
             V value = (V) s.readObject();
-            data.add(new Entry(key, value));
+            data.add(entryFactory.createEntry(key, value));
         }
         buildFromSorted(size, data.iterator());
     }
@@ -2104,4 +2107,33 @@ public class RedBlackTree<K, V> extends AbstractMap<K, V> implements SortedMap<K
         }
         return result.toString();
     }
+
+    /**
+     * A factory for creating new entries and tree paths.
+     * 
+     * @author Martin Pecka
+     */
+    protected class EntryFactory
+    {
+        /**
+         * Create a new entry with black color and no children.
+         * 
+         * @param key The key of the new entry.
+         * @param value The value of the new entry.
+         * @return The new entry.
+         */
+        public Entry createEntry(K key, V value)
+        {
+            return new Entry(key, value);
+        }
+
+        /**
+         * @return An empty tree path.
+         */
+        public TreePath createTreePath()
+        {
+            return new TreePath();
+        }
+    }
+
 }

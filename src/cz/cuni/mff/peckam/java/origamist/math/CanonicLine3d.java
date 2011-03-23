@@ -23,6 +23,9 @@ import javax.vecmath.Vector3d;
 public class CanonicLine3d extends Line3d
 {
 
+    /** */
+    private static final long serialVersionUID = -7024157317710963041L;
+
     /**
      * @param line
      */

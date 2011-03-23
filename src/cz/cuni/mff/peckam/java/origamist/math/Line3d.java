@@ -5,6 +5,8 @@ package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
+import java.util.Iterator;
+
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
@@ -13,17 +15,20 @@ import javax.vecmath.Vector3d;
  * 
  * @author Martin Pecka
  */
-public class Line3d implements Cloneable
+public class Line3d implements Cloneable, Vector<Double>
 {
+    /** */
+    private static final long serialVersionUID = -6793062246943777021L;
+
     /**
      * A point this line goes through.
      */
-    protected Point3d  p;
+    protected Point3d         p;
 
     /**
      * The direction vector of the line.
      */
-    protected Vector3d v;
+    protected Vector3d        v;
 
     /**
      * Create a standalone copy (clone) of the given line.
@@ -217,5 +222,93 @@ public class Line3d implements Cloneable
     public String toString()
     {
         return "Line3d [" + p + " + t*" + v + "]";
+    }
+
+    @Override
+    public Iterator<Double> iterator()
+    {
+        return new Iterator<Double>() {
+            private int i = 0;
+
+            @Override
+            public boolean hasNext()
+            {
+                return i + 1 < getDimension();
+            }
+
+            @Override
+            public Double next()
+            {
+                return get(i++);
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new UnsupportedOperationException("Cannot remove from a vector's iterator.");
+            }
+        };
+    }
+
+    @Override
+    public int getDimension()
+    {
+        return 6;
+    }
+
+    @Override
+    public Double get(int index)
+    {
+        switch (index) {
+            case 0:
+                return v.x;
+            case 1:
+                return v.y;
+            case 2:
+                return v.z;
+            case 3:
+                return p.x;
+            case 4:
+                return p.y;
+            case 5:
+                return p.z;
+            default:
+                throw new IndexOutOfBoundsException();
+        }
+    }
+
+    @Override
+    public Double set(int index, Double value)
+    {
+        Double oldVal;
+        switch (index) {
+            case 0:
+                oldVal = v.x;
+                v.x = value;
+                break;
+            case 1:
+                oldVal = v.y;
+                v.y = value;
+                break;
+            case 2:
+                oldVal = v.z;
+                v.z = value;
+                break;
+            case 3:
+                oldVal = p.x;
+                p.x = value;
+                break;
+            case 4:
+                oldVal = p.y;
+                p.y = value;
+                break;
+            case 5:
+                oldVal = p.z;
+                p.z = value;
+                break;
+            default:
+                throw new IndexOutOfBoundsException();
+        }
+        return oldVal;
     }
 }

@@ -124,6 +124,47 @@
       		<angle>3.141592</angle>
       	</operation>   
       </step>
+      <step id="6">
+        <description>Make a mountain fold parallel to the left side of the paper.</description>
+      	<description lang="cs-CZ">Rovnoběžně s levou hranou papíru udělejte horní přehyb.</description>
+      	<operation type="MOUNTAIN_FOLD">
+      		<startPoint><x>0.875</x><y>0.875</y></startPoint>
+      		<endPoint><x>0.875</x><y>1.0</y></endPoint>
+      		<layer>1</layer>
+      		<layer>2</layer>
+      		<layer>3</layer>
+      		<layer>4</layer>
+      		<layer>5</layer>
+      		<layer>6</layer>
+      		<layer>7</layer>
+      		<layer>8</layer>
+      		<layer>9</layer>
+      		<layer>10</layer>
+      		<layer>11</layer>
+      		<layer>12</layer>
+      		<layer>13</layer>
+      		<layer>14</layer>
+      		<layer>15</layer>
+      		<layer>16</layer>
+      		<layer>17</layer>
+      		<layer>18</layer>
+      		<layer>19</layer>
+      		<layer>20</layer>
+      		<layer>21</layer>
+      		<layer>22</layer>
+      		<layer>23</layer>
+      		<layer>24</layer>
+      		<layer>25</layer>
+      		<layer>26</layer>
+      		<layer>27</layer>
+      		<layer>28</layer>
+      		<layer>29</layer>
+      		<layer>30</layer>
+      		<layer>31</layer>
+      		<layer>32</layer>
+      		<angle>3.141592</angle>
+      	</operation>   
+      </step>
     </steps>
   </model>
 </m:origami>

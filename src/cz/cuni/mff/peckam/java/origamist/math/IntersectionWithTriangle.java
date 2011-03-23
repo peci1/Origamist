@@ -16,8 +16,11 @@ import javax.vecmath.Vector3d;
  */
 public class IntersectionWithTriangle<T extends Triangle3d> extends Segment3d
 {
+    /** */
+    private static final long serialVersionUID = 3418089833892732927L;
+
     /** The triangle the intersection occurs on. */
-    public T triangle;
+    public T                  triangle;
 
     /**
      * @param triangle A triangle.

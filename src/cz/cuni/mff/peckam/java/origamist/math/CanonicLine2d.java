@@ -21,6 +21,9 @@ import javax.vecmath.Vector2d;
  */
 public class CanonicLine2d extends Line2d
 {
+    /** */
+    private static final long serialVersionUID = -8795453541515682775L;
+
     /**
      * @param line
      */
