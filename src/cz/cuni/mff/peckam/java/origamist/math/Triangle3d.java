@@ -653,10 +653,19 @@ public class Triangle3d implements Cloneable
         return normal;
     }
 
+    /**
+     * <p>
+     * <b>The list of neighbors is not cloned, just the same references are copied.</b>
+     * </p>
+     * 
+     * {@inheritDoc}
+     */
     @Override
-    public Triangle3d clone()
+    public Triangle3d clone() throws CloneNotSupportedException
     {
-        return new Triangle3d(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+        Triangle3d result = new Triangle3d(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+        result.neighbors.addAll(this.neighbors);
+        return result;
     }
 
     @Override

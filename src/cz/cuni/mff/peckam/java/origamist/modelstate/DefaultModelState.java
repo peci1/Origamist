@@ -3,13 +3,13 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
+import java.util.LinkedList;
+
 import javax.vecmath.Point2d;
 
-import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 
 /**
  * This model state will be used by the first step as it's "predecessor's" model state.
@@ -54,23 +54,31 @@ public class DefaultModelState extends ModelState
 
         FoldLine line = new FoldLine();
         line.direction = null;
-        line.line = new Segment2d(ul, ur);
+        line.line = new ModelTriangleEdge(mt2, 0);
         fold.lines.add(line);
+        mt2.setFoldLines(0, new LinkedList<FoldLine>());
+        mt2.getFoldLines(0).add(line);
 
         line = new FoldLine();
         line.direction = null;
-        line.line = new Segment2d(ur, dr);
+        line.line = new ModelTriangleEdge(mt2, 2);
         fold.lines.add(line);
+        mt2.setFoldLines(2, new LinkedList<FoldLine>());
+        mt2.getFoldLines(2).add(line);
 
         line = new FoldLine();
         line.direction = null;
-        line.line = new Segment2d(dr, dl);
+        line.line = new ModelTriangleEdge(mt1, 0);
         fold.lines.add(line);
+        mt1.setFoldLines(0, new LinkedList<FoldLine>());
+        mt1.getFoldLines(0).add(line);
 
         line = new FoldLine();
         line.direction = null;
-        line.line = new Segment2d(dl, ul);
+        line.line = new ModelTriangleEdge(mt1, 2);
         fold.lines.add(line);
+        mt1.setFoldLines(2, new LinkedList<FoldLine>());
+        mt1.getFoldLines(2).add(line);
 
         fold.originatingStepId = 0;
         folds.add(fold);

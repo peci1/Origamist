@@ -38,7 +38,6 @@ import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
-import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Stripe3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
@@ -48,7 +47,6 @@ import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.UnitHelper;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
-import cz.cuni.mff.peckam.java.origamist.modelstate.Fold.FoldLine;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
@@ -66,9 +64,6 @@ public class ModelState implements Cloneable
      */
     protected ObservableList<Fold>                 folds                 = new ObservableList<Fold>();
 
-    /** The list of fold lines converted to 3D. Use getFoldLines3d() to get the list. */
-    protected List<Segment3d>                      foldLines3d           = new LinkedList<Segment3d>();
-
     /**
      * Cache for array of the lines representing folds.
      */
@@ -79,13 +74,8 @@ public class ModelState implements Cloneable
      */
     protected boolean                              foldLineArrayDirty    = true;
 
-    /**
-     * The triangles this model state consists of.
-     */
+    /** The triangles this model state consists of. */
     protected ObservableList<ModelTriangle>        triangles             = new ObservableList<ModelTriangle>();
-
-    /** The triangles on the paper. Automatically updated when <code>triangles</code> change. */
-    protected List<Triangle2d>                     triangles2d           = new LinkedList<Triangle2d>();
 
     /** The layers of the paper. */
     protected ObservableList<Layer>                layers                = new ObservableList<Layer>();
@@ -138,6 +128,14 @@ public class ModelState implements Cloneable
 
     public ModelState()
     {
+        addObservers();
+    }
+
+    /**
+     * Add all the needed observers to this state's observable fields.
+     */
+    protected void addObservers()
+    {
         folds.addObserver(new Observer<Fold>() {
             @Override
             public void changePerformed(ChangeNotification<Fold> change)
@@ -164,11 +162,9 @@ public class ModelState implements Cloneable
                 if (change.getChangeType() != ChangeTypes.ADD) {
                     ModelTriangle t = change.getOldItem();
                     paperToSpaceTriangles.remove(t.originalPosition);
-                    triangles2d.remove(t.originalPosition);
                 } else if (change.getChangeType() != ChangeTypes.REMOVE) {
                     ModelTriangle t = change.getItem();
                     paperToSpaceTriangles.put(t.originalPosition, t);
-                    triangles2d.add(t.originalPosition);
                 }
             }
         });
@@ -256,51 +252,35 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * @return The list of all fold lines converted to 3D.
-     */
-    protected List<Segment3d> getFoldLines3d()
-    {
-        if (foldLineArrayDirty)
-            updateLineArray();
-
-        return foldLines3d;
-    }
-
-    /**
      * Update the contents of the foldLineArray so that it corresponds to the actual contents of the folds variable.
      */
     protected synchronized void updateLineArray()
     {
         int linesCount = 0;
         for (Fold fold : folds) {
-            linesCount += fold.lines.size();
+            linesCount += fold.getLines().size();
         }
 
         UnitDimension paperSize = origami.getModel().getPaper().getSize();
         double ratio = UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
 
         foldLineArray = new LineArray(2 * linesCount, GeometryArray.COORDINATES | GeometryArray.COLOR_4);
-        foldLines3d.clear();
         int i = 0;
         for (Fold fold : folds) {
-            for (FoldLine line : fold.lines) {
-                Point2d startPoint = line.line.getP1();
-                Point3d startPoint2 = locatePointFromPaperTo3D(startPoint);
-                startPoint2.scale(ratio);
-                foldLineArray.setCoordinate(2 * i, startPoint2);
+            for (FoldLine line : fold.getLines()) {
+                Point3d startPoint = line.getLine().getSegment3d().getP1();
+                startPoint.scale(ratio);
+                foldLineArray.setCoordinate(2 * i, startPoint);
 
-                Point2d endPoint = line.line.getP2();
-                Point3d endPoint2 = locatePointFromPaperTo3D(endPoint);
-                endPoint2.scale(ratio);
-                foldLineArray.setCoordinate(2 * i + 1, endPoint2);
-
-                foldLines3d.add(new Segment3d(startPoint2, endPoint2));
+                Point3d endPoint = line.getLine().getSegment3d().getP2();
+                endPoint.scale(ratio);
+                foldLineArray.setCoordinate(2 * i + 1, endPoint);
 
                 // TODO implement some more line thickness and style possibilities
                 byte alpha = (byte) 255;
-                if (line.direction != null) {
+                if (line.getDirection() != null) {
                     // TODO invent some more sophisticated way to determine the fold "age"
-                    int diff = step.getId() - fold.originatingStepId;
+                    int diff = step.getId() - fold.getOriginatingStepId();
                     if (diff <= stepBlendingTreshold) {
                         alpha = (byte) (255 - (diff / stepBlendingTreshold) * 255);
                     } else {
@@ -700,6 +680,9 @@ public class ModelState implements Cloneable
     {
         List<IntersectionWithTriangle<ModelTriangle>> intersections = layer.getIntersectionsWithTriangles(segment);
 
+        Fold fold = new Fold();
+        fold.originatingStepId = this.step.getId();
+
         for (IntersectionWithTriangle<ModelTriangle> intersection : intersections) {
             if (intersection == null) {
                 // no intersection with the triangle - something's weird (we loop over intersections with triangles)
@@ -714,34 +697,9 @@ public class ModelState implements Cloneable
             }
         }
 
-        List<Segment3d> foldLines = layer.joinNeighboringSegments(intersections);
-        List<Segment2d> foldLines2d = new LinkedList<Segment2d>();
-        ModelTriangle triangle = layer.getTriangles().iterator().next();
-        for (Segment3d fold : foldLines) {
-            foldLines3d.add(fold);
-
-            // barycentric coordinates can handle even points outside the triangle, so it doesn't matter which triangle
-            // we choose - but it is important that all the triangles lie in one plane
-            Vector3d bp1 = triangle.getBarycentricCoordinates(fold.getP1());
-            Vector3d bp2 = triangle.getBarycentricCoordinates(fold.getP2());
-
-            Point2d p1 = triangle.getOriginalPosition().interpolatePointFromBarycentric(bp1);
-            Point2d p2 = triangle.getOriginalPosition().interpolatePointFromBarycentric(bp2);
-
-            foldLines2d.add(new Segment2d(p1, p2));
-        }
-
-        Fold fold = new Fold();
-        fold.originatingStepId = this.step.getId();
-        for (Segment2d line : foldLines2d) {
-            FoldLine fLine = new FoldLine();
-            fLine.direction = direction;
-            fLine.line = line;
-            fold.lines.add(fLine);
-        }
         folds.add(fold);
 
-        return foldLines;
+        return layer.joinNeighboringSegments(intersections);
     }
 
     /**
@@ -829,23 +787,69 @@ public class ModelState implements Cloneable
     @Override
     public ModelState clone() throws CloneNotSupportedException
     {
-        ModelState result = new ModelState();
+        ModelState result = (ModelState) super.clone();
 
-        result.step = this.step;
-        result.origami = this.origami;
-        result.rotationAngle = this.rotationAngle;
-        result.viewingAngle = this.viewingAngle;
-        result.stepBlendingTreshold = this.stepBlendingTreshold;
-
-        for (Fold fold : folds)
-            result.folds.add((Fold) fold.clone());
-
-        for (Triangle3d t : triangles)
-            result.triangles.add((ModelTriangle) t.clone());
+        result.foldLineArray = null;
+        result.foldLineArrayDirty = true;
+        result.trianglesArray = null;
         result.trianglesArrayDirty = true;
 
-        for (Layer l : layers)
-            result.layers.add(l);
+        result.layers = new ObservableList<Layer>(layers.size());
+        result.folds = new ObservableList<Fold>(folds.size());
+        result.paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>(paperToSpaceTriangles.size());
+        result.triangles = new ObservableList<ModelTriangle>(triangles.size());
+        result.trianglesToLayers = new Hashtable<ModelTriangle, Layer>(trianglesToLayers.size());
+
+        result.addObservers();
+
+        Hashtable<ModelTriangle, ModelTriangle> newTriangles = new Hashtable<ModelTriangle, ModelTriangle>(
+                triangles.size());
+        for (ModelTriangle t : triangles) {
+            ModelTriangle newT = t.clone();
+            newTriangles.put(t, newT);
+            result.triangles.add(newT);
+        }
+
+        for (ModelTriangle t : result.triangles) {
+            List<ModelTriangle> oldNeighbors = new LinkedList<ModelTriangle>(t.getRawNeighbors());
+            t.getRawNeighbors().clear();
+            for (ModelTriangle n : oldNeighbors) {
+                t.getRawNeighbors().add(newTriangles.get(n));
+            }
+        }
+
+        Hashtable<Fold, Fold> newFolds = new Hashtable<Fold, Fold>(folds.size());
+        for (Fold fold : folds) {
+            Fold newFold = fold.clone();
+            newFold.lines.getObservers().clear();
+
+            for (FoldLine l : newFold.lines) {
+                ModelTriangle newTriangle = newTriangles.get(l.getLine().getTriangle());
+                l.setLine(new ModelTriangleEdge(newTriangle, l.getLine().getIndex()));
+            }
+
+            result.folds.add(newFold);
+            newFolds.put(fold, newFold);
+        }
+
+        for (ModelTriangle t : result.triangles) {
+            for (int i = 0; i < 3; i++) {
+                List<FoldLine> foldLines = t.getFoldLines(i);
+                if (foldLines != null && foldLines.size() > 0) {
+                    for (FoldLine line : foldLines) {
+                        line.setFold(newFolds.get(line.getFold()));
+                    }
+                }
+            }
+        }
+
+        for (Layer l : layers) {
+            List<ModelTriangle> triangles = new LinkedList<ModelTriangle>();
+            for (ModelTriangle t : l.getTriangles()) {
+                triangles.add(newTriangles.get(t));
+            }
+            result.layers.add(new Layer(triangles));
+        }
 
         return result;
     }

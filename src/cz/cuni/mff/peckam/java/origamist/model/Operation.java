@@ -3,8 +3,6 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
-import java.util.Hashtable;
-
 import javax.swing.ImageIcon;
 import javax.vecmath.Point2d;
 import javax.xml.bind.annotation.XmlTransient;
@@ -16,7 +14,7 @@ import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 
 /**
- * 
+ * An operation on the model.
  * 
  * @author Martin Pecka
  */
@@ -27,12 +25,7 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
     /**
      * Icon of this operation.
      */
-    protected ImageIcon                         icon            = null;
-
-    /**
-     * Cache for transitions from one modelstate to another one using this operation
-     */
-    protected Hashtable<ModelState, ModelState> modelStateCache = new Hashtable<ModelState, ModelState>();
+    protected ImageIcon icon = null;
 
     /**
      * @return The icon of this operation
@@ -62,46 +55,41 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
     }
 
     /**
-     * Perform folding from the previous state to a new state by this operation.
+     * Perform folding from the previous state to a new state by this operation. Calling this method will alter the
+     * passed ModelState.
      * 
      * @param previousState The state the model has now.
-     * @return The state the model would have after performing this operation.
+     * @return The passed-in state of the model altered by performing this operation.
      */
     public ModelState getModelState(ModelState previousState)
     {
-        // TODO check if we need to overwrite ModelState.hashCode() or not
-        if (modelStateCache.get(previousState) != null)
-            return modelStateCache.get(previousState);
-
-        ModelState state;
-        try {
-            state = (ModelState) previousState.clone();
-        } catch (CloneNotSupportedException e) {
-            assert false : "ModelState does not support clone";
-            return previousState;
-        }
-
         // TODO model state transitioning stuff
         switch (this.type) {
             case ROTATE:
-                state.addRotation(-this.angle);
+                previousState.addRotation(-this.angle);
                 break;
             case TURN_OVER:
-                state.flipViewingAngle();
+                previousState.flipViewingAngle();
                 break;
             case VALLEY_FOLD:
-                state.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()), new Point2d(
-                        endPoint.getX(), endPoint.getY()), layer, angle);
+                previousState.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()),
+                        new Point2d(endPoint.getX(), endPoint.getY()), layer, angle);
                 break;
             case MOUNTAIN_FOLD:
-                state.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()), new Point2d(
-                        endPoint.getX(), endPoint.getY()), layer, angle);
+                previousState.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()),
+                        new Point2d(endPoint.getX(), endPoint.getY()), layer, angle);
                 break;
             case INSIDE_CRIMP_FOLD:
                 break;
             case INSIDE_REVERSE_FOLD:
                 break;
             case MOUNTAIN_VALLEY_FOLD_UNFOLD:
+                previousState.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()),
+                        new Point2d(endPoint.getX(), endPoint.getY()), layer, 0);
+                break;
+            case VALLEY_MOUNTAIN_FOLD_UNFOLD:
+                previousState.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()),
+                        new Point2d(endPoint.getX(), endPoint.getY()), layer, 0);
                 break;
             case OPEN:
                 break;
@@ -119,15 +107,12 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
                 break;
             case THUNDERBOLT_FOLD:
                 break;
-            case VALLEY_MOUNTAIN_FOLD_UNFOLD:
-                break;
             default:
                 // TODO handle error - unknown operation
                 break;
         }
 
-        modelStateCache.put(previousState, state);
-        return state;
+        return previousState;
     }
 
     @Override
@@ -159,6 +144,13 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
         } else if (!ServiceLocator.get(HashCodeAndEqualsHelper.class).equals(icon, other.icon))
             return false;
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Operation [type=" + type + ", angle=" + angle + ", startPoint=" + startPoint + ", endPoint=" + endPoint
+                + ", layer=" + layer + "]";
     }
 
 }

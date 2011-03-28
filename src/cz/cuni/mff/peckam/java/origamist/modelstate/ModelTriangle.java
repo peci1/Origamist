@@ -4,12 +4,16 @@
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import java.util.AbstractList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
+import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
 
@@ -25,7 +29,16 @@ public class ModelTriangle extends Triangle3d
     /**
      * The original position of this triangle on the sheet of paper.
      */
-    protected Triangle2d originalPosition;
+    protected Triangle2d     originalPosition;
+
+    /** The fold lines for the first edge of the triangle. */
+    protected List<FoldLine> s1FoldLines = null;
+
+    /** The fold lines for the second edge of the triangle. */
+    protected List<FoldLine> s2FoldLines = null;
+
+    /** The fold lines for the third edge of the triangle. */
+    protected List<FoldLine> s3FoldLines = null;
 
     /**
      * @param p1
@@ -251,12 +264,136 @@ public class ModelTriangle extends Triangle3d
         return new ModelTriangle(p1, p2, p3, new Triangle2d(pp1, pp2, pp3));
     }
 
-    @Override
-    public ModelTriangle clone()
+    /**
+     * Return the fold lines for the edge with the given index.
+     * 
+     * @param i The index of the edge. An integer from 0 to 2.
+     * @return The fold lines for the edge with the given index.
+     */
+    protected List<FoldLine> getFoldLines(int i)
     {
-        Triangle3d t = (Triangle3d) super.clone();
-        ModelTriangle result = new ModelTriangle(t.getP1(), t.getP2(), t.getP3(),
-                (Triangle2d) this.originalPosition.clone());
+        switch (i) {
+            case 0:
+                return s1FoldLines;
+            case 1:
+                return s2FoldLines;
+            case 2:
+                return s3FoldLines;
+            default:
+                throw new ArrayIndexOutOfBoundsException();
+        }
+    }
+
+    /**
+     * Sets the fold lines for the edge with the given index.
+     * 
+     * @param i The index of the edge. An integer from 0 to 2.
+     * @param lines The new list of fold lines.
+     */
+    protected void setFoldLines(int i, List<FoldLine> lines)
+    {
+        switch (i) {
+            case 0:
+                s1FoldLines = lines;
+                break;
+            case 1:
+                s2FoldLines = lines;
+                break;
+            case 2:
+                s3FoldLines = lines;
+                break;
+            default:
+                throw new ArrayIndexOutOfBoundsException();
+        }
+    }
+
+    @Override
+    public <T extends Triangle3d> List<T> subdivideTriangle(IntersectionWithTriangle<T> segment)
+            throws IllegalArgumentException
+    {
+        List<T> result = super.subdivideTriangle(segment);
+
+        // subdivide also foldLines
+        if (result.size() > 1 && result.get(0) instanceof ModelTriangle) {
+            int i = 0;
+            for (Segment3d edge : getEdges()) {
+                List<FoldLine> lines = getFoldLines(i);
+                if (lines != null && lines.size() > 0) {
+                    loop: for (T t : result) {
+                        ModelTriangle mt = (ModelTriangle) t;
+                        int j = 0;
+                        for (Segment3d tEdge : t.getEdges()) {
+                            Segment3d intersection = edge.getIntersection(tEdge);
+                            if (intersection != null
+                                    && !intersection.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
+
+                                List<FoldLine> newLines = mt.getFoldLines(j);
+                                if (newLines == null) {
+                                    mt.setFoldLines(j, new LinkedList<FoldLine>());
+                                    newLines = mt.getFoldLines(j);
+                                }
+
+                                ModelTriangleEdge newEdge = new ModelTriangleEdge(mt, j);
+                                for (FoldLine line : lines) {
+                                    FoldLine newLine;
+                                    try {
+                                        newLine = line.clone();
+                                    } catch (CloneNotSupportedException e) {
+                                        assert false : "FoldLine doesn't support clone().";
+                                        throw new IllegalStateException("FoldLine doesn't support clone().");
+                                    }
+                                    newLine.setLine(newEdge);
+                                    newLine.getFold().getLines().add(newLine);
+                                    newLines.add(newLine);
+                                }
+
+                                continue loop;
+                            }
+                            j++;
+                        }
+                    }
+
+                    for (FoldLine line : lines) {
+                        line.getFold().getLines().remove(line);
+                    }
+                    setFoldLines(i, null);
+                }
+                i++;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * <p>
+     * <b>The lists of fold lines belonging to edges are cloned, but the Folds the FoldLines belong to aren't changed to
+     * reference the newly created fold lines (but the newly created fold lines reference the same parent folds as the
+     * source ones).</b>
+     * </p>
+     * 
+     * {@inheritDoc}
+     */
+    @Override
+    public ModelTriangle clone() throws CloneNotSupportedException
+    {
+        ModelTriangle result = new ModelTriangle(getP1(), getP2(), getP3(), this.originalPosition.clone());
+
+        for (int i = 0; i < 3; i++) {
+            List<FoldLine> lines = getFoldLines(i);
+            if (lines != null) {
+                result.setFoldLines(i, new LinkedList<FoldLine>());
+                List<FoldLine> newLines = result.getFoldLines(i);
+                for (FoldLine line : lines) {
+                    FoldLine newLine = line.clone();
+                    newLine.setLine(new ModelTriangleEdge(result, line.getLine().getIndex()));
+                    newLines.add(newLine);
+                }
+            }
+        }
+
+        result.neighbors.addAll(this.neighbors);
+
         return result;
     }
 

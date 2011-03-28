@@ -23,6 +23,7 @@ import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.GraphicsConfigTemplate3D;
+import javax.media.j3d.LineAttributes;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Transform3D;
@@ -247,6 +248,23 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * @return The appearance of triangles that represent the foreground of the paper.
+     */
+    protected Appearance createFoldLinesAppearance()
+    {
+        Appearance appearance = new Appearance();
+
+        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(Color.black), ColoringAttributes.NICEST);
+        appearance.setColoringAttributes(colAttrs);
+
+        LineAttributes lineAttrs = new LineAttributes();
+        lineAttrs.setLineWidth(2);
+        appearance.setLineAttributes(lineAttrs);
+
+        return appearance;
+    }
+
+    /**
      * Set this.transform to a new value.
      * 
      * @return The transform used for the step just after initialization.
@@ -258,6 +276,8 @@ public class StepRenderer extends JPanel
         transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
         // TODO adjust zoom according to paper size and renderer size - this is placeholder code
         transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+        // transform
+        // .setScale(new Vector3d(5 * transform.getScale(), 5 * transform.getScale(), 500 * transform.getScale()));
         UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
         transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
 
@@ -274,6 +294,7 @@ public class StepRenderer extends JPanel
         setupTransform();
         Appearance appearance = createNormalTrianglesAppearance();
         Appearance appearance2 = createInverseTrianglesAppearance();
+        Appearance appearance3 = createFoldLinesAppearance();
 
         ModelState state = step.getModelState();
 
@@ -284,7 +305,7 @@ public class StepRenderer extends JPanel
 
         tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
         tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance2));
-        // tGroup.addChild(new Shape3D(state.getLineArray()));
+        tGroup.addChild(new Shape3D(state.getLineArray(), appearance3));
 
         return tGroup;
     }
