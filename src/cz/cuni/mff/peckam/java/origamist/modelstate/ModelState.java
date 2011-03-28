@@ -268,11 +268,11 @@ public class ModelState implements Cloneable
         int i = 0;
         for (Fold fold : folds) {
             for (FoldLine line : fold.getLines()) {
-                Point3d startPoint = line.getLine().getSegment3d().getP1();
+                Point3d startPoint = new Point3d(line.getLine().getSegment3d().getP1());
                 startPoint.scale(ratio);
                 foldLineArray.setCoordinate(2 * i, startPoint);
 
-                Point3d endPoint = line.getLine().getSegment3d().getP2();
+                Point3d endPoint = new Point3d(line.getLine().getSegment3d().getP2());
                 endPoint.scale(ratio);
                 foldLineArray.setCoordinate(2 * i + 1, endPoint);
 
@@ -694,6 +694,23 @@ public class ModelState implements Cloneable
             if (newTriangles.size() > 1) {
                 triangles.remove(intersection.triangle);
                 triangles.addAll(newTriangles);
+
+                for (ModelTriangle t : newTriangles) {
+                    int i = 0;
+                    for (Segment3d edge : t.getEdges()) {
+                        Segment3d edgeInt = edge.getIntersection(intersection);
+                        if (edgeInt != null && !edgeInt.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
+                            // this method adds all fold lines twice - one for each triangle adjacent to the
+                            // intersection segment - but we don't care (maybe we should, it'll be more clear further)
+                            FoldLine line = new FoldLine();
+                            line.setDirection(direction);
+                            line.setFold(fold);
+                            line.setLine(new ModelTriangleEdge(t, i));
+                            fold.getLines().add(line);
+                        }
+                        i++;
+                    }
+                }
             }
         }
 

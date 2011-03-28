@@ -360,6 +360,7 @@ public class ModelTriangle extends Triangle3d
                 }
                 i++;
             }
+
         }
 
         return result;
