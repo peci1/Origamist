@@ -30,7 +30,7 @@ public class Fold implements Cloneable
      */
     public Fold()
     {
-        lines.addObserver(getLinesObserver());
+        addObservers();
     }
 
     /**
@@ -40,6 +40,14 @@ public class Fold implements Cloneable
     {
         this();
         this.originatingStepId = originatingStepId;
+    }
+
+    /**
+     * Add all needed observers to this object's fields.
+     */
+    protected void addObservers()
+    {
+        lines.addObserver(getLinesObserver());
     }
 
     /**
