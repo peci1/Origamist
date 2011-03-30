@@ -43,7 +43,8 @@ public class Triangle3d implements Cloneable
     protected List<Triangle3d> neighborsRO = Collections.unmodifiableList(neighbors);
 
     /**
-     * @return The list of neighbor triangles. The returned list is read-only.
+     * @return The list of neighbor triangles. The returned list is read-only. Triangles with just a single common point
+     *         aren't considered as neighbors.
      */
     public List<? extends Triangle3d> getNeighbors()
     {
@@ -242,18 +243,38 @@ public class Triangle3d implements Cloneable
      */
     public boolean hasCommonEdge(Triangle3d t, boolean strict)
     {
+        return getCommonEdge(t, strict) != null;
+    }
+
+    /**
+     * Returns the common part of edges of this and the given triangle. If they have just a common point, a segment
+     * with zero direction vector will be returned. If the triangles overlay by more than an edge, the result is
+     * undefined. If the triangles do not have a common segment, <code>null</code> will be returned.
+     * 
+     * @param t The segment to find common edge with.
+     * @param strict If true, then the edges must match exactly. If it is false, it is sufficient that the edges
+     *            overlap.
+     * @return The common part of edges of this and the given triangle.
+     */
+    public Segment3d getCommonEdge(Triangle3d t, boolean strict)
+    {
+        Segment3d result = null;
         for (Segment3d edge1 : getEdges()) {
             for (Segment3d edge2 : t.getEdges()) {
                 if (strict) {
                     if (edge1.epsilonEquals(edge2, true))
-                        return true;
+                        return new Segment3d(edge1);
                 } else {
-                    if (edge1.overlaps(edge2))
-                        return true;
+                    if (edge1.overlaps(edge2)) {
+                        result = edge1.getIntersection(edge2);
+                        // if the intersection isn't just a point, we can surely return
+                        if (!result.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                            return result;
+                    }
                 }
             }
         }
-        return false;
+        return result;
     }
 
     /**
@@ -600,7 +621,9 @@ public class Triangle3d implements Cloneable
             for (Triangle3d n : neighbors) {
                 n.neighbors.remove(this);
                 for (T t : triangles) {
-                    if (n.hasCommonEdge(t, false)) {
+                    Segment3d commonEdge = n.getCommonEdge(t, false);
+                    // don't consider triangles with single common point as neighbors
+                    if (commonEdge != null && !commonEdge.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
                         n.neighbors.add(t);
                         t.neighbors.add(n);
                     }
@@ -612,7 +635,9 @@ public class Triangle3d implements Cloneable
             for (T t1 : triangles) {
                 if (i + 1 <= triangles.size() - 1) {
                     for (T t2 : triangles.subList(i + 1, triangles.size())) {
-                        if (t1.hasCommonEdge(t2, false)) {
+                        Segment3d commonEdge = t1.getCommonEdge(t2, false);
+                        // don't consider triangles with single common point as neighbors
+                        if (commonEdge != null && !commonEdge.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
                             t1.neighbors.add(t2);
                             t2.neighbors.add(t1);
                         }
