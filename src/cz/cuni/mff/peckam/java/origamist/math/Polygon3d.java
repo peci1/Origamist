@@ -551,7 +551,7 @@ public class Polygon3d<T extends Triangle3d>
     public Segment3d getIntersectionSegment(Stripe3d stripe)
     {
         List<Segment3d> ints = getIntersections(stripe);
-        if (ints == null)
+        if (ints == null || ints.size() == 0)
             return null;
         Point3d int1 = ints.get(0).getP1();
         Point3d int2 = ints.get(ints.size() - 1).getP2();
