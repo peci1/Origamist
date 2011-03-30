@@ -823,6 +823,10 @@ public class ModelState implements Cloneable
                 triangles.size());
         for (ModelTriangle t : triangles) {
             ModelTriangle newT = t.clone();
+            // the fold lines will be filled further again with their new instances
+            newT.s1FoldLines = null;
+            newT.s2FoldLines = null;
+            newT.s3FoldLines = null;
             newTriangles.put(t, newT);
             result.triangles.add(newT);
         }
@@ -831,39 +835,42 @@ public class ModelState implements Cloneable
             List<ModelTriangle> oldNeighbors = new LinkedList<ModelTriangle>(t.getRawNeighbors());
             t.getRawNeighbors().clear();
             for (ModelTriangle n : oldNeighbors) {
-                t.getRawNeighbors().add(newTriangles.get(n));
+                ModelTriangle newN = newTriangles.get(n);
+                if (newN == null)
+                    throw new IllegalStateException();
+                t.getRawNeighbors().add(newN);
             }
         }
 
-        Hashtable<Fold, Fold> newFolds = new Hashtable<Fold, Fold>(folds.size());
         for (Fold fold : folds) {
             Fold newFold = fold.clone();
             newFold.lines.getObservers().clear();
+            newFold.addObservers();
 
             for (FoldLine l : newFold.lines) {
                 ModelTriangle newTriangle = newTriangles.get(l.getLine().getTriangle());
-                l.setLine(new ModelTriangleEdge(newTriangle, l.getLine().getIndex()));
+                if (newTriangle == null)
+                    throw new IllegalStateException();
+
+                l.getLine().setTriangle(newTriangle);
+                List<FoldLine> foldLines = newTriangle.getFoldLines(l.getLine().getIndex());
+                if (foldLines == null) {
+                    newTriangle.setFoldLines(l.getLine().getIndex(), new LinkedList<FoldLine>());
+                    foldLines = newTriangle.getFoldLines(l.getLine().getIndex());
+                }
+                foldLines.add(l);
             }
 
             result.folds.add(newFold);
-            newFolds.put(fold, newFold);
-        }
-
-        for (ModelTriangle t : result.triangles) {
-            for (int i = 0; i < 3; i++) {
-                List<FoldLine> foldLines = t.getFoldLines(i);
-                if (foldLines != null && foldLines.size() > 0) {
-                    for (FoldLine line : foldLines) {
-                        line.setFold(newFolds.get(line.getFold()));
-                    }
-                }
-            }
         }
 
         for (Layer l : layers) {
             List<ModelTriangle> triangles = new LinkedList<ModelTriangle>();
             for (ModelTriangle t : l.getTriangles()) {
-                triangles.add(newTriangles.get(t));
+                ModelTriangle newT = newTriangles.get(t);
+                if (newT == null)
+                    throw new IllegalStateException();
+                triangles.add(newT);
             }
             result.layers.add(new Layer(triangles));
         }
