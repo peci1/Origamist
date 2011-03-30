@@ -70,12 +70,12 @@
       		<layer>1</layer>
       		<angle>3.141592</angle>
       	</operation>
-      	<!-- operation type="VALLEY_FOLD">
+      	<operation type="VALLEY_FOLD">
       		<startPoint><x>0.66666667</x><y>0.66666667</y></startPoint>
       		<endPoint><x>0.33333333</x><y>1</y></endPoint>
       		<layer>1</layer>
       		<angle>3.141592</angle>
-      	</operation-->
+      	</operation>
       </step>
       <step id="4">
       	<description>Rotate it 90° right.</description>
@@ -94,11 +94,11 @@
       		<angle>3</angle>
       	</operation>
       </step>
-      <!-- step id="6">
+      <step id="6">
       	<description>Turn the paper over.</description>
       	<description lang="cs-CZ">Otočte papír vzhůru nohama.</description>
       	<operation type="TURN_OVER"/>
-      </step-->
+      </step>
     </steps>
   </model>
 </m:origami>

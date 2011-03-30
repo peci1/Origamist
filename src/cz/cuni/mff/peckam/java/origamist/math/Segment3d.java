@@ -26,6 +26,11 @@ public class Segment3d extends Line3d
         this.p2 = p2;
     }
 
+    public Segment3d(Segment3d seg)
+    {
+        this(seg.getP1(), seg.getP2());
+    }
+
     public Point3d getP1()
     {
         return this.p;

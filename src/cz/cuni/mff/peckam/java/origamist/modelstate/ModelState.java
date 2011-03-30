@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -377,11 +378,15 @@ public class ModelState implements Cloneable
         LinkedHashMap<Layer, Segment3d> layerInts = getLayers(segment);
 
         int i = 1;
-        for (Entry<Layer, Segment3d> entry : layerInts.entrySet()) {
-            if (!affectedLayers.contains(i++))
-                continue;
-            // TODO handle direction in some appropriate way
-            makeFoldInLayer(entry.getKey(), direction, entry.getValue());
+        Iterator<Entry<Layer, Segment3d>> it = layerInts.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Layer, Segment3d> entry = it.next();
+            if (!affectedLayers.contains(i++)) {
+                it.remove();
+            } else {
+                // TODO handle direction in some appropriate way
+                makeFoldInLayer(entry.getKey(), direction, entry.getValue());
+            }
         }
 
         bendPaper(direction, segment, layerInts, angle);
@@ -422,6 +427,10 @@ public class ModelState implements Cloneable
 
         HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
 
+        // further we will need to search in layerInts, but the layers will probably change, so we backup the old
+        // removed layers here
+        Hashtable<Layer, Layer> newLayersToOldOnes = new Hashtable<Layer, Layer>();
+
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
         for (Entry<Layer, Segment3d> layerInt : layerInts.entrySet()) {
             Layer layer = layerInt.getKey();
@@ -453,10 +462,16 @@ public class ModelState implements Cloneable
             }
 
             this.layers.remove(layer);
-            for (Polygon3d<ModelTriangle> l : part1)
-                this.layers.add(new Layer(l));
-            for (Polygon3d<ModelTriangle> l : part2)
-                this.layers.add(new Layer(l));
+            for (Polygon3d<ModelTriangle> l : part1) {
+                Layer newL = new Layer(l);
+                this.layers.add(newL);
+                newLayersToOldOnes.put(newL, layer);
+            }
+            for (Polygon3d<ModelTriangle> l : part2) {
+                Layer newL = new Layer(l);
+                this.layers.add(newL);
+                newLayersToOldOnes.put(newL, layer);
+            }
 
             for (Polygon3d<ModelTriangle> l : part1) {
                 queue.addAll(l.getTriangles());
@@ -467,37 +482,38 @@ public class ModelState implements Cloneable
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
 
-        List<Segment3d> foldLines = new LinkedList<Segment3d>();
-        for (Entry<Layer, Segment3d> entry : layerInts.entrySet()) {
-            foldLines.addAll(entry.getKey().getIntersections(entry.getValue()));
-        }
-
         Set<ModelTriangle> inQueue = new HashSet<ModelTriangle>(queue);
         Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
         ModelTriangle t;
         while ((t = queue.poll()) != null) {
             trianglesToRotate.add(t);
-            Hashtable<Segment3d, Segment3d> overlaps = new Hashtable<Segment3d, Segment3d>();
-            for (Segment3d edge : t.getEdges()) {
-                for (Segment3d foldLine : foldLines) {
-                    if (edge.overlaps(foldLine)) {
-                        overlaps.put(edge, foldLine);
-                    }
-                }
+
+            // border is the intersection line in the layer of the processed triangle - if the triangle lies in a layer
+            // without intersection line, it can be surely added to the queue
+            Segment3d border = layerInts.get(trianglesToLayers.get(t));
+            if (border == null) {
+                Layer oldLayer = newLayersToOldOnes.get(trianglesToLayers.get(t));
+                if (oldLayer != null)
+                    border = layerInts.get(oldLayer);
             }
+
             List<ModelTriangle> neighbors = findNeighbors(t);
             n: for (ModelTriangle n : neighbors) {
                 if (inQueue.contains(n))
                     continue;
 
-                for (Entry<Segment3d, Segment3d> overlap : overlaps.entrySet()) {
-                    if (n.getS1().overlaps(overlap.getValue()) || n.getS2().overlaps(overlap.getValue())
-                            || n.getS3().overlaps(overlap.getValue())) {
+                if (border != null) {
+                    Segment3d intWithNeighbor = t.getCommonEdge(n, false);
+                    // if the common edge between t and n is a part of the border line, we need to check if n lies in
+                    // the processed halfspace; if not, it is "on the other side" of the border line, so we don't want
+                    // to add it to the queue
+                    if (intWithNeighbor != null && intWithNeighbor.overlaps(border)) {
                         if (!halfspace.contains(n.getP1()) || !halfspace.contains(n.getP2())
                                 || !halfspace.contains(n.getP3()))
                             continue n;
                     }
                 }
+                // else - if no border line lies in t's layer, we automatically want to add all of its neighbors
 
                 queue.add(n);
                 inQueue.add(n);
@@ -710,6 +726,21 @@ public class ModelState implements Cloneable
                         }
                         i++;
                     }
+                }
+            } else if (newTriangles.size() == 1) {
+                int i = 0;
+                for (Segment3d edge : intersection.getTriangle().getEdges()) {
+                    Segment3d edgeInt = edge.getIntersection(intersection);
+                    if (edgeInt != null && !edgeInt.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
+                        // this method adds all fold lines twice - one for each triangle adjacent to the
+                        // intersection segment - but we don't care (maybe we should, it'll be more clear further)
+                        FoldLine line = new FoldLine();
+                        line.setDirection(direction);
+                        line.setFold(fold);
+                        line.setLine(new ModelTriangleEdge(intersection.getTriangle(), i));
+                        fold.getLines().add(line);
+                    }
+                    i++;
                 }
             }
         }
