@@ -5,8 +5,6 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +24,6 @@ import javax.media.j3d.GeometryArray;
 import javax.media.j3d.LineArray;
 import javax.media.j3d.TriangleArray;
 import javax.vecmath.Color4b;
-import javax.vecmath.Matrix3d;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point4d;
@@ -564,13 +561,27 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * <p>
      * Returns a sorted map of layers defined by the given segment.
+     * </p>
      * 
-     * A layer is a part of the paper surrounded by either fold lines or paper boundaries.
-     * This function returns the layers that intersect with a stripe defined by the two given points and and that is
+     * <p>
+     * <i>A layer is a part of the paper surrounded by either fold lines or paper boundaries.</i>
+     * </p>
+     * 
+     * <p>
+     * This function returns the layers that intersect with a stripe defined by the two given points and that is
      * perpendicular to the layer the line lies in.
-     * The list is sorted in the order the layers intersect with the stripe. The very first layer is the one that is the
-     * closest to the viewer.
+     * </p>
+     * 
+     * <p>
+     * The list is sorted in the order the layers intersect with the stripe.
+     * </p>
+     * 
+     * <p>
+     * The very first layer is the one that has its intersection the furthest in the direction of the normal of the
+     * layer the segment lies in.
+     * </p>
      * 
      * @param segment The segment we search layers for.
      * @return A list of layers defined by the given line and the intersections with the fold stripe with those layers.
@@ -589,11 +600,11 @@ public class ModelState implements Cloneable
         // find another layers: is done by creating a stripe perpendicular to the first layer and finding intersections
         // of the stripe with triangles
 
-        Vector3d stripeDirection = firstLayer.getNormal();
-        Line3d p1line = new Line3d(segment.getP1(), stripeDirection);
-        Line3d p2line = new Line3d(segment.getP2(), stripeDirection);
+        final Vector3d stripeDirection = firstLayer.getNormal();
+        final Line3d p1line = new Line3d(segment.getP1(), stripeDirection);
+        final Line3d p2line = new Line3d(segment.getP2(), stripeDirection);
 
-        Stripe3d stripe = new Stripe3d(p1line, p2line);
+        final Stripe3d stripe = new Stripe3d(p1line, p2line);
 
         LinkedHashMap<Layer, Segment3d> result = new LinkedHashMap<Layer, Segment3d>();
 
@@ -607,54 +618,21 @@ public class ModelState implements Cloneable
         }
 
         List<Layer> keys = new ArrayList<Layer>(result.keySet());
-        // sort the layers so that the first one will be the one nearest to the viewer
-        // assuming that layers don't intersect, one can compare the order of layers by comparing the order of any two
-        // triangles from the layers
+        // sort the layers along the stripe
+        // we assume that all the layers intersect with the stripe, so it's no problem to sort the layers by their
+        // intersections with one of the stripe's border line
         Collections.sort(keys, new Comparator<Layer>() {
-
-            /** The axis from the user's display to the center point. */
-            private Line3d axis = null;
-
-            {
-                Matrix3d transform = new Matrix3d();
-
-                double a1 = viewingAngle - Math.PI / 2.0;
-                double a2 = 0;
-                double a3 = rotationAngle;
-
-                double c1 = cos(a1);
-                double c2 = cos(a2);
-                double c3 = cos(a3);
-
-                double s1 = sin(a1);
-                double s2 = sin(a2);
-                double s3 = sin(a3);
-
-                // see http://en.wikipedia.org/wiki/Euler_angles
-                transform.setRow(0, c2 * c3, -c2 * s3, s2);
-                transform.setRow(1, c1 * s3 + c3 * s1 * s2, c1 * c3 - s1 * s2 * s3, -c2 * s1);
-                transform.setRow(2, s1 * s3 - c1 * c3 * s2, c1 * s2 * s3 + c3 * s1, c1 * c2);
-
-                Matrix3d invTransform = new Matrix3d();
-                invTransform.invert(transform);
-
-                Vector3d axisDir = new Vector3d();
-                invTransform.transform(new Vector3d(0, 0, 1), axisDir);
-
-                axis = new Line3d(new Point3d(), axisDir);
-            }
-
             @Override
             public int compare(Layer o1, Layer o2)
             {
-                Line3d int1 = o1.getPlane().getIntersection(axis);
-                Line3d int2 = o2.getPlane().getIntersection(axis);
+                Line3d int1 = o1.getPlane().getIntersection(p1line);
+                Line3d int2 = o2.getPlane().getIntersection(p1line);
 
                 // we can assume int1 and int2 to be regular points, because intersections with layers parallel to the
                 // stripe are discarded
 
-                double t1 = axis.getParameterForPoint(int1.getPoint());
-                double t2 = axis.getParameterForPoint(int2.getPoint());
+                double t1 = p1line.getParameterForPoint(int1.getPoint());
+                double t2 = p1line.getParameterForPoint(int2.getPoint());
                 return (t1 - t2 > EPSILON) ? 1 : (t1 - t2 < -EPSILON ? -1 : 0);
             }
         });

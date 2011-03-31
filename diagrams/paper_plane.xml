@@ -90,7 +90,7 @@
       	<operation type="VALLEY_FOLD">
       		<startPoint><x>0.33333333</x><y>0</y></startPoint>
       		<endPoint><x>0.33333333</x><y>1</y></endPoint>
-      		<layer>1</layer>
+      		<layer>2</layer>
       		<angle>3</angle>
       	</operation>
       </step>
@@ -98,6 +98,24 @@
       	<description>Turn the paper over.</description>
       	<description lang="cs-CZ">Otočte papír vzhůru nohama.</description>
       	<operation type="TURN_OVER"/>
+      </step>
+      <step id="7">
+      	<description>Fold the wings.</description>
+      	<description lang="cs-CZ">Ohněte křídla</description>
+      	<operation type="MOUNTAIN_FOLD">
+      		<startPoint><x>0.25</x><y>0</y></startPoint>
+      		<endPoint><x>0.25</x><y>0.8824</y></endPoint>
+      		<layer>1</layer>
+      		<layer>2</layer>
+      		<angle>1.5707963</angle>
+      	</operation>
+      	<operation type="MOUNTAIN_FOLD">
+      		<startPoint><x>0.4166667</x><y>0</y></startPoint>
+      		<endPoint><x>0.4166667</x><y>0.8824</y></endPoint>
+      		<layer>1</layer>
+      		<layer>2</layer>
+      		<angle>1.5707963</angle>
+      	</operation>
       </step>
     </steps>
   </model>
