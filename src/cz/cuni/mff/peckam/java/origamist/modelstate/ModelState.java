@@ -748,9 +748,9 @@ public class ModelState implements Cloneable
         rotationAngle = rotation;
 
         while (rotationAngle > Math.PI)
-            rotationAngle -= Math.PI;
+            rotationAngle -= 2 * Math.PI;
         while (rotationAngle < -Math.PI)
-            rotationAngle += Math.PI;
+            rotationAngle += 2 * Math.PI;
     }
 
     /**
