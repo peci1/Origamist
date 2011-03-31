@@ -105,16 +105,19 @@
       	<operation type="MOUNTAIN_FOLD">
       		<startPoint><x>0.25</x><y>0</y></startPoint>
       		<endPoint><x>0.25</x><y>0.8824</y></endPoint>
-      		<layer>1</layer>
-      		<layer>2</layer>
+      		<layer>3</layer>
+      		<layer>4</layer>
       		<angle>1.5707963</angle>
       	</operation>
-      	<operation type="MOUNTAIN_FOLD">
+      	<operation type="VALLEY_FOLD">
       		<startPoint><x>0.4166667</x><y>0</y></startPoint>
       		<endPoint><x>0.4166667</x><y>0.8824</y></endPoint>
       		<layer>1</layer>
       		<layer>2</layer>
       		<angle>1.5707963</angle>
+      	</operation>
+      	<operation type="ROTATE">
+      		<angle>3.141592</angle>
       	</operation>
       </step>
     </steps>
