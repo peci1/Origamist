@@ -285,7 +285,7 @@ public class OrigamiEditor extends CommonGui
                     if (getParameter("file") != null) {
                         try {
                             Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(
-                                    new File(getParameter("file")).toURI(), false);
+                                    new URL(getCodeBase(), getParameter("file")).toURI(), false);
                             setOrigami(o);
                         } catch (UnsupportedDataFormatException e1) {
                             JOptionPane.showMessageDialog(rootPane,
@@ -294,6 +294,12 @@ public class OrigamiEditor extends CommonGui
                                     JOptionPane.ERROR_MESSAGE);
                             Logger.getLogger("application").error(e1);
                         } catch (IOException e1) {
+                            JOptionPane.showMessageDialog(rootPane,
+                                    appMessages.getString("exception.IOException.loadModel"),
+                                    appMessages.getString("exception.IOException.loadModel.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            Logger.getLogger("application").error(e1);
+                        } catch (URISyntaxException e1) {
                             JOptionPane.showMessageDialog(rootPane,
                                     appMessages.getString("exception.IOException.loadModel"),
                                     appMessages.getString("exception.IOException.loadModel.title"),
