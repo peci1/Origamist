@@ -126,6 +126,9 @@ public class ExtensionClassLoader extends ClassLoader
             return null;
         } catch (URISyntaxException e) {
             return null;
+        } catch (IllegalArgumentException e) {
+            // url isn't a file:/ URI
+            return null;
         }
     }
 
