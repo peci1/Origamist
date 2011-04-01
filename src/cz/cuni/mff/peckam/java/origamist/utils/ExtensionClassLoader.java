@@ -29,9 +29,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.ProtectionDomain;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -116,18 +119,50 @@ public class ExtensionClassLoader extends ClassLoader
         URL res = super.getResource(name);
         if (res != null)
             return res;
+
         try {
             URL url = new URL(base, name);
-            if (new File(url.toURI()).exists()) {
+            URI uri = url.toURI();
+
+            // File cannot handle remote URLs, so we must switch here...
+            // * File supports the exists() method
+            // * else we can get a HTTP/S URL, then we issue a HEAD request and test if the server returns 200
+            // * in all other cases (mabe a JAR URL or something) we just try to read from the URL, and if we succeed,
+            // we can claim the file exists
+
+            if ("file".equals(uri.getScheme()) && new File(uri).exists()) {
                 return url;
-            } else
+            } else {
+                URLConnection connection = url.openConnection();
+                if (connection instanceof HttpURLConnection) {
+                    HttpURLConnection httpConnection = (HttpURLConnection) connection;
+                    httpConnection.setRequestMethod("HEAD");
+                    if (httpConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                        return url;
+                    }
+                }
+
+                InputStream stream = null;
+                try {
+                    stream = connection.getInputStream();
+                    // this condition always holds, we just want to test if read() will throw exception
+                    if (stream.read() >= -1) {
+                        return url;
+                    }
+                } catch (IOException e) {
+
+                } finally {
+                    if (stream != null)
+                        stream.close();
+                }
+
                 return null;
+            }
         } catch (MalformedURLException e) {
             return null;
         } catch (URISyntaxException e) {
             return null;
-        } catch (IllegalArgumentException e) {
-            // url isn't a file:/ URI
+        } catch (IOException e) {
             return null;
         }
     }
@@ -224,6 +259,7 @@ public class ExtensionClassLoader extends ClassLoader
                 out.write(buffer, 0, size);
             }
             in.close();
+
             // Define class
             return defineClass(name, out.toByteArray(), 0, out.size(), this.protectionDomain);
         } catch (IOException ex) {
@@ -238,9 +274,12 @@ public class ExtensionClassLoader extends ClassLoader
     protected String findLibrary(String libname)
     {
         String result = this.extensionDlls.get(libname);
-        if (result != null)
+        if (result != null) {
             return result;
-        return super.findLibrary(libname);
+        }
+
+        result = super.findLibrary(libname);
+        return result;
     }
 
     /**
