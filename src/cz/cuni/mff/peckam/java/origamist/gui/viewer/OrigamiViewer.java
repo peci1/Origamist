@@ -437,10 +437,10 @@ public class OrigamiViewer extends CommonGui
 
             ObjectFactory of = new ObjectFactory();
             filesToDisplay = (Listing) of.createListing();
-            List<File> files = new LinkedList<File>();
+            List<URI> files = new LinkedList<URI>();
             for (String fileString : filesAsStrings) {
                 try {
-                    File file = new File(new URL(getDocumentBase(), fileString).toURI());
+                    URI file = new URL(getDocumentBase(), fileString).toURI();
                     files.add(file);
                 } catch (MalformedURLException e) {
                     Logger.getLogger("viewer").l7dlog(Level.ERROR, "filesParamInvalidItem",

@@ -46,16 +46,17 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     }
 
     /**
-     * Adds the <code>java.io.File</code>s to this listing. If recursive non-null and greater than 0, add files from
-     * subdirectories and create a category for each subdirectory of depth <code>recurseDepth</code> and less. If
-     * recursive is <code>null</code>, recurse all subdirectories.
+     * Adds the <code>java.net.URI</code>s to this listing. If recursive is non-<code>null</code> and greater than 0,
+     * add files from subdirectories and create a category for each subdirectory of depth <code>recurseDepth</code> and
+     * less. If recursive is <code>null</code>, recurse all subdirectories. The recursion is done only for URIs with the
+     * "file" scheme.
      * 
-     * @param ioFiles The files to add.
+     * @param uris The URIs to add.
      * @param recurseDepth If <code>null</code>, recurse infinitely, else recurse subdirectories of the depth
      *            <code>recurseDepth</code> and less.
      * @param category The category or listing to add the files to.
      */
-    public void addFiles(List<java.io.File> ioFiles, final Integer recurseDepth, FilesContainer category)
+    public void addFiles(List<URI> uris, final Integer recurseDepth, FilesContainer category)
     {
         if (category == null)
             throw new IllegalArgumentException("Cannot add files to null category.");
@@ -63,7 +64,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
         if (recurseDepth != null && recurseDepth < 0)
             return;
 
-        FileFilter fileFilter = new FileFilter() {
+        final FileFilter fileFilter = new FileFilter() {
             @Override
             public boolean accept(java.io.File pathname)
             {
@@ -75,7 +76,82 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
             }
         };
 
-        ObjectFactory of = new ObjectFactory();
+        final ObjectFactory of = new ObjectFactory();
+
+        for (URI uri : uris) {
+            if ("file".equals(uri.getScheme())) {
+                java.io.File ioFile = new java.io.File(uri);
+                if (!ioFile.isDirectory()) {
+                    if (!fileFilter.accept(ioFile))
+                        continue;
+                    File file = (File) of.createFile();
+                    file.setSrc(uri);
+                    file.setParent(category);
+                    if (category.getFiles() == null)
+                        category.setFiles((Files) of.createFiles());
+                    category.getFiles().getFile().add(file);
+                } else {
+                    List<java.io.File> ioFilesToAdd = Arrays.asList(ioFile.listFiles(fileFilter));
+
+                    Category newCategory = (Category) of.createCategory();
+                    String name = ioFile.getName();
+                    newCategory.setId(name);
+                    newCategory.getName().add(new LangString(name, Locale.getDefault()));
+
+                    CategoriesContainer cCategory = (CategoriesContainer) category;
+
+                    newCategory.setParent(cCategory);
+
+                    if (cCategory.getCategories() == null)
+                        cCategory.setCategories((Categories) of.createCategories());
+                    cCategory.getCategories().getCategory().add(newCategory);
+
+                    this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory, false);
+                }
+            } else {
+                if (!uri.toString().toLowerCase().endsWith(".xml"))
+                    continue;
+                File file = (File) of.createFile();
+                file.setSrc(uri);
+                file.setParent(category);
+                if (category.getFiles() == null)
+                    category.setFiles((Files) of.createFiles());
+                category.getFiles().getFile().add(file);
+            }
+        }
+    }
+
+    /**
+     * Adds the <code>java.io.File</code>s to this listing. If recursive non-null and greater than 0, add files from
+     * subdirectories and create a category for each subdirectory of depth <code>recurseDepth</code> and less. If
+     * recursive is <code>null</code>, recurse all subdirectories.
+     * 
+     * @param ioFiles The files to add.
+     * @param recurseDepth If <code>null</code>, recurse infinitely, else recurse subdirectories of the depth
+     *            <code>recurseDepth</code> and less.
+     * @param category The category or listing to add the files to.
+     */
+    public void addFiles(List<java.io.File> ioFiles, final Integer recurseDepth, FilesContainer category, boolean unused)
+    {
+        if (category == null)
+            throw new IllegalArgumentException("Cannot add files to null category.");
+
+        if (recurseDepth != null && recurseDepth < 0)
+            return;
+
+        final FileFilter fileFilter = new FileFilter() {
+            @Override
+            public boolean accept(java.io.File pathname)
+            {
+                if (recurseDepth != null && recurseDepth == 0 && pathname.isDirectory())
+                    return false;
+                if (pathname.isDirectory())
+                    return true;
+                return pathname.getName().toLowerCase().endsWith("xml");
+            }
+        };
+
+        final ObjectFactory of = new ObjectFactory();
 
         for (java.io.File ioFile : ioFiles) {
             if (!ioFile.isDirectory()) {
@@ -103,7 +179,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
                     cCategory.setCategories((Categories) of.createCategories());
                 cCategory.getCategories().getCategory().add(newCategory);
 
-                this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory);
+                this.addFiles(ioFilesToAdd, recurseDepth == null ? null : recurseDepth - 1, newCategory, false);
             }
         }
     }
