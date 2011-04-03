@@ -22,6 +22,7 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatExcepti
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
+import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
 
 /**
  * Additional functionality for the JAXB generated listing element.
@@ -476,8 +477,9 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
      */
     public Iterator<Category> recursiveCategoryIterator()
     {
-        if (getCategories() == null)
-            return null;
+        if (getCategories() == null) {
+            return new EmptyIterator<Category>();
+        }
 
         return (getCategories()).recursiveCategoryIterator();
     }

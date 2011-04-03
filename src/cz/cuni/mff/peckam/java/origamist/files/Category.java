@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
@@ -114,7 +115,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     public Iterator<Category> recursiveCategoryIterator()
     {
         if (getCategories() == null)
-            return null;
+            return new EmptyIterator<Category>();
 
         return (getCategories()).recursiveCategoryIterator();
     }
