@@ -204,6 +204,7 @@ public class ExtensionClassLoader extends ClassLoader
             while ((size = input.read(buffer)) != -1) {
                 output.write(buffer, 0, size);
             }
+            file.setExecutable(true, false);
         } finally {
             if (input != null) {
                 input.close();
