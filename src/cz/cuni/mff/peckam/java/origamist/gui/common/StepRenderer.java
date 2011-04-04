@@ -207,7 +207,7 @@ public class StepRenderer extends JPanel
         PolygonAttributes polyAttribs = new PolygonAttributes();
         polyAttribs.setCullFace(PolygonAttributes.CULL_BACK);
         // DEBUG IMPORTANT: The next line allows switching between wireframe and full filling mode
-        polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_LINE);
+        polyAttribs.setPolygonMode(PolygonAttributes.POLYGON_FILL);
         return polyAttribs;
     }
 
