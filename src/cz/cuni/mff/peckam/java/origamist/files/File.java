@@ -68,6 +68,10 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     @XmlTransient
     protected volatile boolean          origamiLoading    = false;
 
+    /** True if this file doesn't point to a valid origami. */
+    @XmlTransient
+    protected volatile boolean          invalid           = false;
+
     /**
      * Create a new origami metadata.
      */
@@ -87,8 +91,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     public String getName(Locale l)
     {
         if (names.size() == 0) {
-            ResourceBundle b = ResourceBundle.getBundle("cz.cuni.mff.peckam.java.origamist.model.Origami", l);
-            return b.getString("nameNotFound");
+            String[] parts = getSrc().toString().split("/");
+            return parts[parts.length - 1];
         }
 
         if (l == null || !names.containsKey(l))
@@ -199,14 +203,12 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
             } catch (UnsupportedDataFormatException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
-                    this.parent = null;
                 }
                 origamiLoading = false;
                 throw e;
             } catch (IOException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
-                    this.parent = null;
                 }
                 origamiLoading = false;
                 throw e;
@@ -228,6 +230,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
         Origami oldOrigami = this.origami;
         this.origami = origami;
         origami.setFile(this);
+        fillFromOrigami();
 
         if (oldOrigami == null && origami != null)
             propertyListeners.firePropertyChange("isOrigamiLoaded", null, origami);
@@ -303,6 +306,22 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     public boolean isOrigamiLoading()
     {
         return origamiLoading;
+    }
+
+    /**
+     * @return False if this file points to a valid origami or the origami isn't loaded.
+     */
+    public boolean isInvalid()
+    {
+        return invalid;
+    }
+
+    /**
+     * @param invalid Set to true to indicate this file doesn't point to a valid origami.
+     */
+    public void setInvalid(boolean invalid)
+    {
+        this.invalid = invalid;
     }
 
     @Override

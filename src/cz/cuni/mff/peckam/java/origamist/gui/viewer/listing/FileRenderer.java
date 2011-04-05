@@ -140,7 +140,11 @@ public class FileRenderer extends JPanelWithOverlay
         Locale l = ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale();
         ResourceBundle messages = ResourceBundle.getBundle("viewer", l);
 
-        if (file.isOrigamiLoading()) {
+        if (file.isInvalid()) {
+            loading.setText(messages.getString("origamiInvalid"));
+            getOverlay().setSize(getContent().getSize()); // maybe this is not needed, but for sure
+            showOverlay();
+        } else if (file.isOrigamiLoading()) {
             loading.setText(messages.getString("origamiLoading"));
             getOverlay().setSize(getContent().getSize()); // maybe this is not needed, but for sure
             showOverlay();
@@ -151,9 +155,15 @@ public class FileRenderer extends JPanelWithOverlay
         name.setText(file.getName(l));
         name.setToolTipText(name.getText());
 
-        authorLabel.setText(messages.getString("authorLabel") + ": ");
-        author.setText(file.getAuthor().getName());
-        authorPanel.setToolTipText(author.getText());
+        if (file.getAuthor() != null) {
+            authorLabel.setText(messages.getString("authorLabel") + ": ");
+            author.setText(file.getAuthor().getName());
+            authorPanel.setToolTipText(author.getText());
+        } else {
+            authorLabel.setText("");
+            author.setText("");
+            authorPanel.setToolTipText("");
+        }
 
         if (file.getShortdesc().size() > 0) {
             desc.setText(file.getShortDesc(l));

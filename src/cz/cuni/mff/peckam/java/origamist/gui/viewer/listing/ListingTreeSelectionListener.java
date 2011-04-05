@@ -3,14 +3,18 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.viewer.listing;
 
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
+import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -36,7 +40,8 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
             return;
         }
 
-        final Object selected = ((DefaultMutableTreeNode) e.getPath().getLastPathComponent()).getUserObject();
+        final DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
+        final Object selected = node.getUserObject();
         if (selected instanceof File) {
             final OrigamiViewer viewer = ServiceLocator.get(OrigamiViewer.class);
             if (viewer == null) {
@@ -78,6 +83,26 @@ public class ListingTreeSelectionListener implements TreeSelectionListener
                             });
                         } catch (UnsupportedDataFormatException e1) {
                             Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLazyLoadException", e1);
+                            file.setInvalid(true);
+                            // remove the node after 5 seconds
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    Timer timer = new Timer(5000, new AbstractAction() {
+                                        /** */
+                                        private static final long serialVersionUID = -949655828654998790L;
+
+                                        @Override
+                                        public void actionPerformed(ActionEvent e)
+                                        {
+                                            ((DefaultTreeModel) tree.getModel()).removeNodeFromParent(node);
+                                        }
+                                    });
+                                    timer.setRepeats(false);
+                                    timer.start();
+                                }
+                            });
                         } catch (IOException e1) {
                             Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLazyLoadException", e1);
                         }

@@ -468,7 +468,9 @@ public class OrigamiViewer extends CommonGui
                 boolean onlyMetadata = modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS;
 
                 int i = 0;
-                while (iterator.hasNext() && (modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL || i++ < modelDownloadMode)) {
+                while (iterator.hasNext()
+                        && (modelDownloadMode == MODEL_DOWNLOAD_MODE_ALL
+                                || modelDownloadMode == MODEL_DOWNLOAD_MODE_HEADERS || i++ < modelDownloadMode)) {
                     cz.cuni.mff.peckam.java.origamist.files.File file = iterator.next();
                     try {
                         file.getOrigami(onlyMetadata, false);

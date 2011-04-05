@@ -32,20 +32,6 @@ import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
 public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listing implements FilesContainer,
         CategoriesContainer
 {
-
-    /**
-     * If this isn't the newest version of the listing, convert it to the newest one. It this is the newest version,
-     * just return <code>this</code>.
-     * 
-     * @return The newest version of the listing.
-     */
-    public Listing convertToNewestVersion()
-    {
-        // TODO if a new listing schema version is developed, make this code convert the objects older objects to the
-        // newer
-        return this;
-    }
-
     /**
      * Adds the <code>java.net.URI</code>s to this listing. If recursive is non-<code>null</code> and greater than 0,
      * add files from subdirectories and create a category for each subdirectory of depth <code>recurseDepth</code> and
@@ -505,7 +491,7 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
     @Override
     public String toString()
     {
-        return "Listing [files=" + files + ", categories=" + categories + ", version=" + version + "]";
+        return "Listing [files=" + files + ", categories=" + categories + "]";
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.awt.event.ContainerListener;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -21,6 +22,10 @@ import java.util.prefs.BackingStoreException;
 import javax.swing.JApplet;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.PropertyException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -29,6 +34,9 @@ import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
+import cz.cuni.mff.peckam.java.origamist.jaxb.BindingsManager;
+import cz.cuni.mff.peckam.java.origamist.jaxb.SchemaInfo;
+import cz.cuni.mff.peckam.java.origamist.jaxb.UnmarshallerConfigurator;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.services.HashCodeAndEqualsHelperImpl;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
@@ -147,6 +155,60 @@ public abstract class CommonGui extends JApplet
         ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
         ServiceLocator.add(HashCodeAndEqualsHelper.class, new HashCodeAndEqualsHelperImpl());
         ServiceLocator.add(TooltipFactory.class, new TooltipFactory());
+
+        // setup JAXB bindings
+        try {
+            ServiceLocator.add(BindingsManager.class, new BindingsManager(JAXBContext.newInstance(
+                    "cz.cuni.mff.peckam.java.origamist.model.jaxb:cz.cuni.mff.peckam.java.origamist.files.jaxb:"
+                            + "cz.cuni.mff.peckam.java.origamist.common.jaxb", getClass().getClassLoader())));
+
+            BindingsManager manager = ServiceLocator.get(BindingsManager.class);
+
+            final String OBJECT_FACTORY_PROPERTY = "com.sun.xml.internal.bind.ObjectFactory";
+
+            @SuppressWarnings("unused")
+            SchemaInfo c1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/common/v1",
+                    "resources/schemata/common_v1.xsd", true);
+
+            SchemaInfo d1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1",
+                    "resources/schemata/diagram_v1.xsd", true);
+            manager.addUnmarshallerConfigurator(d1, new UnmarshallerConfigurator() {
+                @Override
+                public void configure(Unmarshaller unmarshaller)
+                {
+                    try {
+                        unmarshaller.setProperty(OBJECT_FACTORY_PROPERTY,
+                                new cz.cuni.mff.peckam.java.origamist.model.ObjectFactory());
+                    } catch (PropertyException e) {
+                        Logger.getLogger(getClass()).warn(
+                                "Cannot set the property " + OBJECT_FACTORY_PROPERTY
+                                        + " for unmarshaller. The unmarshaller is of class " + unmarshaller.getClass());
+                    }
+                }
+            });
+
+            SchemaInfo f1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/files/v1",
+                    "resources/schemata/files_v1.xsd", true);
+            manager.addUnmarshallerConfigurator(f1, new UnmarshallerConfigurator() {
+                @Override
+                public void configure(Unmarshaller unmarshaller)
+                {
+                    try {
+                        unmarshaller.setProperty(OBJECT_FACTORY_PROPERTY,
+                                new cz.cuni.mff.peckam.java.origamist.files.ObjectFactory());
+                    } catch (PropertyException e) {
+                        Logger.getLogger(getClass()).warn(
+                                "Cannot set the property " + OBJECT_FACTORY_PROPERTY
+                                        + " for unmarshaller. The unmarshaller is of class " + unmarshaller.getClass());
+                    }
+                }
+            });
+
+        } catch (JAXBException e) {
+            Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
+        } catch (IOException e) {
+            Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
+        }
     }
 
     /**

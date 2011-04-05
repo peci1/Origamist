@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 
 /**
@@ -21,7 +20,6 @@ public class ObjectFactory extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
      * steps.
      */
     @Override
-    @XmlElementDecl(namespace = "http://www.mff.cuni.cz/~peckam/java/origamist/diagram/", name = "origami")
     public JAXBElement<cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami> createOrigami(
             cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami value)
     {

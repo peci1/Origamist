@@ -324,20 +324,6 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     /**
-     * If this isn't the newest version of the diagram, convert it to the newest one. It this is the newest version,
-     * just
-     * return <code>this</code>.
-     * 
-     * @return The newest version of the diagram.
-     */
-    public Origami convertToNewestVersion()
-    {
-        // TODO if a new diagram schema version is developed, make this code convert the objects older objects to the
-        // newer
-        return this;
-    }
-
-    /**
      * Initializes the substructures, so that no structure that may contain other structures will be <code>null</code>.
      */
     public void initStructure()

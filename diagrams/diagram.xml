@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<m:origami version="1" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/diagram.xsd">
+<m:origami xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1 diagram_v1.xsd">
   <author>
     <name>Kawasaki</name>
     <homepage>http://www.mff.cuni.cz</homepage>

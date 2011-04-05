@@ -3,9 +3,12 @@
 	<description>
             Origami diagram making application
     </description>
-
-	<!-- If you want to deploy the application on a remote server, put the JNLP file's directory URL in the following property. -->
-	<property name="jnlp.codebase" value="file:/${basedir}" />
+	
+	<input addproperty="jnlp.codebase" defaultvalue="file:/${basedir}" message="Enter the URI of the JNLP files codebase. Leave blank if you deploy the application onto your local machine."/>
+	
+	<property name="path.to.latest.schema.common" value="src/resources/schemata/common_v1.xsd" />
+	<property name="path.to.latest.schema.files" value="src/resources/schemata/files_v1.xsd" />
+	<property name="path.to.latest.schema.diagram" value="src/resources/schemata/diagram_v1.xsd" />
 
 	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
 		<classpath>
@@ -100,7 +103,7 @@
 	</target>
 
 	<target name="jaxb-common" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from common.xsd">
-		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/common.xsd" destdir="src" removeOldOutput="true">
+		<xjc schema="${path.to.latest.schema.common}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
@@ -112,7 +115,7 @@
 	</target>
 
 	<target name="jaxb-files" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from files.xsd">
-		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/files.xsd" destdir="src" removeOldOutput="true">
+		<xjc schema="${path.to.latest.schema.files}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
@@ -123,7 +126,7 @@
 	</target>
 
 	<target name="jaxb-diagram" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from diagram.xsd">
-		<xjc schema="src/cz/cuni/mff/peckam/java/origamist/diagram.xsd" destdir="src" removeOldOutput="true">
+		<xjc schema="${path.to.latest.schema.diagram}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
