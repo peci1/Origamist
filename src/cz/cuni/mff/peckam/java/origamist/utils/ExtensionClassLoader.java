@@ -25,6 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,8 +56,9 @@ public class ExtensionClassLoader extends ClassLoader
     protected final List<String>        applicationPackages;
     protected URL                       base;
 
-    protected final Map<String, String> extensionDlls = new Hashtable<String, String>();
-    protected final List<JarFile>       extensionJars = new LinkedList<JarFile>();
+    protected final Map<String, String> extensionDlls       = new Hashtable<String, String>();
+    protected final Map<String, URL>    extensionDllSources = new Hashtable<String, URL>();
+    protected final List<JarFile>       extensionJars       = new LinkedList<JarFile>();
 
     /**
      * Creates a class loader. It will consider JARs and DLLs of <code>extensionJarsAndDlls</code> as classpath and
@@ -94,17 +96,31 @@ public class ExtensionClassLoader extends ClassLoader
                 if (extensionJarOrDllUrl != null) {
                     if (extensionJarOrDll.endsWith(".jar")) {
                         // Copy jar to a tmp file
-                        String extensionJar = copyURLToCacheFile(extensionJarOrDllUrl);
+                        String extensionJar = copyURLToCacheFile(extensionJarOrDllUrl, false);
                         // Add tmp file to extension jars list
                         extensionJars.add(new JarFile(extensionJar, false));
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
+
+                        String key = extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
+                                extensionJarOrDll.indexOf(dllSuffix));
+
                         // Copy DLL to a tmp file
-                        String extensionDll = copyURLToCacheFile(extensionJarOrDllUrl);
-                        // Add tmp file to extension DLLs map
-                        this.extensionDlls.put(
-                                extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
-                                        extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
+                        String extensionDll = null;
+                        try {
+                            extensionDll = copyURLToCacheFile(extensionJarOrDllUrl, false);
+                            // Add tmp file to extension DLLs map
+                            this.extensionDlls.put(key, extensionDll);
+                            this.extensionDllSources.put(key, extensionJarOrDllUrl);
+                        } catch (FileInUseException e) {
+                            // the native library is being used by another thread, so we need to make a copy of the
+                            // library and use that copy
+                            extensionDll = copyURLToCacheFile(extensionJarOrDllUrl, true);
+                            // Add tmp file to extension DLLs map
+                            this.extensionDlls.put(key, extensionDll);
+                            // don't add the file's source to the map to indicate the randomized file has been used
+                            // this.extensionDllSources.put(key, extensionJarOrDllUrl);
+                        }
                     }
                 }
             } catch (IOException ex) {
@@ -170,7 +186,7 @@ public class ExtensionClassLoader extends ClassLoader
     /**
      * Returns the file name of a cached local copy of <code>url</code> content.
      */
-    protected String copyURLToCacheFile(URL url) throws IOException
+    protected String copyURLToCacheFile(URL url, boolean addRandomStringToName) throws IOException
     {
         String filename = url.toString();
         try {
@@ -179,20 +195,22 @@ public class ExtensionClassLoader extends ClassLoader
             }
         } catch (URISyntaxException e) {}
         int dotIndex = filename.lastIndexOf(".");
-        String extension = "";
+        String extension = null;
         if (dotIndex > -1) {
             extension = filename.substring(dotIndex, filename.length());
             filename = filename.substring(0, dotIndex);
         }
 
-        filename = filename.replaceAll("[^a-zA-Z0-9]", "");
-        filename += extension;
+        filename = filename.replaceAll("[^a-zA-Z0-9]", "");;
 
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"), ".").getAbsoluteFile().getCanonicalFile();
-        File file = new File(tmpDir, filename);
-
-        if (file.exists())
-            return file.toString();
+        File file;
+        if (!addRandomStringToName) {
+            File tmpDir = new File(System.getProperty("java.io.tmpdir"), ".").getAbsoluteFile().getCanonicalFile();
+            file = new File(tmpDir, filename + extension);
+        } else {
+            file = File.createTempFile(filename, extension);
+            file.deleteOnExit();
+        }
 
         InputStream input = url.openStream();
         OutputStream output = null;
@@ -205,6 +223,12 @@ public class ExtensionClassLoader extends ClassLoader
                 output.write(buffer, 0, size);
             }
             file.setExecutable(true, false);
+        } catch (FileNotFoundException e) {
+            if (file.exists())
+                // FileNotFoundException thrown while the file exists means the file cannot be read
+                throw new FileInUseException();
+            else
+                throw e;
         } finally {
             if (input != null) {
                 input.close();
@@ -276,11 +300,28 @@ public class ExtensionClassLoader extends ClassLoader
     {
         String result = this.extensionDlls.get(libname);
         if (result != null) {
+
+            // HACK ! If you load eg. editor as applet, and then load viewer, or if you just want to have multiple
+            // instances running, Java would deny multiple access to the native libraries. The hack is that when
+            // searching for the name of a library, we also try to load it, and if it fails, we know we need to copy the
+            // library and load that copy.
+            try {
+                System.loadLibrary(libname);
+            } catch (UnsatisfiedLinkError e) {
+                // the library is loaded by another classloader
+                try {
+                    URL source = this.extensionDllSources.get(libname);
+                    if (source != null) {
+                        result = copyURLToCacheFile(source, true);
+                        this.extensionDlls.put(libname, result);
+                    }
+                } catch (IOException e1) {}
+            }
+
             return result;
         }
 
-        result = super.findLibrary(libname);
-        return result;
+        return super.findLibrary(libname);
     }
 
     /**
@@ -337,5 +378,16 @@ public class ExtensionClassLoader extends ClassLoader
             resolveClass(loadedClass);
         }
         return loadedClass;
+    }
+
+    /**
+     * This exception is thrown if a file is to be opened but some other application has it exclusively open.
+     * 
+     * @author Martin Pecka
+     */
+    protected class FileInUseException extends IOException
+    {
+        /** */
+        private static final long serialVersionUID = -713063084550677154L;
     }
 }

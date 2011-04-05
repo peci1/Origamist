@@ -148,3 +148,55 @@ So I've also implemented epsilon-methods with boolean argument surelyContains.
 This argument tells the method that it should perform a sequential search if 
 the standard epsilon-method fails to find an entry. It's just a workaround, but
 it seems to work for my needs. 
+
+-----------
+
+Well, I think the above described problem has another solution - if you take
+care, you may write all the algoritms in a way that they try to use the 
+existing instances of the geometry objects, and where it isn't feasible, you
+can invent some more clever methods - like substituting a hastable from lines
+to the adjacent triangles with pointers to neighbors in the triangles.
+
+-----------
+
+I've found a good-looking solution to the problem of versioning XML Schemata.
+All models are converted to the newest version while they are being loaded, and
+saving to older versions isn't allowed. The conversion from older versions is 
+done via a chain of XSLT transforms and Java callbacks. I hope this approach 
+can handle all types of changes between schemata.
+
+If the XSLT files don't require looping over the input file, the whole 
+conversion is done in one pass and doesn't require to save any inter-steps to 
+disk or memory.
+
+The different schema verions are differentiated by different namespaces.
+
+This process requires the parser to first read the root element without a 
+schema, and then choose the correct schema from the root tag's namespace. 
+Whenever the correct schema is found, the chain of transformations can be 
+determined and the unmarshalling process may begin.
+
+-----------
+
+The above described approach to loading Java3D native libraries has its 
+counterside. No native library can be loaded by two distinct classloaders /
+threads / processes at a time. But what if the user'd want to run multiple
+instances? Or, a case closer to reality, what if the user loads the app as
+applet and then loads the applet again? The JVM used in Applets is being 
+"recycled", so it just unloads the old applet and loads the new one. But the
+caches for loaded libraries don't clear, which results in the native libraries
+being locked by the non-existing old applet and UnsatisfiedLinkError in the new
+one.
+
+I've finally found a nearly nice solution / hack. 
+
+My first try was to overwrite loadLibrary in ExtensionClassLoader. 
+What a surprise this method is private to ClassLoader. No luck.
+
+So I've hacked the findLibrary() method a bit. If I find the path to the 
+library, I call System.loadLibrary() and test if it throws a 
+UnsatisfiedLinkError. If not, the library is then loaded and the (probable) 
+following call to loadLibrary will just load the cached version. However, if 
+the loadLibrary() call throws the error, we know the library is in use. Then we
+download the library once more to a file with a randomized name and use that 
+copy of the library. Then everything works fine.
