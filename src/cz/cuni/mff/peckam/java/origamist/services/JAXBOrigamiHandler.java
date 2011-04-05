@@ -128,7 +128,7 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
                 controller.addAdditionalTransform(transform, TransformLocation.BEFORE_UNMARSHALLER, true);
             }
 
-            model = controller.unmarshal(new InputStreamReader(input));
+            model = controller.unmarshal(new InputStreamReader(input, "UTF8"));
 
             if (onlyMetadata) {
                 // if only metadata are loaded, we need to provide a method to lazily load the rest of the diagram

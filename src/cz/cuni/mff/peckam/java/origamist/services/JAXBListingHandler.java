@@ -78,7 +78,7 @@ public class JAXBListingHandler extends Service implements ListingHandler
         try {
             BindingsManager manager = ServiceLocator.get(BindingsManager.class);
             BindingsController<Listing> controller = new BindingsController<Listing>(manager, LATEST_SCHEMA_NAMESPACE);
-            return controller.unmarshal(new InputStreamReader(path.openStream()));
+            return controller.unmarshal(new InputStreamReader(path.openStream(), "UTF8"));
         } catch (JAXBException e) {
             throw new UnsupportedDataFormatException();
         }
