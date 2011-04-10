@@ -210,8 +210,10 @@ public class BindingsController<T>
             if (handler == null)
                 throw new SAXException("Couldn't find a handler for unmarshalling the given XML file.");
 
-            Logger.getLogger(getClass()).info(
-                    "Converted loaded XML file from schema " + uri + " to schema " + schema.getNamespace());
+            if (!uri.equals(schema.getNamespace())) {
+                Logger.getLogger(getClass()).info(
+                        "Converted loaded XML file from schema " + uri + " to schema " + schema.getNamespace());
+            }
 
             // this effectively removes this handler from the reader and substitutes it with the bindings' handler
             unmarshalParser.getXMLReader().setContentHandler(handler);

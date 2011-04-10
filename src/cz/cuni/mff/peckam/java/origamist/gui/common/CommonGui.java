@@ -26,6 +26,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -172,7 +173,13 @@ public abstract class CommonGui extends JApplet
 
             SchemaInfo d1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1",
                     "resources/schemata/diagram_v1.xsd", true);
-            manager.addUnmarshallerConfigurator(d1, new UnmarshallerConfigurator() {
+
+            SchemaInfo d2 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2",
+                    "resources/schemata/diagram_v2.xsd", true);
+
+            manager.addTransform(d1, d2, "resources/schemata/diagram_v1_to_v2.xsl", null);
+
+            manager.addUnmarshallerConfigurator(d2, new UnmarshallerConfigurator() {
                 @Override
                 public void configure(Unmarshaller unmarshaller)
                 {
@@ -208,6 +215,8 @@ public abstract class CommonGui extends JApplet
             Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
         } catch (IOException e) {
             Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
+        } catch (TransformerConfigurationException e) {
+            Logger.getLogger(getClass()).error("Couldn't initialize Transform: " + e);
         }
     }
 

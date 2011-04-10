@@ -8,7 +8,7 @@
 	
 	<property name="path.to.latest.schema.common" value="src/resources/schemata/common_v1.xsd" />
 	<property name="path.to.latest.schema.files" value="src/resources/schemata/files_v1.xsd" />
-	<property name="path.to.latest.schema.diagram" value="src/resources/schemata/diagram_v1.xsd" />
+	<property name="path.to.latest.schema.diagram" value="src/resources/schemata/diagram_v2.xsd" />
 
 	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
 		<classpath>

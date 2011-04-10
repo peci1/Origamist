@@ -46,7 +46,7 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
 {
 
     /** The namespace of the newest schema. */
-    public static final String LATEST_SCHEMA_NAMESPACE = "http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1";
+    public static final String LATEST_SCHEMA_NAMESPACE = "http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2";
 
     /** The model to return. */
     protected Origami          model                   = null;

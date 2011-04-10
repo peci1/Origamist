@@ -72,24 +72,26 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
                 previousState.flipViewingAngle();
                 break;
             case VALLEY_FOLD:
-                previousState.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()),
-                        new Point2d(endPoint.getX(), endPoint.getY()), layer, angle);
+                previousState.makeFold(Direction.VALLEY, new Point2d(getLine().getStart().getX(), getLine().getStart()
+                        .getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer, angle);
                 break;
             case MOUNTAIN_FOLD:
-                previousState.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()),
-                        new Point2d(endPoint.getX(), endPoint.getY()), layer, angle);
+                previousState.makeFold(Direction.MOUNTAIN, new Point2d(getLine().getStart().getX(), getLine()
+                        .getStart().getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer,
+                        angle);
                 break;
             case INSIDE_CRIMP_FOLD:
                 break;
             case INSIDE_REVERSE_FOLD:
                 break;
             case MOUNTAIN_VALLEY_FOLD_UNFOLD:
-                previousState.makeFold(Direction.MOUNTAIN, new Point2d(startPoint.getX(), startPoint.getY()),
-                        new Point2d(endPoint.getX(), endPoint.getY()), layer, 0);
+                previousState.makeFold(Direction.MOUNTAIN, new Point2d(getLine().getStart().getX(), getLine()
+                        .getStart().getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer,
+                        0);
                 break;
             case VALLEY_MOUNTAIN_FOLD_UNFOLD:
-                previousState.makeFold(Direction.VALLEY, new Point2d(startPoint.getX(), startPoint.getY()),
-                        new Point2d(endPoint.getX(), endPoint.getY()), layer, 0);
+                previousState.makeFold(Direction.VALLEY, new Point2d(getLine().getStart().getX(), getLine().getStart()
+                        .getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer, 0);
                 break;
             case OPEN:
                 break;
@@ -149,8 +151,8 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
     @Override
     public String toString()
     {
-        return "Operation [type=" + type + ", angle=" + angle + ", startPoint=" + startPoint + ", endPoint=" + endPoint
-                + ", layer=" + layer + "]";
+        return "Operation [type=" + type + ", angle=" + angle + ", point=" + point + ", line=" + line + ", refLine="
+                + refLine + ", layer=" + layer + "]";
     }
 
 }
