@@ -136,16 +136,16 @@ public class ParserTransformBindings<T> implements Bindings<T>
         contentHandlers = new SAXOutputtingContentHandler[start.size() + transform.getDepth()
                 + beforeUnmarshaller.size() + end.size()];
 
-        int i = 0;
+        int i = -1;
 
         for (AdditionalTransform tr : start) {
+            i++;
             if (tr.getTransform().getTemplates() != null) {
                 contentHandlers[i] = bindingsManager.getTransformerFactory().newTransformerHandler(
                         tr.getTransform().getTemplates());
             } else {
                 contentHandlers[i] = tr.getTransform().getContentHandler();
             }
-            i++;
         }
 
         for (TransformInfo tr = transform; tr != null; tr = tr.getParent()) {
@@ -160,23 +160,23 @@ public class ParserTransformBindings<T> implements Bindings<T>
         i += transform.getDepth();
 
         for (AdditionalTransform tr : beforeUnmarshaller) {
+            i++;
             if (tr.getTransform().getTemplates() != null) {
                 contentHandlers[i] = bindingsManager.getTransformerFactory().newTransformerHandler(
                         tr.getTransform().getTemplates());
             } else {
                 contentHandlers[i] = tr.getTransform().getContentHandler();
             }
-            i++;
         }
 
         for (AdditionalTransform tr : end) {
+            i++;
             if (tr.getTransform().getTemplates() != null) {
                 contentHandlers[i] = bindingsManager.getTransformerFactory().newTransformerHandler(
                         tr.getTransform().getTemplates());
             } else {
                 contentHandlers[i] = tr.getTransform().getContentHandler();
             }
-            i++;
         }
 
         // interconnect the handlers with setResult()

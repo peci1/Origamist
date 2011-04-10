@@ -10,6 +10,7 @@ import javax.xml.bind.UnmarshalException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 
+import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -208,6 +209,9 @@ public class BindingsController<T>
             ContentHandler handler = binding.getContentHandler();
             if (handler == null)
                 throw new SAXException("Couldn't find a handler for unmarshalling the given XML file.");
+
+            Logger.getLogger(getClass()).info(
+                    "Converted loaded XML file from schema " + uri + " to schema " + schema.getNamespace());
 
             // this effectively removes this handler from the reader and substitutes it with the bindings' handler
             unmarshalParser.getXMLReader().setContentHandler(handler);
