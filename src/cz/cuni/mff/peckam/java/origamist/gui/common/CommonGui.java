@@ -89,6 +89,8 @@ public abstract class CommonGui extends JApplet
 
         super.init();
 
+        setupLoggersBeforeServices();
+
         registerServices();
 
         setupLoggers();
@@ -229,13 +231,11 @@ public abstract class CommonGui extends JApplet
     }
 
     /**
-     * Setup the loggers used by the application.
+     * Setup the loggers used by the application. Count that no services are registered at this time.
      */
-    protected void setupLoggers()
+    protected void setupLoggersBeforeServices()
     {
         BasicConfigurator.configure();
-
-        LogManager.getRootLogger().addAppender(new GUIAppender(this));
 
         final Logger l = Logger.getLogger("application");
         l.setResourceBundle(appMessages);
@@ -247,7 +247,18 @@ public abstract class CommonGui extends JApplet
             }
         });
         l.setLevel(Level.ALL);
-        l.addAppender(new GUIAppender(this));
+    }
+
+    /**
+     * Setup the loggers used by the application.
+     */
+    protected void setupLoggers()
+    {
+        BasicConfigurator.configure();
+
+        LogManager.getRootLogger().addAppender(new GUIAppender(this));
+
+        Logger.getLogger("application").addAppender(new GUIAppender(this));
     }
 
     /**
