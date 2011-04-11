@@ -246,8 +246,8 @@ public class OrigamiEditor extends CommonGui
             {
                 if (step == null || origami == null)
                     return;
-                addStep.setEnabled(step.getOperation().size() > 0);
-                cancelLastOperation.setEnabled(step.getOperation().size() > 0);
+                addStep.setEnabled(step.getOperations().size() > 0);
+                cancelLastOperation.setEnabled(step.getOperations().size() > 0);
 
                 DefaultListModel model = ((DefaultListModel) operationsList.getModel());
                 if (change.getChangeType() == ChangeTypes.REMOVE || change.getChangeType() == ChangeTypes.CHANGE) {
@@ -797,7 +797,7 @@ public class OrigamiEditor extends CommonGui
     public void setStep(Step step)
     {
         if (this.step != null)
-            ((ObservableList<Operation>) this.step.getOperation()).removeObserver(operationsObserver);
+            ((ObservableList<Operation>) this.step.getOperations()).removeObserver(operationsObserver);
 
         this.step = step;
         stepEditor.setStep(step);
@@ -811,8 +811,8 @@ public class OrigamiEditor extends CommonGui
         }
 
         if (step != null) {
-            numOperations = step.getOperation().size();
-            ((ObservableList<Operation>) step.getOperation()).addObserver(operationsObserver);
+            numOperations = step.getOperations().size();
+            ((ObservableList<Operation>) step.getOperations()).addObserver(operationsObserver);
             zoomSlider.setValue((int) ((double) step.getZoom()));
             description.setStrings(step.getDescription());
             colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
@@ -863,7 +863,7 @@ public class OrigamiEditor extends CommonGui
     {
         DefaultListModel model = new DefaultListModel();
         if (step != null) {
-            for (Operation o : step.getOperation())
+            for (Operation o : step.getOperations())
                 model.addElement(o);
         }
         operationsList.setModel(model);
@@ -1390,7 +1390,7 @@ public class OrigamiEditor extends CommonGui
             if (step == null)
                 return;
 
-            List<Operation> operations = step.getOperation();
+            List<Operation> operations = step.getOperations();
 
             if (operations.size() == 0) {
                 return;

@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schema xmlns="http://www.w3.org/2001/XMLSchema"
-	xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2"
-	xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1"
-	xmlns:jxb="http://java.sun.com/xml/ns/jaxb" jxb:version="2.0"
-	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2"
+	xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+	jxb:version="2.0" targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
 
-	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1"
-		schemaLocation="common_v1.xsd" />
+	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" schemaLocation="common_v1.xsd" />
 
 	<annotation>
 		<appinfo>
@@ -27,37 +24,30 @@
 		</annotation>
 		<sequence>
 			<element name="author" type="c:Author" />
-			<element name="name" type="c:LangString" maxOccurs="unbounded"
-				minOccurs="1">
+			<element name="name" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
 			<element name="year" type="gYear" />
-			<element name="shortdesc" type="c:LangString" maxOccurs="unbounded"
-				minOccurs="1">
+			<element name="shortdesc" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
-			<element name="description" type="c:LangString" minOccurs="1"
-				maxOccurs="unbounded">
+			<element name="description" type="c:LangString" minOccurs="1" maxOccurs="unbounded">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
 			<element name="license" type="c:License" />
-			<element name="original" type="anyURI" maxOccurs="1"
-				minOccurs="0" />
+			<element name="original" type="anyURI" maxOccurs="1" minOccurs="0" />
 			<element name="thumbnail" type="c:Image" />
 
 			<element name="paper" type="m:DiagramPaper" />
@@ -150,8 +140,7 @@
 	<simpleType name="Color">
 		<annotation>
 			<appinfo>
-				<jxb:javaType name="java.awt.Color"
-					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.ColorConverter.parse"
+				<jxb:javaType name="java.awt.Color" parseMethod="cz.cuni.mff.peckam.java.origamist.utils.ColorConverter.parse"
 					printMethod="cz.cuni.mff.peckam.java.origamist.utils.ColorConverter.print" />
 			</appinfo>
 		</annotation>
@@ -177,12 +166,10 @@
 				<sequence>
 					<element name="colors" type="m:ModelColors" />
 					<element name="weight" type="double" />
-					<element name="note" type="c:LangString" maxOccurs="unbounded"
-						minOccurs="1">
+					<element name="note" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
 						<annotation>
 							<appinfo>
-								<jxb:property
-									collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+								<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 							</appinfo>
 						</annotation>
 					</element>
@@ -198,12 +185,10 @@
 			</appinfo>
 		</annotation>
 		<sequence>
-			<element name="step" type="m:Step" maxOccurs="unbounded"
-				minOccurs="1">
+			<element name="step" type="m:Step" maxOccurs="unbounded" minOccurs="1">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
@@ -224,32 +209,33 @@
 			</appinfo>
 		</annotation>
 		<sequence>
-			<element name="description" type="c:LangString" maxOccurs="unbounded"
-				minOccurs="1">
+			<element name="description" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
-			<element name="colspan" type="positiveInteger" default="1"
-				maxOccurs="1" minOccurs="0" />
-			<element name="rowspan" type="positiveInteger" default="1"
-				maxOccurs="1" minOccurs="0" />
-			<element name="zoom" type="m:Percent" maxOccurs="1"
-				minOccurs="0" default="100" />
+			<element name="colspan" type="positiveInteger" default="1" maxOccurs="1" minOccurs="0" />
+			<element name="rowspan" type="positiveInteger" default="1" maxOccurs="1" minOccurs="0" />
+			<element name="zoom" type="m:Percent" maxOccurs="1" minOccurs="0" default="100" />
 			<choice>
 				<element name="image" type="c:BinaryImage" />
-				<element name="operation" type="m:Operation" maxOccurs="unbounded"
-					minOccurs="0">
+				<sequence minOccurs="0" maxOccurs="unbounded">
 					<annotation>
 						<appinfo>
-							<jxb:property
+							<jxb:property name="operations"
 								collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 						</appinfo>
 					</annotation>
-				</element>
+					<choice>
+						<element name="foldOperation" type="m:FoldOperation" />
+						<element name="foldUnfoldOperation" type="m:FoldUnfoldOperation" />
+						<element name="rotateOperation" type="m:RotateOperation" />
+						<element name="turnOverOperation" type="m:TurnOverOperation" />
+						<element name="reverseFoldOperation" type="m:ReverseFoldOperation" />
+					</choice>
+				</sequence>
 			</choice>
 		</sequence>
 		<attribute name="id" type="int" use="required" />
@@ -261,29 +247,160 @@
 		</restriction>
 	</simpleType>
 
-	<complexType name="Operation">
+	<complexType name="Operation" abstract="true">
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Operation" />
 			</appinfo>
 		</annotation>
+		<attribute name="type" type="m:Operations" use="required" />
+	</complexType>
+
+	<complexType name="FoldOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:FoldOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="FoldOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.FoldOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:FoldOperationBase">
+				<sequence>
+					<group ref="m:angle" />
+					<group ref="m:line" />
+					<group ref="m:layerList" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+
+	<complexType name="FoldUnfoldOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:FoldUnfoldOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="FoldUnfoldOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:FoldUnfoldOperationBase">
+				<sequence>
+					<group ref="m:line" />
+					<group ref="m:layerList" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+
+	<complexType name="RotateOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:RotateOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="RotateOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.RotateOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:RotateOperationBase">
+				<group ref="m:angle" />
+			</extension>
+		</complexContent>
+	</complexType>
+
+	<complexType name="TurnOverOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:TurnOverOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="TurnOverOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.TurnOverOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<restriction base="m:TurnOverOperationBase">
+				<attribute name="type" type="m:TurnOverOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="ReverseFoldOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:ReverseFoldOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="ReverseFoldOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ReverseFoldOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:ReverseFoldOperationBase">
+				<sequence>
+					<group ref="m:line" />
+					<group ref="m:refLine" />
+					<group ref="m:layerList" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+
+	<group name="layerList">
 		<sequence>
-			<element name="angle" type="double" minOccurs="0" />
-			<element name="point" type="m:Point2D" minOccurs="0" />
-			<element name="line" type="m:Line2D" minOccurs="0" />
-			<element name="refLine" type="m:Line2D" minOccurs="0" />
-			<element name="layer" type="int" maxOccurs="unbounded"
-				minOccurs="0">
+			<element name="layer" type="int" maxOccurs="unbounded">
 				<annotation>
 					<appinfo>
-						<jxb:property
-							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
 					</appinfo>
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="type" type="m:Operations" use="required" />
-	</complexType>
+	</group>
+
+	<group name="angle">
+		<sequence>
+			<element name="angle" type="double" />
+		</sequence>
+	</group>
+
+	<group name="line">
+		<sequence>
+			<element name="line" type="m:Line2D" />
+		</sequence>
+	</group>
+
+	<group name="refLine">
+		<sequence>
+			<element name="refLine" type="m:Line2D" />
+		</sequence>
+	</group>
 
 	<simpleType name="Operations">
 		<restriction base="string">
@@ -306,12 +423,43 @@
 		</restriction>
 	</simpleType>
 
+	<simpleType name="FoldOperations">
+		<restriction base="m:Operations">
+			<enumeration value="VALLEY_FOLD" />
+			<enumeration value="MOUNTAIN_FOLD" />
+		</restriction>
+	</simpleType>
+
+	<simpleType name="FoldUnfoldOperations">
+		<restriction base="m:Operations">
+			<enumeration value="MOUNTAIN_VALLEY_FOLD_UNFOLD" />
+			<enumeration value="VALLEY_MOUNTAIN_FOLD_UNFOLD" />
+		</restriction>
+	</simpleType>
+
+	<simpleType name="ReverseFoldOperations">
+		<restriction base="m:Operations">
+			<enumeration value="INSIDE_REVERSE_FOLD" />
+			<enumeration value="OUTSIDE_REVERSE_FOLD" />
+		</restriction>
+	</simpleType>
+
+	<simpleType name="RotateOperations">
+		<restriction base="m:Operations">
+			<enumeration value="ROTATE" />
+		</restriction>
+	</simpleType>
+
+	<simpleType name="TurnOverOperations">
+		<restriction base="m:Operations">
+			<enumeration value="TURN_OVER" />
+		</restriction>
+	</simpleType>
+
 	<simpleType name="positiveInteger">
 		<annotation>
 			<appinfo>
-				<jxb:javaType name="Integer"
-					parseMethod="javax.xml.bind.DatatypeConverter.parseInt"
-					printMethod="javax.xml.bind.DatatypeConverter.printInt" />
+				<jxb:javaType name="Integer" parseMethod="javax.xml.bind.DatatypeConverter.parseInt" printMethod="javax.xml.bind.DatatypeConverter.printInt" />
 			</appinfo>
 		</annotation>
 		<restriction base="integer">
@@ -326,11 +474,11 @@
 			</appinfo>
 		</annotation>
 		<sequence>
-			<element name="x" type="double"/>
-			<element name="y" type="double"/>
+			<element name="x" type="double" />
+			<element name="y" type="double" />
 		</sequence>
 	</complexType>
-	
+
 	<complexType name="Line2D">
 		<annotation>
 			<appinfo>
@@ -338,8 +486,8 @@
 			</appinfo>
 		</annotation>
 		<sequence>
-			<element name="start" type="m:Point2D"/>
-			<element name="end" type="m:Point2D"/>
+			<element name="start" type="m:Point2D" />
+			<element name="end" type="m:Point2D" />
 		</sequence>
 	</complexType>
 </schema>

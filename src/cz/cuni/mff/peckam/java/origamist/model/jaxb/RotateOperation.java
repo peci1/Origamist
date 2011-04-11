@@ -18,18 +18,20 @@ import org.jvnet.jaxb2_commons.lang.HashCodeStrategy;
 import org.jvnet.jaxb2_commons.lang.JAXBEqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.JAXBHashCodeStrategy;
 import org.jvnet.jaxb2_commons.locator.ObjectLocator;
+import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
- * <p>Java class for Colors complex type.
+ * <p>Java class for RotateOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="Colors">
+ * &lt;complexType name="RotateOperation">
  *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *     &lt;/restriction>
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}RotateOperationBase">
+ *       &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}angle"/>
+ *     &lt;/extension>
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
@@ -37,18 +39,51 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "Colors")
-public abstract class Colors
+@XmlType(name = "RotateOperation", propOrder = {
+    "angle"
+})
+public class RotateOperation
+    extends RotateOperationBase
     implements Equals, HashCode
 {
 
+    protected double angle;
+
+    /**
+     * Gets the value of the angle property.
+     * 
+     */
+    public double getAngle() {
+        return angle;
+    }
+
+    /**
+     * Sets the value of the angle property.
+     * 
+     */
+    public void setAngle(double value) {
+        this.angle = value;
+    }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof Colors)) {
+        if (!(object instanceof RotateOperation)) {
             return false;
         }
         if (this == object) {
             return true;
+        }
+        if (!super.equals(thisLocator, thatLocator, object, strategy)) {
+            return false;
+        }
+        final RotateOperation that = ((RotateOperation) object);
+        {
+            double lhsAngle;
+            lhsAngle = this.getAngle();
+            double rhsAngle;
+            rhsAngle = that.getAngle();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "angle", lhsAngle), LocatorUtils.property(thatLocator, "angle", rhsAngle), lhsAngle, rhsAngle)) {
+                return false;
+            }
         }
         return true;
     }
@@ -59,7 +94,12 @@ public abstract class Colors
     }
 
     public int hashCode(ObjectLocator locator, HashCodeStrategy strategy) {
-        int currentHashCode = 1;
+        int currentHashCode = super.hashCode(locator, strategy);
+        {
+            double theAngle;
+            theAngle = this.getAngle();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "angle", theAngle), currentHashCode, theAngle);
+        }
         return currentHashCode;
     }
 

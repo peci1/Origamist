@@ -4,7 +4,6 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Locale;
 
 import javax.xml.bind.annotation.XmlTransient;
@@ -94,20 +93,6 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         this.description.add(s);
     }
 
-    @Override
-    public List<Operation> getOperation()
-    {
-        // // this must be done due to odd behavior - even though the implClass of the list is ObservableList, JAXB
-        // somehow
-        // constructs an ArrayList instead and sets it as this.operations.
-        List<Operation> result = super.getOperation();
-        if (!(result instanceof ObservableList<?>)) {
-            result = new ObservableList<Operation>(result);
-            operation = result;
-        }
-        return result;
-    }
-
     /**
      * Perform folding from the previous step's state to a new state by this step.
      * 
@@ -129,10 +114,10 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         }
 
         this.modelState.setStep(this);
-        if (operation == null)
+        if (operations == null)
             return this.modelState;
 
-        for (cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation o : operation)
+        for (cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation o : operations)
             this.modelState = ((Operation) o).getModelState(this.modelState);
 
         return this.modelState;

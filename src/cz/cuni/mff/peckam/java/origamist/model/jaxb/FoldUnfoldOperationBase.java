@@ -10,7 +10,10 @@ package cz.cuni.mff.peckam.java.origamist.model.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
+import cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation;
+import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -21,14 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for Colors complex type.
+ * <p>Java class for FoldUnfoldOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="Colors">
+ * &lt;complexType name="FoldUnfoldOperationBase">
  *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
+ *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldUnfoldOperations" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -37,18 +41,25 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "Colors")
-public abstract class Colors
+@XmlType(name = "FoldUnfoldOperationBase")
+@XmlSeeAlso({
+    FoldUnfoldOperation.class
+})
+public abstract class FoldUnfoldOperationBase
+    extends Operation
     implements Equals, HashCode
 {
 
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof Colors)) {
+        if (!(object instanceof FoldUnfoldOperationBase)) {
             return false;
         }
         if (this == object) {
             return true;
+        }
+        if (!super.equals(thisLocator, thatLocator, object, strategy)) {
+            return false;
         }
         return true;
     }
@@ -59,7 +70,7 @@ public abstract class Colors
     }
 
     public int hashCode(ObjectLocator locator, HashCodeStrategy strategy) {
-        int currentHashCode = 1;
+        int currentHashCode = super.hashCode(locator, strategy);
         return currentHashCode;
     }
 

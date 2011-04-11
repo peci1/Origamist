@@ -15,13 +15,40 @@
 		</m:origami>
 	</xsl:template>
 
+	<xsl:template name="getNewOperationName">
+		<xsl:param name="type" />
+		<xsl:choose>
+			<xsl:when test="$type='MOUNTAIN_FOLD' or $type='VALLEY_FOLD'">
+				<xsl:value-of select="'foldOperation'" />
+			</xsl:when>
+			<xsl:when test="$type='MOUNTAIN_VALLEY_FOLD_UNFOLD' or $type='VALLEY_MOUNTAIN_FOLD_UNFOLD'">
+				<xsl:value-of select="'foldUnfoldOperation'" />
+			</xsl:when>
+			<xsl:when test="$type='INSIDE_REVERSE_FOLD' or $type='OUTSIDE_REVERSE_FOLD'">
+				<xsl:value-of select="'reverseFoldOperation'" />
+			</xsl:when>
+			<xsl:when test="$type='ROTATE'">
+				<xsl:value-of select="'rotateOperation'" />
+			</xsl:when>
+			<xsl:when test="$type='TURN_OVER'">
+				<xsl:value-of select="'turnOverOperation'" />
+			</xsl:when>
+		</xsl:choose>
+	</xsl:template>
+
 	<!-- Move <startPoint> and <endPoint> tags into one <line> tag. -->
 	<xsl:template match="operation[startPoint and endPoint]">
-		<xsl:element name="operation">
+		<xsl:variable name="newName">
+			<xsl:call-template name="getNewOperationName">
+				<xsl:with-param name="type" select="@type"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:element name="{$newName}">
 			<!-- Copy attributes. -->
 			<xsl:copy-of select="@*"/>
-			<!-- Copy all sub-elements except for <startPoint> and <endPoint>. -->
-	    	<xsl:apply-templates select="*[not(local-name() = 'startPoint') and not(local-name() = 'endPoint')]" />
+			
+			<!-- Copy all sub-elements before <startPoint> and <endPoint>. -->
+	    	<xsl:apply-templates select="angle" />
 	    	
 	      	<line>
 	      		<start>
@@ -33,19 +60,29 @@
 	      			<y><xsl:value-of select="endPoint/y"/></y>
 	      		</end>
 	      	</line>
+	      	
+	      	<!-- Copy all sub-elements after <startPoint> and <endPoint>. -->
+	    	<xsl:apply-templates select="layer" />
 		</xsl:element>
 	</xsl:template>
 
-	<!-- Copy all other elements as they are. -->
-    <xsl:template match="node()">
-    	<xsl:element name="{name()}">
+	<xsl:template match="operation">
+		<xsl:variable name="newName">
+			<xsl:call-template name="getNewOperationName">
+				<xsl:with-param name="type" select="@type"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:element name="{$newName}">
 			<xsl:copy-of select="@*"/>
-        	<xsl:apply-templates select="node()"/>
-      	</xsl:element>
-    </xsl:template>
+			<xsl:apply-templates select="*"/>
+		</xsl:element>
+	</xsl:template>
 
-   	<xsl:template match="text()">
-     	<xsl:value-of select="." />
-   	</xsl:template>
+	<!-- Copy all other elements as they are (identity template). -->
+    <xsl:template match="@*|node()">
+  		<xsl:copy>
+    		<xsl:apply-templates select="@*|node()"/>
+  		</xsl:copy>
+	</xsl:template>
    	
 </xsl:stylesheet>

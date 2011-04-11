@@ -4,11 +4,9 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import javax.swing.ImageIcon;
-import javax.vecmath.Point2d;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
-import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
@@ -19,12 +17,13 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHe
  * @author Martin Pecka
  */
 @XmlTransient
-public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation
+public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation
 {
 
     /**
      * Icon of this operation.
      */
+    @XmlTransient
     protected ImageIcon icon = null;
 
     /**
@@ -58,63 +57,17 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
      * Perform folding from the previous state to a new state by this operation. Calling this method will alter the
      * passed ModelState.
      * 
+     * <p>
+     * Subclasses of {@link Operation} should overwrite this method. They shouldn't call
+     * <code>super.getModelState(previousState)</code>.
+     * 
      * @param previousState The state the model has now.
      * @return The passed-in state of the model altered by performing this operation.
      */
     public ModelState getModelState(ModelState previousState)
     {
-        // TODO model state transitioning stuff
-        switch (this.type) {
-            case ROTATE:
-                previousState.addRotation(-this.angle);
-                break;
-            case TURN_OVER:
-                previousState.flipViewingAngle();
-                break;
-            case VALLEY_FOLD:
-                previousState.makeFold(Direction.VALLEY, new Point2d(getLine().getStart().getX(), getLine().getStart()
-                        .getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer, angle);
-                break;
-            case MOUNTAIN_FOLD:
-                previousState.makeFold(Direction.MOUNTAIN, new Point2d(getLine().getStart().getX(), getLine()
-                        .getStart().getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer,
-                        angle);
-                break;
-            case INSIDE_CRIMP_FOLD:
-                break;
-            case INSIDE_REVERSE_FOLD:
-                break;
-            case MOUNTAIN_VALLEY_FOLD_UNFOLD:
-                previousState.makeFold(Direction.MOUNTAIN, new Point2d(getLine().getStart().getX(), getLine()
-                        .getStart().getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer,
-                        0);
-                break;
-            case VALLEY_MOUNTAIN_FOLD_UNFOLD:
-                previousState.makeFold(Direction.VALLEY, new Point2d(getLine().getStart().getX(), getLine().getStart()
-                        .getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer, 0);
-                break;
-            case OPEN:
-                break;
-            case OUTSIDE_CRIMP_FOLD:
-                break;
-            case OUTSIDE_REVERSE_FOLD:
-                break;
-            case PULL:
-                break;
-            case RABBIT_FOLD:
-                break;
-            case REPEAT_ACTION:
-                break;
-            case SQUASH_FOLD:
-                break;
-            case THUNDERBOLT_FOLD:
-                break;
-            default:
-                // TODO handle error - unknown operation
-                break;
-        }
-
-        return previousState;
+        throw new UnsupportedOperationException("Class " + getClass() + " is a subclass of " + Operation.class
+                + " and therefore must overwrite the getModelState() method.");
     }
 
     @Override
@@ -146,13 +99,6 @@ public class Operation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Oper
         } else if (!ServiceLocator.get(HashCodeAndEqualsHelper.class).equals(icon, other.icon))
             return false;
         return true;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "Operation [type=" + type + ", angle=" + angle + ", point=" + point + ", line=" + line + ", refLine="
-                + refLine + ", layer=" + layer + "]";
     }
 
 }
