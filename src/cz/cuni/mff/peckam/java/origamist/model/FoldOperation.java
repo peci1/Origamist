@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import javax.vecmath.Point2d;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
@@ -19,17 +20,13 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     @Override
     public ModelState getModelState(ModelState previousState)
     {
-        switch (this.type) {
-            case VALLEY_FOLD:
-                previousState.makeFold(Direction.VALLEY, new Point2d(getLine().getStart().getX(), getLine().getStart()
-                        .getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer, angle);
-                break;
-            case MOUNTAIN_FOLD:
-                previousState.makeFold(Direction.MOUNTAIN, new Point2d(getLine().getStart().getX(), getLine()
-                        .getStart().getY()), new Point2d(getLine().getEnd().getX(), getLine().getEnd().getY()), layer,
-                        angle);
-                break;
-        }
+        Direction dir = Direction.MOUNTAIN;
+        if (this.type == Operations.VALLEY_FOLD)
+            dir = Direction.VALLEY;
+
+        previousState.makeFold(dir, new Point2d(getLine().getStart().getX(), getLine().getStart().getY()), new Point2d(
+                getLine().getEnd().getX(), getLine().getEnd().getY()), layer, angle);
+
         return previousState;
     }
 
