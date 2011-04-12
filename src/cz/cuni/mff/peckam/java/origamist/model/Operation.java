@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import javax.swing.ImageIcon;
 import javax.xml.bind.annotation.XmlTransient;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -63,8 +64,10 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
      * 
      * @param previousState The state the model has now.
      * @return The passed-in state of the model altered by performing this operation.
+     * 
+     * @throws InvalidOperationException If the operation cannot be completed.
      */
-    public ModelState getModelState(ModelState previousState)
+    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
         throw new UnsupportedOperationException("Class " + getClass() + " is a subclass of " + Operation.class
                 + " and therefore must overwrite the getModelState() method.");

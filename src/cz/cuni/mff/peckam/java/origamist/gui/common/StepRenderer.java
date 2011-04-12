@@ -28,17 +28,20 @@ import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.media.j3d.VirtualUniverse;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import com.sun.j3d.exp.swing.JCanvas3D;
 import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -87,6 +90,9 @@ public class StepRenderer extends JPanel
 
     /** The transform group containing the whole step. */
     protected TransformGroup        tGroup;
+
+    /** The branch graph to be added to the scene. */
+    protected BranchGroup           branchGraph      = null;
 
     /** The zoom of the step. */
     protected double                zoom             = 100d;
@@ -185,7 +191,13 @@ public class StepRenderer extends JPanel
                     if (getWidth() > 0 && getHeight() > 0)
                         canvas.setSize(getWidth(), getHeight());
 
-                    setupUniverse();
+                    try {
+                        setupUniverse();
+                    } catch (InvalidOperationException e) {
+                        Logger.getLogger("application").l7dlog(Level.ERROR, "StepRenderer.InvalidOperationException",
+                                new Object[] { StepRenderer.this.step.getId(), e.getOperation().toString() }, e);
+                        // TODO some more clever handling of invalid operations
+                    }
 
                     repaint();
                 }
@@ -288,65 +300,91 @@ public class StepRenderer extends JPanel
      * Set this.tGroup to a new value.
      * 
      * @return The transform group that contains all nodes.
+     * 
+     * @throws InvalidOperationException If the model state cannot be gotten due to invalid operations.
      */
-    protected TransformGroup setupTGroup()
+    protected TransformGroup setupTGroup() throws InvalidOperationException
     {
         setupTransform();
         Appearance appearance = createNormalTrianglesAppearance();
         Appearance appearance2 = createInverseTrianglesAppearance();
         Appearance appearance3 = createFoldLinesAppearance();
 
-        ModelState state = step.getModelState();
+        try {
+            ModelState state = step.getModelState();
 
-        tGroup = new TransformGroup();
-        tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        tGroup.setTransform(transform);
+            tGroup = new TransformGroup();
+            tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+            tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+            tGroup.setTransform(transform);
 
-        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
-        tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance2));
-        tGroup.addChild(new Shape3D(state.getLineArray(), appearance3));
+            tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
+            tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance2));
+            tGroup.addChild(new Shape3D(state.getLineArray(), appearance3));
 
-        return tGroup;
+            return tGroup;
+        } catch (InvalidOperationException e) {
+            tGroup = new TransformGroup();
+            // TODO create an ErrorTransformGroup that would signalize to the user that an operatino is invalid
+            throw e;
+        }
     }
 
     /**
-     * @return The compiled BranchGroup containing this.tGroup and all defined top-level behaviors.
-     */
-    protected BranchGroup createBranchGraph()
-    {
-        setupTGroup();
-
-        BranchGroup contents = new BranchGroup();
-        contents.addChild(tGroup);
-
-        // TODO now these three lines enable rotating. Either make a whole concept of controlling the
-        // displayed step, or delete them
-        Behavior rotate = new MouseRotate(tGroup);
-        rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
-        contents.addChild(rotate);
-
-        contents.compile(); // may cause unexpected problems - any consequent change of contents
-        // (or even reading of them) will produce an error if you don't set the proper capability
-
-        return contents;
-    }
-
-    /**
-     * Set a new value to this.universe.
+     * Return the compiled BranchGroup containing this.tGroup and all defined top-level behaviors. Also save the group
+     * to this.branchGraph.
      * 
-     * @return The universe corresponding to the current step.
+     * @return The compiled BranchGroup containing this.tGroup and all defined top-level behaviors.
+     * 
+     * @throws InvalidOperationException If the branch graph cannot be created due to an invalid operation in the model.
      */
-    protected VirtualUniverse setupUniverse()
+    protected BranchGroup createBranchGraph() throws InvalidOperationException
+    {
+        try {
+            setupTGroup();
+
+            branchGraph = new BranchGroup();
+            branchGraph.addChild(tGroup);
+
+            // TODO now these three lines enable rotating. Either make a whole concept of controlling the
+            // displayed step, or delete them
+            Behavior rotate = new MouseRotate(tGroup);
+            rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
+            branchGraph.addChild(rotate);
+
+            branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
+            // (or even reading of them) will produce an error if you don't set the proper capability
+
+            return branchGraph;
+        } catch (InvalidOperationException e) {
+            branchGraph = new BranchGroup();
+            branchGraph.addChild(tGroup);
+            branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
+            // (or even reading of them) will produce an error if you don't set the proper capability
+            throw e;
+        }
+    }
+
+    /**
+     * Set a new universe corresponding to the current step to this.universe.
+     * 
+     * @throws InvalidOperationException If the universe cannot be setup due to an invalid operation in the model.
+     */
+    protected void setupUniverse() throws InvalidOperationException
     {
         universe.getViewer().setViewingPlatform(null);
         universe.getViewer().getView().removeAllCanvas3Ds();
 
         universe = new SimpleUniverse(offscreenCanvas);
         universe.getViewingPlatform().setNominalViewingTransform();
-        universe.addBranchGraph(createBranchGraph());
 
-        return universe;
+        try {
+            createBranchGraph();
+            universe.addBranchGraph(branchGraph);
+        } catch (InvalidOperationException e) {
+            universe.addBranchGraph(branchGraph);
+            throw e;
+        }
     }
 
     /**

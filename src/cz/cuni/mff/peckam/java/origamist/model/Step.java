@@ -9,6 +9,7 @@ import java.util.Locale;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
@@ -97,8 +98,10 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      * Perform folding from the previous step's state to a new state by this step.
      * 
      * @return The state the model would have after performing this step.
+     * 
+     * @throws InvalidOperationException If an operation cannot be done.
      */
-    public ModelState getModelState()
+    public ModelState getModelState() throws InvalidOperationException
     {
         if (this.modelState != null)
             return this.modelState;
@@ -117,8 +120,15 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         if (operations == null)
             return this.modelState;
 
-        for (cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation o : operations)
-            this.modelState = ((Operation) o).getModelState(this.modelState);
+        for (Operation o : operations) {
+            try {
+                this.modelState = o.getModelState(this.modelState);
+            } catch (InvalidOperationException e) {
+                if (e.getOperation() == null)
+                    e.setOperation(o);
+                throw e;
+            }
+        }
 
         return this.modelState;
     }
