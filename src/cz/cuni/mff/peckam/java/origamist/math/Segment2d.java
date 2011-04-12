@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.math;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import javax.vecmath.Point2d;
+import javax.vecmath.Vector2d;
 
 /**
  * A line segment in 2D.
@@ -43,15 +44,26 @@ public class Segment2d extends Line2d
         return new Point2d[] { p, p2 };
     }
 
+    /**
+     * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
+     *         point was found; <code>this</code> if this lies on the given line and the line is not a segment; or a
+     *         (new instance of) segment of intersection of this segment and the given segment.
+     */
     @Override
-    public Point2d getIntersection(Line2d line)
+    public Segment2d getIntersection(Line2d line)
     {
-        Point2d intersection = super.getIntersection(line);
-        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y))
-            return intersection;
+        if (line instanceof Segment2d) {
+            return getIntersection((Segment2d) line);
+        }
 
-        if (contains(intersection)) {
-            return intersection;
+        // line is a pure line, not a segment
+        Line2d intersection = super.getIntersection(line);
+        if (intersection == null || intersection == this)
+            // no intersection with this as a pure line, or this lies on line
+            return (Segment2d) intersection;
+
+        if (contains(intersection.p)) {
+            return new Segment2d(intersection.p, intersection.p);
         }
         return null;
     }
@@ -59,22 +71,51 @@ public class Segment2d extends Line2d
     /**
      * Return the intersection with another segment.
      * 
-     * TODO should be able to differentiate if two parallel vectors have a common part or not
-     * 
      * @param segment The other segment to find intersection with.
-     * @return the intersection with another segment. Will be <code>null</code> if no intersection exists and will
-     *         return (NaN, NaN, NaN) if the segments lie on the same line.
+     * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
+     *         point was found; or a (new instance of) segment of intersection of this segment and the given segment.
      */
-    public Point2d getIntersection(Segment2d segment)
+    public Segment2d getIntersection(Segment2d segment)
     {
-        Point2d intersection = getIntersection((Line2d) segment);
-        if (intersection == null || Double.isNaN(intersection.x) || Double.isNaN(intersection.y))
-            return intersection;
+        // creating a new instance of line is necessary to avoid infinite call loop
+        Segment2d intersection = getIntersection(new Line2d(segment.p, segment.v));
+        if (intersection == null) {
+            return null;
+        } else if (intersection.v.epsilonEquals(new Vector2d(), EPSILON)) { // single point intersection
+            if (!segment.contains(intersection.p))
+                return null;
+            return new Segment2d(intersection.p, intersection.p);
+        } else { // the segments lie on the same line
+            Segment2d big = this;
+            Segment2d small = segment;
+            if (!this.contains(segment.p) && !this.contains(segment.p2)) {
+                big = segment;
+                small = this;
+            }
+            // if one segment is whole inside the other, big is the "containing" segment... otherwise it doesn't matter
 
-        if (segment.contains(intersection)) {
-            return intersection;
+            if (big.contains(small.p)) {
+                if (big.contains(small.p2)) {
+                    return small.clone();
+                } else { // small has to contain either big.p or big.p2
+                    if (small.contains(big.p)) {
+                        return new Segment2d(big.p, small.p);
+                    } else {
+                        return new Segment2d(big.p2, small.p);
+                    }
+                }
+            } else if (big.contains(small.p2)) { // small has to contain either big.p or big.p2
+                if (small.contains(big.p)) {
+                    return new Segment2d(big.p, small.p2);
+                } else {
+                    return new Segment2d(big.p2, small.p2);
+                }
+            } else {
+                // big is the potentionally "containing" segment, and if it contains no points of small, the segments
+                // have no intersection
+                return null;
+            }
         }
-        return null;
     }
 
     /**
@@ -138,7 +179,7 @@ public class Segment2d extends Line2d
     }
 
     @Override
-    public Segment2d clone() throws CloneNotSupportedException
+    public Segment2d clone()
     {
         return new Segment2d(new Point2d(p), new Point2d(p2));
     }

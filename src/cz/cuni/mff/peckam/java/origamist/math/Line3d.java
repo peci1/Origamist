@@ -213,7 +213,7 @@ public class Line3d implements Cloneable, Vector<Double>
     }
 
     @Override
-    protected Line3d clone() throws CloneNotSupportedException
+    protected Line3d clone()
     {
         return new Line3d(this);
     }

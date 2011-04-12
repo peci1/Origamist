@@ -52,7 +52,7 @@ public class Segment3d extends Line3d
     /**
      * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
      *         point was found; <code>this</code> if this lies on the given line and the line is not a segment; or a
-     *         (new instance of) segment of intersection of this segment and the given segment
+     *         (new instance of) segment of intersection of this segment and the given segment.
      */
     @Override
     public Segment3d getIntersection(Line3d line)
@@ -78,7 +78,7 @@ public class Segment3d extends Line3d
      * 
      * @param segment The other segment to find intersection with.
      * @return The intersection point (as a segment with zero direction vector); <code>null</code> if no intersection
-     *         point was found; or a (new instance of) segment of intersection of this segment and the given segment
+     *         point was found; or a (new instance of) segment of intersection of this segment and the given segment.
      */
     public Segment3d getIntersection(Segment3d segment)
     {
@@ -101,7 +101,7 @@ public class Segment3d extends Line3d
 
             if (big.contains(small.p)) {
                 if (big.contains(small.p2)) {
-                    return small;
+                    return small.clone();
                 } else { // small has to contain either big.p or big.p2
                     if (small.contains(big.p)) {
                         return new Segment3d(big.p, small.p);
@@ -183,7 +183,7 @@ public class Segment3d extends Line3d
     }
 
     @Override
-    protected Segment3d clone() throws CloneNotSupportedException
+    protected Segment3d clone()
     {
         return new Segment3d(new Point3d(p), new Point3d(p2));
     }

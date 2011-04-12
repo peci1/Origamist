@@ -103,25 +103,25 @@ public class Line2d implements Cloneable, Vector<Double>
      * Return the intersection with the line.
      * 
      * @param line The line to find intersection with.
-     * @return The intersection point; <code>null</code> if no intersection point was found; <code>(NaN, NaN)</code> if
-     *         the lines are equal.
+     * @return The intersection point (as a line with zero direction vector); <code>null</code> if no intersection point
+     *         was found; <code>this</code> if the lines are epsilon-equal.
      * 
      * @see http://sputsoft.com/blog/2010/03/line-line-intersection.html
      */
-    public Point2d getIntersection(Line2d line)
+    public Line2d getIntersection(Line2d line)
     {
         double a = line.v.x * v.y - line.v.y * v.x;
         double b = line.v.x * (line.p.y - p.y) - line.v.y * (line.p.x - p.x);
 
         if (abs(a) < EPSILON) {
             if (abs(b) < EPSILON) {
-                return new Point2d(Double.NaN, Double.NaN);
+                return this;
             } else {
                 return null;
             }
         }
 
-        return new Point2d(p.x + b / a * v.x, p.y + b / a * v.y);
+        return new Line2d(new Point2d(p.x + b / a * v.x, p.y + b / a * v.y), new Vector2d());
     }
 
     /**
@@ -197,8 +197,7 @@ public class Line2d implements Cloneable, Vector<Double>
             return false;
         if (!getClass().equals(other.getClass()))
             return false;
-        Point2d intersection = getIntersection(other);
-        return Double.isNaN(intersection.x);
+        return getIntersection(other) == this;
     }
 
     @Override
@@ -208,7 +207,7 @@ public class Line2d implements Cloneable, Vector<Double>
     }
 
     @Override
-    protected Line2d clone() throws CloneNotSupportedException
+    protected Line2d clone()
     {
         return new Line2d(this);
     }
