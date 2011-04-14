@@ -14,10 +14,29 @@ public enum Direction
     /**
      * A valley fold direction
      */
-    VALLEY,
+    VALLEY
+    {
+        @Override
+        public Direction getOpposite()
+        {
+            return MOUNTAIN;
+        }
+    },
 
     /**
      * A mountain fold direction
      */
     MOUNTAIN
+    {
+        @Override
+        public Direction getOpposite()
+        {
+            return VALLEY;
+        }
+    };
+
+    /**
+     * @return The opposite fold direction.
+     */
+    public abstract Direction getOpposite();
 }

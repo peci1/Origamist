@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import javax.vecmath.Point2d;
+
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 
 /**
@@ -25,6 +27,22 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
         } else {
             return new DoubleDimension(size.getWidth() / size.getHeight(), 1.0);
         }
+    }
+
+    /**
+     * Check if the given point in relative coordinates lies in the paper boundaries.
+     * 
+     * @param p The point to check.
+     * @return True if the point lies in this paper's boundaries.
+     */
+    public boolean containsRelative(Point2d p)
+    {
+        DoubleDimension dim = getRelativeDimensions();
+        if (p.getX() < 0 || p.getY() < 0)
+            return false;
+        if (p.getX() > dim.getWidth() || p.getY() > dim.getHeight())
+            return false;
+        return true;
     }
 
     @Override

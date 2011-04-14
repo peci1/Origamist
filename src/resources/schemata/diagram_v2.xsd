@@ -275,6 +275,7 @@
 				<sequence>
 					<group ref="m:angle" />
 					<group ref="m:line" />
+					<group ref="m:refPoint" minOccurs="0" />
 					<group ref="m:layerList" />
 				</sequence>
 			</extension>
@@ -299,6 +300,7 @@
 			<extension base="m:FoldUnfoldOperationBase">
 				<sequence>
 					<group ref="m:line" />
+					<group ref="m:refPoint" minOccurs="0" />
 					<group ref="m:layerList" />
 				</sequence>
 			</extension>
@@ -321,7 +323,10 @@
 		</annotation>
 		<complexContent>
 			<extension base="m:RotateOperationBase">
-				<group ref="m:angle" />
+				<sequence>
+					<group ref="m:angle" />
+					<group ref="m:refPoint" minOccurs="0" />
+				</sequence>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -367,6 +372,16 @@
 					<group ref="m:line" />
 					<group ref="m:refLine" />
 					<group ref="m:layerList" />
+					<sequence minOccurs="0">
+						<element type="m:Line2D" name="oppositeLine" />
+						<element name="oppositeLayer" type="int" maxOccurs="unbounded">
+							<annotation>
+								<appinfo>
+									<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+								</appinfo>
+							</annotation>
+						</element>
+					</sequence>
 				</sequence>
 			</extension>
 		</complexContent>
@@ -393,6 +408,12 @@
 	<group name="line">
 		<sequence>
 			<element name="line" type="m:Line2D" />
+		</sequence>
+	</group>
+
+	<group name="refPoint">
+		<sequence>
+			<element name="refPoint" type="m:Point2D" />
 		</sequence>
 	</group>
 

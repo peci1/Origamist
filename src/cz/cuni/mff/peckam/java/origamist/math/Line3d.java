@@ -139,6 +139,22 @@ public class Line3d implements Cloneable, Vector<Double>
         return v1xv2.epsilonEquals(new Vector3d(), EPSILON);
     }
 
+    /**
+     * Return a point on this line nearest to the given point.
+     * 
+     * @param p The point to find the nearest one for.
+     * @return A point on this line nearest to the given point. The passed-in instance is returned if it lies on this.
+     */
+    public Point3d getNearestPoint(Point3d p)
+    {
+        if (contains(p))
+            return p;
+
+        Plane3d plane = new Plane3d(this.getVector(), p);
+        // intersection must be a single point because plane's normal is this, so the plane can't be parralel to this
+        return plane.getIntersection(this).getPoint();
+    }
+
     public boolean contains(Point3d point)
     {
         Point3d pt = new Point3d();

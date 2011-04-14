@@ -134,6 +134,29 @@ public class Segment2d extends Line2d
         return (quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
     }
 
+    /**
+     * Return the point on this segment that is the nearest to the given point.
+     * 
+     * @param p The point to find the nearest one for.
+     * @return The point on this segment that is the nearest to the given point.
+     */
+    @Override
+    public Point2d getNearestPoint(Point2d p)
+    {
+        Point2d point = super.getNearestPoint(p);
+
+        if (contains(point)) {
+            return point;
+        } else {
+            double p1dist = p.distance(point);
+            double p2dist = p2.distance(point);
+            if (p1dist < p2dist)
+                return p;
+            else
+                return p2;
+        }
+    }
+
     @Override
     public boolean epsilonEquals(Line2d other)
     {

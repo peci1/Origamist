@@ -82,6 +82,22 @@ public class Stripe3d implements Cloneable
         return plane;
     }
 
+    /**
+     * @return the line1
+     */
+    public Line3d getLine1()
+    {
+        return line1;
+    }
+
+    /**
+     * @return the line2
+     */
+    public Line3d getLine2()
+    {
+        return line2;
+    }
+
     @Override
     public int hashCode()
     {

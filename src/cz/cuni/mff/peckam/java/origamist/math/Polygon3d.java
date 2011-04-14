@@ -521,13 +521,17 @@ public class Polygon3d<T extends Triangle3d>
      * 
      * @param stripe The stripe to find intersections with.
      * @return The intersections of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
-     *         this polygon.
+     *         this polygon or has its direction vector parallel to this polygon.
      */
     public List<Segment3d> getIntersections(Stripe3d stripe)
     {
         Line3d stripePlaneAndPolygonPlaneInt = stripe.getPlane().getIntersection(getPlane());
         if (stripePlaneAndPolygonPlaneInt == null)
             return null; // the stripe and the polygon are parallel
+
+        // the stripe's direction vector is parallel to the polygon
+        if (MathHelper.vectorQuotient3d(stripePlaneAndPolygonPlaneInt.getVector(), stripe.getLine1().getVector()) != null)
+            return null;
 
         Line3d segmentPoint1 = stripe.getHalfspace1().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
         Line3d segmentPoint2 = stripe.getHalfspace2().getPlane().getIntersection(stripePlaneAndPolygonPlaneInt);
@@ -546,7 +550,8 @@ public class Polygon3d<T extends Triangle3d>
      * 
      * @param stripe The stripe to find the intersection with.
      * @return The intersection of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
-     *         this polygon (and if it lies in the same plane as the polygon).
+     *         this polygon (and if it lies in the same plane as the polygon) or if the stripe doesn't intersect with
+     *         it.
      */
     public Segment3d getIntersectionSegment(Stripe3d stripe)
     {

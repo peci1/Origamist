@@ -15,6 +15,7 @@ public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     @Override
     public ModelState getModelState(ModelState previousState)
     {
+        // TODO handle <refPoint>
         previousState.addRotation(-this.angle);
         return previousState;
     }

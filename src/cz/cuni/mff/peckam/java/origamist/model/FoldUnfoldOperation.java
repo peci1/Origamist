@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import javax.vecmath.Point2d;
+
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -21,7 +23,9 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
         if (this.type == Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD)
             dir = Direction.VALLEY;
 
-        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), layer, 0);
+        Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
+        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint, layer,
+                0);
 
         return previousState;
     }

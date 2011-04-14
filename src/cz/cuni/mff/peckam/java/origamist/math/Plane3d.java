@@ -95,6 +95,20 @@ public class Plane3d implements Cloneable
         this(new Point3d(p1x, p1y, p1z), new Point3d(p2x, p2y, p2z), new Point3d(p3x, p3y, p3z));
     }
 
+    /**
+     * Create a plane with the given normal and containing the given point.
+     * 
+     * @param normal
+     * @param point
+     */
+    public Plane3d(Vector3d normal, Point3d point)
+    {
+        this.a = normal.x;
+        this.b = normal.y;
+        this.c = normal.z;
+        this.d = -normal.dot(new Vector3d(point));
+    }
+
     public boolean contains(Point3d point)
     {
         return abs(a * point.x + b * point.y + c * point.z + d) < EPSILON;
@@ -241,7 +255,7 @@ public class Plane3d implements Cloneable
     }
 
     @Override
-    protected Plane3d clone() throws CloneNotSupportedException
+    protected Plane3d clone()
     {
         return new Plane3d(this);
     }

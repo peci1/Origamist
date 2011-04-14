@@ -85,6 +85,10 @@
 							<y>1</y>
 						</end>
 					</line>
+					<refPoint>
+						<x>0</x>
+						<y>1</y>
+					</refPoint>
 					<layer>1</layer>
 				</foldOperation>
 				<foldOperation type="VALLEY_FOLD">
@@ -99,6 +103,10 @@
 							<y>1</y>
 						</end>
 					</line>
+					<refPoint>
+						<x>0.66666667</x>
+						<y>1</y>
+					</refPoint>
 					<layer>1</layer>
 				</foldOperation>
 			</step>
@@ -124,7 +132,7 @@
 							<y>1</y>
 						</end>
 					</line>
-					<layer>2</layer>
+					<layer>3</layer>
 				</foldOperation>
 			</step>
 			<step id="6">
@@ -147,8 +155,12 @@
 							<y>0.8824</y>
 						</end>
 					</line>
-					<layer>3</layer>
-					<layer>4</layer>
+					<refPoint>
+						<x>0</x>
+						<y>0</y>
+					</refPoint>
+					<layer>1</layer>
+					<layer>2</layer>
 				</foldOperation>
 				<foldOperation type="VALLEY_FOLD">
 					<angle>1.5707963</angle>
@@ -162,6 +174,10 @@
 							<y>0.8824</y>
 						</end>
 					</line>
+					<refPoint>
+						<x>0.66666667</x>
+						<y>0</y>
+					</refPoint>
 					<layer>1</layer>
 					<layer>2</layer>
 				</foldOperation>
@@ -170,8 +186,8 @@
 				</rotateOperation>
 			</step>		
 			<step id="8">
-				<description>Do inside reverse fold on the back of the plane.</description>
-				<description lang="cs-CZ">Prohněte zadní část šipky dovnitř.</description>
+				<description>Do inside reverse fold on the back and outside reverse fold on the front of the plane.</description>
+				<description lang="cs-CZ">Prohněte zadní část šipky dovnitř a přední ven.</description>
 				<reverseFoldOperation type="INSIDE_REVERSE_FOLD">
 					<line>
 						<start>
@@ -194,6 +210,30 @@
 						</end>
 					</refLine>
 					<layer>1</layer>
+				</reverseFoldOperation>
+				<reverseFoldOperation type="OUTSIDE_REVERSE_FOLD">
+					<line>
+						<start>
+							<x>0.25</x>
+							<y>0.916667</y>
+						</start>
+						<end>
+							<x>0.33333333</x>
+							<y>0.916667</y>
+						</end>
+					</line>
+					<refLine>
+						<start>
+							<x>0.33333333</x>
+							<y>0.916667</y>
+						</start>
+						<end>
+							<x>0.33333333</x>
+							<y>1</y>
+						</end>
+					</refLine>
+					<layer>3</layer>
+					<layer>4</layer>
 				</reverseFoldOperation>
 			</step>	
 		</steps>

@@ -151,6 +151,82 @@ public class Line2d implements Cloneable, Vector<Double>
         return abs(p.x * a + p.y * b + c) <= EPSILON;
     }
 
+    /**
+     * Return the point on this line that is the nearest to the given point.
+     * 
+     * @param p The point to find the nearest one for.
+     * @return The point on this line that is the nearest to the given point (the passed-in instance is returned if it
+     *         lies on this line).
+     */
+    public Point2d getNearestPoint(Point2d p)
+    {
+        if (contains(p))
+            return p;
+
+        if (getVector().epsilonEquals(new Vector2d(), EPSILON))
+            return getPoint();
+
+        Vector2d perp = new Vector2d(getVector().y, -getVector().x);
+        Line2d perpLine = new Line2d(p, perp);
+
+        Line2d intPoint = perpLine.getIntersection(this);
+        // intPoint can be neither null nor can have non-zero dir. vector (the lines aren't parallel)
+        return intPoint.getPoint();
+    }
+
+    /**
+     * Mirror the given point around this line (axis symmetry).
+     * 
+     * @param p The point to mirror.
+     * @return The mirrored point (the passed-in instance is returned if it lies on this line).
+     */
+    public Point2d mirror(Point2d p)
+    {
+        Point2d nearest = getNearestPoint(p);
+        if (nearest == p) // p lies on this line
+            return p;
+
+        // direction vector p->nearest
+        Vector2d vect = new Vector2d(nearest);
+        vect.sub(p);
+
+        Point2d mirrored = new Point2d(nearest);
+        mirrored.add(vect);
+        return mirrored;
+    }
+
+    /**
+     * Mirror the given line around this line (axis symmetry).
+     * 
+     * @param l The line to mirror.
+     * @return The mirrored line (the passed-in instance is returned if it lies on this line).
+     */
+    public Line2d mirror(Line2d l)
+    {
+        if (l.epsilonEquals(this))
+            return l;
+
+        Point2d p1 = l.getPoint();
+        Point2d p2 = new Point2d(p1);
+        p2.add(l.getVector());
+        return new Line2d(mirror(p1), mirror(p2));
+    }
+
+    /**
+     * Mirror the given segment around this line (axis symmetry).
+     * 
+     * @param l The segment to mirror.
+     * @return The mirrored segment (the passed-in instance is returned if it lies on this line).
+     */
+    public Segment2d mirror(Segment2d l)
+    {
+        Segment2d intPoint = l.getIntersection(this);
+        if (intPoint != null && !intPoint.getVector().epsilonEquals(new Vector2d(), EPSILON))
+            return l;
+
+        return new Segment2d(mirror(l.getP1()), mirror(l.getP2()));
+    }
+
     @Override
     public int hashCode()
     {
@@ -186,10 +262,10 @@ public class Line2d implements Cloneable, Vector<Double>
     }
 
     /**
-     * Return <code>true</code> if the given halfplane is almost equal to this one.
+     * Return <code>true</code> if the given line is almost equal to this one.
      * 
      * @param other The halfplane to compare.
-     * @return <code>true</code> if the given halfplane is almost equal to this one.
+     * @return <code>true</code> if the given line is almost equal to this one.
      */
     public boolean epsilonEquals(Line2d other)
     {

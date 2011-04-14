@@ -110,9 +110,9 @@ public class HalfSpace3d implements Cloneable
         Vector3d v2 = new Vector3d(r.x - p1.x, r.y - p1.y, r.z - p1.z);
         Vector3d c = new Vector3d();
         c.cross(v1, v2);
+        c.normalize(); // added to improve robustness against rounding errors
         c.add(p1);
-        Point3d p = new Point3d();
-        p.add(c);
+        Point3d p = new Point3d(c);
 
         return new HalfSpace3d(p1, p2, p, r);
     }
@@ -195,8 +195,8 @@ public class HalfSpace3d implements Cloneable
     }
 
     @Override
-    protected HalfSpace3d clone() throws CloneNotSupportedException
+    protected HalfSpace3d clone()
     {
-        return new HalfSpace3d(new Plane3d(plane));
+        return new HalfSpace3d(plane.clone());
     }
 }
