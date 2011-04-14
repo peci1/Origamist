@@ -266,10 +266,12 @@ public class Triangle3d implements Cloneable
                         return new Segment3d(edge1);
                 } else {
                     if (edge1.overlaps(edge2)) {
-                        result = edge1.getIntersection(edge2);
+                        Segment3d intersection = edge1.getIntersection(edge2);
                         // if the intersection isn't just a point, we can surely return
-                        if (!result.getVector().epsilonEquals(new Vector3d(), EPSILON))
-                            return result;
+                        if (intersection != null && !intersection.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                            return intersection;
+                        if (intersection != null)
+                            result = intersection;
                     }
                 }
             }
