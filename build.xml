@@ -4,8 +4,6 @@
             Origami diagram making application
     </description>
 	
-	<input addproperty="jnlp.codebase" defaultvalue="file:/${basedir}" message="Enter the URI of the JNLP files codebase. Leave blank if you deploy the application onto your local machine."/>
-	
 	<property name="path.to.latest.schema.common" value="src/resources/schemata/common_v1.xsd" />
 	<property name="path.to.latest.schema.files" value="src/resources/schemata/files_v1.xsd" />
 	<property name="path.to.latest.schema.diagram" value="src/resources/schemata/diagram_v2.xsd" />
@@ -214,7 +212,11 @@
 
 	<target name="jnlp" depends="jnlp-viewer,jnlp-editor" />
 
-	<target name="jnlp-viewer">
+	<target name="jnlp-init">
+		<input addproperty="jnlp.codebase" defaultvalue="file:/${basedir}" message="Enter the URI of the JNLP files codebase. Leave blank if you deploy the application onto your local machine."/>
+	</target>
+	
+	<target name="jnlp-viewer" depends="jnlp-init">
 		<jnlp href="origami_viewer.jnlp" tofile="origami_viewer.jnlp" codebase="${jnlp.codebase}">
 			<information>
 				<title>Origamist viewer</title>
@@ -246,7 +248,7 @@
 		</jnlp>
 	</target>
 
-	<target name="jnlp-viewer-test">
+	<target name="jnlp-viewer-test" depends="jnlp-init">
 		<jnlp href="origami_viewer.test.jnlp" tofile="origami_viewer.test.jnlp" codebase="${jnlp.codebase}">
 			<information>
 				<title>Origamist viewer</title>
@@ -281,7 +283,7 @@
 		</jnlp>
 	</target>
 
-	<target name="jnlp-editor">
+	<target name="jnlp-editor" depends="jnlp-init">
 		<jnlp href="origami_editor.jnlp" tofile="origami_editor.jnlp" codebase="${jnlp.codebase}">
 			<information>
 				<title>Origamist editor</title>
