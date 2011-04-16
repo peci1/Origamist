@@ -31,8 +31,10 @@ import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Plane3d;
@@ -88,6 +90,9 @@ public class ModelState implements Cloneable
      * <code>triangles</code> change.
      */
     protected Hashtable<Triangle2d, ModelTriangle> paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
+
+    /** Cache for finding 3D locations of points corresponding to 2D points on the paper. */
+    protected Hashtable<Point2d, Point3d>          paperToSpacePoint     = new Hashtable<Point2d, Point3d>();
 
     /**
      * The triangles the model state consists of. This representation can be directly used by Java3D.
@@ -159,6 +164,7 @@ public class ModelState implements Cloneable
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
                 ModelState.this.trianglesArrayDirty = true;
+                paperToSpacePoint.clear();
                 if (change.getChangeType() != ChangeTypes.ADD) {
                     ModelTriangle t = change.getOldItem();
                     paperToSpaceTriangles.remove(t.originalPosition);
@@ -242,29 +248,40 @@ public class ModelState implements Cloneable
      * Takes a point defined in the 2D paper relative coordinates and returns the position of the point in the 3D model
      * state (also in relative coordinates).
      * 
-     * @param point
-     * @return
+     * This method uses a cache for the points. The cache is cleared everytime a triangle is added or removed.
+     * 
+     * @param point The 2D paper point to find the corresponding 3D point for.
+     * @return The 3D point. The returned copy is a fresh instance, so you can alter it.
+     * 
+     * @throws IllegalArgumentException If the given point doesn't lie in the paper.
      */
-    protected Point3d locatePointFromPaperTo3D(Point2d point)
+    public Point3d locatePointFromPaperTo3D(Point2d point) throws IllegalArgumentException
     {
-        ModelTriangle containingTriangle = null;
-        // TODO possible performance loss, try to use some kind of Voronoi diagram??? But it seems that this section
-        // won't be preformance-bottle-neck
-        for (ModelTriangle t : triangles) {
-            if (t.getOriginalPosition().contains(point)) {
-                containingTriangle = t;
-                break;
+        if (!origami.getModel().getPaper().containsRelative(point))
+            throw new IllegalArgumentException("locatePointFromPaperTo3D: Given point doesn't lie in the paper: "
+                    + point);
+
+        if (paperToSpacePoint.get(point) == null) {
+            ModelTriangle containingTriangle = null;
+            // TODO possible performance loss, try to use some kind of Voronoi diagram??? But it seems that this section
+            // won't be preformance-bottle-neck
+            for (ModelTriangle t : triangles) {
+                if (t.getOriginalPosition().contains(point)) {
+                    containingTriangle = t;
+                    break;
+                }
             }
+
+            if (containingTriangle == null) {
+                Logger.getLogger(getClass()).warn("locatePointFromPaperTo3D: Couldn't locate point " + point);
+                return new Point3d();
+            }
+
+            Vector3d barycentric = containingTriangle.getOriginalPosition().getBarycentricCoords(point);
+
+            paperToSpacePoint.put(point, new Point3d(containingTriangle.interpolatePointFromBarycentric(barycentric)));
         }
-
-        if (containingTriangle == null) {
-            Logger.getLogger(getClass()).warn("locatePointFromPaperTo3D: Couldn't locate point " + point);
-            return new Point3d();
-        }
-
-        Vector3d barycentric = containingTriangle.getOriginalPosition().getBarycentricCoords(point);
-
-        return containingTriangle.interpolatePointFromBarycentric(barycentric);
+        return paperToSpacePoint.get(point);
     }
 
     /**
@@ -717,6 +734,92 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * Make a reverse fold and bend the paper correspondingly.
+     * 
+     * @param direction The direction of the fold along <code>line</code>.
+     * @param line The line to bend along.
+     * @param oppositeLine The second line to fold along. Pass <code>null</code> to autocompute. If you do so, you must
+     *            also pass <code>null</code> to <code>oppositeAffectedLayer</code>.
+     * @param refLine The line around which the paper will twist (you'd press on this line with your finger when doing
+     *            the fold manually).
+     * @param affectedLayers Indices of the layers to fold along <code>line</code>.
+     * @param oppositeAffectedLayers Indices of the layers to fold along <code>oppositeLine</code>. Pass
+     *            <code>null</code> to autocompute. If you do so, you must also pass <code>null</code> to
+     *            <code>oppositeLine</code>.
+     * 
+     * @throws InvalidOperationException If the assumptions for doing this fold aren't satisfied.
+     */
+    public void makeReverseFold(Direction direction, Segment2d line, Segment2d oppositeLine, Segment2d refLine,
+            List<Integer> affectedLayers, List<Integer> oppositeAffectedLayers) throws InvalidOperationException
+    {
+        Segment3d line3 = new Segment3d(locatePointFromPaperTo3D(line.getP1()), locatePointFromPaperTo3D(line.getP2()));
+        Segment3d refLine3 = new Segment3d(locatePointFromPaperTo3D(refLine.getP1()),
+                locatePointFromPaperTo3D(refLine.getP2()));
+
+        // check if line and refLine have exactly one common point in 3D
+        Segment3d intPoint = line3.getIntersection(refLine3);
+        if (intPoint == null || !intPoint.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
+            throw new InvalidOperationException(
+                    "line and refLine must intersect in exactly one point, but their intersection is: "
+                            + (intPoint == null ? "empty" : intPoint.toStringAsIntersection()));
+        }
+
+        LinkedHashMap<Layer, Segment3d> lineAffectedLayers = new LinkedHashMap<Layer, Segment3d>(affectedLayers.size());
+        // create the first fold
+        makeFold(direction, line.getP1(), line.getP2(), affectedLayers, 0, lineAffectedLayers);
+
+        Segment2d oppositeLine2;
+        Segment3d oppositeLine3;
+        List<Integer> oppositeLayers;
+
+        if (oppositeLine == null) {
+            // neither oppositeLine nor oppositeAffectedLayer were specified, so we must compute them
+            // line and refLine don't have to intersect on the paper, so we can treat them as lines
+            oppositeLine2 = new Segment2d(new Line2d(refLine).mirror(new Line2d(line)));
+            // check if the oppositeLine lies in the paper
+            if (!getOrigami().getModel().getPaper().containsRelative(oppositeLine2.getP1())
+                    || !getOrigami().getModel().getPaper().containsRelative(oppositeLine2.getP2())) {
+                throw new InvalidOperationException(
+                        "The opposite side of line couldn't be found (the found one doesn't lie on the paper). "
+                                + "Please specify it implicitly in the XML source file.");
+            }
+
+            oppositeLine3 = new Segment3d(locatePointFromPaperTo3D(oppositeLine2.getP1()),
+                    locatePointFromPaperTo3D(oppositeLine2.getP2()));
+
+            oppositeLayers = getOppositeLineAffectedLayers(line3, oppositeLine3, lineAffectedLayers.keySet());
+
+        } else {
+            oppositeLine2 = oppositeLine;
+            oppositeLayers = oppositeAffectedLayers;
+
+            oppositeLine3 = new Segment3d(locatePointFromPaperTo3D(oppositeLine2.getP1()),
+                    locatePointFromPaperTo3D(oppositeLine2.getP2()));
+
+            Segment3d intersection = oppositeLine3.getIntersection(line3);
+            if (intersection == null) {
+                throw new InvalidOperationException("line and oppositeLine don't intersect.");
+            } else {
+                Segment3d intersection2 = refLine3.getIntersection(intersection);
+                if (intersection2 == null) {
+                    throw new InvalidOperationException("line and oppositeLine don't intersect on refLine.");
+                } else if (!intersection2.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
+                    throw new InvalidOperationException("line and oppositeLine can't be parallel to refLine.");
+                }
+            }
+        }
+
+        LinkedHashMap<Layer, Segment3d> oppositeAffectedLayers2 = new LinkedHashMap<Layer, Segment3d>(
+                oppositeLayers.size());
+        // create the opposite fold
+        makeFold(direction.getOpposite(), oppositeLine2.getP1(), oppositeLine2.getP2(), oppositeLayers, 0,
+                oppositeAffectedLayers2);
+
+        // bend the paper
+        bendReverseFold(direction, line3, oppositeLine3, refLine3, lineAffectedLayers, oppositeAffectedLayers2);
+    }
+
+    /**
      * Bend a reverse fold. Requires that all the fold lines have been created yet.
      * 
      * <code>line</code>, <code>opposite</code> and <code>refLine</code> must all meet just in a single point.
@@ -731,7 +834,7 @@ public class ModelState implements Cloneable
      * @param oppositeAffectedLayers The layers to be bent over <code>opposite</code>, mapped to intersections with the
      *            stripe going through <code>opposite</code>.
      */
-    public void bendReverseFold(Direction direction, Segment2d line, Segment2d opposite, Segment2d refLine,
+    public void bendReverseFold(Direction direction, Segment3d line, Segment3d opposite, Segment3d refLine,
             Map<Layer, Segment3d> lineAffectedLayers, Map<Layer, Segment3d> oppositeAffectedLayers)
     {
         // ________________lineP...oppositeP_____________.................
@@ -744,41 +847,30 @@ public class ModelState implements Cloneable
         // ............|....................|
         // ..........common..............common
 
-        // suffix "3" means that the point is a 3D representation of the corresponding 2D point
-
-        Point2d lineP = line.getP1();
-        Point2d common = line.getP2();
+        Point3d lineP = line.getP1();
+        Point3d common = line.getP2();
         if (!opposite.contains(common)) {
             lineP = line.getP2();
             common = line.getP1();
         }
-        Point2d oppositeP = opposite.getP1();
+        Point3d oppositeP = opposite.getP1();
         if (oppositeP.epsilonEquals(common, EPSILON))
             oppositeP = opposite.getP2();
 
-        Point3d lineP3 = locatePointFromPaperTo3D(lineP);
-        Point3d common3 = locatePointFromPaperTo3D(common);
-        Point3d oppositeP3 = locatePointFromPaperTo3D(oppositeP);
-
-        Segment3d line3 = new Segment3d(lineP3, common3);
-        Segment3d opposite3 = new Segment3d(oppositeP3, common3);
-        Segment3d refLine3 = new Segment3d(locatePointFromPaperTo3D(refLine.getP1()),
-                locatePointFromPaperTo3D(refLine.getP2()));
-
-        // refLineEnd3 is the border point of refLine that doesn't meet with line and opposite
-        Point3d refLineEnd3 = refLine3.getP1();
+        // refLineEnd is the border point of refLine that doesn't meet with line and opposite
+        Point3d refLineEnd = refLine.getP1();
         if (refLine.getP1().epsilonEquals(common, EPSILON))
-            refLineEnd3 = refLine3.getP2();
+            refLineEnd = refLine.getP2();
 
-        Vector3d lineP3_oppositeP3 = new Vector3d(oppositeP3);
-        lineP3_oppositeP3.sub(lineP3);
-        if (lineP3_oppositeP3.epsilonEquals(new Vector3d(), EPSILON))
+        Vector3d lineP_oppositeP = new Vector3d(oppositeP);
+        lineP_oppositeP.sub(lineP);
+        if (lineP_oppositeP.epsilonEquals(new Vector3d(), EPSILON))
             // line and opposite are equal, so we need another way to determine the dividing plane's normal
             // TODO this may not be sufficient handling of this corner case
-            lineP3_oppositeP3.cross(line3.getVector(), refLine3.getVector());
+            lineP_oppositeP.cross(line.getVector(), refLine.getVector());
 
-        // dividing plane goes along refLine and halves the space between lineP3 and oppositeP3
-        Plane3d dividingPlane = new Plane3d(lineP3_oppositeP3, refLine3.getP1());
+        // dividing plane goes along refLine and halves the space between lineP and oppositeP
+        Plane3d dividingPlane = new Plane3d(lineP_oppositeP, refLine.getP1());
 
         // this halfspace just serves to be able to distinguish layers that correspond to line from that corresponding
         // to opposite
@@ -796,35 +888,36 @@ public class ModelState implements Cloneable
 
         // DETERMINING THE ROTATION ANGLE
 
-        // to determine the angle of rotation we find the image of refLineEnd3 in a "plane symmetry" through the plane
-        // defined by lineP3, oppositeP3 and common3; once we know this image, we can simply compute the angle between
+        // to determine the angle of rotation we find the image of refLineEnd in a "plane symmetry" through the plane
+        // defined by lineP, oppositeP and common; once we know this image, we can simply compute the angle between
         // the source and the image around <line> and we've finished (we don't need to compute the angle of rotation
         // around <opposite>, it will be the same)
         Plane3d mirrorPlane;
         try {
-            mirrorPlane = new Plane3d(lineP3, oppositeP3, common3);
+            mirrorPlane = new Plane3d(lineP, oppositeP, common);
         } catch (IllegalArgumentException e) {
+            // lineP, oppositeP and common don't form a triangle, so both parts of the paper are parallel
             Vector3d mirrorPlaneDirection = new Vector3d();
-            mirrorPlaneDirection.cross(line3.getVector(), refLine3.getVector());
-            mirrorPlaneDirection.add(common3);
-            mirrorPlane = new Plane3d(lineP3, common3, new Point3d(mirrorPlaneDirection));
+            mirrorPlaneDirection.cross(line.getVector(), refLine.getVector());
+            mirrorPlaneDirection.add(common);
+            mirrorPlane = new Plane3d(lineP, common, new Point3d(mirrorPlaneDirection));
         }
 
         Vector3d mirrorPlaneNormal = new Vector3d(mirrorPlane.getNormal());
         mirrorPlaneNormal.normalize();
-        Line3d mirrorLine = new Line3d(refLineEnd3, mirrorPlaneNormal);
+        Line3d mirrorLine = new Line3d(refLineEnd, mirrorPlaneNormal);
         Point3d mirrorPoint = mirrorPlane.getIntersection(mirrorLine).getPoint();
 
-        Vector3d refLineEnd3_mirrorPoint = new Vector3d(mirrorPoint);
-        refLineEnd3_mirrorPoint.sub(refLineEnd3);
+        Vector3d refLineEnd_mirrorPoint = new Vector3d(mirrorPoint);
+        refLineEnd_mirrorPoint.sub(refLineEnd);
 
         // this is the desired image
         Point3d mirroredRefLineEnd = new Point3d(mirrorPoint);
-        mirroredRefLineEnd.add(refLineEnd3_mirrorPoint);
+        mirroredRefLineEnd.add(refLineEnd_mirrorPoint);
 
-        Point3d nearestLinePoint = line3.getNearestPoint(refLineEnd3);
+        Point3d nearestLinePoint = line.getNearestPoint(refLineEnd);
 
-        Vector3d v1 = new Vector3d(refLineEnd3);
+        Vector3d v1 = new Vector3d(refLineEnd);
         v1.sub(nearestLinePoint);
         Vector3d v2 = new Vector3d(mirroredRefLineEnd);
         v2.sub(nearestLinePoint);
@@ -832,10 +925,20 @@ public class ModelState implements Cloneable
         // and here we are the angle
         double angle = v1.angle(v2);
 
-        // and now just bend the two parts of paper
-        bendPaper(direction, line3, refLineEnd3, lineAffectedLayers, angle, neighborTest);
+        // angle is in [0,PI], but it may be needed to be in [PI,2PI] to do the right rotation; so we try to rotate the
+        // refLineEnd, and if it doesn't correspond to mirroredRefLineEnd, we know we need the complementary angle
+        if (!MathHelper.rotate(refLineEnd, line, angle).epsilonEquals(mirroredRefLineEnd, EPSILON))
+            angle = -angle;
 
-        bendPaper(direction.getOpposite(), opposite3, refLineEnd3, oppositeAffectedLayers, angle, neighborTest);
+        // bendPaper() also performs this change, but we already have the correct angle, so we call it once againg to
+        // cancel the change
+        if (direction == Direction.MOUNTAIN)
+            angle = -angle;
+
+        // and now just bend the two parts of paper
+        bendPaper(direction, line, refLineEnd, lineAffectedLayers, angle, neighborTest);
+
+        bendPaper(direction.getOpposite(), opposite, refLineEnd, oppositeAffectedLayers, angle, neighborTest);
     }
 
     /**
@@ -962,6 +1065,14 @@ public class ModelState implements Cloneable
 
                 // we can assume int1 and int2 to be regular points, because intersections with layers parallel to the
                 // stripe are discarded
+                // nevertheless we do the null checks here to avoid NPEs due to rounding errors
+                if (int1 == null) {
+                    if (int2 == null)
+                        return 0;
+                    return -1;
+                } else if (int2 == null) {
+                    return 1;
+                }
 
                 double t1 = stripe.getLine1().getParameterForPoint(int1.getPoint());
                 double t2 = stripe.getLine1().getParameterForPoint(int2.getPoint());
@@ -1009,6 +1120,13 @@ public class ModelState implements Cloneable
         Fold fold = new Fold();
         fold.originatingStepId = this.step.getId();
 
+        for (Fold f : folds) {
+            for (FoldLine l : f.lines) {
+                if (!triangles.contains(l.getLine().getTriangle()))
+                    throw new IllegalStateException(step.toString());
+            }
+        }
+
         for (IntersectionWithTriangle<ModelTriangle> intersection : intersections) {
             if (intersection == null) {
                 // no intersection with the triangle - something's weird (we loop over intersections with triangles)
@@ -1016,30 +1134,17 @@ public class ModelState implements Cloneable
                         "Invalid diagram: no intersection found in IntersectionWithTriangle in step " + step.getId());
             }
 
+            // also subdivides the referenced foldlines and removes references to the old ones from
+            // intersection.triangle, so no references to it should remain in this.folds
             List<ModelTriangle> newTriangles = layer.subdivideTriangle(intersection);
             if (newTriangles.size() > 1) {
                 triangles.remove(intersection.triangle);
                 triangles.addAll(newTriangles);
+            }
 
-                for (ModelTriangle t : newTriangles) {
-                    int i = 0;
-                    for (Segment3d edge : t.getEdges()) {
-                        Segment3d edgeInt = edge.getIntersection(intersection);
-                        if (edgeInt != null && !edgeInt.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
-                            // this method adds all fold lines twice - one for each triangle adjacent to the
-                            // intersection segment - but we don't care (maybe we should, it'll be more clear further)
-                            FoldLine line = new FoldLine();
-                            line.setDirection(direction);
-                            line.setFold(fold);
-                            line.setLine(new ModelTriangleEdge(t, i));
-                            fold.getLines().add(line);
-                        }
-                        i++;
-                    }
-                }
-            } else if (newTriangles.size() == 1) {
+            for (ModelTriangle t : newTriangles) {
                 int i = 0;
-                for (Segment3d edge : intersection.getTriangle().getEdges()) {
+                for (Segment3d edge : t.getEdges()) {
                     Segment3d edgeInt = edge.getIntersection(intersection);
                     if (edgeInt != null && !edgeInt.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
                         // this method adds all fold lines twice - one for each triangle adjacent to the
@@ -1047,7 +1152,8 @@ public class ModelState implements Cloneable
                         FoldLine line = new FoldLine();
                         line.setDirection(direction);
                         line.setFold(fold);
-                        line.setLine(new ModelTriangleEdge(intersection.getTriangle(), i));
+                        line.setLine(new ModelTriangleEdge(t, i));
+                        t.addFoldLine(i, line);
                         fold.getLines().add(line);
                     }
                     i++;
@@ -1069,35 +1175,29 @@ public class ModelState implements Cloneable
      * TODO a lot of getLayers() usage can be cached
      * 
      * @param line The original fold line.
-     * @param opposite The <code>line</code>'s opposite line (it's image in axis symmetry around an axis that has a
+     * @param opposite The <code>line</code>'s opposite line (it's image in 2D axis symmetry around an axis that has a
      *            common point with <code>line</code>).
      * @param lineAffectedLayers The set of affected layers for <code>line</code>.
      * @return The corresponding list of indices of affected layers for <code>opposite</code>. <code>null</code> if for
      *         the given <code>line</code> and <code>opposite</code> no solution is available (eg. one of them has zero
      *         direction vector or they together form a line).
      */
-    public List<Integer> getOppositeLineAffectedLayers(Segment2d line, Segment2d opposite, Set<Layer> lineAffectedLayers)
+    protected List<Integer> getOppositeLineAffectedLayers(Segment3d line, Segment3d opposite,
+            Set<Layer> lineAffectedLayers)
     {
-        Point2d lineP = line.getP1();
-        Point2d common = line.getP2();
+        Point3d lineP = line.getP1();
+        Point3d common = line.getP2();
         if (!opposite.contains(common)) {
             lineP = line.getP2();
             common = line.getP1();
         }
-        Point2d oppositeP = opposite.getP1();
+        Point3d oppositeP = opposite.getP1();
         if (oppositeP.epsilonEquals(common, EPSILON))
             oppositeP = opposite.getP2();
 
-        Point3d lineP3 = locatePointFromPaperTo3D(lineP);
-        Point3d common3 = locatePointFromPaperTo3D(common);
-        Point3d oppositeP3 = locatePointFromPaperTo3D(oppositeP);
-
-        Segment3d line3 = new Segment3d(lineP3, common3);
-        Segment3d opposite3 = new Segment3d(oppositeP3, common3);
-
         // try to construct a triangle
         //
-        // lineP3-------------oppositeP3
+        // lineP--------------oppositeP
         // ...l.\............/.o
         // ....i.\........../.p
         // .....n.\......../.p
@@ -1105,12 +1205,12 @@ public class ModelState implements Cloneable
         // .........\..../.s
         // ..........\../..i
         // ...........\/...t
-        // ........common3.e
+        // ........common..e
 
         // not null if the given points form a triangle in 3D
         Triangle3d triangle = null;
         try {
-            triangle = new Triangle3d(lineP3, common3, oppositeP3);
+            triangle = new Triangle3d(lineP, common, oppositeP);
         } catch (IllegalArgumentException e) {}
 
         // if the triangle could be constructed, we use this algorithm, otherwise we have another one
@@ -1118,12 +1218,12 @@ public class ModelState implements Cloneable
 
             // construct a stripe that has one border line as the line lineP3-oppositeP3 and the second one parallel to
             // that one and going through common3
-            Vector3d stripeDir = new Vector3d(oppositeP3);
-            stripeDir.sub(lineP3);
+            Vector3d stripeDir = new Vector3d(oppositeP);
+            stripeDir.sub(lineP);
             stripeDir.normalize();
 
-            Line3d line1 = new Line3d(lineP3, stripeDir);
-            Line3d line2 = new Line3d(common3, stripeDir);
+            Line3d line1 = new Line3d(lineP, stripeDir);
+            Line3d line2 = new Line3d(common, stripeDir);
 
             Stripe3d stripe = new Stripe3d(line1, line2);
 
@@ -1146,7 +1246,7 @@ public class ModelState implements Cloneable
 
             Set<Layer> oppositeLayers = layerInts.keySet();
             // intersections with layers as defined by opposite
-            Set<Layer> oppositeLineLayers = getLayers(opposite3).keySet();
+            Set<Layer> oppositeLineLayers = getLayers(opposite).keySet();
 
             // now just walk through oppositeLineLayers and return the indices that are also in oppositeLayers
             List<Integer> result = new LinkedList<Integer>();
@@ -1159,7 +1259,7 @@ public class ModelState implements Cloneable
             return result;
         } else {
             // if the triangle couldn't be constructed, there are several possibilities
-            Segment3d intersection = line3.getIntersection(opposite3);
+            Segment3d intersection = line.getIntersection(opposite);
             if (intersection == null || intersection.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
                 // line and opposite either don't intersect or one of them has zero direction vector
                 return null;
@@ -1168,11 +1268,11 @@ public class ModelState implements Cloneable
             // line and opposite do overlap, which means the "triangle" is effectively a line, so we are interested only
             // in layers that go through that line (using affectedLayers it is possible to find some layers that go
             // through that line and aren't "used" by line)
-            LinkedHashMap<Layer, Segment3d> oppositeLayerInts = getLayers(opposite3);
+            LinkedHashMap<Layer, Segment3d> oppositeLayerInts = getLayers(opposite);
             List<Integer> result = new LinkedList<Integer>();
             int i = 1;
             for (Entry<Layer, Segment3d> entry : oppositeLayerInts.entrySet()) {
-                intersection = entry.getValue().getIntersection(opposite3);
+                intersection = entry.getValue().getIntersection(opposite);
                 if (intersection != null && !intersection.getVector().epsilonEquals(new Vector3d(), EPSILON)
                         && !lineAffectedLayers.contains(entry.getKey()))
                     result.add(i);
@@ -1279,6 +1379,7 @@ public class ModelState implements Cloneable
         result.paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>(paperToSpaceTriangles.size());
         result.triangles = new ObservableList<ModelTriangle>(triangles.size());
         result.trianglesToLayers = new Hashtable<ModelTriangle, Layer>(trianglesToLayers.size());
+        result.paperToSpacePoint = new Hashtable<Point2d, Point3d>(paperToSpacePoint.size());
 
         result.addObservers();
 
@@ -1300,7 +1401,8 @@ public class ModelState implements Cloneable
             for (ModelTriangle n : oldNeighbors) {
                 ModelTriangle newN = newTriangles.get(n);
                 if (newN == null)
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("clone: Cannot find new triangle for old triangle "
+                            + n.getOriginalPosition());
                 t.getRawNeighbors().add(newN);
             }
         }
@@ -1313,7 +1415,8 @@ public class ModelState implements Cloneable
             for (FoldLine l : newFold.lines) {
                 ModelTriangle newTriangle = newTriangles.get(l.getLine().getTriangle());
                 if (newTriangle == null)
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("clone: Cannot find new triangle for old triangle "
+                            + l.getLine().getTriangle().getOriginalPosition());
 
                 l.getLine().setTriangle(newTriangle);
                 List<FoldLine> foldLines = newTriangle.getFoldLines(l.getLine().getIndex());
@@ -1332,7 +1435,8 @@ public class ModelState implements Cloneable
             for (ModelTriangle t : l.getTriangles()) {
                 ModelTriangle newT = newTriangles.get(t);
                 if (newT == null)
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("clone: Cannot find new triangle for old triangle "
+                            + t.getOriginalPosition());
                 triangles.add(newT);
             }
             result.layers.add(new Layer(triangles));

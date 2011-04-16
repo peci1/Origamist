@@ -282,6 +282,17 @@ public class Line2d implements Cloneable, Vector<Double>
         return "Line2d [" + a + "x + " + b + "y + " + c + " >= 0]";
     }
 
+    /**
+     * @return If the direction vector is zero, print only the point; else this behaves as {@link #toString()}.
+     */
+    public String toStringAsIntersection()
+    {
+        if (v.epsilonEquals(new Vector2d(), EPSILON))
+            return p.toString();
+        else
+            return toString();
+    }
+
     @Override
     protected Line2d clone()
     {

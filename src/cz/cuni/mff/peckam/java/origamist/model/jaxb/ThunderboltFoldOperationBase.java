@@ -12,8 +12,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.model.FoldOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.ThunderboltFoldOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for FoldOperationBase complex type.
+ * <p>Java class for ThunderboltFoldOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldOperationBase">
+ * &lt;complexType name="ThunderboltFoldOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldOperations" />
+ *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ThunderboltOperations" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -41,18 +41,18 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "FoldOperationBase")
+@XmlType(name = "ThunderboltFoldOperationBase")
 @XmlSeeAlso({
-    FoldOperation.class
+    ThunderboltFoldOperation.class
 })
-public abstract class FoldOperationBase
+public abstract class ThunderboltFoldOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldOperationBase)) {
+        if (!(object instanceof ThunderboltFoldOperationBase)) {
             return false;
         }
         if (this == object) {

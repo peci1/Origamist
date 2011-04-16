@@ -307,6 +307,27 @@ public class ModelTriangle extends Triangle3d
         }
     }
 
+    /**
+     * Adds the fold lines for the edge with the given index.
+     * 
+     * @param i The index of the edge. An integer from 0 to 2.
+     * @param lines The new fold line.
+     */
+    protected void addFoldLine(int i, FoldLine line)
+    {
+        List<FoldLine> lines = getFoldLines(i);
+        if (lines == null) {
+            setFoldLines(i, new LinkedList<FoldLine>());
+            lines = getFoldLines(i);
+        }
+        lines.add(line);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Subdivides the fold lines, assigns them to the new triangles and nulls foldline references in segment.triangle.
+     */
     @Override
     public <T extends Triangle3d> List<T> subdivideTriangle(IntersectionWithTriangle<T> segment)
             throws IllegalArgumentException
@@ -327,24 +348,12 @@ public class ModelTriangle extends Triangle3d
                             if (intersection != null
                                     && !intersection.getVector().epsilonEquals(new Vector3d(), MathHelper.EPSILON)) {
 
-                                List<FoldLine> newLines = mt.getFoldLines(j);
-                                if (newLines == null) {
-                                    mt.setFoldLines(j, new LinkedList<FoldLine>());
-                                    newLines = mt.getFoldLines(j);
-                                }
-
                                 ModelTriangleEdge newEdge = new ModelTriangleEdge(mt, j);
                                 for (FoldLine line : lines) {
-                                    FoldLine newLine;
-                                    try {
-                                        newLine = line.clone();
-                                    } catch (CloneNotSupportedException e) {
-                                        assert false : "FoldLine doesn't support clone().";
-                                        throw new IllegalStateException("FoldLine doesn't support clone().");
-                                    }
+                                    FoldLine newLine = line.clone();
                                     newLine.setLine(newEdge);
                                     newLine.getFold().getLines().add(newLine);
-                                    newLines.add(newLine);
+                                    mt.addFoldLine(j, newLine);
                                 }
 
                                 continue loop;

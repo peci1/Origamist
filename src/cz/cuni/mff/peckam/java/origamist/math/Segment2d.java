@@ -26,6 +26,16 @@ public class Segment2d extends Line2d
         this.p2 = p2;
     }
 
+    /**
+     * @param line
+     */
+    public Segment2d(Line2d line)
+    {
+        super(line);
+        p2 = new Point2d(p);
+        p2.add(v);
+    }
+
     public Point2d getP1()
     {
         return this.p;
@@ -129,6 +139,10 @@ public class Segment2d extends Line2d
     @Override
     public boolean contains(Point2d point)
     {
+        // handling border points by quotient is quite inaccurate, so handle them this way
+        if (p.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON))
+            return true;
+
         Double quotient = getParameterForPoint(point);
         // if the quotient is between 0 and 1, the point lies inside the segment
         return (quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
@@ -199,6 +213,17 @@ public class Segment2d extends Line2d
     public boolean overlaps(Segment2d segment)
     {
         return contains(segment.p) || contains(segment.p2) || segment.contains(p) || segment.contains(p2);
+    }
+
+    /**
+     * Return true if the given point is the beginning or end of this segment.
+     * 
+     * @param point The point to check. Cannot be <code>null</code>.
+     * @return true if the given point is the beginning or end of this segment.
+     */
+    public boolean isBorderPoint(Point2d point)
+    {
+        return p.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON);
     }
 
     @Override

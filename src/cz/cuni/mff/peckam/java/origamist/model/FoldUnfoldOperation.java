@@ -21,7 +21,7 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD)
-            dir = Direction.VALLEY;
+            dir = dir.getOpposite();
 
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
         previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint, layer,

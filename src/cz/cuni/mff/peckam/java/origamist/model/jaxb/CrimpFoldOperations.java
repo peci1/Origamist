@@ -13,30 +13,32 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for TurnOverOperations.
+ * <p>Java class for CrimpFoldOperations.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="TurnOverOperations">
+ * &lt;simpleType name="CrimpFoldOperations">
  *   &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations">
- *     &lt;enumeration value="TURN_OVER"/>
+ *     &lt;enumeration value="INSIDE_CRIMP_FOLD"/>
+ *     &lt;enumeration value="OUTSIDE_CRIMP_FOLD"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "TurnOverOperations")
+@XmlType(name = "CrimpFoldOperations")
 @XmlEnum(Operations.class)
-public enum TurnOverOperations {
+public enum CrimpFoldOperations {
 
-    TURN_OVER;
+    INSIDE_CRIMP_FOLD,
+    OUTSIDE_CRIMP_FOLD;
 
     public String value() {
         return name();
     }
 
-    public static TurnOverOperations fromValue(String v) {
+    public static CrimpFoldOperations fromValue(String v) {
         return valueOf(v);
     }
 

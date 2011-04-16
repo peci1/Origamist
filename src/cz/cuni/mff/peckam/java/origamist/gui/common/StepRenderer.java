@@ -280,8 +280,10 @@ public class StepRenderer extends JPanel
      * Set this.transform to a new value.
      * 
      * @return The transform used for the step just after initialization.
+     * 
+     * @throws InvalidOperationException If the model state cannot be gotten due to invalid operations.
      */
-    protected Transform3D setupTransform()
+    protected Transform3D setupTransform() throws InvalidOperationException
     {
         ModelState state = step.getModelState();
 
@@ -305,12 +307,12 @@ public class StepRenderer extends JPanel
      */
     protected TransformGroup setupTGroup() throws InvalidOperationException
     {
-        setupTransform();
-        Appearance appearance = createNormalTrianglesAppearance();
-        Appearance appearance2 = createInverseTrianglesAppearance();
-        Appearance appearance3 = createFoldLinesAppearance();
-
         try {
+            setupTransform();
+            Appearance appearance = createNormalTrianglesAppearance();
+            Appearance appearance2 = createInverseTrianglesAppearance();
+            Appearance appearance3 = createFoldLinesAppearance();
+
             ModelState state = step.getModelState();
 
             tGroup = new TransformGroup();

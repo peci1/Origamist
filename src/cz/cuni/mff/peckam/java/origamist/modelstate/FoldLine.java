@@ -127,7 +127,7 @@ public class FoldLine implements Cloneable
     }
 
     @Override
-    protected FoldLine clone() throws CloneNotSupportedException
+    protected FoldLine clone()
     {
         try {
             FoldLine result = (FoldLine) super.clone();

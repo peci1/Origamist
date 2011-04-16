@@ -24,14 +24,14 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
- * <p>Java class for ReverseFoldOperation complex type.
+ * <p>Java class for CrimpFoldOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ReverseFoldOperation">
+ * &lt;complexType name="CrimpFoldOperation">
  *   &lt;complexContent>
- *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ReverseFoldOperationBase">
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}CrimpFoldOperationBase">
  *       &lt;sequence>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}line"/>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}refLine"/>
@@ -39,6 +39,12 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  *         &lt;sequence minOccurs="0">
  *           &lt;element name="oppositeLine" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Line2D"/>
  *           &lt;element name="oppositeLayer" type="{http://www.w3.org/2001/XMLSchema}int" maxOccurs="unbounded"/>
+ *         &lt;/sequence>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}secondLine"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}secondLayerList"/>
+ *         &lt;sequence minOccurs="0">
+ *           &lt;element name="secondOppositeLine" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Line2D"/>
+ *           &lt;element name="secondOppositeLayer" type="{http://www.w3.org/2001/XMLSchema}int" maxOccurs="unbounded"/>
  *         &lt;/sequence>
  *       &lt;/sequence>
  *     &lt;/extension>
@@ -49,15 +55,19 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ReverseFoldOperation", propOrder = {
+@XmlType(name = "CrimpFoldOperation", propOrder = {
     "line",
     "refLine",
     "layer",
     "oppositeLine",
-    "oppositeLayer"
+    "oppositeLayer",
+    "secondLine",
+    "secondLayer",
+    "secondOppositeLine",
+    "secondOppositeLayer"
 })
-public class ReverseFoldOperation
-    extends ReverseFoldOperationBase
+public class CrimpFoldOperation
+    extends CrimpFoldOperationBase
     implements Equals, HashCode
 {
 
@@ -65,12 +75,20 @@ public class ReverseFoldOperation
     protected List<Integer> layer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
     @XmlElement(type = Integer.class)
     protected List<Integer> oppositeLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+    @XmlElement(type = Integer.class)
+    protected List<Integer> secondLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+    @XmlElement(type = Integer.class)
+    protected List<Integer> secondOppositeLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
     @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Line2D line;
     @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Line2D refLine;
     @XmlElement(type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Line2D oppositeLine;
+    @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
+    protected cz.cuni.mff.peckam.java.origamist.model.Line2D secondLine;
+    @XmlElement(type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
+    protected cz.cuni.mff.peckam.java.origamist.model.Line2D secondOppositeLine;
 
     /**
      * Gets the value of the line property.
@@ -202,8 +220,114 @@ public class ReverseFoldOperation
         return this.oppositeLayer;
     }
 
+    /**
+     * Gets the value of the secondLine property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public cz.cuni.mff.peckam.java.origamist.model.Line2D getSecondLine() {
+        return secondLine;
+    }
+
+    /**
+     * Sets the value of the secondLine property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public void setSecondLine(cz.cuni.mff.peckam.java.origamist.model.Line2D value) {
+        this.secondLine = value;
+    }
+
+    /**
+     * Gets the value of the secondLayer property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the secondLayer property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getSecondLayer().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link Integer }
+     * 
+     * 
+     */
+    public List<Integer> getSecondLayer() {
+        if (secondLayer == null) {
+            secondLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+        }
+        return this.secondLayer;
+    }
+
+    /**
+     * Gets the value of the secondOppositeLine property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public cz.cuni.mff.peckam.java.origamist.model.Line2D getSecondOppositeLine() {
+        return secondOppositeLine;
+    }
+
+    /**
+     * Sets the value of the secondOppositeLine property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public void setSecondOppositeLine(cz.cuni.mff.peckam.java.origamist.model.Line2D value) {
+        this.secondOppositeLine = value;
+    }
+
+    /**
+     * Gets the value of the secondOppositeLayer property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the secondOppositeLayer property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getSecondOppositeLayer().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link Integer }
+     * 
+     * 
+     */
+    public List<Integer> getSecondOppositeLayer() {
+        if (secondOppositeLayer == null) {
+            secondOppositeLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+        }
+        return this.secondOppositeLayer;
+    }
+
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof ReverseFoldOperation)) {
+        if (!(object instanceof CrimpFoldOperation)) {
             return false;
         }
         if (this == object) {
@@ -212,7 +336,7 @@ public class ReverseFoldOperation
         if (!super.equals(thisLocator, thatLocator, object, strategy)) {
             return false;
         }
-        final ReverseFoldOperation that = ((ReverseFoldOperation) object);
+        final CrimpFoldOperation that = ((CrimpFoldOperation) object);
         {
             cz.cuni.mff.peckam.java.origamist.model.Line2D lhsLine;
             lhsLine = this.getLine();
@@ -258,6 +382,42 @@ public class ReverseFoldOperation
                 return false;
             }
         }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D lhsSecondLine;
+            lhsSecondLine = this.getSecondLine();
+            cz.cuni.mff.peckam.java.origamist.model.Line2D rhsSecondLine;
+            rhsSecondLine = that.getSecondLine();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondLine", lhsSecondLine), LocatorUtils.property(thatLocator, "secondLine", rhsSecondLine), lhsSecondLine, rhsSecondLine)) {
+                return false;
+            }
+        }
+        {
+            List<Integer> lhsSecondLayer;
+            lhsSecondLayer = this.getSecondLayer();
+            List<Integer> rhsSecondLayer;
+            rhsSecondLayer = that.getSecondLayer();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondLayer", lhsSecondLayer), LocatorUtils.property(thatLocator, "secondLayer", rhsSecondLayer), lhsSecondLayer, rhsSecondLayer)) {
+                return false;
+            }
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D lhsSecondOppositeLine;
+            lhsSecondOppositeLine = this.getSecondOppositeLine();
+            cz.cuni.mff.peckam.java.origamist.model.Line2D rhsSecondOppositeLine;
+            rhsSecondOppositeLine = that.getSecondOppositeLine();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondOppositeLine", lhsSecondOppositeLine), LocatorUtils.property(thatLocator, "secondOppositeLine", rhsSecondOppositeLine), lhsSecondOppositeLine, rhsSecondOppositeLine)) {
+                return false;
+            }
+        }
+        {
+            List<Integer> lhsSecondOppositeLayer;
+            lhsSecondOppositeLayer = this.getSecondOppositeLayer();
+            List<Integer> rhsSecondOppositeLayer;
+            rhsSecondOppositeLayer = that.getSecondOppositeLayer();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondOppositeLayer", lhsSecondOppositeLayer), LocatorUtils.property(thatLocator, "secondOppositeLayer", rhsSecondOppositeLayer), lhsSecondOppositeLayer, rhsSecondOppositeLayer)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -292,6 +452,26 @@ public class ReverseFoldOperation
             List<Integer> theOppositeLayer;
             theOppositeLayer = this.getOppositeLayer();
             currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "oppositeLayer", theOppositeLayer), currentHashCode, theOppositeLayer);
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D theSecondLine;
+            theSecondLine = this.getSecondLine();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondLine", theSecondLine), currentHashCode, theSecondLine);
+        }
+        {
+            List<Integer> theSecondLayer;
+            theSecondLayer = this.getSecondLayer();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondLayer", theSecondLayer), currentHashCode, theSecondLayer);
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D theSecondOppositeLine;
+            theSecondOppositeLine = this.getSecondOppositeLine();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondOppositeLine", theSecondOppositeLine), currentHashCode, theSecondOppositeLine);
+        }
+        {
+            List<Integer> theSecondOppositeLayer;
+            theSecondOppositeLayer = this.getSecondOppositeLayer();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondOppositeLayer", theSecondOppositeLayer), currentHashCode, theSecondOppositeLayer);
         }
         return currentHashCode;
     }

@@ -13,7 +13,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -25,19 +24,22 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
- * <p>Java class for FoldOperation complex type.
+ * <p>Java class for ThunderboltFoldOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldOperation">
+ * &lt;complexType name="ThunderboltFoldOperation">
  *   &lt;complexContent>
- *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldOperationBase">
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ThunderboltFoldOperationBase">
  *       &lt;sequence>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}angle"/>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}line"/>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}refPoint" minOccurs="0"/>
  *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}layerList"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}secondAngle" minOccurs="0"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}secondLine"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}secondLayerList"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -47,24 +49,32 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "FoldOperation", propOrder = {
+@XmlType(name = "ThunderboltFoldOperation", propOrder = {
     "angle",
     "line",
     "refPoint",
-    "layer"
+    "layer",
+    "secondAngle",
+    "secondLine",
+    "secondLayer"
 })
-public class FoldOperation
-    extends FoldOperationBase
+public class ThunderboltFoldOperation
+    extends ThunderboltFoldOperationBase
     implements Equals, HashCode
 {
 
     protected double angle;
     @XmlElement(type = Integer.class)
-    protected List<Integer> layer = new ObservableList<Integer>();
+    protected List<Integer> layer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+    protected Double secondAngle;
+    @XmlElement(type = Integer.class)
+    protected List<Integer> secondLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
     @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Line2D line;
     @XmlElement(type = cz.cuni.mff.peckam.java.origamist.model.Point2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Point2D refPoint;
+    @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
+    protected cz.cuni.mff.peckam.java.origamist.model.Line2D secondLine;
 
     /**
      * Gets the value of the angle property.
@@ -154,13 +164,90 @@ public class FoldOperation
      */
     public List<Integer> getLayer() {
         if (layer == null) {
-            layer = new ObservableList<Integer>();
+            layer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
         }
         return this.layer;
     }
 
+    /**
+     * Gets the value of the secondAngle property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Double }
+     *     
+     */
+    public Double getSecondAngle() {
+        return secondAngle;
+    }
+
+    /**
+     * Sets the value of the secondAngle property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Double }
+     *     
+     */
+    public void setSecondAngle(Double value) {
+        this.secondAngle = value;
+    }
+
+    /**
+     * Gets the value of the secondLine property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public cz.cuni.mff.peckam.java.origamist.model.Line2D getSecondLine() {
+        return secondLine;
+    }
+
+    /**
+     * Sets the value of the secondLine property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public void setSecondLine(cz.cuni.mff.peckam.java.origamist.model.Line2D value) {
+        this.secondLine = value;
+    }
+
+    /**
+     * Gets the value of the secondLayer property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the secondLayer property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getSecondLayer().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link Integer }
+     * 
+     * 
+     */
+    public List<Integer> getSecondLayer() {
+        if (secondLayer == null) {
+            secondLayer = new cz.cuni.mff.peckam.java.origamist.utils.ObservableList<Integer>();
+        }
+        return this.secondLayer;
+    }
+
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldOperation)) {
+        if (!(object instanceof ThunderboltFoldOperation)) {
             return false;
         }
         if (this == object) {
@@ -169,7 +256,7 @@ public class FoldOperation
         if (!super.equals(thisLocator, thatLocator, object, strategy)) {
             return false;
         }
-        final FoldOperation that = ((FoldOperation) object);
+        final ThunderboltFoldOperation that = ((ThunderboltFoldOperation) object);
         {
             double lhsAngle;
             lhsAngle = this.getAngle();
@@ -206,6 +293,33 @@ public class FoldOperation
                 return false;
             }
         }
+        {
+            Double lhsSecondAngle;
+            lhsSecondAngle = this.getSecondAngle();
+            Double rhsSecondAngle;
+            rhsSecondAngle = that.getSecondAngle();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondAngle", lhsSecondAngle), LocatorUtils.property(thatLocator, "secondAngle", rhsSecondAngle), lhsSecondAngle, rhsSecondAngle)) {
+                return false;
+            }
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D lhsSecondLine;
+            lhsSecondLine = this.getSecondLine();
+            cz.cuni.mff.peckam.java.origamist.model.Line2D rhsSecondLine;
+            rhsSecondLine = that.getSecondLine();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondLine", lhsSecondLine), LocatorUtils.property(thatLocator, "secondLine", rhsSecondLine), lhsSecondLine, rhsSecondLine)) {
+                return false;
+            }
+        }
+        {
+            List<Integer> lhsSecondLayer;
+            lhsSecondLayer = this.getSecondLayer();
+            List<Integer> rhsSecondLayer;
+            rhsSecondLayer = that.getSecondLayer();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "secondLayer", lhsSecondLayer), LocatorUtils.property(thatLocator, "secondLayer", rhsSecondLayer), lhsSecondLayer, rhsSecondLayer)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -235,6 +349,21 @@ public class FoldOperation
             List<Integer> theLayer;
             theLayer = this.getLayer();
             currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "layer", theLayer), currentHashCode, theLayer);
+        }
+        {
+            Double theSecondAngle;
+            theSecondAngle = this.getSecondAngle();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondAngle", theSecondAngle), currentHashCode, theSecondAngle);
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D theSecondLine;
+            theSecondLine = this.getSecondLine();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondLine", theSecondLine), currentHashCode, theSecondLine);
+        }
+        {
+            List<Integer> theSecondLayer;
+            theSecondLayer = this.getSecondLayer();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "secondLayer", theSecondLayer), currentHashCode, theSecondLayer);
         }
         return currentHashCode;
     }

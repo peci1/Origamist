@@ -134,6 +134,10 @@ public class Segment3d extends Line3d
     @Override
     public boolean contains(Point3d point)
     {
+        // handling border points by the quotient is quite inaccurate, so do it this way
+        if (p.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON))
+            return true;
+
         Double quotient = getParameterForPoint(point);
         // if the quotient is between 0 and 1, the point lies inside the segment
         return (quotient != null && quotient >= -EPSILON && quotient <= 1.0 + EPSILON);
@@ -180,6 +184,17 @@ public class Segment3d extends Line3d
     public boolean overlaps(Segment3d segment)
     {
         return contains(segment.p) || contains(segment.p2) || segment.contains(p) || segment.contains(p2);
+    }
+
+    /**
+     * Return true if the given point is the beginning or end of this segment.
+     * 
+     * @param point The point to check. Cannot be <code>null</code>.
+     * @return true if the given point is the beginning or end of this segment.
+     */
+    public boolean isBorderPoint(Point3d point)
+    {
+        return p.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON);
     }
 
     @Override

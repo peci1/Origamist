@@ -234,6 +234,8 @@
 						<element name="rotateOperation" type="m:RotateOperation" />
 						<element name="turnOverOperation" type="m:TurnOverOperation" />
 						<element name="reverseFoldOperation" type="m:ReverseFoldOperation" />
+						<element name="thunderboltFoldOperation" type="m:ThunderboltFoldOperation" />
+						<element name="crimpFoldOperation" type="m:CrimpFoldOperation" />
 					</choice>
 				</sequence>
 			</choice>
@@ -386,10 +388,98 @@
 			</extension>
 		</complexContent>
 	</complexType>
+	
+	<complexType name="ThunderboltFoldOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:ThunderboltOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="ThunderboltFoldOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ThunderboltFoldOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:ThunderboltFoldOperationBase">
+				<sequence>
+					<group ref="m:angle" />
+					<group ref="m:line" />
+					<group ref="m:refPoint" minOccurs="0" />
+					<group ref="m:layerList" />
+					<group ref="m:secondAngle" minOccurs="0" />
+					<group ref="m:secondLine" />
+					<group ref="m:secondLayerList" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+	
+	<complexType name="CrimpFoldOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:CrimpFoldOperations" use="required" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="CrimpFoldOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.CrimpFoldOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:CrimpFoldOperationBase">
+				<sequence>
+					<group ref="m:line" />
+					<group ref="m:refLine" />
+					<group ref="m:layerList" />
+					<sequence minOccurs="0">
+						<element type="m:Line2D" name="oppositeLine" />
+						<element name="oppositeLayer" type="int" maxOccurs="unbounded">
+							<annotation>
+								<appinfo>
+									<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+								</appinfo>
+							</annotation>
+						</element>
+					</sequence>
+					<group ref="m:secondLine" />
+					<group ref="m:secondLayerList" />
+					<sequence minOccurs="0">
+						<element type="m:Line2D" name="secondOppositeLine" />
+						<element name="secondOppositeLayer" type="int" maxOccurs="unbounded">
+							<annotation>
+								<appinfo>
+									<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+								</appinfo>
+							</annotation>
+						</element>
+					</sequence>
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
 
 	<group name="layerList">
 		<sequence>
 			<element name="layer" type="int" maxOccurs="unbounded">
+				<annotation>
+					<appinfo>
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+					</appinfo>
+				</annotation>
+			</element>
+		</sequence>
+	</group>
+	
+	<group name="secondLayerList">
+		<sequence>
+			<element name="secondLayer" type="int" maxOccurs="unbounded">
 				<annotation>
 					<appinfo>
 						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
@@ -420,6 +510,24 @@
 	<group name="refLine">
 		<sequence>
 			<element name="refLine" type="m:Line2D" />
+		</sequence>
+	</group>
+	
+	<group name="secondAngle">
+		<sequence>
+			<element name="secondAngle" type="double" />
+		</sequence>
+	</group>
+
+	<group name="secondLine">
+		<sequence>
+			<element name="secondLine" type="m:Line2D" />
+		</sequence>
+	</group>
+
+	<group name="secondRefPoint">
+		<sequence>
+			<element name="secondRefPoint" type="m:Point2D" />
 		</sequence>
 	</group>
 
@@ -474,6 +582,19 @@
 	<simpleType name="TurnOverOperations">
 		<restriction base="m:Operations">
 			<enumeration value="TURN_OVER" />
+		</restriction>
+	</simpleType>
+
+	<simpleType name="ThunderboltOperations">
+		<restriction base="m:Operations">
+			<enumeration value="THUNDERBOLT_FOLD" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="CrimpFoldOperations">
+		<restriction base="m:Operations">
+			<enumeration value="INSIDE_CRIMP_FOLD" />
+			<enumeration value="OUTSIDE_CRIMP_FOLD" />
 		</restriction>
 	</simpleType>
 

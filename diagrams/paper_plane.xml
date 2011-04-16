@@ -236,6 +236,113 @@
 					<layer>4</layer>
 				</reverseFoldOperation>
 			</step>	
+			<step id="9">
+				<description>Fine-tune wings with thunderbolt folds.</description>
+				<description lang="cs-CZ">Vytuňte křídla pomocí cik-cak skladů.</description>
+				<thunderboltFoldOperation type="THUNDERBOLT_FOLD">
+					<angle>3.14</angle>
+					<line>
+						<start>
+							<x>0</x>
+							<y>0.05</y>
+						</start>
+						<end>
+							<x>0.05</x>
+							<y>0</y>
+						</end>
+					</line>
+					<refPoint>
+						<x>0</x>
+						<y>0</y>
+					</refPoint>
+					<layer>1</layer>
+					<secondAngle>3.14</secondAngle>
+					<secondLine>
+						<start>
+							<x>0</x>
+							<y>0.065</y>
+						</start>
+						<end>
+							<x>0.065</x>
+							<y>0</y>
+						</end>
+					</secondLine>
+					<secondLayer>1</secondLayer>
+				</thunderboltFoldOperation>
+				<thunderboltFoldOperation type="THUNDERBOLT_FOLD">
+					<angle>3.14</angle>
+					<line>
+						<start>
+							<x>0.66666667</x>
+							<y>0.05</y>
+						</start>
+						<end>
+							<x>0.61666667</x>
+							<y>0</y>
+						</end>
+					</line>
+					<refPoint>
+						<x>0.66666667</x>
+						<y>0</y>
+					</refPoint>
+					<layer>1</layer>
+					<secondLine>
+						<start>
+							<x>0.66666667</x>
+							<y>0.065</y>
+						</start>
+						<end>
+							<x>0.60166667</x>
+							<y>0</y>
+						</end>
+					</secondLine>
+					<secondLayer>1</secondLayer>
+				</thunderboltFoldOperation>
+			</step>
+			<step id="10">
+				<description>Fold the nose inwards using an inside crimp fold.</description>
+				<description lang="cs-CZ">Vtlačte čumák dovnitř.</description>
+				<crimpFoldOperation type="INSIDE_CRIMP_FOLD">
+					<line>
+						<start>
+							<x>0.25</x>
+							<y>0.9583335</y>
+						</start>
+						<end>
+							<x>0.2916665</x>
+							<y>1</y>
+						</end>
+					</line>
+					<refLine>
+						<start>
+							<x>0.33333333</x>
+							<y>0.91666667</y>
+						</start>
+						<end>
+							<x>0.33333333</x>
+							<y>0.875</y>
+						</end>
+					</refLine>
+					<layer>1</layer>
+					<layer>2</layer>
+					<layer>3</layer>
+					<layer>4</layer>
+					<secondLine>
+						<start>
+							<x>0.25</x>
+							<y>0.9683335</y>
+						</start>
+						<end>
+							<x>0.2183335</x>
+							<y>1</y>
+						</end>
+					</secondLine>
+					<secondLayer>9</secondLayer>
+					<secondLayer>10</secondLayer>
+					<secondLayer>11</secondLayer>
+					<secondLayer>12</secondLayer>
+				</crimpFoldOperation>
+			</step>
 		</steps>
 	</model>
 </m:origami>

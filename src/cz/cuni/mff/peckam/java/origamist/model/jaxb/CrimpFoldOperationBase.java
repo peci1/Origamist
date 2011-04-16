@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.model.FoldOperation;
+import cz.cuni.mff.peckam.java.origamist.model.CrimpFoldOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for FoldOperationBase complex type.
+ * <p>Java class for CrimpFoldOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldOperationBase">
+ * &lt;complexType name="CrimpFoldOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldOperations" />
+ *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}CrimpFoldOperations" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -41,18 +41,18 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "FoldOperationBase")
+@XmlType(name = "CrimpFoldOperationBase")
 @XmlSeeAlso({
-    FoldOperation.class
+    CrimpFoldOperation.class
 })
-public abstract class FoldOperationBase
+public abstract class CrimpFoldOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldOperationBase)) {
+        if (!(object instanceof CrimpFoldOperationBase)) {
             return false;
         }
         if (this == object) {

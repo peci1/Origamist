@@ -240,6 +240,17 @@ public class Line3d implements Cloneable, Vector<Double>
         return "Line3d [" + p + " + t*" + v + "]";
     }
 
+    /**
+     * @return If the direction vector is zero, print only the point; else this behaves as {@link #toString()}.
+     */
+    public String toStringAsIntersection()
+    {
+        if (v.epsilonEquals(new Vector3d(), EPSILON))
+            return p.toString();
+        else
+            return toString();
+    }
+
     @Override
     public Iterator<Double> iterator()
     {

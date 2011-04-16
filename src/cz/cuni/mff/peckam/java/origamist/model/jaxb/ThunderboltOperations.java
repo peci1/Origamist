@@ -13,30 +13,30 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for TurnOverOperations.
+ * <p>Java class for ThunderboltOperations.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="TurnOverOperations">
+ * &lt;simpleType name="ThunderboltOperations">
  *   &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations">
- *     &lt;enumeration value="TURN_OVER"/>
+ *     &lt;enumeration value="THUNDERBOLT_FOLD"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "TurnOverOperations")
+@XmlType(name = "ThunderboltOperations")
 @XmlEnum(Operations.class)
-public enum TurnOverOperations {
+public enum ThunderboltOperations {
 
-    TURN_OVER;
+    THUNDERBOLT_FOLD;
 
     public String value() {
         return name();
     }
 
-    public static TurnOverOperations fromValue(String v) {
+    public static ThunderboltOperations fromValue(String v) {
         return valueOf(v);
     }
 

@@ -22,7 +22,7 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.VALLEY_FOLD)
-            dir = Direction.VALLEY;
+            dir = dir.getOpposite();
 
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
         previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint, layer,
