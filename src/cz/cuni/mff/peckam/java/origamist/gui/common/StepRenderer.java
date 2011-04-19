@@ -7,6 +7,7 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.InputMethodListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -22,16 +23,23 @@ import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
+import javax.media.j3d.Font3D;
+import javax.media.j3d.FontExtrusion;
 import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.LineAttributes;
+import javax.media.j3d.Material;
+import javax.media.j3d.OrientedShape3D;
 import javax.media.j3d.PolygonAttributes;
+import javax.media.j3d.RenderingAttributes;
 import javax.media.j3d.Shape3D;
+import javax.media.j3d.Text3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
+import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Level;
@@ -47,6 +55,7 @@ import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelColors;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
+import cz.cuni.mff.peckam.java.origamist.modelstate.MarkerRenderData;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
 /**
@@ -99,6 +108,12 @@ public class StepRenderer extends JPanel
 
     /** The helper for properties. */
     protected PropertyChangeSupport listeners        = new PropertyChangeSupport(this);
+
+    /** The font to use for drawing markers. */
+    protected Font                  markerFont       = new Font("Arial", Font.BOLD, 12);
+
+    /** The font color to use for drawing markers. */
+    protected Color                 markerFontColor  = Color.BLACK;
 
     /**
      * 
@@ -299,6 +314,55 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * @return The transform groups containing nodes for displaying markers.
+     */
+    protected TransformGroup getMarkerGroups()
+    {
+        ModelState state = step.getModelState();
+        TransformGroup result = new TransformGroup();
+
+        double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
+        Font3D font = new Font3D(markerFont, new FontExtrusion());
+        // scale of the 3D font; this should make 12pt font be 1/10 of the side of the paper large
+        double scale = 1d / 12d * oneRelInMeters * 1d / 10d;
+
+        Appearance textAp = new Appearance();
+        Material m = new Material();
+        textAp.setMaterial(m);
+        textAp.setColoringAttributes(new ColoringAttributes(new Color3f(markerFontColor), ColoringAttributes.FASTEST));
+        if (textAp.getRenderingAttributes() == null)
+            textAp.setRenderingAttributes(new RenderingAttributes());
+        // draw markers always on the top
+        textAp.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+
+        for (MarkerRenderData marker : state.getMarkerRenderData()) {
+            TransformGroup group = new TransformGroup();
+            group.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+            group.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+
+            // we use Text3D here bacause Text2D looks very, very blurry (even if it isn't zoomed)
+            Text3D textGeom = new Text3D(font, marker.getText());
+
+            OrientedShape3D text = new OrientedShape3D(textGeom, textAp, OrientedShape3D.ROTATE_ABOUT_POINT,
+                    new Point3f());
+            group.addChild(text);
+
+            Transform3D transform = new Transform3D();
+            transform.setScale(scale);
+            Vector3d translation = new Vector3d(marker.getPoint3d());
+            translation.scale(oneRelInMeters);
+            transform.setTranslation(translation);
+
+            group.setTransform(transform);
+
+            // TODO add a behavior for fine-positioning colliding markers
+
+            result.addChild(group);
+        }
+        return result;
+    }
+
+    /**
      * Set this.tGroup to a new value.
      * 
      * @return The transform group that contains all nodes.
@@ -319,6 +383,8 @@ public class StepRenderer extends JPanel
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
             tGroup.setTransform(transform);
+
+            tGroup.addChild(getMarkerGroups());
 
             tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance));
             tGroup.addChild(new Shape3D(state.getTrianglesArray(), appearance2));
@@ -430,6 +496,38 @@ public class StepRenderer extends JPanel
     public void decZoom()
     {
         setZoom(getZoom() - 10d);
+    }
+
+    /**
+     * @return The font to use for drawing markers.
+     */
+    Font getMarkerFont()
+    {
+        return markerFont;
+    }
+
+    /**
+     * @param markerFont The font to use for drawing markers.
+     */
+    void setMarkerFont(Font markerFont)
+    {
+        this.markerFont = markerFont;
+    }
+
+    /**
+     * @return The font color to use for drawing markers.
+     */
+    Color getMarkerFontColor()
+    {
+        return markerFontColor;
+    }
+
+    /**
+     * @param markerFontColor The font color to use for drawing markers.
+     */
+    void setMarkerFontColor(Color markerFontColor)
+    {
+        this.markerFontColor = markerFontColor;
     }
 
     /**

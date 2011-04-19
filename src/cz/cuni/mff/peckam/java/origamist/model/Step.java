@@ -106,15 +106,12 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         if (this.modelState != null)
             return this.modelState;
 
-        try {
-            if (previous != null)
-                this.modelState = previous.getModelState().clone();
-            else
-                this.modelState = this.defaultModelState.clone();
-        } catch (CloneNotSupportedException e) {
-            assert false : "ModelState does not support clone()";
-            return null;
-        }
+        if (previous != null)
+            this.modelState = previous.getModelState().clone();
+        else
+            this.modelState = this.defaultModelState.clone();
+
+        this.modelState.proceedToNextStep();
 
         this.modelState.setStep(this);
         if (operations == null)

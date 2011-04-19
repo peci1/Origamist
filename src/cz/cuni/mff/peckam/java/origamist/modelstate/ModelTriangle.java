@@ -385,7 +385,7 @@ public class ModelTriangle extends Triangle3d
      * {@inheritDoc}
      */
     @Override
-    public ModelTriangle clone() throws CloneNotSupportedException
+    public ModelTriangle clone()
     {
         ModelTriangle result = new ModelTriangle(getP1(), getP2(), getP3(), this.originalPosition.clone());
 

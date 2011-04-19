@@ -143,7 +143,7 @@ public class Fold implements Cloneable
      * {@inheritDoc}
      */
     @Override
-    public Fold clone() throws CloneNotSupportedException
+    public Fold clone()
     {
         try {
             Fold result = (Fold) super.clone();

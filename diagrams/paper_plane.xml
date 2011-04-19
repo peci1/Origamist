@@ -113,7 +113,7 @@
 			<step id="4">
 				<description>Rotate it 90° right.</description>
 				<description lang="cs-CZ">Otočte papír o 90° doprava.</description>
-				<rotateOperation type="ROTATE">
+				<rotateOperation>
 					<angle>1.570796</angle>
 				</rotateOperation>
 			</step>
@@ -138,7 +138,7 @@
 			<step id="6">
 				<description>Turn the paper over.</description>
 				<description lang="cs-CZ">Otočte papír vzhůru nohama.</description>
-				<turnOverOperation type="TURN_OVER" />
+				<turnOverOperation />
 			</step>
 			<step id="7">
 				<description>Fold the wings.</description>
@@ -181,7 +181,7 @@
 					<layer>1</layer>
 					<layer>2</layer>
 				</foldOperation>
-				<rotateOperation type="ROTATE">
+				<rotateOperation>
 					<angle>3.141592</angle>
 				</rotateOperation>
 			</step>		
@@ -237,6 +237,42 @@
 				</reverseFoldOperation>
 			</step>	
 			<step id="9">
+				<description>Now watch where will points A-D move.</description>
+				<description lang="cs-CZ">Sledujte, kam se hýbou body A-D.</description>
+				<markerOpertaion>
+					<text>A</text>
+					<refPoint>
+						<x>0</x>
+						<y>0</y>
+					</refPoint>
+					<stepsToHide>3</stepsToHide>
+				</markerOpertaion>
+				<markerOpertaion>
+					<text>B</text>
+					<refPoint>
+						<x>0</x>
+						<y>1</y>
+					</refPoint>
+					<stepsToHide>3</stepsToHide>
+				</markerOpertaion>
+				<markerOpertaion>
+					<text>C</text>
+					<refPoint>
+						<x>0.66666666</x>
+						<y>0</y>
+					</refPoint>
+					<stepsToHide>1</stepsToHide>
+				</markerOpertaion>
+				<markerOpertaion>
+					<text>D</text>
+					<refPoint>
+						<x>0.66666666</x>
+						<y>1</y>
+					</refPoint>
+					<stepsToHide>1</stepsToHide>
+				</markerOpertaion>
+			</step>
+			<step id="10">
 				<description>Fine-tune wings with thunderbolt folds.</description>
 				<description lang="cs-CZ">Vytuňte křídla pomocí cik-cak skladů.</description>
 				<thunderboltFoldOperation type="THUNDERBOLT_FOLD">
@@ -299,7 +335,7 @@
 					<secondLayer>1</secondLayer>
 				</thunderboltFoldOperation>
 			</step>
-			<step id="10">
+			<step id="11">
 				<description>Fold the nose inwards using an inside crimp fold.</description>
 				<description lang="cs-CZ">Vtlačte čumák dovnitř.</description>
 				<crimpFoldOperation type="INSIDE_CRIMP_FOLD">

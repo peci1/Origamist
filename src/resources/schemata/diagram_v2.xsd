@@ -236,6 +236,7 @@
 						<element name="reverseFoldOperation" type="m:ReverseFoldOperation" />
 						<element name="thunderboltFoldOperation" type="m:ThunderboltFoldOperation" />
 						<element name="crimpFoldOperation" type="m:CrimpFoldOperation" />
+						<element name="markerOpertaion" type="m:MarkerOperation" />
 					</choice>
 				</sequence>
 			</choice>
@@ -255,7 +256,7 @@
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Operation" />
 			</appinfo>
 		</annotation>
-		<attribute name="type" type="m:Operations" use="required" />
+		<attribute name="type" type="m:Operations" use="optional" default="UNDEFINED" />
 	</complexType>
 
 	<complexType name="FoldOperationBase" abstract="true">
@@ -312,7 +313,7 @@
 	<complexType name="RotateOperationBase" abstract="true">
 		<complexContent>
 			<restriction base="m:Operation">
-				<attribute name="type" type="m:RotateOperations" use="required" />
+				<attribute name="type" type="m:RotateOperations" fixed="ROTATE" />
 			</restriction>
 		</complexContent>
 	</complexType>
@@ -336,7 +337,7 @@
 	<complexType name="TurnOverOperationBase" abstract="true">
 		<complexContent>
 			<restriction base="m:Operation">
-				<attribute name="type" type="m:TurnOverOperations" use="required" />
+				<attribute name="type" type="m:TurnOverOperations" fixed="TURN_OVER" />
 			</restriction>
 		</complexContent>
 	</complexType>
@@ -348,9 +349,9 @@
 			</appinfo>
 		</annotation>
 		<complexContent>
-			<restriction base="m:TurnOverOperationBase">
-				<attribute name="type" type="m:TurnOverOperations" use="required" />
-			</restriction>
+			<extension base="m:TurnOverOperationBase">
+				<!-- empty -->
+			</extension>
 		</complexContent>
 	</complexType>
 
@@ -392,7 +393,7 @@
 	<complexType name="ThunderboltFoldOperationBase" abstract="true">
 		<complexContent>
 			<restriction base="m:Operation">
-				<attribute name="type" type="m:ThunderboltOperations" use="required" />
+				<attribute name="type" type="m:ThunderboltOperations" fixed="THUNDERBOLT_FOLD" use="required" />
 			</restriction>
 		</complexContent>
 	</complexType>
@@ -460,6 +461,31 @@
 							</annotation>
 						</element>
 					</sequence>
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+	
+	<complexType name="MarkerOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:MarkerOperations" fixed="MARKER" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="MarkerOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.MarkerOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:MarkerOperationBase">
+				<sequence>
+					<element name="text" type="string" />
+					<group ref="m:refPoint" />
+					<element name="stepsToHide" type="positiveInteger" default="1" />
 				</sequence>
 			</extension>
 		</complexContent>
@@ -533,6 +559,7 @@
 
 	<simpleType name="Operations">
 		<restriction base="string">
+			<enumeration value="UNDEFINED" />
 			<enumeration value="VALLEY_FOLD" />
 			<enumeration value="MOUNTAIN_FOLD" />
 			<enumeration value="MOUNTAIN_VALLEY_FOLD_UNFOLD" />
@@ -546,6 +573,7 @@
 			<enumeration value="OPEN" />
 			<enumeration value="INSIDE_REVERSE_FOLD" />
 			<enumeration value="OUTSIDE_REVERSE_FOLD" />
+			<enumeration value="MARKER"/>
 			<enumeration value="REPEAT_ACTION" />
 			<enumeration value="RABBIT_FOLD" />
 			<enumeration value="SQUASH_FOLD" />
@@ -595,6 +623,12 @@
 		<restriction base="m:Operations">
 			<enumeration value="INSIDE_CRIMP_FOLD" />
 			<enumeration value="OUTSIDE_CRIMP_FOLD" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="MarkerOperations">
+		<restriction base="m:Operations">
+			<enumeration value="MARKER" />
 		</restriction>
 	</simpleType>
 

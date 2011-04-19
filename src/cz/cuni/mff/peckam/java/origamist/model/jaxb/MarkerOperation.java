@@ -8,12 +8,12 @@
 
 package cz.cuni.mff.peckam.java.origamist.model.jaxb;
 
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -22,21 +22,22 @@ import org.jvnet.jaxb2_commons.lang.JAXBEqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.JAXBHashCodeStrategy;
 import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
+import org.w3._2001.xmlschema.Adapter1;
 
 
 /**
- * <p>Java class for FoldUnfoldOperation complex type.
+ * <p>Java class for MarkerOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldUnfoldOperation">
+ * &lt;complexType name="MarkerOperation">
  *   &lt;complexContent>
- *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldUnfoldOperationBase">
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}MarkerOperationBase">
  *       &lt;sequence>
- *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}line"/>
- *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}refPoint" minOccurs="0"/>
- *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}layerList"/>
+ *         &lt;element name="text" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}refPoint"/>
+ *         &lt;element name="stepsToHide" type="{http://www.w3.org/2001/XMLSchema}positiveInteger"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -46,45 +47,47 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "FoldUnfoldOperation", propOrder = {
-    "line",
+@XmlType(name = "MarkerOperation", propOrder = {
+    "text",
     "refPoint",
-    "layer"
+    "stepsToHide"
 })
-public class FoldUnfoldOperation
-    extends FoldUnfoldOperationBase
+public class MarkerOperation
+    extends MarkerOperationBase
     implements Equals, HashCode
 {
 
-    @XmlElement(type = Integer.class)
-    protected List<Integer> layer = new ObservableList<Integer>();
-    @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
-    protected cz.cuni.mff.peckam.java.origamist.model.Line2D line;
-    @XmlElement(type = cz.cuni.mff.peckam.java.origamist.model.Point2D.class)
+    @XmlElement(required = true)
+    protected String text;
+    @XmlElement(required = true, type = String.class, defaultValue = "1")
+    @XmlJavaTypeAdapter(Adapter1 .class)
+    @XmlSchemaType(name = "positiveInteger")
+    protected Integer stepsToHide;
+    @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Point2D.class)
     protected cz.cuni.mff.peckam.java.origamist.model.Point2D refPoint;
 
     /**
-     * Gets the value of the line property.
+     * Gets the value of the text property.
      * 
      * @return
      *     possible object is
-     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     {@link String }
      *     
      */
-    public cz.cuni.mff.peckam.java.origamist.model.Line2D getLine() {
-        return line;
+    public String getText() {
+        return text;
     }
 
     /**
-     * Sets the value of the line property.
+     * Sets the value of the text property.
      * 
      * @param value
      *     allowed object is
-     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     {@link String }
      *     
      */
-    public void setLine(cz.cuni.mff.peckam.java.origamist.model.Line2D value) {
-        this.line = value;
+    public void setText(String value) {
+        this.text = value;
     }
 
     /**
@@ -112,36 +115,31 @@ public class FoldUnfoldOperation
     }
 
     /**
-     * Gets the value of the layer property.
+     * Gets the value of the stepsToHide property.
      * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the layer property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getLayer().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Integer }
-     * 
-     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
      */
-    public List<Integer> getLayer() {
-        if (layer == null) {
-            layer = new ObservableList<Integer>();
-        }
-        return this.layer;
+    public Integer getStepsToHide() {
+        return stepsToHide;
+    }
+
+    /**
+     * Sets the value of the stepsToHide property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setStepsToHide(Integer value) {
+        this.stepsToHide = value;
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldUnfoldOperation)) {
+        if (!(object instanceof MarkerOperation)) {
             return false;
         }
         if (this == object) {
@@ -150,13 +148,13 @@ public class FoldUnfoldOperation
         if (!super.equals(thisLocator, thatLocator, object, strategy)) {
             return false;
         }
-        final FoldUnfoldOperation that = ((FoldUnfoldOperation) object);
+        final MarkerOperation that = ((MarkerOperation) object);
         {
-            cz.cuni.mff.peckam.java.origamist.model.Line2D lhsLine;
-            lhsLine = this.getLine();
-            cz.cuni.mff.peckam.java.origamist.model.Line2D rhsLine;
-            rhsLine = that.getLine();
-            if (!strategy.equals(LocatorUtils.property(thisLocator, "line", lhsLine), LocatorUtils.property(thatLocator, "line", rhsLine), lhsLine, rhsLine)) {
+            String lhsText;
+            lhsText = this.getText();
+            String rhsText;
+            rhsText = that.getText();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "text", lhsText), LocatorUtils.property(thatLocator, "text", rhsText), lhsText, rhsText)) {
                 return false;
             }
         }
@@ -170,11 +168,11 @@ public class FoldUnfoldOperation
             }
         }
         {
-            List<Integer> lhsLayer;
-            lhsLayer = this.getLayer();
-            List<Integer> rhsLayer;
-            rhsLayer = that.getLayer();
-            if (!strategy.equals(LocatorUtils.property(thisLocator, "layer", lhsLayer), LocatorUtils.property(thatLocator, "layer", rhsLayer), lhsLayer, rhsLayer)) {
+            Integer lhsStepsToHide;
+            lhsStepsToHide = this.getStepsToHide();
+            Integer rhsStepsToHide;
+            rhsStepsToHide = that.getStepsToHide();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "stepsToHide", lhsStepsToHide), LocatorUtils.property(thatLocator, "stepsToHide", rhsStepsToHide), lhsStepsToHide, rhsStepsToHide)) {
                 return false;
             }
         }
@@ -189,9 +187,9 @@ public class FoldUnfoldOperation
     public int hashCode(ObjectLocator locator, HashCodeStrategy strategy) {
         int currentHashCode = super.hashCode(locator, strategy);
         {
-            cz.cuni.mff.peckam.java.origamist.model.Line2D theLine;
-            theLine = this.getLine();
-            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "line", theLine), currentHashCode, theLine);
+            String theText;
+            theText = this.getText();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "text", theText), currentHashCode, theText);
         }
         {
             cz.cuni.mff.peckam.java.origamist.model.Point2D theRefPoint;
@@ -199,9 +197,9 @@ public class FoldUnfoldOperation
             currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "refPoint", theRefPoint), currentHashCode, theRefPoint);
         }
         {
-            List<Integer> theLayer;
-            theLayer = this.getLayer();
-            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "layer", theLayer), currentHashCode, theLayer);
+            Integer theStepsToHide;
+            theStepsToHide = this.getStepsToHide();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "stepsToHide", theStepsToHide), currentHashCode, theStepsToHide);
         }
         return currentHashCode;
     }

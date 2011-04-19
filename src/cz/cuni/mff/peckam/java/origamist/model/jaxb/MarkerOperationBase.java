@@ -12,8 +12,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
+import cz.cuni.mff.peckam.java.origamist.model.MarkerOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
-import cz.cuni.mff.peckam.java.origamist.model.TurnOverOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for TurnOverOperationBase complex type.
+ * <p>Java class for MarkerOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="TurnOverOperationBase">
+ * &lt;complexType name="MarkerOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}TurnOverOperations" fixed="TURN_OVER" />
+ *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}MarkerOperations" fixed="MARKER" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -41,18 +41,18 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "TurnOverOperationBase")
+@XmlType(name = "MarkerOperationBase")
 @XmlSeeAlso({
-    TurnOverOperation.class
+    MarkerOperation.class
 })
-public abstract class TurnOverOperationBase
+public abstract class MarkerOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof TurnOverOperationBase)) {
+        if (!(object instanceof MarkerOperationBase)) {
             return false;
         }
         if (this == object) {

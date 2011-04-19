@@ -45,6 +45,24 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
         return true;
     }
 
+    /**
+     * @return The length of one relative unit of this paper in meters (actually this is the length of the longer side
+     *         in meters).
+     * 
+     * @throws IllegalStateException If this paper is specified by a relative unit which doesn't have its reference
+     *             dimension specified.
+     */
+    public double getOneRelInMeters() throws IllegalStateException
+    {
+        if (size.getUnit() == Unit.REL) {
+            if (size.getReferenceLength() != null)
+                return size.getReferenceLength();
+            throw new IllegalStateException(
+                    "Cannot convert from a relative dimension without reference dimension to an absloute dimension.");
+        }
+        return UnitHelper.convertTo(Unit.REL, Unit.M, 1, size.getUnit(), size.getMax());
+    }
+
     @Override
     public void setSize(UnitDimension value)
     {

@@ -26,7 +26,6 @@ import javax.media.j3d.TriangleArray;
 import javax.vecmath.Color4b;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
-import javax.vecmath.Point4d;
 import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
@@ -82,6 +81,9 @@ public class ModelState implements Cloneable
     /** The layers of the paper. */
     protected ObservableList<Layer>                layers                = new ObservableList<Layer>();
 
+    /** The list of markers to be displayed. */
+    protected ObservableList<Marker>               markers               = new ObservableList<Marker>();
+
     /** The mapping of triangles to their containing layer. Automatically updated when <code>layers</code> change */
     protected Hashtable<ModelTriangle, Layer>      trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
 
@@ -103,6 +105,12 @@ public class ModelState implements Cloneable
      * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
     protected boolean                              trianglesArrayDirty   = true;
+
+    /** The data from markers needed for rendering. This list should be automatically handled by the markers list. */
+    protected List<MarkerRenderData>               markerData            = new LinkedList<MarkerRenderData>();
+
+    /** If true, the 3D positions of markers need to be recomputed before returning them to some caller. */
+    protected boolean                              markersDirty          = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
@@ -164,6 +172,7 @@ public class ModelState implements Cloneable
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
                 ModelState.this.trianglesArrayDirty = true;
+                ModelState.this.markersDirty = true;
                 paperToSpacePoint.clear();
                 if (change.getChangeType() != ChangeTypes.ADD) {
                     ModelTriangle t = change.getOldItem();
@@ -205,6 +214,17 @@ public class ModelState implements Cloneable
                 }
             }
 
+        });
+
+        markers.addObserver(new Observer<Marker>() {
+            @Override
+            public void changePerformed(ChangeNotification<Marker> change)
+            {
+                if (change.getChangeType() != ChangeTypes.ADD)
+                    markerData.remove(change.getOldItem().getRenderData());
+                if (change.getChangeType() != ChangeTypes.REMOVE)
+                    markerData.add(change.getItem().getRenderData());
+            }
         });
     }
 
@@ -351,24 +371,22 @@ public class ModelState implements Cloneable
     {
         trianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
 
-        UnitDimension paperSize = origami.getModel().getPaper().getSize();
-        double ratio = 1.0 / UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
+        double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
 
         int i = 0;
-        Point3d p1, p2, p3;
+        Point3d p;
         for (Triangle3d triangle : triangles) {
-            p1 = (Point3d) triangle.getP1().clone();
-            p1.project(new Point4d(p1.x, p1.y, p1.z, ratio));
+            p = (Point3d) triangle.getP1().clone();
+            p.scale(oneRelInMeters);
+            trianglesArray.setCoordinate(3 * i, p);
 
-            p2 = (Point3d) triangle.getP2().clone();
-            p2.project(new Point4d(p2.x, p2.y, p2.z, ratio));
+            p = (Point3d) triangle.getP2().clone();
+            p.scale(oneRelInMeters);
+            trianglesArray.setCoordinate(3 * i + 1, p);
 
-            p3 = (Point3d) triangle.getP3().clone();
-            p3.project(new Point4d(p3.x, p3.y, p3.z, ratio));
-
-            trianglesArray.setCoordinate(3 * i, p1);
-            trianglesArray.setCoordinate(3 * i + 1, p2);
-            trianglesArray.setCoordinate(3 * i + 2, p3);
+            p = (Point3d) triangle.getP3().clone();
+            p.scale(oneRelInMeters);
+            trianglesArray.setCoordinate(3 * i + 2, p);
 
             i++;
         }
@@ -387,6 +405,26 @@ public class ModelState implements Cloneable
             updateTrianglesArray();
 
         return trianglesArray;
+    }
+
+    /**
+     * @return The list of marker data needed for rendering.
+     */
+    public synchronized List<MarkerRenderData> getMarkerRenderData()
+    {
+        if (markersDirty)
+            updateMarkers();
+        return markerData;
+    }
+
+    /**
+     * Recompute markers 3D positions.
+     */
+    protected synchronized void updateMarkers()
+    {
+        for (Marker m : markers)
+            m.setPoint3d(locatePointFromPaperTo3D(m.getPoint2d()));
+        markersDirty = false;
     }
 
     /**
@@ -942,6 +980,19 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * Add a textual marker bound to a point on the paper.
+     * 
+     * @param point The point the marker should "stick" to.
+     * @param text The text to display.
+     * @param stepsToHide Number of steps this marker should be displayed during.
+     */
+    public void addMarker(Point2d point, String text, int stepsToHide)
+    {
+        Marker marker = new Marker(text, locatePointFromPaperTo3D(point), point, stepsToHide);
+        markers.add(marker);
+    }
+
+    /**
      * Returns a list of triangles having a common point with the given triangle.
      * 
      * @param t The triangle to find neighbors to.
@@ -1364,10 +1415,29 @@ public class ModelState implements Cloneable
         return viewingAngle;
     }
 
-    @Override
-    public ModelState clone() throws CloneNotSupportedException
+    /**
+     * This function has to be called after {@link #clone()} if you intend to base the next step on this model state.
+     */
+    public void proceedToNextStep()
     {
-        ModelState result = (ModelState) super.clone();
+        for (Iterator<Marker> it = markers.iterator(); it.hasNext();) {
+            Marker marker = it.next();
+            if (marker.getStepsToHide() > 0)
+                marker.setStepsToHide(marker.getStepsToHide() - 1);
+            else
+                it.remove();
+        }
+    }
+
+    @Override
+    public ModelState clone()
+    {
+        ModelState result = null;
+        try {
+            result = (ModelState) super.clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
 
         result.foldLineArray = null;
         result.foldLineArrayDirty = true;
@@ -1376,6 +1446,8 @@ public class ModelState implements Cloneable
 
         result.layers = new ObservableList<Layer>(layers.size());
         result.folds = new ObservableList<Fold>(folds.size());
+        result.markers = new ObservableList<Marker>(markers.size());
+        result.markerData = new LinkedList<MarkerRenderData>();
         result.paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>(paperToSpaceTriangles.size());
         result.triangles = new ObservableList<ModelTriangle>(triangles.size());
         result.trianglesToLayers = new Hashtable<ModelTriangle, Layer>(trianglesToLayers.size());
@@ -1440,6 +1512,10 @@ public class ModelState implements Cloneable
                 triangles.add(newT);
             }
             result.layers.add(new Layer(triangles));
+        }
+
+        for (Marker m : markers) {
+            result.markers.add(m.clone());
         }
 
         return result;

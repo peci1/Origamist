@@ -13,30 +13,30 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for TurnOverOperations.
+ * <p>Java class for MarkerOperations.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="TurnOverOperations">
+ * &lt;simpleType name="MarkerOperations">
  *   &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations">
- *     &lt;enumeration value="TURN_OVER"/>
+ *     &lt;enumeration value="MARKER"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "TurnOverOperations")
+@XmlType(name = "MarkerOperations")
 @XmlEnum(Operations.class)
-public enum TurnOverOperations {
+public enum MarkerOperations {
 
-    TURN_OVER;
+    MARKER;
 
     public String value() {
         return name();
     }
 
-    public static TurnOverOperations fromValue(String v) {
+    public static MarkerOperations fromValue(String v) {
         return valueOf(v);
     }
 
