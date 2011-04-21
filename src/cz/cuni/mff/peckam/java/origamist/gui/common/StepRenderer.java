@@ -1130,6 +1130,7 @@ public class StepRenderer extends JPanel
                     for (int i = steps; i < 0; i++)
                         decZoom();
                 }
+                e.consume();
             } else if (availableLayers.size() > 1 && selected != null) {
                 // perform selection among available layers
                 int selIndex = -1;
@@ -1153,6 +1154,7 @@ public class StepRenderer extends JPanel
 
                     setSelectedLayer(availableLayers.get(selIndex));
                 }
+                e.consume();
             }
         }
 
