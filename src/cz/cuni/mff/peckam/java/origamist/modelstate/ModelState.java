@@ -25,7 +25,9 @@ import javax.media.j3d.LineArray;
 import javax.media.j3d.TriangleArray;
 import javax.vecmath.Color4b;
 import javax.vecmath.Point2d;
+import javax.vecmath.Point2f;
 import javax.vecmath.Point3d;
+import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
@@ -97,14 +99,15 @@ public class ModelState implements Cloneable
     protected Hashtable<Point2d, Point3d>          paperToSpacePoint     = new Hashtable<Point2d, Point3d>();
 
     /**
-     * The triangles the model state consists of. This representation can be directly used by Java3D.
+     * The triangles the model state consists of. Each array component contains triangles of one layer. Indices in the
+     * array correspond to indices in the layer list. This representation can be directly used by Java3D.
      */
-    protected TriangleArray                        trianglesArray        = null;
+    protected TriangleArray[]                      trianglesArrays       = null;
 
     /**
-     * If true, the value of trianglesArray doesn't have to be consistent and a call to updateVerticesArray is needed.
+     * If true, the value of trianglesArrays doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                              trianglesArrayDirty   = true;
+    protected boolean                              trianglesArraysDirty  = true;
 
     /** The data from markers needed for rendering. This list should be automatically handled by the markers list. */
     protected List<MarkerRenderData>               markerData            = new LinkedList<MarkerRenderData>();
@@ -171,7 +174,7 @@ public class ModelState implements Cloneable
             @Override
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
-                ModelState.this.trianglesArrayDirty = true;
+                ModelState.this.trianglesArraysDirty = true;
                 ModelState.this.markersDirty = true;
                 paperToSpacePoint.clear();
                 if (change.getChangeType() != ChangeTypes.ADD) {
@@ -364,47 +367,59 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Update the contents of the trianglesArray so that it corresponds to the actual contents of the triangles
-     * variable.
+     * Update the contents of the trianglesArrays so that it corresponds to the actual model state.
      */
-    protected synchronized void updateTrianglesArray()
+    protected synchronized void updateTrianglesArrays()
     {
-        trianglesArray = new TriangleArray(triangles.size() * 3, TriangleArray.COORDINATES);
+        trianglesArrays = new TriangleArray[layers.size()];
 
         double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
-
-        int i = 0;
+        int index = 0;
         Point3d p;
-        for (Triangle3d triangle : triangles) {
-            p = (Point3d) triangle.getP1().clone();
-            p.scale(oneRelInMeters);
-            trianglesArray.setCoordinate(3 * i, p);
 
-            p = (Point3d) triangle.getP2().clone();
-            p.scale(oneRelInMeters);
-            trianglesArray.setCoordinate(3 * i + 1, p);
+        for (Layer layer : layers) {
+            trianglesArrays[index] = new TriangleArray(layer.getTriangles().size() * 3, TriangleArray.COORDINATES
+                    | TriangleArray.TEXTURE_COORDINATE_2);
 
-            p = (Point3d) triangle.getP3().clone();
-            p.scale(oneRelInMeters);
-            trianglesArray.setCoordinate(3 * i + 2, p);
+            int i = 0;
+            for (ModelTriangle triangle : layer.getTriangles()) {
+                p = (Point3d) triangle.getP1().clone();
+                p.scale(oneRelInMeters);
+                trianglesArrays[index].setCoordinate(3 * i, p);
+                trianglesArrays[index].setTextureCoordinate(0, 3 * i, new TexCoord2f(new Point2f(triangle
+                        .getOriginalPosition().getP1())));
 
-            i++;
+                p = (Point3d) triangle.getP2().clone();
+                p.scale(oneRelInMeters);
+                trianglesArrays[index].setCoordinate(3 * i + 1, p);
+                trianglesArrays[index].setTextureCoordinate(0, 3 * i + 1, new TexCoord2f(new Point2f(triangle
+                        .getOriginalPosition().getP2())));
+
+                p = (Point3d) triangle.getP3().clone();
+                p.scale(oneRelInMeters);
+                trianglesArrays[index].setCoordinate(3 * i + 2, p);
+                trianglesArrays[index].setTextureCoordinate(0, 3 * i + 2, new TexCoord2f(new Point2f(triangle
+                        .getOriginalPosition().getP3())));
+
+                i++;
+            }
+            index++;
         }
 
-        trianglesArrayDirty = false;
+        trianglesArraysDirty = false;
     }
 
     /**
-     * Return the triangle array.
+     * Return the triangle arrays.
      * 
-     * @return The triangle array.
+     * @return The triangle arrays.
      */
-    public synchronized TriangleArray getTrianglesArray()
+    public synchronized TriangleArray[] getTrianglesArrays()
     {
-        if (trianglesArrayDirty)
-            updateTrianglesArray();
+        if (trianglesArraysDirty)
+            updateTrianglesArrays();
 
-        return trianglesArray;
+        return trianglesArrays;
     }
 
     /**
@@ -1171,13 +1186,6 @@ public class ModelState implements Cloneable
         Fold fold = new Fold();
         fold.originatingStepId = this.step.getId();
 
-        for (Fold f : folds) {
-            for (FoldLine l : f.lines) {
-                if (!triangles.contains(l.getLine().getTriangle()))
-                    throw new IllegalStateException(step.toString());
-            }
-        }
-
         for (IntersectionWithTriangle<ModelTriangle> intersection : intersections) {
             if (intersection == null) {
                 // no intersection with the triangle - something's weird (we loop over intersections with triangles)
@@ -1416,6 +1424,22 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * @return The folds on the paper.
+     */
+    public ObservableList<Fold> getFolds()
+    {
+        return folds;
+    }
+
+    /**
+     * @return The list of layers.
+     */
+    public ObservableList<Layer> getLayers()
+    {
+        return layers;
+    }
+
+    /**
      * This function has to be called after {@link #clone()} if you intend to base the next step on this model state.
      */
     public void proceedToNextStep()
@@ -1441,8 +1465,8 @@ public class ModelState implements Cloneable
 
         result.foldLineArray = null;
         result.foldLineArrayDirty = true;
-        result.trianglesArray = null;
-        result.trianglesArrayDirty = true;
+        result.trianglesArrays = null;
+        result.trianglesArraysDirty = true;
 
         result.layers = new ObservableList<Layer>(layers.size());
         result.folds = new ObservableList<Fold>(folds.size());
