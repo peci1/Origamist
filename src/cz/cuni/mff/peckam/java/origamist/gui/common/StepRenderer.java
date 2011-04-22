@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import static java.lang.Math.abs;
+
 import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -11,6 +13,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputMethodListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -23,6 +26,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +56,10 @@ import javax.media.j3d.Texture2D;
 import javax.media.j3d.TextureAttributes;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
@@ -96,86 +103,81 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 public class StepRenderer extends JPanel
 {
     /** */
-    private static final long         serialVersionUID         = 9198803673578003101L;
+    private static final long                        serialVersionUID        = 9198803673578003101L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami                 origami                  = null;
+    protected Origami                                origami                 = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                    step                     = null;
+    protected Step                                   step                    = null;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D               canvas;
+    protected JCanvas3D                              canvas;
 
     /** The offscreen canvas used for drawing. */
-    protected Canvas3D                offscreenCanvas;
+    protected Canvas3D                               offscreenCanvas;
 
     /** The canvas support for picking. Automatically updated when branch graph changes. */
-    protected PickCanvas              pickCanvas;
+    protected PickCanvas                             pickCanvas;
 
     /** The universe we use. */
-    protected SimpleUniverse          universe;
+    protected SimpleUniverse                         universe;
 
     /** The main transform used to display the step. */
-    protected Transform3D             transform                = new Transform3D();
+    protected Transform3D                            transform               = new Transform3D();
 
     /** The transform group containing the whole step. */
-    protected TransformGroup          tGroup;
+    protected TransformGroup                         tGroup;
 
     /** The branch graph to be added to the scene. */
-    protected BranchGroup             branchGraph              = null;
+    protected BranchGroup                            branchGraph             = null;
 
     /** The zoom of the step. */
-    protected double                  zoom                     = 100d;
+    protected double                                 zoom                    = 100d;
 
     /** The helper for properties. */
-    protected PropertyChangeSupport   listeners                = new PropertyChangeSupport(this);
+    protected PropertyChangeSupport                  listeners               = new PropertyChangeSupport(this);
 
     /** The font to use for drawing markers. */
-    protected Font                    markerFont               = new Font("Arial", Font.BOLD, 12);
+    protected Font                                   markerFont              = new Font("Arial", Font.BOLD, 12);
 
     /** The font color to use for drawing markers. */
-    protected Color                   markerFontColor          = Color.BLACK;
+    protected Color                                  markerFontColor         = Color.BLACK;
 
     /** The size of the surface texture. */
-    protected final static int        TEXTURE_SIZE             = 512;
+    protected final static int                       TEXTURE_SIZE            = 512;
 
     /** Cached textures for top and bottom side of the paper. */
-    protected Texture                 topTexture, bottomTexture;
+    protected Texture                                topTexture, bottomTexture;
 
     /** The maximum level of anisotropic filter that is supported by the current HW. */
-    protected final float             maxAnisotropyLevel;
+    protected final float                            maxAnisotropyLevel;
 
     /** The list of layers available by the last performed pick operation. */
-    protected List<TransformGroup>    availableLayers          = new LinkedList<TransformGroup>();
+    protected List<TransformGroup>                   availableLayers         = new LinkedList<TransformGroup>();
 
-    /** The currently selected (picked) layer. */
-    protected TransformGroup          selected                 = null;
+    /** The currently highlighted (picked) layer. */
+    protected TransformGroup                         highlighted             = null;
 
-    /**
-     * If true, let the selected layer remain selected even if the user wants to change it or it he moves the mouse out
-     * of it.
-     */
-    protected boolean                 layerSelectionLocked     = false;
+    /** Keys are the currently selected layers. Values are the callbacks to return the layers to their previous state. */
+    protected Hashtable<TransformGroup, Callable<?>> selectedLayers          = new Hashtable<TransformGroup, Callable<?>>();
 
     /** The type of primitves the user can pick. */
-    protected PickMode                pickMode                 = PickMode.POINT;
+    protected PickMode                               pickMode                = PickMode.POINT;
 
     /**
-     * Callbacks that return previously selected objects to their normal state. They are called when the selection is to
+     * Callbacks that return previously highlighted objects to their normal state. They are called when the highlight is
+     * to
      * be changed, but before the change. If a callback returns true, it has to be removed from this list after being
      * called.
      */
-    protected List<Callable<Boolean>> selectionChangeCallbacks = new LinkedList<Callable<Boolean>>();
-
-    /** The callback to be called when unlocking a layer. */
-    protected Callable<?>             layerUnlockCallback      = null;
+    protected List<Callable<?>>                      afterHighlightCallbacks = new LinkedList<Callable<?>>();
 
     /**
      * 
@@ -296,11 +298,10 @@ public class StepRenderer extends JPanel
                         // TODO some more clever handling of invalid operations
                     }
 
-                    selected = null;
+                    highlighted = null;
                     availableLayers.clear();
-                    selectionChangeCallbacks.clear();
-                    layerSelectionLocked = false;
-                    layerUnlockCallback = null;
+                    afterHighlightCallbacks.clear();
+                    selectedLayers.clear();
                     topTexture = null;
                     bottomTexture = null;
 
@@ -443,11 +444,15 @@ public class StepRenderer extends JPanel
         colAttrs.setCapability(ColoringAttributes.ALLOW_COLOR_WRITE);
         appearance.setColoringAttributes(colAttrs);
 
-        appearance.setRenderingAttributes(new RenderingAttributes());
-
         appearance.setTextureAttributes(new TextureAttributes());
         appearance.getTextureAttributes().setPerspectiveCorrectionMode(TextureAttributes.NICEST);
         appearance.getTextureAttributes().setTextureMode(TextureAttributes.COMBINE);
+
+        appearance.setRenderingAttributes(new RenderingAttributes());
+
+        appearance.setTransparencyAttributes(new TransparencyAttributes());
+        appearance.getTransparencyAttributes().setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
+        appearance.getTransparencyAttributes().setTransparencyMode(TransparencyAttributes.NICEST);
 
         return appearance;
     }
@@ -722,16 +727,13 @@ public class StepRenderer extends JPanel
      */
     protected void pick(int x, int y, MouseEvent e)
     {
-        if (pickMode == PickMode.LAYER && layerSelectionLocked)
-            return;
-
         pickCanvas.setShapeLocation(x, y);
 
         List<PickResult> results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
 
         if (results.size() > 0) {
             if (pickMode == PickMode.LAYER) {
-                boolean containsSelected = false;
+                boolean containsHighlighted = false;
                 List<TransformGroup> newAvailableLayers = new LinkedList<TransformGroup>();
                 if (results.size() == availableLayers.size()) {
                     Iterator<TransformGroup> it = availableLayers.iterator();
@@ -740,8 +742,8 @@ public class StepRenderer extends JPanel
                         TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
                         if (!different && it.next() != tg)
                             different = true;
-                        if (tg == selected)
-                            containsSelected = true;
+                        if (tg == highlighted)
+                            containsHighlighted = true;
                         newAvailableLayers.add(tg);
                     }
                     if (!different)
@@ -749,43 +751,41 @@ public class StepRenderer extends JPanel
                 } else {
                     for (PickResult r : results) {
                         TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
-                        if (tg == selected)
-                            containsSelected = true;
+                        if (tg == highlighted)
+                            containsHighlighted = true;
                         newAvailableLayers.add(tg);
                     }
                 }
                 availableLayers = newAvailableLayers;
 
-                if (containsSelected)
+                if (containsHighlighted)
                     return;
 
-                runSelectionChangeCallbacks();
+                runAfterHighlightCallbacks();
 
-                setSelectedLayer(availableLayers.get(0));
-
-                // System.err.println(Arrays.toString(pr.getIntersection(0).getPrimitiveCoordinateIndices()));
+                setHighlightedLayer(availableLayers.get(0));
             }
-        } else if (selected != null && !layerSelectionLocked) {
-            runSelectionChangeCallbacks();
-            selected = null;
+        } else if (highlighted != null) {
+            runAfterHighlightCallbacks();
+            highlighted = null;
             availableLayers.clear();
         }
 
     }
 
     /**
-     * Call the callbacks to be performed before the selection changes. The selectionChangeCallbacks list will be empty
-     * after this method finishes its work.
+     * Call the callbacks to be performed when a highlighted layer is to be un-highlighted.
      */
-    protected void runSelectionChangeCallbacks()
+    protected void runAfterHighlightCallbacks()
     {
-        for (Iterator<Callable<Boolean>> it = selectionChangeCallbacks.iterator(); it.hasNext();) {
+        for (Iterator<Callable<?>> it = afterHighlightCallbacks.iterator(); it.hasNext();) {
             try {
-                if (it.next().call())
+                Object result = it.next().call();
+                if (result instanceof Boolean && result == Boolean.TRUE)
                     it.remove();
                 return;
             } catch (Exception e) {
-                Logger.getLogger(getClass()).warn("Selection change callback threw exception.", e);
+                Logger.getLogger(getClass()).warn("After Highlight callback threw exception.", e);
             }
             it.remove();
         }
@@ -895,16 +895,61 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * Get the highlight color for the specified background.
+     * 
+     * @param background The background color that can be used for contrast computations etc.
+     * @return The highlight color.
+     */
+    protected Color3f getHighlightColor(Color3f background)
+    {
+        Color result = new Color(150, 150, 255);
+
+        // the above is the basic color
+        Color back = new Color(background.x, background.y, background.z);
+
+        // if the color difference is sufficient, we can return
+        final int colDiff = abs(result.getRed() - back.getRed()) + abs(result.getGreen() - back.getGreen())
+                + abs(result.getBlue() - back.getBlue());
+        // WCAG suggests 500, but we don't need such a large contrast here
+        if (colDiff > 180)
+            return new Color3f(result);
+
+        // if the contrast with the background would be too low, change the highlight color to be more contrasting
+        float[] hsbBack = new float[3];
+        float[] hsbRes = new float[3];
+
+        Color.RGBtoHSB(back.getRed(), back.getGreen(), back.getBlue(), hsbBack);
+        Color.RGBtoHSB(result.getRed(), result.getGreen(), result.getBlue(), hsbRes);
+
+        final float threshold = 0.2f;
+        final float diff = hsbBack[2] - hsbRes[2];
+        if (diff > -threshold && diff <= 0f) {
+            float bright;
+            if (hsbBack[2] + threshold <= 1f)
+                bright = hsbRes[2] + threshold;
+            else
+                bright = hsbRes[2] - threshold;
+            result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
+        } else if (diff < threshold && diff >= 0f) {
+            float bright;
+            if (hsbBack[2] > threshold)
+                bright = hsbRes[2] - threshold;
+            else
+                bright = hsbRes[2] + threshold;
+            result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
+        }
+
+        return new Color3f(result);
+    }
+
+    /**
      * Performs the changes needed to make a layer highlighted.
      * 
      * @param layer The layer to highlight.
      */
-    protected void setSelectedLayer(TransformGroup layer)
+    protected void setHighlightedLayer(TransformGroup layer)
     {
-        if (layerSelectionLocked)
-            return;
-
-        selected = layer;
+        highlighted = layer;
 
         Enumeration<?> children = layer.getAllChildren();
 
@@ -912,41 +957,40 @@ public class StepRenderer extends JPanel
 
         final Color3f color1 = new Color3f();
         shape.getAppearance().getColoringAttributes().getColor(color1);
+        final float po1 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
+        final float pof1 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
 
-        Color selectedColor = new Color(150, 150, 255);
-
-        shape.getAppearance().getColoringAttributes().setColor(new Color3f(selectedColor));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+        shape.getAppearance().getColoringAttributes().setColor(getHighlightColor(color1));
+        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
 
         shape = (Shape3D) children.nextElement();
 
         final Color3f color2 = new Color3f();
         shape.getAppearance().getColoringAttributes().getColor(color2);
+        final float po2 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
+        final float pof2 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
 
-        shape.getAppearance().getColoringAttributes().setColor(new Color3f(selectedColor));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+        shape.getAppearance().getColoringAttributes().setColor(getHighlightColor(color2));
+        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
 
-        selectionChangeCallbacks.add(new Callable<Boolean>() {
+        afterHighlightCallbacks.add(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception
             {
-                if (layerSelectionLocked)
-                    return false;
-
-                assert selected.numChildren() == 2;
-                Enumeration<?> children = selected.getAllChildren();
+                assert highlighted.numChildren() == 2;
+                Enumeration<?> children = highlighted.getAllChildren();
 
                 Shape3D shape = (Shape3D) children.nextElement();
                 shape.getAppearance().getColoringAttributes().setColor(color1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po1);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof1);
 
                 shape = (Shape3D) children.nextElement();
                 shape.getAppearance().getColoringAttributes().setColor(color2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po2);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof2);
 
                 return true;
             }
@@ -954,11 +998,11 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * Performs the changes needed to make a layer look locked.
+     * Performs the changes needed to make a layer selected.
      * 
-     * @param layer The layer to lock.
+     * @param layer The layer to select.
      */
-    protected void lockLayer(TransformGroup layer)
+    protected void selectLayer(TransformGroup layer)
     {
         Enumeration<?> children = layer.getAllChildren();
 
@@ -966,42 +1010,52 @@ public class StepRenderer extends JPanel
 
         final Color3f color1 = new Color3f();
         shape.getAppearance().getColoringAttributes().getColor(color1);
+        final float po1 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
+        final float pof1 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
+        final float trans1 = shape.getAppearance().getTransparencyAttributes().getTransparency();
 
         Color lockedColor = new Color(100, 100, 200);
 
         shape.getAppearance().getColoringAttributes().setColor(new Color3f(lockedColor));
         shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
         shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+        shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
 
         shape = (Shape3D) children.nextElement();
 
         final Color3f color2 = new Color3f();
         shape.getAppearance().getColoringAttributes().getColor(color2);
+        final float po2 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
+        final float pof2 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
+        final float trans2 = shape.getAppearance().getTransparencyAttributes().getTransparency();
 
         shape.getAppearance().getColoringAttributes().setColor(new Color3f(lockedColor));
         shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
         shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+        shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
 
-        layerUnlockCallback = new Callable<Void>() {
+        selectedLayers.put(layer, new Callable<Void>() {
             @Override
             public Void call() throws Exception
             {
-                assert selected.numChildren() == 2;
-                Enumeration<?> children = selected.getAllChildren();
+                assert highlighted.numChildren() == 2;
+                Enumeration<?> children = highlighted.getAllChildren();
 
                 Shape3D shape = (Shape3D) children.nextElement();
                 shape.getAppearance().getColoringAttributes().setColor(color1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po1);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof1);
+                shape.getAppearance().getTransparencyAttributes().setTransparency(trans1);
 
                 shape = (Shape3D) children.nextElement();
                 shape.getAppearance().getColoringAttributes().setColor(color2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po2);
+                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof2);
+                shape.getAppearance().getTransparencyAttributes().setTransparency(trans2);
 
                 return null;
             }
-        };
+        });
     }
 
     /**
@@ -1124,35 +1178,29 @@ public class StepRenderer extends JPanel
 
             if (e.isControlDown()) {
                 if (steps > 0) {
+                    Action action = new ZoomInAction();
+                    ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "zoomIn");
                     for (int i = 0; i < steps; i++)
-                        incZoom();
+                        action.actionPerformed(event);
                 } else {
+                    Action action = new ZoomOutAction();
+                    ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "zoomOut");
                     for (int i = steps; i < 0; i++)
-                        decZoom();
+                        action.actionPerformed(event);
                 }
                 e.consume();
-            } else if (availableLayers.size() > 1 && selected != null) {
+            } else if (availableLayers.size() > 1 && highlighted != null) {
                 // perform selection among available layers
-                int selIndex = -1;
-                int i = 0;
-                for (TransformGroup tg : availableLayers) {
-                    if (tg == selected) {
-                        selIndex = i;
-                        break;
-                    }
-                    i++;
-                }
-
-                if (selIndex > -1) {
-                    runSelectionChangeCallbacks();
-                    steps = (int) Math.signum(steps);
-                    if (selIndex == 0 && steps == -1)
-                        // % isn't a real modulus function
-                        selIndex = availableLayers.size() - 1;
-                    else
-                        selIndex = (selIndex + steps) % availableLayers.size();
-
-                    setSelectedLayer(availableLayers.get(selIndex));
+                if (steps > 0) {
+                    Action action = new HighlightNextLayerAction();
+                    ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
+                            "highlightNextLayer");
+                    action.actionPerformed(event);
+                } else if (steps < 0) {
+                    Action action = new HighlightPreviousLayerAction();
+                    ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
+                            "highlightPreviousLayer");
+                    action.actionPerformed(event);
                 }
                 e.consume();
             }
@@ -1167,24 +1215,11 @@ public class StepRenderer extends JPanel
         @Override
         public void mouseClicked(MouseEvent e)
         {
-            if (pickMode == PickMode.LAYER && e.getButton() == MouseEvent.BUTTON1 && selected != null) {
-                if (layerSelectionLocked) {
-                    layerSelectionLocked = false;
-                    if (layerUnlockCallback != null) {
-                        try {
-                            layerUnlockCallback.call();
-                        } catch (Exception e1) {
-                            Logger.getLogger(getClass()).warn("Layer unlocking callback threw exception.", e1);
-                        }
-                        layerUnlockCallback = null;
-                    } else {
-                        Logger.getLogger(getClass()).warn("Layer unlocking callback should exist, but is null.");
-                    }
-                    pick(e.getX(), e.getY(), e);
-                } else {
-                    layerSelectionLocked = true;
-                    lockLayer(selected);
-                }
+            if (pickMode == PickMode.LAYER && e.getButton() == MouseEvent.BUTTON1 && highlighted != null) {
+                Action action = new ToggleHighlightedLayerSelectionAction();
+                ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
+                        "toggleHigghlightedLayerSelection");
+                action.actionPerformed(event);
             }
         }
 
@@ -1195,9 +1230,119 @@ public class StepRenderer extends JPanel
             int middle = MouseEvent.BUTTON2_DOWN_MASK;
             int both = MouseEvent.BUTTON1_DOWN_MASK | MouseEvent.BUTTON3_DOWN_MASK;
             // either a middle button click or left+right button simultaneous click
-            if (((mods & middle) == middle) || ((mods & both) == both))
-                setPickMode(pickMode.getNext());
+            if (((mods & middle) == middle) || ((mods & both) == both)) {
+                Action action = new TogglePickModeAction();
+                ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "togglePickMode");
+                action.actionPerformed(event);
+            }
         }
+    }
+
+    protected class ZoomInAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 313512643556762110L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            incZoom();
+        }
+
+    }
+
+    protected class ZoomOutAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -5340289900894828612L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            decZoom();
+        }
+
+    }
+
+    protected class HighlightNextLayerAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -3089302395435461134L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            int selIndex = availableLayers.indexOf(highlighted);
+
+            if (selIndex > -1) {
+                runAfterHighlightCallbacks();
+                selIndex = (selIndex + 1) % availableLayers.size();
+                setHighlightedLayer(availableLayers.get(selIndex));
+            }
+        }
+
+    }
+
+    protected class HighlightPreviousLayerAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -3089302395435461134L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            int selIndex = availableLayers.indexOf(highlighted);
+
+            if (selIndex > -1) {
+                runAfterHighlightCallbacks();
+                selIndex = selIndex - 1;
+                if (selIndex == -1)
+                    selIndex = availableLayers.size() - 1;
+                setHighlightedLayer(availableLayers.get(selIndex));
+            }
+        }
+
+    }
+
+    protected class TogglePickModeAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -5513138483903360858L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            setPickMode(pickMode.getNext());
+        }
+
+    }
+
+    protected class ToggleHighlightedLayerSelectionAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -1297141033881147805L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (selectedLayers.keySet().contains(highlighted)) {
+                runAfterHighlightCallbacks();
+                try {
+                    selectedLayers.get(highlighted).call();
+                } catch (Exception e1) {
+                    Logger.getLogger(getClass()).warn("Layer unlocking callback threw exception.", e1);
+                }
+                selectedLayers.remove(highlighted);
+                setHighlightedLayer(highlighted);
+            } else {
+                runAfterHighlightCallbacks();
+                selectLayer(highlighted);
+                setHighlightedLayer(highlighted);
+            }
+        }
+
     }
 
     /**
