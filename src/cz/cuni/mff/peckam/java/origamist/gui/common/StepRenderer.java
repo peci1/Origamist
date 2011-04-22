@@ -26,11 +26,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Behavior;
@@ -103,81 +102,76 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 public class StepRenderer extends JPanel
 {
     /** */
-    private static final long                        serialVersionUID        = 9198803673578003101L;
+    private static final long         serialVersionUID       = 9198803673578003101L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami                                origami                 = null;
+    protected Origami                 origami                = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                                   step                    = null;
+    protected Step                    step                   = null;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D                              canvas;
+    protected JCanvas3D               canvas;
 
     /** The offscreen canvas used for drawing. */
-    protected Canvas3D                               offscreenCanvas;
+    protected Canvas3D                offscreenCanvas;
 
     /** The canvas support for picking. Automatically updated when branch graph changes. */
-    protected PickCanvas                             pickCanvas;
+    protected PickCanvas              pickCanvas;
 
     /** The universe we use. */
-    protected SimpleUniverse                         universe;
+    protected SimpleUniverse          universe;
 
     /** The main transform used to display the step. */
-    protected Transform3D                            transform               = new Transform3D();
+    protected Transform3D             transform              = new Transform3D();
 
     /** The transform group containing the whole step. */
-    protected TransformGroup                         tGroup;
+    protected TransformGroup          tGroup;
 
     /** The branch graph to be added to the scene. */
-    protected BranchGroup                            branchGraph             = null;
+    protected BranchGroup             branchGraph            = null;
 
     /** The zoom of the step. */
-    protected double                                 zoom                    = 100d;
+    protected double                  zoom                   = 100d;
 
     /** The helper for properties. */
-    protected PropertyChangeSupport                  listeners               = new PropertyChangeSupport(this);
+    protected PropertyChangeSupport   listeners              = new PropertyChangeSupport(this);
 
     /** The font to use for drawing markers. */
-    protected Font                                   markerFont              = new Font("Arial", Font.BOLD, 12);
-
-    /** The font color to use for drawing markers. */
-    protected Color                                  markerFontColor         = Color.BLACK;
+    protected Font                    markerFont             = new Font("Arial", Font.BOLD, 12);
 
     /** The size of the surface texture. */
-    protected final static int                       TEXTURE_SIZE            = 512;
+    protected final static int        TEXTURE_SIZE           = 512;
 
     /** Cached textures for top and bottom side of the paper. */
-    protected Texture                                topTexture, bottomTexture;
+    protected Texture                 topTexture, bottomTexture;
 
     /** The maximum level of anisotropic filter that is supported by the current HW. */
-    protected final float                            maxAnisotropyLevel;
+    protected final float             maxAnisotropyLevel;
 
     /** The list of layers available by the last performed pick operation. */
-    protected List<TransformGroup>                   availableLayers         = new LinkedList<TransformGroup>();
+    protected List<TransformGroup>    availableLayers        = new LinkedList<TransformGroup>();
 
     /** The currently highlighted (picked) layer. */
-    protected TransformGroup                         highlighted             = null;
+    protected TransformGroup          highlighted            = null;
 
-    /** Keys are the currently selected layers. Values are the callbacks to return the layers to their previous state. */
-    protected Hashtable<TransformGroup, Callable<?>> selectedLayers          = new Hashtable<TransformGroup, Callable<?>>();
+    /** The currently selected layers. */
+    protected HashSet<TransformGroup> selectedLayers         = new HashSet<TransformGroup>();
 
     /** The type of primitves the user can pick. */
-    protected PickMode                               pickMode                = PickMode.POINT;
+    protected PickMode                pickMode               = PickMode.POINT;
 
-    /**
-     * Callbacks that return previously highlighted objects to their normal state. They are called when the highlight is
-     * to
-     * be changed, but before the change. If a callback returns true, it has to be removed from this list after being
-     * called.
-     */
-    protected List<Callable<?>>                      afterHighlightCallbacks = new LinkedList<Callable<?>>();
+    /** The manager for changing layer appearances. */
+    protected LayerAppearanceManager  layerAppearanceManager = new LayerAppearanceManager();
+
+    /** The manager of {@link StepRenderer}'s colors. */
+    protected ColorManager            colorManager           = new ColorManager(Color.WHITE, Color.WHITE);
 
     /**
      * 
@@ -258,10 +252,13 @@ public class StepRenderer extends JPanel
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
-        if (origami != null)
+        if (origami != null) {
             setBackground(origami.getPaper().getColor().getBackground());
-        else
+            colorManager = new ColorManager(origami.getModel().getPaper().getBackgroundColor(), origami.getModel()
+                    .getPaper().getForegroundColor());
+        } else {
             setBackground(Color.GRAY);
+        }
     }
 
     /**
@@ -298,9 +295,8 @@ public class StepRenderer extends JPanel
                         // TODO some more clever handling of invalid operations
                     }
 
-                    highlighted = null;
                     availableLayers.clear();
-                    afterHighlightCallbacks.clear();
+                    highlighted = null;
                     selectedLayers.clear();
                     topTexture = null;
                     bottomTexture = null;
@@ -391,7 +387,7 @@ public class StepRenderer extends JPanel
     {
         if (topTexture == null) {
             BufferedImage buffer = createTextureBuffer();
-            Graphics2D graphics = initTextureGraphics(buffer, origami.getModel().getPaper().getForegroundColor());
+            Graphics2D graphics = initTextureGraphics(buffer, colorManager.getForeground());
 
             int w = buffer.getWidth();
             for (Fold f : step.getModelState().getFolds()) {
@@ -414,7 +410,7 @@ public class StepRenderer extends JPanel
     {
         if (bottomTexture == null) {
             BufferedImage buffer = createTextureBuffer();
-            Graphics2D graphics = initTextureGraphics(buffer, origami.getModel().getPaper().getBackgroundColor());
+            Graphics2D graphics = initTextureGraphics(buffer, colorManager.getBackground());
 
             int w = buffer.getWidth();
             for (Fold f : step.getModelState().getFolds()) {
@@ -464,8 +460,7 @@ public class StepRenderer extends JPanel
     {
         Appearance appearance = createBaseTrianglesAppearance();
 
-        Color paperColor = origami.getModel().getPaper().getColors().getForeground();
-        appearance.getColoringAttributes().setColor(new Color3f(paperColor));
+        appearance.getColoringAttributes().setColor(colorManager.getForeground3f());
 
         appearance.setTexture(getTopTexture());
 
@@ -481,8 +476,7 @@ public class StepRenderer extends JPanel
 
         appearance.getPolygonAttributes().setCullFace(PolygonAttributes.CULL_FRONT);
 
-        Color paperColor = origami.getModel().getPaper().getColors().getBackground();
-        appearance.getColoringAttributes().setColor(new Color3f(paperColor));
+        appearance.getColoringAttributes().setColor(colorManager.getBackground3f());
 
         appearance.setTexture(getBottomTexture());
 
@@ -557,7 +551,7 @@ public class StepRenderer extends JPanel
         Appearance textAp = new Appearance();
         Material m = new Material();
         textAp.setMaterial(m);
-        textAp.setColoringAttributes(new ColoringAttributes(new Color3f(markerFontColor), ColoringAttributes.FASTEST));
+        textAp.setColoringAttributes(new ColoringAttributes(colorManager.getMarker3f(), ColoringAttributes.FASTEST));
         if (textAp.getRenderingAttributes() == null)
             textAp.setRenderingAttributes(new RenderingAttributes());
         // draw markers always on the top
@@ -761,34 +755,13 @@ public class StepRenderer extends JPanel
                 if (containsHighlighted)
                     return;
 
-                runAfterHighlightCallbacks();
-
                 setHighlightedLayer(availableLayers.get(0));
             }
         } else if (highlighted != null) {
-            runAfterHighlightCallbacks();
-            highlighted = null;
+            setHighlightedLayer(null);
             availableLayers.clear();
         }
 
-    }
-
-    /**
-     * Call the callbacks to be performed when a highlighted layer is to be un-highlighted.
-     */
-    protected void runAfterHighlightCallbacks()
-    {
-        for (Iterator<Callable<?>> it = afterHighlightCallbacks.iterator(); it.hasNext();) {
-            try {
-                Object result = it.next().call();
-                if (result instanceof Boolean && result == Boolean.TRUE)
-                    it.remove();
-                return;
-            } catch (Exception e) {
-                Logger.getLogger(getClass()).warn("After Highlight callback threw exception.", e);
-            }
-            it.remove();
-        }
     }
 
     /**
@@ -861,22 +834,6 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * @return The font color to use for drawing markers.
-     */
-    Color getMarkerFontColor()
-    {
-        return markerFontColor;
-    }
-
-    /**
-     * @param markerFontColor The font color to use for drawing markers.
-     */
-    void setMarkerFontColor(Color markerFontColor)
-    {
-        this.markerFontColor = markerFontColor;
-    }
-
-    /**
      * @return The type of primitives the user can pick.
      */
     public PickMode getPickMode()
@@ -895,167 +852,71 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * Get the highlight color for the specified background.
-     * 
-     * @param background The background color that can be used for contrast computations etc.
-     * @return The highlight color.
-     */
-    protected Color3f getHighlightColor(Color3f background)
-    {
-        Color result = new Color(150, 150, 255);
-
-        // the above is the basic color
-        Color back = new Color(background.x, background.y, background.z);
-
-        // if the color difference is sufficient, we can return
-        final int colDiff = abs(result.getRed() - back.getRed()) + abs(result.getGreen() - back.getGreen())
-                + abs(result.getBlue() - back.getBlue());
-        // WCAG suggests 500, but we don't need such a large contrast here
-        if (colDiff > 180)
-            return new Color3f(result);
-
-        // if the contrast with the background would be too low, change the highlight color to be more contrasting
-        float[] hsbBack = new float[3];
-        float[] hsbRes = new float[3];
-
-        Color.RGBtoHSB(back.getRed(), back.getGreen(), back.getBlue(), hsbBack);
-        Color.RGBtoHSB(result.getRed(), result.getGreen(), result.getBlue(), hsbRes);
-
-        final float threshold = 0.2f;
-        final float diff = hsbBack[2] - hsbRes[2];
-        if (diff > -threshold && diff <= 0f) {
-            float bright;
-            if (hsbBack[2] + threshold <= 1f)
-                bright = hsbRes[2] + threshold;
-            else
-                bright = hsbRes[2] - threshold;
-            result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
-        } else if (diff < threshold && diff >= 0f) {
-            float bright;
-            if (hsbBack[2] > threshold)
-                bright = hsbRes[2] - threshold;
-            else
-                bright = hsbRes[2] + threshold;
-            result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
-        }
-
-        return new Color3f(result);
-    }
-
-    /**
      * Performs the changes needed to make a layer highlighted.
      * 
-     * @param layer The layer to highlight.
+     * If another layer has been highlighted, un-highlight it before highlighting the new one.
+     * 
+     * If the given layer already has been highlighted, nothing happens.
+     * 
+     * @param layer The layer to highlight. Pass <code>null</code> to clear the highlight.
      */
     protected void setHighlightedLayer(TransformGroup layer)
     {
-        highlighted = layer;
+        if (layer == highlighted)
+            return;
 
-        Enumeration<?> children = layer.getAllChildren();
+        if (highlighted != null) {
+            if (!selectedLayers.contains(highlighted))
+                layerAppearanceManager.setAppearance(highlighted, LayerState.NORMAL);
+            else
+                layerAppearanceManager.setAppearance(highlighted, LayerState.SELECTED);
+            highlighted = null;
+        }
 
-        Shape3D shape = (Shape3D) children.nextElement();
-
-        final Color3f color1 = new Color3f();
-        shape.getAppearance().getColoringAttributes().getColor(color1);
-        final float po1 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
-        final float pof1 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
-
-        shape.getAppearance().getColoringAttributes().setColor(getHighlightColor(color1));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-
-        shape = (Shape3D) children.nextElement();
-
-        final Color3f color2 = new Color3f();
-        shape.getAppearance().getColoringAttributes().getColor(color2);
-        final float po2 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
-        final float pof2 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
-
-        shape.getAppearance().getColoringAttributes().setColor(getHighlightColor(color2));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-
-        afterHighlightCallbacks.add(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception
-            {
-                assert highlighted.numChildren() == 2;
-                Enumeration<?> children = highlighted.getAllChildren();
-
-                Shape3D shape = (Shape3D) children.nextElement();
-                shape.getAppearance().getColoringAttributes().setColor(color1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof1);
-
-                shape = (Shape3D) children.nextElement();
-                shape.getAppearance().getColoringAttributes().setColor(color2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof2);
-
-                return true;
-            }
-        });
+        if (layer != null) {
+            highlighted = layer;
+            if (!selectedLayers.contains(layer))
+                layerAppearanceManager.setAppearance(layer, LayerState.HIGHLIGHTED);
+            else
+                layerAppearanceManager.setAppearance(layer, LayerState.SELECTED_HIGHLIGHTED);
+        }
     }
 
     /**
      * Performs the changes needed to make a layer selected.
      * 
+     * If the layer has already been selected, nothing happens.
+     * 
      * @param layer The layer to select.
      */
     protected void selectLayer(TransformGroup layer)
     {
-        Enumeration<?> children = layer.getAllChildren();
+        if (selectedLayers.contains(layer))
+            return;
 
-        Shape3D shape = (Shape3D) children.nextElement();
+        if (layer != highlighted)
+            layerAppearanceManager.setAppearance(layer, LayerState.SELECTED);
+        else
+            layerAppearanceManager.setAppearance(layer, LayerState.SELECTED_HIGHLIGHTED);
 
-        final Color3f color1 = new Color3f();
-        shape.getAppearance().getColoringAttributes().getColor(color1);
-        final float po1 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
-        final float pof1 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
-        final float trans1 = shape.getAppearance().getTransparencyAttributes().getTransparency();
+        selectedLayers.add(layer);
+    }
 
-        Color lockedColor = new Color(100, 100, 200);
-
-        shape.getAppearance().getColoringAttributes().setColor(new Color3f(lockedColor));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
-        shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
-
-        shape = (Shape3D) children.nextElement();
-
-        final Color3f color2 = new Color3f();
-        shape.getAppearance().getColoringAttributes().getColor(color2);
-        final float po2 = shape.getAppearance().getPolygonAttributes().getPolygonOffset();
-        final float pof2 = shape.getAppearance().getPolygonAttributes().getPolygonOffsetFactor();
-        final float trans2 = shape.getAppearance().getTransparencyAttributes().getTransparency();
-
-        shape.getAppearance().getColoringAttributes().setColor(new Color3f(lockedColor));
-        shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-        shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
-        shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
-
-        selectedLayers.put(layer, new Callable<Void>() {
-            @Override
-            public Void call() throws Exception
-            {
-                assert highlighted.numChildren() == 2;
-                Enumeration<?> children = highlighted.getAllChildren();
-
-                Shape3D shape = (Shape3D) children.nextElement();
-                shape.getAppearance().getColoringAttributes().setColor(color1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po1);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof1);
-                shape.getAppearance().getTransparencyAttributes().setTransparency(trans1);
-
-                shape = (Shape3D) children.nextElement();
-                shape.getAppearance().getColoringAttributes().setColor(color2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffset(po2);
-                shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(pof2);
-                shape.getAppearance().getTransparencyAttributes().setTransparency(trans2);
-
-                return null;
-            }
-        });
+    /**
+     * Performs the changes needed to make a selected layer not selected.
+     * 
+     * If the given layer hasn't been selected, nothing happens.
+     * 
+     * @param layer The layer to deselect.
+     */
+    protected void deselectLayer(TransformGroup layer)
+    {
+        if (selectedLayers.remove(layer)) {
+            if (layer != highlighted)
+                layerAppearanceManager.setAppearance(layer, LayerState.NORMAL);
+            else
+                layerAppearanceManager.setAppearance(layer, LayerState.HIGHLIGHTED);
+        }
     }
 
     /**
@@ -1277,7 +1138,6 @@ public class StepRenderer extends JPanel
             int selIndex = availableLayers.indexOf(highlighted);
 
             if (selIndex > -1) {
-                runAfterHighlightCallbacks();
                 selIndex = (selIndex + 1) % availableLayers.size();
                 setHighlightedLayer(availableLayers.get(selIndex));
             }
@@ -1296,7 +1156,6 @@ public class StepRenderer extends JPanel
             int selIndex = availableLayers.indexOf(highlighted);
 
             if (selIndex > -1) {
-                runAfterHighlightCallbacks();
                 selIndex = selIndex - 1;
                 if (selIndex == -1)
                     selIndex = availableLayers.size() - 1;
@@ -1327,19 +1186,13 @@ public class StepRenderer extends JPanel
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            if (selectedLayers.keySet().contains(highlighted)) {
-                runAfterHighlightCallbacks();
-                try {
-                    selectedLayers.get(highlighted).call();
-                } catch (Exception e1) {
-                    Logger.getLogger(getClass()).warn("Layer unlocking callback threw exception.", e1);
-                }
-                selectedLayers.remove(highlighted);
-                setHighlightedLayer(highlighted);
+            if (highlighted == null)
+                return;
+
+            if (selectedLayers.contains(highlighted)) {
+                deselectLayer(highlighted);
             } else {
-                runAfterHighlightCallbacks();
                 selectLayer(highlighted);
-                setHighlightedLayer(highlighted);
             }
         }
 
@@ -1421,5 +1274,447 @@ public class StepRenderer extends JPanel
          * @return The filtered pick results.
          */
         protected abstract List<PickResult> filterPickResults(PickResult[] results);
+    }
+
+    /**
+     * A state of a layer.
+     * 
+     * @author Martin Pecka
+     */
+    protected enum LayerState
+    {
+        /** Normal appearance. */
+        NORMAL,
+        /** Highlighted layer. */
+        HIGHLIGHTED,
+        /** Selected non-highlighted layer. */
+        SELECTED,
+        /** Selected highlighted layer. */
+        SELECTED_HIGHLIGHTED
+    }
+
+    /**
+     * A manager for changing layer appearance.
+     * 
+     * @author Martin Pecka
+     */
+    protected class LayerAppearanceManager
+    {
+        /**
+         * Apply the given appearance on the given layer.
+         * 
+         * @param layer The layer to apply the appearance on.
+         * @param state The state to derive appearance from.
+         */
+        protected void setAppearance(TransformGroup layer, LayerState state)
+        {
+            assert layer.numChildren() == 2;
+
+            Enumeration<?> children = layer.getAllChildren();
+
+            Shape3D shape = (Shape3D) children.nextElement();
+
+            switch (state) {
+                case NORMAL:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getForeground3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case HIGHLIGHTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getHighlightFg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case SELECTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedFg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case SELECTED_HIGHLIGHTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedHighlightFg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+            }
+
+            shape = (Shape3D) children.nextElement();
+
+            switch (state) {
+                case NORMAL:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getBackground3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case HIGHLIGHTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getHighlightBg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case SELECTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedBg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case SELECTED_HIGHLIGHTED:
+                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedHighlightBg3f());
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
+                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Manager of all colors used in this {@link StepRenderer}.
+     * 
+     * @author Martin Pecka
+     */
+    protected class ColorManager
+    {
+        /** Color of textual markers' text. */
+        protected Color marker = Color.BLACK;
+        /** Paper background color. */
+        protected Color background;
+        /** Paper foreground color. */
+        protected Color foreground;
+        /** Highlighted layer color for foreground/background. */
+        protected Color highlightBg = new Color(150, 150, 255), highlightFg = new Color(150, 150, 255);
+        /** Selected layer color for foreground/background. */
+        protected Color selectedBg  = new Color(100, 100, 200), selectedFg = new Color(100, 100, 200);
+        /** Highlighted selected layer color for foreground/background. */
+        protected Color selectedHighlightBg = new Color(125, 125, 225), selectedHighlightFg = new Color(125, 125, 225);
+
+        /**
+         * @param background Paper background color.
+         * @param foreground Paper foreground color.
+         */
+        public ColorManager(Color background, Color foreground)
+        {
+            this.background = background;
+            this.foreground = foreground;
+            ensureColorsAreContrasting();
+        }
+
+        /**
+         * Call this method to make sure
+         */
+        public void ensureColorsAreContrasting()
+        {
+            // TODO May implement a cleverer algorithm, or just allow to set these colors from diagram.
+            // This algorithm doesn't check if the highlight and selectedHighlight colors aren't the same, which would
+            // be a problem for program usability.
+
+            highlightBg = getContrastingColor(background, highlightBg);
+            highlightFg = getContrastingColor(foreground, highlightFg);
+
+            selectedHighlightBg = getContrastingColor(selectedBg, selectedHighlightBg);
+            selectedHighlightFg = getContrastingColor(selectedFg, selectedHighlightFg);
+        }
+
+        /**
+         * Get the well contrasting color for the specified reference color.
+         * 
+         * @param refColor The reference color that can be used for contrast computations etc.
+         * @param color The color we want to be contrasting with refColor.
+         * 
+         * @return If color has enough contrast, return it, otherwise return a more contrasting color (if color is
+         *         brighter than refColor, than an even brighter color will be returned, and conversely).
+         */
+        protected Color getContrastingColor(Color refColor, Color color)
+        {
+            Color result = color;
+
+            // if the color difference is sufficient, we can return
+            final int colDiff = abs(result.getRed() - refColor.getRed()) + abs(result.getGreen() - refColor.getGreen())
+                    + abs(result.getBlue() - refColor.getBlue());
+            // WCAG suggests 500, but we don't need such a large contrast here
+            if (colDiff > 180)
+                return result;
+
+            // if the contrast with the reference color would be too low, change the resulting color to be more
+            // contrasting
+            float[] hsbRef = new float[3];
+            float[] hsbRes = new float[3];
+
+            Color.RGBtoHSB(refColor.getRed(), refColor.getGreen(), refColor.getBlue(), hsbRef);
+            Color.RGBtoHSB(result.getRed(), result.getGreen(), result.getBlue(), hsbRes);
+
+            final float threshold = 0.2f;
+            final float diff = hsbRef[2] - hsbRes[2];
+            if (diff > -threshold && diff <= 0f) {
+                float bright;
+                if (hsbRef[2] + threshold <= 1f)
+                    bright = hsbRef[2] + threshold;
+                else
+                    bright = hsbRef[2] - threshold;
+                result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
+            } else if (diff < threshold && diff >= 0f) {
+                float bright;
+                if (hsbRef[2] > threshold)
+                    bright = hsbRef[2] - threshold;
+                else
+                    bright = hsbRef[2] + threshold;
+                result = Color.getHSBColor(hsbRes[0], hsbRes[1], bright);
+            }
+
+            return result;
+        }
+
+        /**
+         * @return Color of textual markers' text.
+         */
+        public Color getMarker()
+        {
+            return marker;
+        }
+
+        /**
+         * @return Color of textual markers' text.
+         */
+        public Color3f getMarker3f()
+        {
+            return new Color3f(marker);
+        }
+
+        /**
+         * @param marker Color of textual markers' text.
+         */
+        public void setMarker(Color marker)
+        {
+            this.marker = marker;
+        }
+
+        /**
+         * @return Paper background color.
+         */
+        public Color getBackground()
+        {
+            return background;
+        }
+
+        /**
+         * @return Paper background color.
+         */
+        public Color3f getBackground3f()
+        {
+            return new Color3f(background);
+        }
+
+        /**
+         * @param background Paper background color.
+         */
+        public void setBackground(Color background)
+        {
+            this.background = background;
+        }
+
+        /**
+         * @return Paper foreground color.
+         */
+        public Color getForeground()
+        {
+            return foreground;
+        }
+
+        /**
+         * @return Paper foreground color.
+         */
+        public Color3f getForeground3f()
+        {
+            return new Color3f(foreground);
+        }
+
+        /**
+         * @param foreground Paper foreground color.
+         */
+        public void setForeground(Color foreground)
+        {
+            this.foreground = foreground;
+        }
+
+        /**
+         * @return Highlighted layer background color.
+         */
+        public Color getHighlightBg()
+        {
+            return highlightBg;
+        }
+
+        /**
+         * @return Highlighted layer background color.
+         */
+        public Color3f getHighlightBg3f()
+        {
+            return new Color3f(highlightBg);
+        }
+
+        /**
+         * @param highlightBg Highlighted layer background color.
+         */
+        public void setHighlightBg(Color highlightBg)
+        {
+            this.highlightBg = highlightBg;
+        }
+
+        /**
+         * @return Highlighted layer foreground color.
+         */
+        public Color getHighlightFg()
+        {
+            return highlightFg;
+        }
+
+        /**
+         * @return Highlighted layer foreground color.
+         */
+        public Color3f getHighlightFg3f()
+        {
+            return new Color3f(highlightFg);
+        }
+
+        /**
+         * @param highlightFg Highlighted layer foreground color.
+         */
+        public void setHighlightFg(Color highlightFg)
+        {
+            this.highlightFg = highlightFg;
+        }
+
+        /**
+         * @return Selected layer background color.
+         */
+        public Color getSelectedBg()
+        {
+            return selectedBg;
+        }
+
+        /**
+         * @return Selected layer background color.
+         */
+        public Color3f getSelectedBg3f()
+        {
+            return new Color3f(selectedBg);
+        }
+
+        /**
+         * @param selectedBg Selected layer background color.
+         */
+        public void setSelectedBg(Color selectedBg)
+        {
+            this.selectedBg = selectedBg;
+        }
+
+        /**
+         * @return Selected layer foreground color.
+         */
+        public Color getSelectedFg()
+        {
+            return selectedFg;
+        }
+
+        /**
+         * @return Selected layer foreground color.
+         */
+        public Color3f getSelectedFg3f()
+        {
+            return new Color3f(selectedFg);
+        }
+
+        /**
+         * @param selectedFg Selected layer foreground color.
+         */
+        public void setSelectedFg(Color selectedFg)
+        {
+            this.selectedFg = selectedFg;
+        }
+
+        /**
+         * @return Highlighted selected layer background color.
+         */
+        public Color getSelectedHighlightBg()
+        {
+            return selectedHighlightBg;
+        }
+
+        /**
+         * @return Highlighted selected layer background color.
+         */
+        public Color3f getSelectedHighlightBg3f()
+        {
+            return new Color3f(selectedHighlightBg);
+        }
+
+        /**
+         * @param selectedHighlightBg Highlighted selected layer background color.
+         */
+        public void setSelectedHighlightBg(Color selectedHighlightBg)
+        {
+            this.selectedHighlightBg = selectedHighlightBg;
+        }
+
+        /**
+         * @return Highlighted selected layer foreground color.
+         */
+        public Color getSelectedHighlightFg()
+        {
+            return selectedHighlightFg;
+        }
+
+        /**
+         * @return Highlighted selected layer foreground color.
+         */
+        public Color3f getSelectedHighlightFg3f()
+        {
+            return new Color3f(selectedHighlightFg);
+        }
+
+        /**
+         * @param selectedHighlightFg Highlighted selected layer foreground color.
+         */
+        public void setSelectedHighlightFg(Color selectedHighlightFg)
+        {
+            this.selectedHighlightFg = selectedHighlightFg;
+        }
+
+        /**
+         * Set both background/foreground colors for highlighted layer.
+         * 
+         * @param highlight Highlighted layer both colors.
+         */
+        public void setHighlight(Color highlight)
+        {
+            this.highlightFg = highlight;
+            this.highlightBg = highlight;
+        }
+
+        /**
+         * Set both background/foreground colors for selected layer.
+         * 
+         * @param selected Selected layer both colors.
+         */
+        public void setSelected(Color selected)
+        {
+            this.selectedFg = selected;
+            this.selectedBg = selected;
+        }
+
+        /**
+         * Set both background/foreground colors for highlighted selected layer.
+         * 
+         * @param selectedHighlight Highlighted selected layer both colors.
+         */
+        public void setSelectedHighlight(Color selectedHighlight)
+        {
+            this.selectedHighlightFg = selectedHighlight;
+            this.selectedHighlightBg = selectedHighlight;
+        }
     }
 }
