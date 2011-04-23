@@ -23,7 +23,6 @@ import java.util.Set;
 import javax.media.j3d.GeometryArray;
 import javax.media.j3d.LineArray;
 import javax.media.j3d.TriangleArray;
-import javax.vecmath.Color4b;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point2f;
 import javax.vecmath.Point3d;
@@ -67,15 +66,13 @@ public class ModelState implements Cloneable
      */
     protected ObservableList<Fold>                 folds                 = new ObservableList<Fold>();
 
-    /**
-     * Cache for array of the lines representing folds.
-     */
-    protected LineArray                            foldLineArray         = null;
+    /** Cache for arrays of the lines representing folds. */
+    protected LineArray[]                          foldLineArrays        = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                              foldLineArrayDirty    = true;
+    protected boolean                              foldLineArraysDirty   = true;
 
     /** The triangles this model state consists of. */
     protected ObservableList<ModelTriangle>        triangles             = new ObservableList<ModelTriangle>();
@@ -156,14 +153,14 @@ public class ModelState implements Cloneable
             @Override
             public void changePerformed(ChangeNotification<Fold> change)
             {
-                ModelState.this.foldLineArrayDirty = true;
+                ModelState.this.foldLineArraysDirty = true;
 
                 if (change.getChangeType() == ChangeTypes.ADD) {
                     change.getItem().lines.addObserver(new Observer<FoldLine>() {
                         @Override
                         public void changePerformed(ChangeNotification<FoldLine> change)
                         {
-                            ModelState.this.foldLineArrayDirty = true;
+                            ModelState.this.foldLineArraysDirty = true;
                         }
                     });
                 }
@@ -175,6 +172,7 @@ public class ModelState implements Cloneable
             public void changePerformed(ChangeNotification<ModelTriangle> change)
             {
                 ModelState.this.trianglesArraysDirty = true;
+                ModelState.this.foldLineArraysDirty = true;
                 ModelState.this.markersDirty = true;
                 paperToSpacePoint.clear();
                 if (change.getChangeType() != ChangeTypes.ADD) {
@@ -308,62 +306,173 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Update the contents of the foldLineArray so that it corresponds to the actual contents of the folds variable.
+     * Update the contents of the foldLineArrays so that it corresponds to the actual contents of the folds variable.
      */
-    protected synchronized void updateLineArray()
+    @SuppressWarnings("serial")
+    protected synchronized void updateLineArrays()
     {
-        int linesCount = 0;
-        for (Fold fold : folds) {
-            linesCount += fold.getLines().size();
+
+        // HOW THIS METHOD WORKS
+        // WE HAVE: a bunch of triangle edges marked as fold lines; a lot of them is duplicated by various folds going
+        // through that triangle edge
+        // WE WANT: a set of lines, where no two lines could be connected together to form a new narrow line not
+        // intersected by another line; also no lines can be duplicated
+        // WE DO:
+        // 1) take only the newest line for each triangle edge (the newest is the latest in the edge's fold line list)
+        // - this makes sure no lines are duplicated
+        // 2) connect all segments into the longest narrow lines available
+        // - this makes sure no two lines can be connected to form a new narrow line
+        // 3) split the lines at their intersections
+        // - this makes sure the lines aren't too long
+
+        List<List<ModelSegment>> lines = new ArrayList<List<ModelSegment>>(step.getId() * 3);
+        for (int i = 0; i < step.getId() * 3; i++)
+            lines.add(new LinkedList<ModelSegment>());
+
+        // STEP 1
+        // put only the newest fold lines into lines (it means, if more folds go through a fold line, add only the one
+        // with highest originatingStepId)
+        int index;
+        for (ModelTriangle t : triangles) {
+            for (int i = 0; i < 3; i++) {
+                List<FoldLine> foldLines = t.getFoldLines(i);
+                if (foldLines != null && foldLines.size() > 0) {
+                    FoldLine line = foldLines.get(foldLines.size() - 1);
+                    if (line.getDirection() != null)
+                        index = line.getDirection().ordinal() * line.getFold().getOriginatingStepId();
+                    else
+                        index = 2 * line.getFold().getOriginatingStepId();
+                    lines.get(index).add(new ModelSegment(line));
+                }
+            }
+        }
+
+        // STEP 2
+        // now we have a lot of lines split by the boundaries of the triangles, so join all adjacent lines together
+        int numLines = 0;
+        for (List<ModelSegment> list : lines) {
+            if (list.size() == 0)
+                continue;
+            numLines += list.size();
+            // join lines that are parallel and overlap
+            // TODO O(n^2) algorithm, couldn't we do it better? (it already has contained some optimizations, but still
+            // it's been O(n^2))
+            int i = 0;
+            for (Iterator<ModelSegment> it = list.iterator(); it.hasNext();) {
+                if (i >= list.size() - 1)
+                    break;
+                ModelSegment seg = it.next();
+                boolean merged = false;
+                for (ModelSegment other : list.subList(i + 1, list.size())) {
+                    if (other.merge(seg)) {
+                        it.remove();
+                        numLines--;
+                        merged = true;
+                        break;
+                    }
+                }
+
+                if (!merged)
+                    i++;
+            }
+        }
+
+        // now flatten the joined lines into linesWhole and prepare linesIntersected for further use
+        ModelSegment[] linesWhole = new ModelSegment[numLines];
+        List<List<ModelSegment>> linesIntersected = new ArrayList<List<ModelSegment>>(numLines);
+        int i = 0;
+        for (List<ModelSegment> list : lines) {
+            for (final ModelSegment seg : list) {
+                linesWhole[i] = seg;
+                linesIntersected.add(new ArrayList<ModelSegment>(5) {
+                    {
+                        add(seg.clone());
+                    }
+                });
+                i++;
+            }
+        }
+
+        // STEP 3
+        // now we have all the parts of narrow lines joined into one line; but we want to get lines split at their
+        // intersections with other lines
+
+        // this algorithm runs in O(n^2) time; it just takes pairs of the narrow lines and looks if they intersect; if
+        // they do, it subdivides those lines into linesIntersected list and then looks for intersections for the
+        // subdivided parts
+
+        // it would be nice to use iterators and foreach loops here, but we need to add elements to the iterated lists
+        for (i = 0; i < linesWhole.length - 1; i++) {
+            for (int j = i + 1; j < linesWhole.length; j++) {
+                Segment3d intersection = linesWhole[i].getIntersection(linesWhole[j]);
+                // if the whole lines intersect, find the intersecting subsegments and slice them
+                if (intersection != null && intersection.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
+                    Point3d intPoint = intersection.getPoint();
+                    List<ModelSegment> lineIntersected = linesIntersected.get(i);
+                    k: for (int k = 0; k < lineIntersected.size(); k++) {
+                        ModelSegment line = lineIntersected.get(k);
+                        ModelSegment split = line.split(intPoint);
+                        if (split != null || line.isBorderPoint(intPoint)) {
+                            if (split != null) {
+                                lineIntersected.add(split);
+                                numLines++;
+                            }
+                            break k;
+                        }
+                    }
+                    List<ModelSegment> otherIntersected = linesIntersected.get(j);
+                    l: for (int l = 0; l < otherIntersected.size(); l++) {
+                        ModelSegment other = otherIntersected.get(l);
+                        ModelSegment split = other.split(intPoint);
+                        if (split != null || other.isBorderPoint(intPoint)) {
+                            if (split != null) {
+                                otherIntersected.add(split);
+                                numLines++;
+                            }
+                            break l;
+                        }
+                    }
+                }
+            }
         }
 
         UnitDimension paperSize = origami.getModel().getPaper().getSize();
         double ratio = UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
 
-        foldLineArray = new LineArray(2 * linesCount, GeometryArray.COORDINATES | GeometryArray.COLOR_4);
-        int i = 0;
-        for (Fold fold : folds) {
-            for (FoldLine line : fold.getLines()) {
-                Point3d startPoint = new Point3d(line.getLine().getSegment3d().getP1());
+        foldLineArrays = new LineArray[numLines];
+        i = 0;
+        for (List<ModelSegment> lineIntersected : linesIntersected) {
+            for (ModelSegment line : lineIntersected) {
+                foldLineArrays[i] = new LineArray(2, GeometryArray.COORDINATES);
+
+                Point3d startPoint = new Point3d(line.getP1());
                 startPoint.scale(ratio);
-                foldLineArray.setCoordinate(2 * i, startPoint);
+                foldLineArrays[i].setCoordinate(0, startPoint);
 
-                Point3d endPoint = new Point3d(line.getLine().getSegment3d().getP2());
+                Point3d endPoint = new Point3d(line.getP2());
                 endPoint.scale(ratio);
-                foldLineArray.setCoordinate(2 * i + 1, endPoint);
+                foldLineArrays[i].setCoordinate(1, endPoint);
 
-                // TODO implement some more line thickness and style possibilities
-                byte alpha = (byte) 255;
-                if (line.getDirection() != null) {
-                    // TODO invent some more sophisticated way to determine the fold "age"
-                    int diff = step.getId() - fold.getOriginatingStepId();
-                    if (diff <= stepBlendingTreshold) {
-                        alpha = (byte) (255 - (diff / stepBlendingTreshold) * 255);
-                    } else {
-                        alpha = 0;
-                    }
-                }
-                alpha = (byte) 255; // TODO remove, this disables blending for development purposes
-                foldLineArray.setColor(2 * i, new Color4b((byte) 0, (byte) 0, (byte) 0, alpha));
-                foldLineArray.setColor(2 * i + 1, new Color4b((byte) 0, (byte) 0, (byte) 0, alpha));
+                foldLineArrays[i].setUserData(line);
+
                 i++;
             }
         }
 
-        foldLineArrayDirty = false;
+        foldLineArraysDirty = false;
     }
 
     /**
-     * Retrurn the line array corresponding to the list of folds.
+     * Retrurn the line arrays corresponding to the lines on the paper.
      * 
-     * @return The line array corresponding to the list of folds.
+     * @return The line arrays corresponding to the lines on the paper.
      */
-    public synchronized LineArray getLineArray()
+    public synchronized LineArray[] getLineArrays()
     {
-        if (foldLineArrayDirty)
-            updateLineArray();
+        if (foldLineArraysDirty)
+            updateLineArrays();
 
-        return foldLineArray;
+        return foldLineArrays;
     }
 
     /**
@@ -380,6 +489,7 @@ public class ModelState implements Cloneable
         for (Layer layer : layers) {
             trianglesArrays[index] = new TriangleArray(layer.getTriangles().size() * 3, TriangleArray.COORDINATES
                     | TriangleArray.TEXTURE_COORDINATE_2);
+            trianglesArrays[index].setUserData(layer);
 
             int i = 0;
             for (ModelTriangle triangle : layer.getTriangles()) {
@@ -1451,6 +1561,13 @@ public class ModelState implements Cloneable
             else
                 it.remove();
         }
+
+        for (Fold fold : folds) {
+            for (FoldLine line : fold.getLines()) {
+                // null means that the fold no longer has a special appearance
+                line.setDirection(null);
+            }
+        }
     }
 
     @Override
@@ -1463,8 +1580,8 @@ public class ModelState implements Cloneable
             return null;
         }
 
-        result.foldLineArray = null;
-        result.foldLineArrayDirty = true;
+        result.foldLineArrays = null;
+        result.foldLineArraysDirty = true;
         result.trianglesArrays = null;
         result.trianglesArraysDirty = true;
 

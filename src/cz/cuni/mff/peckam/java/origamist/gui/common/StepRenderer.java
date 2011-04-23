@@ -13,6 +13,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputMethodListener;
 import java.awt.event.KeyListener;
@@ -41,6 +42,7 @@ import javax.media.j3d.Font3D;
 import javax.media.j3d.FontExtrusion;
 import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.ImageComponent2D;
+import javax.media.j3d.LineArray;
 import javax.media.j3d.LineAttributes;
 import javax.media.j3d.Material;
 import javax.media.j3d.Node;
@@ -82,10 +84,10 @@ import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
-import cz.cuni.mff.peckam.java.origamist.modelstate.Fold;
-import cz.cuni.mff.peckam.java.origamist.modelstate.FoldLine;
+import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.MarkerRenderData;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
 /**
@@ -148,6 +150,9 @@ public class StepRenderer extends JPanel
 
     /** The size of the surface texture. */
     protected final static int        TEXTURE_SIZE           = 512;
+
+    /** The factory that handles different strokes. */
+    protected StrokeFactory           strokeFactory          = new StrokeFactory();
 
     /** Cached textures for top and bottom side of the paper. */
     protected Texture                 topTexture, bottomTexture;
@@ -390,12 +395,16 @@ public class StepRenderer extends JPanel
             Graphics2D graphics = initTextureGraphics(buffer, colorManager.getForeground());
 
             int w = buffer.getWidth();
-            for (Fold f : step.getModelState().getFolds()) {
-                for (FoldLine line : f.getLines()) {
-                    Segment2d seg = line.getSegment2d();
-                    graphics.drawLine((int) (seg.getP1().x * w), (int) (w - seg.getP1().y * w),
-                            (int) (seg.getP2().x * w), (int) (w - seg.getP2().y * w));
-                }
+            int h = buffer.getHeight();
+            ModelSegment segment;
+            for (LineArray array : step.getModelState().getLineArrays()) {
+                segment = (ModelSegment) array.getUserData();
+                // TODO handle originatingStepId
+                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection()));
+
+                Segment2d seg = segment.getOriginal();
+                graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
+                        (int) (h - seg.getP2().y * h));
             }
 
             topTexture = createTextureFromBuffer(buffer);
@@ -413,12 +422,17 @@ public class StepRenderer extends JPanel
             Graphics2D graphics = initTextureGraphics(buffer, colorManager.getBackground());
 
             int w = buffer.getWidth();
-            for (Fold f : step.getModelState().getFolds()) {
-                for (FoldLine line : f.getLines()) {
-                    Segment2d seg = line.getSegment2d();
-                    graphics.drawLine((int) (seg.getP1().x * w), (int) (w - seg.getP1().y * w),
-                            (int) (seg.getP2().x * w), (int) (w - seg.getP2().y * w));
-                }
+            int h = buffer.getHeight();
+            ModelSegment segment;
+            for (LineArray array : step.getModelState().getLineArrays()) {
+                segment = (ModelSegment) array.getUserData();
+                // TODO handle originatingStepId
+                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection() == null ? null : segment
+                        .getDirection().getOpposite()));
+
+                Segment2d seg = segment.getOriginal();
+                graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
+                        (int) (h - seg.getP2().y * h));
             }
 
             bottomTexture = createTextureFromBuffer(buffer);
@@ -492,6 +506,8 @@ public class StepRenderer extends JPanel
 
         ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(Color.black), ColoringAttributes.NICEST);
         appearance.setColoringAttributes(colAttrs);
+
+        appearance.setRenderingAttributes(new RenderingAttributes());
 
         final LineAttributes lineAttrs = new LineAttributes();
         final float lineWidth = 1f;
@@ -613,30 +629,48 @@ public class StepRenderer extends JPanel
             Shape3D top, bottom;
             Appearance appearance;
             Appearance appearance2;
-            int i = 0;
-            for (Layer layer : state.getLayers()) {
+            for (TriangleArray triangleArray : triangleArrays) {
                 TransformGroup group = new TransformGroup();
                 group.setBoundsAutoCompute(true);
-                group.setUserData(layer);
+                group.setUserData(triangleArray.getUserData()); // contains the layer
                 group.setPickable(true);
                 group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 
                 appearance = createNormalTrianglesAppearance();
                 appearance2 = createInverseTrianglesAppearance();
 
-                top = new Shape3D(triangleArrays[i], appearance);
-                bottom = new Shape3D(triangleArrays[i], appearance2);
+                top = new Shape3D(triangleArray, appearance);
+                bottom = new Shape3D(triangleArray, appearance2);
 
                 group.addChild(top);
                 group.addChild(bottom);
 
                 model.addChild(group);
-
-                i++;
             }
 
-            Appearance appearance3 = createFoldLinesAppearance();
-            model.addChild(new Shape3D(state.getLineArray(), appearance3));
+            LineArray[] lineArrays = state.getLineArrays();
+
+            Appearance appearance3;
+            Shape3D shape;
+            for (LineArray lineArray : lineArrays) {
+                TransformGroup group = new TransformGroup();
+                group.setBoundsAutoCompute(true);
+                group.setUserData(lineArray.getUserData()); // contains the layer
+                group.setPickable(true);
+                group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+
+                appearance3 = createFoldLinesAppearance(); // TODO handle originatingStepId
+                // lines signalizing just created mountain/valley folds couldn't be correctly displayed dashed from one
+                // side and dot-dashed from the other side, so we hide them and draw them only on the texture
+                if (((ModelSegment) lineArray.getUserData()).getDirection() != null)
+                    appearance3.getRenderingAttributes().setVisible(false);
+
+                shape = new Shape3D(lineArray, appearance3);
+
+                group.addChild(shape);
+
+                model.addChild(group);
+            }
 
             og.addChild(model);
 
@@ -756,6 +790,8 @@ public class StepRenderer extends JPanel
                     return;
 
                 setHighlightedLayer(availableLayers.get(0));
+            } else if (pickMode == PickMode.LINE) {
+                System.err.println(results.get(0).getGeometryArray().getUserData());
             }
         } else if (highlighted != null) {
             setHighlightedLayer(null);
@@ -1230,7 +1266,16 @@ public class StepRenderer extends JPanel
             @Override
             protected List<PickResult> filterPickResults(PickResult[] results)
             {
-                return new LinkedList<PickResult>();
+                List<PickResult> result = new LinkedList<PickResult>();
+                if (results == null)
+                    return result;
+
+                for (PickResult r : results) {
+                    if (r.getGeometryArray() != null && r.getGeometryArray() instanceof LineArray) {
+                        result.add(r);
+                    }
+                }
+                return result;
             }
         },
         LAYER
@@ -1715,6 +1760,40 @@ public class StepRenderer extends JPanel
         {
             this.selectedHighlightFg = selectedHighlight;
             this.selectedHighlightBg = selectedHighlight;
+        }
+    }
+
+    /**
+     * A factory that handles different {@link Stroke}s.
+     * 
+     * @author Martin Pecka
+     */
+    protected class StrokeFactory
+    {
+        /** Stroke for basic old fold line. */
+        protected Stroke textureBasicLineStroke    = new BasicStroke(0.5f);
+        /** Stroke for a freshly new mountain fold line. */
+        protected Stroke textureMountainLineStroke = new BasicStroke(0.5f, BasicStroke.CAP_BUTT,
+                                                           BasicStroke.JOIN_BEVEL, 0, new float[] { 20f, 5f, 3f, 5f },
+                                                           0f);
+        /** Stroke for a freshly new valley fold line. */
+        protected Stroke textureValleyLineStroke   = new BasicStroke(0.5f, BasicStroke.CAP_BUTT,
+                                                           BasicStroke.JOIN_BEVEL, 0, new float[] { 20f, 10f }, 0f);
+
+        /**
+         * Get the stroke to paint a fold line with.
+         * 
+         * @param direction The direction of the fold line.
+         * @return The stroke to poaint a fold line with.
+         */
+        public Stroke getForDirection(Direction direction)
+        {
+            if (direction == null)
+                return textureBasicLineStroke;
+            else if (direction == Direction.MOUNTAIN)
+                return textureMountainLineStroke;
+            else
+                return textureValleyLineStroke;
         }
     }
 }

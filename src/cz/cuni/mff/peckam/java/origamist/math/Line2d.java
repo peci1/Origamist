@@ -227,6 +227,17 @@ public class Line2d implements Cloneable, Vector<Double>
         return new Segment2d(mirror(l.getP1()), mirror(l.getP2()));
     }
 
+    /**
+     * Return true if these lines are parallel.
+     * 
+     * @param other The other line to check.
+     * @return true if these lines are parallel.
+     */
+    public boolean isParallelTo(Line2d other)
+    {
+        return MathHelper.vectorQuotient2d(this.v, other.v) != null;
+    }
+
     @Override
     public int hashCode()
     {
