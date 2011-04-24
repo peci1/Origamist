@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Behavior;
@@ -41,6 +42,7 @@ import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Font3D;
 import javax.media.j3d.FontExtrusion;
 import javax.media.j3d.GraphicsConfigTemplate3D;
+import javax.media.j3d.Group;
 import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.LineArray;
 import javax.media.j3d.LineAttributes;
@@ -104,79 +106,97 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 public class StepRenderer extends JPanel
 {
     /** */
-    private static final long         serialVersionUID       = 9198803673578003101L;
+    private static final long        serialVersionUID       = 9198803673578003101L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami                 origami                = null;
+    protected Origami                origami                = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                    step                   = null;
+    protected Step                   step                   = null;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D               canvas;
+    protected JCanvas3D              canvas;
 
     /** The offscreen canvas used for drawing. */
-    protected Canvas3D                offscreenCanvas;
+    protected Canvas3D               offscreenCanvas;
 
     /** The canvas support for picking. Automatically updated when branch graph changes. */
-    protected PickCanvas              pickCanvas;
+    protected PickCanvas             pickCanvas;
 
     /** The universe we use. */
-    protected SimpleUniverse          universe;
+    protected SimpleUniverse         universe;
 
     /** The main transform used to display the step. */
-    protected Transform3D             transform              = new Transform3D();
+    protected Transform3D            transform              = new Transform3D();
 
     /** The transform group containing the whole step. */
-    protected TransformGroup          tGroup;
+    protected TransformGroup         tGroup;
 
     /** The branch graph to be added to the scene. */
-    protected BranchGroup             branchGraph            = null;
+    protected BranchGroup            branchGraph            = null;
+
+    /** The group containing all layers. */
+    protected TransformGroup         layers                 = null;
+
+    /** The group containing all lines. */
+    protected TransformGroup         lines                  = null;
+
+    /** The group that is always drawn after the model is drawn. */
+    protected TransformGroup         overModel              = null;
 
     /** The zoom of the step. */
-    protected double                  zoom                   = 100d;
+    protected double                 zoom                   = 100d;
 
     /** The helper for properties. */
-    protected PropertyChangeSupport   listeners              = new PropertyChangeSupport(this);
+    protected PropertyChangeSupport  listeners              = new PropertyChangeSupport(this);
 
     /** The font to use for drawing markers. */
-    protected Font                    markerFont             = new Font("Arial", Font.BOLD, 12);
+    protected Font                   markerFont             = new Font("Arial", Font.BOLD, 12);
 
     /** The size of the surface texture. */
-    protected final static int        TEXTURE_SIZE           = 512;
+    protected final static int       TEXTURE_SIZE           = 512;
 
     /** The factory that handles different strokes. */
-    protected StrokeFactory           strokeFactory          = new StrokeFactory();
+    protected StrokeFactory          strokeFactory          = new StrokeFactory();
 
     /** Cached textures for top and bottom side of the paper. */
-    protected Texture                 topTexture, bottomTexture;
+    protected Texture                topTexture, bottomTexture;
 
     /** The maximum level of anisotropic filter that is supported by the current HW. */
-    protected final float             maxAnisotropyLevel;
+    protected final float            maxAnisotropyLevel;
 
-    /** The list of layers available by the last performed pick operation. */
-    protected List<TransformGroup>    availableLayers        = new LinkedList<TransformGroup>();
+    /** The list of (points/lines/layers - depends on pickMode) available by the last performed pick operation. */
+    protected List<Group>            availableItems         = new LinkedList<Group>();
 
-    /** The currently highlighted (picked) layer. */
-    protected TransformGroup          highlighted            = null;
+    /** The currently highlighted (picked) (point/line/layer - depends on pickMode). */
+    protected Group                  highlighted            = null;
 
-    /** The currently selected layers. */
-    protected HashSet<TransformGroup> selectedLayers         = new HashSet<TransformGroup>();
+    /** The currently selected points, lines and layers. */
+    protected HashSet<Group>         selected               = new HashSet<Group>();
+
+    /** The set of currently selected layers. */
+    protected Set<Layer>             selectedLayers         = new HashSet<Layer>();
+
+    /** The set of currently selected lines. */
+    protected Set<ModelSegment>      selectedLines          = new HashSet<ModelSegment>();
 
     /** The type of primitves the user can pick. */
-    protected PickMode                pickMode               = PickMode.POINT;
+    protected PickMode               pickMode               = PickMode.POINT;
 
     /** The manager for changing layer appearances. */
-    protected LayerAppearanceManager  layerAppearanceManager = new LayerAppearanceManager();
+    protected LayerAppearanceManager layerAppearanceManager = new LayerAppearanceManager();
+
+    /** The manager for changing line appearances. */
+    protected LineAppearanceManager  lineAppearanceManager  = new LineAppearanceManager();
 
     /** The manager of {@link StepRenderer}'s colors. */
-    protected ColorManager            colorManager           = new ColorManager(Color.WHITE, Color.WHITE);
+    protected ColorManager           colorManager           = new ColorManager(Color.WHITE, Color.WHITE);
 
     /**
      * 
@@ -219,12 +239,20 @@ public class StepRenderer extends JPanel
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (pickMode == PickMode.POINT) {
-                    StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                } else if (pickMode == PickMode.LINE) {
-                    StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-                } else if (pickMode == PickMode.LAYER) {
-                    StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                availableItems.clear();
+
+                clearHighlighted();
+
+                switch (pickMode) {
+                    case POINT:
+                        StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                        break;
+                    case LINE:
+                        StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+                        break;
+                    case LAYER:
+                        StepRenderer.this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        break;
                 }
             }
         });
@@ -300,9 +328,9 @@ public class StepRenderer extends JPanel
                         // TODO some more clever handling of invalid operations
                     }
 
-                    availableLayers.clear();
+                    availableItems.clear();
                     highlighted = null;
-                    selectedLayers.clear();
+                    selected.clear();
                     topTexture = null;
                     bottomTexture = null;
 
@@ -399,8 +427,8 @@ public class StepRenderer extends JPanel
             ModelSegment segment;
             for (LineArray array : step.getModelState().getLineArrays()) {
                 segment = (ModelSegment) array.getUserData();
-                // TODO handle originatingStepId
-                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection()));
+                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection(),
+                        step.getId() - segment.getOriginatingStepId()));
 
                 Segment2d seg = segment.getOriginal();
                 graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
@@ -426,9 +454,8 @@ public class StepRenderer extends JPanel
             ModelSegment segment;
             for (LineArray array : step.getModelState().getLineArrays()) {
                 segment = (ModelSegment) array.getUserData();
-                // TODO handle originatingStepId
                 graphics.setStroke(strokeFactory.getForDirection(segment.getDirection() == null ? null : segment
-                        .getDirection().getOpposite()));
+                        .getDirection().getOpposite(), step.getId() - segment.getOriginatingStepId()));
 
                 Segment2d seg = segment.getOriginal();
                 graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
@@ -498,21 +525,26 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * @return The appearance of triangles that represent the foreground of the paper.
+     * @return The basic appearance of lines representing folds.
      */
-    protected Appearance createFoldLinesAppearance()
+    protected Appearance createBasicLinesAppearance()
     {
         Appearance appearance = new Appearance();
 
-        ColoringAttributes colAttrs = new ColoringAttributes(new Color3f(Color.black), ColoringAttributes.NICEST);
+        ColoringAttributes colAttrs = new ColoringAttributes(colorManager.getLine3f(), ColoringAttributes.NICEST);
+        colAttrs.setCapability(ColoringAttributes.ALLOW_COLOR_WRITE);
         appearance.setColoringAttributes(colAttrs);
 
+        appearance.setTransparencyAttributes(new TransparencyAttributes());
+        appearance.getTransparencyAttributes().setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
+
         appearance.setRenderingAttributes(new RenderingAttributes());
+        appearance.getRenderingAttributes().setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        appearance.getRenderingAttributes().setCapability(RenderingAttributes.ALLOW_DEPTH_TEST_FUNCTION_WRITE);
 
         final LineAttributes lineAttrs = new LineAttributes();
-        final float lineWidth = 1f;
-        lineAttrs.setLineWidth(lineWidth);
         lineAttrs.setLineAntialiasingEnable(true);
+        lineAttrs.setCapability(LineAttributes.ALLOW_WIDTH_READ);
         lineAttrs.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
         appearance.setLineAttributes(lineAttrs);
 
@@ -521,7 +553,9 @@ public class StepRenderer extends JPanel
             public void propertyChange(PropertyChangeEvent evt)
             {
                 if (evt.getPropertyName().equals("zoom")) {
-                    lineAttrs.setLineWidth(lineWidth * (float) (getZoom() / 100f));
+                    double oldZoom = (Double) evt.getOldValue();
+                    double newZoom = (Double) evt.getNewValue();
+                    lineAttrs.setLineWidth(lineAttrs.getLineWidth() * (float) (newZoom / oldZoom));
                 }
             }
         });
@@ -625,6 +659,9 @@ public class StepRenderer extends JPanel
             TransformGroup model = new TransformGroup();
             model.setPickable(true);
 
+            layers = new TransformGroup();
+            layers.setPickable(true);
+
             TriangleArray[] triangleArrays = state.getTrianglesArrays();
             Shape3D top, bottom;
             Appearance appearance;
@@ -645,34 +682,50 @@ public class StepRenderer extends JPanel
                 group.addChild(top);
                 group.addChild(bottom);
 
-                model.addChild(group);
+                layers.addChild(group);
             }
 
+            model.addChild(layers);
+
             LineArray[] lineArrays = state.getLineArrays();
+
+            lines = new TransformGroup();
+            lines.setPickable(true);
+            lines.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+            lines.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+            lines.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 
             Appearance appearance3;
             Shape3D shape;
             for (LineArray lineArray : lineArrays) {
-                TransformGroup group = new TransformGroup();
+                BranchGroup group = new BranchGroup();
                 group.setBoundsAutoCompute(true);
                 group.setUserData(lineArray.getUserData()); // contains the layer
                 group.setPickable(true);
                 group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+                group.setCapability(BranchGroup.ALLOW_DETACH);
+                group.setCapability(BranchGroup.ALLOW_PARENT_READ);
 
-                appearance3 = createFoldLinesAppearance(); // TODO handle originatingStepId
-                // lines signalizing just created mountain/valley folds couldn't be correctly displayed dashed from one
-                // side and dot-dashed from the other side, so we hide them and draw them only on the texture
-                if (((ModelSegment) lineArray.getUserData()).getDirection() != null)
-                    appearance3.getRenderingAttributes().setVisible(false);
+                ModelSegment segment = (ModelSegment) lineArray.getUserData();
+                appearance3 = createBasicLinesAppearance();
+                lineAppearanceManager.alterBasicAppearance(appearance3, segment.getDirection(),
+                        step.getId() - segment.getOriginatingStepId());
 
                 shape = new Shape3D(lineArray, appearance3);
 
                 group.addChild(shape);
 
-                model.addChild(group);
+                lines.addChild(group);
             }
+            model.addChild(lines);
 
             og.addChild(model);
+
+            overModel = new TransformGroup();
+            overModel.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+            overModel.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+            overModel.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+            og.addChild(overModel);
 
             og.addChild(getMarkerGroups());
 
@@ -698,6 +751,7 @@ public class StepRenderer extends JPanel
     {
         try {
             branchGraph = new BranchGroup();
+            branchGraph.setCapability(BranchGroup.ALLOW_DETACH);
 
             setupTGroup();
 
@@ -755,6 +809,9 @@ public class StepRenderer extends JPanel
      */
     protected void pick(int x, int y, MouseEvent e)
     {
+        if (!branchGraph.isLive())
+            return;
+
         pickCanvas.setShapeLocation(x, y);
 
         List<PickResult> results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
@@ -762,9 +819,9 @@ public class StepRenderer extends JPanel
         if (results.size() > 0) {
             if (pickMode == PickMode.LAYER) {
                 boolean containsHighlighted = false;
-                List<TransformGroup> newAvailableLayers = new LinkedList<TransformGroup>();
-                if (results.size() == availableLayers.size()) {
-                    Iterator<TransformGroup> it = availableLayers.iterator();
+                List<Group> newAvailableItems = new LinkedList<Group>();
+                if (results.size() == availableItems.size()) {
+                    Iterator<Group> it = availableItems.iterator();
                     boolean different = false;
                     for (PickResult r : results) {
                         TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
@@ -772,7 +829,7 @@ public class StepRenderer extends JPanel
                             different = true;
                         if (tg == highlighted)
                             containsHighlighted = true;
-                        newAvailableLayers.add(tg);
+                        newAvailableItems.add(tg);
                     }
                     if (!different)
                         return;
@@ -781,21 +838,77 @@ public class StepRenderer extends JPanel
                         TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
                         if (tg == highlighted)
                             containsHighlighted = true;
-                        newAvailableLayers.add(tg);
+                        newAvailableItems.add(tg);
                     }
                 }
-                availableLayers = newAvailableLayers;
+                availableItems = newAvailableItems;
 
                 if (containsHighlighted)
                     return;
 
-                setHighlightedLayer(availableLayers.get(0));
+                setHighlightedLayer(availableItems.get(0));
             } else if (pickMode == PickMode.LINE) {
-                System.err.println(results.get(0).getGeometryArray().getUserData());
+                boolean containsHighlighted = false;
+                List<Group> newAvailableItems = new LinkedList<Group>();
+                if (results.size() == availableItems.size()) {
+                    Iterator<Group> it = availableItems.iterator();
+                    boolean different = false;
+                    for (PickResult r : results) {
+                        BranchGroup tg = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
+                        if (!different && it.next() != tg)
+                            different = true;
+
+                        // if some layers are selected, provide only those lines that lie in the selected layers
+                        boolean isInSelectedLayers = selectedLayers.size() == 0;
+                        ModelSegment seg = (ModelSegment) tg.getUserData();
+                        for (Layer l : selectedLayers) {
+                            if (l.liesInThisLayer(seg)) {
+                                isInSelectedLayers = true;
+                                break;
+                            }
+                        }
+                        if (!isInSelectedLayers)
+                            continue;
+
+                        if (tg == highlighted)
+                            containsHighlighted = true;
+
+                        newAvailableItems.add(tg);
+                    }
+                    if (!different)
+                        return;
+                } else {
+                    for (PickResult r : results) {
+                        BranchGroup tg = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
+
+                        boolean isInSelectedLayers = selectedLayers.size() == 0;
+                        ModelSegment seg = (ModelSegment) tg.getUserData();
+                        for (Layer l : selectedLayers) {
+                            if (l.liesInThisLayer(seg)) {
+                                isInSelectedLayers = true;
+                                break;
+                            }
+                        }
+                        if (!isInSelectedLayers)
+                            continue;
+
+                        if (tg == highlighted)
+                            containsHighlighted = true;
+
+                        newAvailableItems.add(tg);
+                    }
+                }
+                availableItems = newAvailableItems;
+
+                if (containsHighlighted)
+                    return;
+
+                if (availableItems.size() > 0)
+                    setHighlightedLine(availableItems.get(0));
             }
         } else if (highlighted != null) {
-            setHighlightedLayer(null);
-            availableLayers.clear();
+            clearHighlighted();
+            availableItems.clear();
         }
 
     }
@@ -888,6 +1001,23 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * Performs the changes needed to make a highlighted item unhighlighted.
+     */
+    protected void clearHighlighted()
+    {
+        if (highlighted == null)
+            return;
+
+        if (highlighted.getUserData() instanceof Layer) {
+            setHighlightedLayer(null);
+        } else if (highlighted.getUserData() instanceof ModelSegment) {
+            setHighlightedLine(null);
+        } else {
+            // TODO point
+        }
+    }
+
+    /**
      * Performs the changes needed to make a layer highlighted.
      * 
      * If another layer has been highlighted, un-highlight it before highlighting the new one.
@@ -896,25 +1026,56 @@ public class StepRenderer extends JPanel
      * 
      * @param layer The layer to highlight. Pass <code>null</code> to clear the highlight.
      */
-    protected void setHighlightedLayer(TransformGroup layer)
+    protected void setHighlightedLayer(Group layer)
     {
         if (layer == highlighted)
             return;
 
         if (highlighted != null) {
-            if (!selectedLayers.contains(highlighted))
-                layerAppearanceManager.setAppearance(highlighted, LayerState.NORMAL);
+            if (!selected.contains(highlighted))
+                layerAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
             else
-                layerAppearanceManager.setAppearance(highlighted, LayerState.SELECTED);
+                layerAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
             highlighted = null;
         }
 
         if (layer != null) {
             highlighted = layer;
-            if (!selectedLayers.contains(layer))
-                layerAppearanceManager.setAppearance(layer, LayerState.HIGHLIGHTED);
+            if (!selected.contains(layer))
+                layerAppearanceManager.setAppearance(layer, SelectionState.HIGHLIGHTED);
             else
-                layerAppearanceManager.setAppearance(layer, LayerState.SELECTED_HIGHLIGHTED);
+                layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED_HIGHLIGHTED);
+        }
+    }
+
+    /**
+     * Performs the changes needed to make a line highlighted.
+     * 
+     * If another line has been highlighted, un-highlight it before highlighting the new one.
+     * 
+     * If the given line already has been highlighted, nothing happens.
+     * 
+     * @param line The line to highlight. Pass <code>null</code> to clear the highlight.
+     */
+    protected void setHighlightedLine(Group line)
+    {
+        if (line == highlighted)
+            return;
+
+        if (highlighted != null) {
+            if (!selected.contains(highlighted))
+                lineAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
+            else
+                lineAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
+            highlighted = null;
+        }
+
+        if (line != null) {
+            highlighted = line;
+            if (!selected.contains(line))
+                lineAppearanceManager.setAppearance(line, SelectionState.HIGHLIGHTED);
+            else
+                lineAppearanceManager.setAppearance(line, SelectionState.SELECTED_HIGHLIGHTED);
         }
     }
 
@@ -925,17 +1086,18 @@ public class StepRenderer extends JPanel
      * 
      * @param layer The layer to select.
      */
-    protected void selectLayer(TransformGroup layer)
+    protected void selectLayer(Group layer)
     {
-        if (selectedLayers.contains(layer))
+        if (selected.contains(layer))
             return;
 
         if (layer != highlighted)
-            layerAppearanceManager.setAppearance(layer, LayerState.SELECTED);
+            layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED);
         else
-            layerAppearanceManager.setAppearance(layer, LayerState.SELECTED_HIGHLIGHTED);
+            layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED_HIGHLIGHTED);
 
-        selectedLayers.add(layer);
+        selected.add(layer);
+        selectedLayers.add((Layer) layer.getUserData());
     }
 
     /**
@@ -945,13 +1107,53 @@ public class StepRenderer extends JPanel
      * 
      * @param layer The layer to deselect.
      */
-    protected void deselectLayer(TransformGroup layer)
+    protected void deselectLayer(Group layer)
     {
-        if (selectedLayers.remove(layer)) {
+        if (selected.remove(layer)) {
             if (layer != highlighted)
-                layerAppearanceManager.setAppearance(layer, LayerState.NORMAL);
+                layerAppearanceManager.setAppearance(layer, SelectionState.NORMAL);
             else
-                layerAppearanceManager.setAppearance(layer, LayerState.HIGHLIGHTED);
+                layerAppearanceManager.setAppearance(layer, SelectionState.HIGHLIGHTED);
+            selectedLayers.remove(layer.getUserData());
+        }
+    }
+
+    /**
+     * Performs the changes needed to make a line selected.
+     * 
+     * If the line has already been selected, nothing happens.
+     * 
+     * @param line The line to select.
+     */
+    protected void selectLine(Group line)
+    {
+        if (selected.contains(line))
+            return;
+
+        if (line != highlighted)
+            lineAppearanceManager.setAppearance(line, SelectionState.SELECTED);
+        else
+            lineAppearanceManager.setAppearance(line, SelectionState.SELECTED_HIGHLIGHTED);
+
+        selected.add(line);
+        selectedLines.add((ModelSegment) line.getUserData());
+    }
+
+    /**
+     * Performs the changes needed to make a selected line not selected.
+     * 
+     * If the given line hasn't been selected, nothing happens.
+     * 
+     * @param line The line to deselect.
+     */
+    protected void deselectLine(Group line)
+    {
+        if (selected.remove(line)) {
+            if (line != highlighted)
+                lineAppearanceManager.setAppearance(line, SelectionState.NORMAL);
+            else
+                lineAppearanceManager.setAppearance(line, SelectionState.HIGHLIGHTED);
+            selectedLines.remove(line.getUserData());
         }
     }
 
@@ -1073,7 +1275,7 @@ public class StepRenderer extends JPanel
             if (steps == 0)
                 return;
 
-            if (e.isControlDown()) {
+            if (e.isControlDown() || (e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) > 0) {
                 if (steps > 0) {
                     Action action = new ZoomInAction();
                     ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "zoomIn");
@@ -1086,17 +1288,17 @@ public class StepRenderer extends JPanel
                         action.actionPerformed(event);
                 }
                 e.consume();
-            } else if (availableLayers.size() > 1 && highlighted != null) {
-                // perform selection among available layers
+            } else if (availableItems.size() > 1 && highlighted != null) {
+                // perform selection among available items
                 if (steps > 0) {
-                    Action action = new HighlightNextLayerAction();
+                    Action action = new HighlightNextItemAction();
                     ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
-                            "highlightNextLayer");
+                            "highlightNextItem");
                     action.actionPerformed(event);
                 } else if (steps < 0) {
-                    Action action = new HighlightPreviousLayerAction();
+                    Action action = new HighlightPreviousItemAction();
                     ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
-                            "highlightPreviousLayer");
+                            "highlightPreviousItem");
                     action.actionPerformed(event);
                 }
                 e.consume();
@@ -1112,10 +1314,10 @@ public class StepRenderer extends JPanel
         @Override
         public void mouseClicked(MouseEvent e)
         {
-            if (pickMode == PickMode.LAYER && e.getButton() == MouseEvent.BUTTON1 && highlighted != null) {
-                Action action = new ToggleHighlightedLayerSelectionAction();
+            if (e.getButton() == MouseEvent.BUTTON1 && highlighted != null) {
+                Action action = new ToggleHighlightedItemSelectionAction();
                 ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
-                        "toggleHigghlightedLayerSelection");
+                        "toggleHighlightedItemSelection");
                 action.actionPerformed(event);
             }
         }
@@ -1131,6 +1333,7 @@ public class StepRenderer extends JPanel
                 Action action = new TogglePickModeAction();
                 ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "togglePickMode");
                 action.actionPerformed(event);
+                pick(e.getX(), e.getY(), e);
             }
         }
     }
@@ -1162,7 +1365,7 @@ public class StepRenderer extends JPanel
 
     }
 
-    protected class HighlightNextLayerAction extends AbstractAction
+    protected class HighlightNextItemAction extends AbstractAction
     {
 
         /** */
@@ -1171,17 +1374,27 @@ public class StepRenderer extends JPanel
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int selIndex = availableLayers.indexOf(highlighted);
+            int selIndex = availableItems.indexOf(highlighted);
 
             if (selIndex > -1) {
-                selIndex = (selIndex + 1) % availableLayers.size();
-                setHighlightedLayer(availableLayers.get(selIndex));
+                selIndex = (selIndex + 1) % availableItems.size();
+                switch (pickMode) {
+                    case POINT:
+                        // TODO
+                        break;
+                    case LINE:
+                        setHighlightedLine(availableItems.get(selIndex));
+                        break;
+                    case LAYER:
+                        setHighlightedLayer(availableItems.get(selIndex));
+                        break;
+                }
             }
         }
 
     }
 
-    protected class HighlightPreviousLayerAction extends AbstractAction
+    protected class HighlightPreviousItemAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -3089302395435461134L;
@@ -1189,13 +1402,23 @@ public class StepRenderer extends JPanel
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int selIndex = availableLayers.indexOf(highlighted);
+            int selIndex = availableItems.indexOf(highlighted);
 
             if (selIndex > -1) {
                 selIndex = selIndex - 1;
                 if (selIndex == -1)
-                    selIndex = availableLayers.size() - 1;
-                setHighlightedLayer(availableLayers.get(selIndex));
+                    selIndex = availableItems.size() - 1;
+                switch (pickMode) {
+                    case POINT:
+                        // TODO
+                        break;
+                    case LINE:
+                        setHighlightedLine(availableItems.get(selIndex));
+                        break;
+                    case LAYER:
+                        setHighlightedLayer(availableItems.get(selIndex));
+                        break;
+                }
             }
         }
 
@@ -1214,7 +1437,7 @@ public class StepRenderer extends JPanel
 
     }
 
-    protected class ToggleHighlightedLayerSelectionAction extends AbstractAction
+    protected class ToggleHighlightedItemSelectionAction extends AbstractAction
     {
         /** */
         private static final long serialVersionUID = -1297141033881147805L;
@@ -1225,10 +1448,24 @@ public class StepRenderer extends JPanel
             if (highlighted == null)
                 return;
 
-            if (selectedLayers.contains(highlighted)) {
-                deselectLayer(highlighted);
-            } else {
-                selectLayer(highlighted);
+            switch (pickMode) {
+                case POINT:
+                    // TODO
+                    break;
+                case LINE:
+                    if (selected.contains(highlighted)) {
+                        deselectLine(highlighted);
+                    } else {
+                        selectLine(highlighted);
+                    }
+                    break;
+                case LAYER:
+                    if (selected.contains(highlighted)) {
+                        deselectLayer(highlighted);
+                    } else {
+                        selectLayer(highlighted);
+                    }
+                    break;
             }
         }
 
@@ -1252,7 +1489,7 @@ public class StepRenderer extends JPanel
             @Override
             protected List<PickResult> filterPickResults(PickResult[] results)
             {
-                return new LinkedList<PickResult>();
+                return new LinkedList<PickResult>(); // TODO
             }
         },
         LINE
@@ -1322,19 +1559,19 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * A state of a layer.
+     * A state of a selected item.
      * 
      * @author Martin Pecka
      */
-    protected enum LayerState
+    protected enum SelectionState
     {
         /** Normal appearance. */
         NORMAL,
-        /** Highlighted layer. */
+        /** Highlighted item. */
         HIGHLIGHTED,
-        /** Selected non-highlighted layer. */
+        /** Selected non-highlighted item. */
         SELECTED,
-        /** Selected highlighted layer. */
+        /** Selected highlighted item. */
         SELECTED_HIGHLIGHTED
     }
 
@@ -1351,67 +1588,69 @@ public class StepRenderer extends JPanel
          * @param layer The layer to apply the appearance on.
          * @param state The state to derive appearance from.
          */
-        protected void setAppearance(TransformGroup layer, LayerState state)
+        protected void setAppearance(Group layer, SelectionState state)
         {
             assert layer.numChildren() == 2;
 
             Enumeration<?> children = layer.getAllChildren();
 
             Shape3D shape = (Shape3D) children.nextElement();
+            Appearance app = shape.getAppearance();
 
             switch (state) {
                 case NORMAL:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getForeground3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getForeground3f());
+                    app.getPolygonAttributes().setPolygonOffset(0f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(0f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
                 case HIGHLIGHTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getHighlightFg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getHighlightFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
                 case SELECTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedFg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
+                    app.getColoringAttributes().setColor(colorManager.getSelectedFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-10000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
                     break;
                 case SELECTED_HIGHLIGHTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedHighlightFg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getSelectedHighlightFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
             }
 
             shape = (Shape3D) children.nextElement();
+            app = shape.getAppearance();
 
             switch (state) {
                 case NORMAL:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getBackground3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(0f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(0f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getBackground3f());
+                    app.getPolygonAttributes().setPolygonOffset(0f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(0f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
                 case HIGHLIGHTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getHighlightBg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getHighlightBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
                 case SELECTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedBg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-10000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-10000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0.3f);
+                    app.getColoringAttributes().setColor(colorManager.getSelectedBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-10000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-10000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
                     break;
                 case SELECTED_HIGHLIGHTED:
-                    shape.getAppearance().getColoringAttributes().setColor(colorManager.getSelectedHighlightBg3f());
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffset(-20000f);
-                    shape.getAppearance().getPolygonAttributes().setPolygonOffsetFactor(-20000f);
-                    shape.getAppearance().getTransparencyAttributes().setTransparency(0f);
+                    app.getColoringAttributes().setColor(colorManager.getSelectedHighlightBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
                     break;
             }
         }
@@ -1425,17 +1664,26 @@ public class StepRenderer extends JPanel
     protected class ColorManager
     {
         /** Color of textual markers' text. */
-        protected Color marker = Color.BLACK;
+        protected Color marker                  = Color.BLACK;
         /** Paper background color. */
         protected Color background;
         /** Paper foreground color. */
         protected Color foreground;
         /** Highlighted layer color for foreground/background. */
-        protected Color highlightBg = new Color(150, 150, 255), highlightFg = new Color(150, 150, 255);
+        protected Color highlightBg             = new Color(150, 150, 255), highlightFg = new Color(150, 150, 255);
         /** Selected layer color for foreground/background. */
-        protected Color selectedBg  = new Color(100, 100, 200), selectedFg = new Color(100, 100, 200);
+        protected Color selectedBg              = new Color(100, 100, 200), selectedFg = new Color(100, 100, 200);
         /** Highlighted selected layer color for foreground/background. */
-        protected Color selectedHighlightBg = new Color(125, 125, 225), selectedHighlightFg = new Color(125, 125, 225);
+        protected Color selectedHighlightBg     = new Color(125, 125, 225), selectedHighlightFg = new Color(125, 125,
+                                                        225);
+        /** Color of a fold line. */
+        protected Color line                    = Color.BLACK;
+        /** Color of a highlighted fold line. */
+        protected Color highlightedLine         = new Color(75, 75, 150);
+        /** Color of a selected fold line. */
+        protected Color selectedLine            = new Color(25, 25, 100);
+        /** Color of a selected highlighted fold line. */
+        protected Color selectedHighlightedLine = new Color(50, 50, 125);
 
         /**
          * @param background Paper background color.
@@ -1761,6 +2009,102 @@ public class StepRenderer extends JPanel
             this.selectedHighlightFg = selectedHighlight;
             this.selectedHighlightBg = selectedHighlight;
         }
+
+        /**
+         * @return Color of a fold line.
+         */
+        public Color getLine()
+        {
+            return line;
+        }
+
+        /**
+         * @return Color of a fold line.
+         */
+        public Color3f getLine3f()
+        {
+            return new Color3f(line);
+        }
+
+        /**
+         * @param line Color of a fold line.
+         */
+        public void setLine(Color line)
+        {
+            this.line = line;
+        }
+
+        /**
+         * @return Color of a highlighted fold line.
+         */
+        public Color getHighlightedLine()
+        {
+            return highlightedLine;
+        }
+
+        /**
+         * @return Color of a highlighted fold line.
+         */
+        public Color3f getHighlightedLine3f()
+        {
+            return new Color3f(highlightedLine);
+        }
+
+        /**
+         * @param highlightedLine Color of a highlighted fold line.
+         */
+        public void setHighlightedLine(Color highlightedLine)
+        {
+            this.highlightedLine = highlightedLine;
+        }
+
+        /**
+         * @return Color of a selected fold line.
+         */
+        public Color getSelectedLine()
+        {
+            return selectedLine;
+        }
+
+        /**
+         * @return Color of a selected fold line.
+         */
+        public Color3f getSelectedLine3f()
+        {
+            return new Color3f(selectedLine);
+        }
+
+        /**
+         * @param selectedLine Color of a selected fold line.
+         */
+        public void setSelectedLine(Color selectedLine)
+        {
+            this.selectedLine = selectedLine;
+        }
+
+        /**
+         * @return Color of a selected highlighted fold line.
+         */
+        public Color getSelectedHighlightedLine()
+        {
+            return selectedHighlightedLine;
+        }
+
+        /**
+         * @return Color of a selected highlighted fold line.
+         */
+        public Color3f getSelectedHighlightedLine3f()
+        {
+            return new Color3f(selectedHighlightedLine);
+        }
+
+        /**
+         * @param selectedHighlightedLine Color of a selected highlighted fold line.
+         */
+        public void setSelectedHighlightedLine(Color selectedHighlightedLine)
+        {
+            this.selectedHighlightedLine = selectedHighlightedLine;
+        }
     }
 
     /**
@@ -1770,30 +2114,179 @@ public class StepRenderer extends JPanel
      */
     protected class StrokeFactory
     {
-        /** Stroke for basic old fold line. */
-        protected Stroke textureBasicLineStroke    = new BasicStroke(0.5f);
-        /** Stroke for a freshly new mountain fold line. */
-        protected Stroke textureMountainLineStroke = new BasicStroke(0.5f, BasicStroke.CAP_BUTT,
-                                                           BasicStroke.JOIN_BEVEL, 0, new float[] { 20f, 5f, 3f, 5f },
-                                                           0f);
-        /** Stroke for a freshly new valley fold line. */
-        protected Stroke textureValleyLineStroke   = new BasicStroke(0.5f, BasicStroke.CAP_BUTT,
-                                                           BasicStroke.JOIN_BEVEL, 0, new float[] { 20f, 10f }, 0f);
+        private final float[] mountainStroke = new float[] { 20f, 5f, 3f, 5f };
+        private final float[] valleyStroke   = new float[] { 20f, 10f };
+
+        /** Array of strokes - first is fold type, then fold age. */
+        protected Stroke[][]  textureStrokes;
+
+        public StrokeFactory()
+        {
+            textureStrokes = new Stroke[Direction.values().length + 1][];
+
+            textureStrokes[getIndex(null)] = new Stroke[] { new BasicStroke(3f) };
+
+            textureStrokes[getIndex(Direction.MOUNTAIN)] = new Stroke[] {
+                    new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, mountainStroke, 0f),
+                    new BasicStroke(2f), new BasicStroke(1f), new BasicStroke(0.5f) };
+
+            textureStrokes[getIndex(Direction.VALLEY)] = new Stroke[] {
+                    new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, valleyStroke, 0f),
+                    new BasicStroke(2f), new BasicStroke(1f), new BasicStroke(0.5f) };
+        }
+
+        protected int getIndex(Direction dir)
+        {
+            if (dir != null)
+                return dir.ordinal();
+            else
+                return Direction.values().length;
+        }
 
         /**
          * Get the stroke to paint a fold line with.
          * 
          * @param direction The direction of the fold line.
-         * @return The stroke to poaint a fold line with.
+         * @param age The age of the fold line (in steps, 0 means this step).
+         * @return The stroke to paint a fold line with.
          */
-        public Stroke getForDirection(Direction direction)
+        public Stroke getForDirection(Direction direction, int age)
         {
-            if (direction == null)
-                return textureBasicLineStroke;
-            else if (direction == Direction.MOUNTAIN)
-                return textureMountainLineStroke;
+            Stroke[] byAge = textureStrokes[getIndex(direction)];
+            if (age < byAge.length)
+                return byAge[age];
             else
-                return textureValleyLineStroke;
+                return byAge[byAge.length - 1];
+        }
+    }
+
+    /**
+     * A manager for changing line appearance.
+     * 
+     * @author Martin Pecka
+     */
+    protected class LineAppearanceManager
+    {
+        /**
+         * Take a basic appearance and set it up according to the direction and age of the fold it represents.
+         * 
+         * @param app The appearance to setup.
+         * @param dir The direction of the fold.
+         * @param age The age of the fold (in steps).
+         */
+        public void alterBasicAppearance(Appearance app, Direction dir, int age)
+        {
+            if (app == null)
+                throw new NullPointerException();
+
+            app.getLineAttributes().setLineWidth(getLineWidth(dir, age));
+
+            if (dir == null) {
+                return;
+            }
+
+            if (age == 0) {
+                app.getLineAttributes().setLinePattern(LineAttributes.PATTERN_DASH);
+                app.getRenderingAttributes().setVisible(false);
+            }
+        }
+
+        /**
+         * Get the width of a line representing a fold.
+         * 
+         * @param dir The direction of the fold.
+         * @param age The age of the fold (in steps).
+         */
+        protected float getLineWidth(Direction dir, int age)
+        {
+            if (dir == null) {
+                return 2f;
+            }
+
+            switch (age) {
+                case 0:
+                    return 1.25f;
+                case 1:
+                    return 1.25f;
+                case 2:
+                    return 0.85f;
+                default:
+                    return 0.5f;
+            }
+        }
+
+        /**
+         * Apply the given appearance on the given line.
+         * 
+         * @param line The line to apply the appearance on.
+         * @param state The state to derive appearance from.
+         */
+        protected void setAppearance(Group line, SelectionState state)
+        {
+            assert line.numChildren() == 1;
+
+            Enumeration<?> children = line.getAllChildren();
+
+            Shape3D shape = (Shape3D) children.nextElement();
+            ModelSegment seg = (ModelSegment) shape.getGeometry().getUserData();
+            Appearance app = shape.getAppearance();
+            Direction dir = seg.getDirection();
+            int age = step.getId() - seg.getOriginatingStepId();
+
+            switch (state) {
+                case NORMAL:
+                    app.getColoringAttributes().setColor(colorManager.getLine3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(seg.getOriginatingStepId() != step.getId());
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.LESS_OR_EQUAL);
+                    app.getLineAttributes().setLineWidth(getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == overModel) {
+                        overModel.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        lines.addChild(line);
+                    }
+                    break;
+                case HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(colorManager.getHighlightedLine3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2.5f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
+                case SELECTED:
+                    app.getColoringAttributes().setColor(colorManager.getSelectedLine3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
+                case SELECTED_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(colorManager.getSelectedHighlightedLine3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
+            }
         }
     }
 }

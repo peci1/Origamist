@@ -404,6 +404,9 @@ public class ModelState implements Cloneable
         // it would be nice to use iterators and foreach loops here, but we need to add elements to the iterated lists
         for (i = 0; i < linesWhole.length - 1; i++) {
             for (int j = i + 1; j < linesWhole.length; j++) {
+                // discard lines not intersecting on the paper
+                if (linesWhole[i].original.getIntersection(linesWhole[j].original) == null)
+                    continue;
                 Segment3d intersection = linesWhole[i].getIntersection(linesWhole[j]);
                 // if the whole lines intersect, find the intersecting subsegments and slice them
                 if (intersection != null && intersection.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
@@ -1560,13 +1563,6 @@ public class ModelState implements Cloneable
                 marker.setStepsToHide(marker.getStepsToHide() - 1);
             else
                 it.remove();
-        }
-
-        for (Fold fold : folds) {
-            for (FoldLine line : fold.getLines()) {
-                // null means that the fold no longer has a special appearance
-                line.setDirection(null);
-            }
         }
     }
 

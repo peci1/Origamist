@@ -4,6 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+import static java.lang.Math.abs;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -660,6 +661,33 @@ public class Polygon3d<T extends Triangle3d>
         });
 
         return intersections;
+    }
+
+    /**
+     * Check if the given line or segment intersects with this layer.
+     * 
+     * @param line The line to check.
+     * @return True if the line intersects with this layer.
+     */
+    public boolean liesInThisLayer(Line3d line)
+    {
+        double dot = plane.getNormal().dot(line.getVector());
+        // we want the line to lie in the layer's plane, so it must be perpendicular to it's normal
+        if (abs(dot) > EPSILON)
+            return false;
+
+        // the line must lie in the layer's plane
+        if (!plane.contains(line.getPoint()))
+            return false;
+
+        Segment3d intersection;
+        for (T t : triangles) {
+            intersection = t.getIntersection(line);
+            if (intersection != null && !intersection.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                return true;
+        }
+
+        return false;
     }
 
     /**

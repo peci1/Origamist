@@ -152,6 +152,25 @@ public class Line2d implements Cloneable, Vector<Double>
     }
 
     /**
+     * Returns true if this line contains all the given points.
+     * 
+     * @param points The points to check.
+     * @return true if this line contains all the given points.
+     */
+    public boolean containsAll(Point2d... points)
+    {
+        if (points == null)
+            return true;
+
+        for (Point2d p : points) {
+            if (!contains(p))
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Return the point on this line that is the nearest to the given point.
      * 
      * @param p The point to find the nearest one for.

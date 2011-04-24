@@ -125,6 +125,9 @@ public class ModelSegment extends Segment3d
             return false;
         if (!this.original.overlaps(other.original) || !this.overlaps(other))
             return false;
+        if ((this.original.containsAll(other.original.getPoints()) != this.containsAll(other.getPoints()))
+                || (other.original.containsAll(this.original.getPoints()) != other.containsAll(this.getPoints())))
+            return false;
 
         Segment3d trial;
         if ((trial = new Segment3d(this.getP1(), other.getP1())) != null && trial.contains(this.getP2())

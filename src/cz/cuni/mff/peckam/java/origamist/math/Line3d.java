@@ -155,6 +155,12 @@ public class Line3d implements Cloneable, Vector<Double>
         return plane.getIntersection(this).getPoint();
     }
 
+    /**
+     * Returns true if this line contains the given point.
+     * 
+     * @param p The point to check.
+     * @return Whether the given point lies on this line.
+     */
     public boolean contains(Point3d point)
     {
         Point3d pt = new Point3d();
@@ -163,6 +169,25 @@ public class Line3d implements Cloneable, Vector<Double>
         vt.cross(vt, v);
         // if vt and v are colinear (parallel), the point is contained in this line
         return vt.epsilonEquals(new Vector3d(), EPSILON);
+    }
+
+    /**
+     * Returns true if this line contains all the given points.
+     * 
+     * @param points The points to check.
+     * @return true if this line contains all the given points.
+     */
+    public boolean containsAll(Point3d... points)
+    {
+        if (points == null)
+            return true;
+
+        for (Point3d p : points) {
+            if (!contains(p))
+                return false;
+        }
+
+        return true;
     }
 
     /**
