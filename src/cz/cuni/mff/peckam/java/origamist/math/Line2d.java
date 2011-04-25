@@ -141,6 +141,18 @@ public class Line2d implements Cloneable, Vector<Double>
     }
 
     /**
+     * Return the point on this line that corresponds to <code>this.p + param*this.v</code>.
+     * 
+     * @param param The parameter of the point (scale of the direction vector needed to be added to this.p to get the
+     *            desired point).
+     * @return The point (note that for a line with zero direction vector, this.p will be returned always).
+     */
+    public Point2d getPointForParameter(double param)
+    {
+        return new Point2d(this.p.x + param * this.v.x, this.p.y + param * this.v.y);
+    }
+
+    /**
      * Returns true if this line contains the given point.
      * 
      * @param p The point to check.

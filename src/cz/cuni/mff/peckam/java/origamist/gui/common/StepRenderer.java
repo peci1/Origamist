@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
 import java.awt.AWTEvent;
@@ -29,6 +30,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -50,6 +52,8 @@ import javax.media.j3d.Material;
 import javax.media.j3d.Node;
 import javax.media.j3d.OrderedGroup;
 import javax.media.j3d.OrientedShape3D;
+import javax.media.j3d.PointArray;
+import javax.media.j3d.PointAttributes;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.RenderingAttributes;
 import javax.media.j3d.Shape3D;
@@ -61,11 +65,13 @@ import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
+import javax.media.j3d.View;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.vecmath.Color3f;
+import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
@@ -79,9 +85,11 @@ import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.picking.PickTool;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
@@ -89,6 +97,7 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.MarkerRenderData;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
@@ -135,6 +144,12 @@ public class StepRenderer extends JPanel
     /** The main transform used to display the step. */
     protected Transform3D            transform              = new Transform3D();
 
+    /** The transform for transforming vworld coordinates to image plate coordinates. */
+    protected Transform3D            vWorldToImagePlate     = new Transform3D();
+
+    /** The transform for transforming image plate coordinates to canvas pixel coordinates. */
+    protected Transform3D            imagePlateToCanvas     = new Transform3D();
+
     /** The transform group containing the whole step. */
     protected TransformGroup         tGroup;
 
@@ -142,13 +157,16 @@ public class StepRenderer extends JPanel
     protected BranchGroup            branchGraph            = null;
 
     /** The group containing all layers. */
-    protected TransformGroup         layers                 = null;
+    protected Group                  layers                 = null;
 
     /** The group containing all lines. */
-    protected TransformGroup         lines                  = null;
+    protected Group                  lines                  = null;
 
     /** The group that is always drawn after the model is drawn. */
-    protected TransformGroup         overModel              = null;
+    protected Group                  overModel              = null;
+
+    /** The group that holds all displayed points. */
+    protected Group                  pointGroup             = null;
 
     /** The zoom of the step. */
     protected double                 zoom                   = 100d;
@@ -164,6 +182,9 @@ public class StepRenderer extends JPanel
 
     /** The factory that handles different strokes. */
     protected StrokeFactory          strokeFactory          = new StrokeFactory();
+
+    /** The factory that creates groups for given model points. */
+    protected PointFactory           pointFactory           = new PointFactory();
 
     /** Cached textures for top and bottom side of the paper. */
     protected Texture                topTexture, bottomTexture;
@@ -186,6 +207,9 @@ public class StepRenderer extends JPanel
     /** The set of currently selected lines. */
     protected Set<ModelSegment>      selectedLines          = new HashSet<ModelSegment>();
 
+    /** The set of currently selected points. */
+    protected Set<ModelPoint>        selectedPoints         = new HashSet<ModelPoint>();
+
     /** The type of primitves the user can pick. */
     protected PickMode               pickMode               = PickMode.POINT;
 
@@ -194,6 +218,9 @@ public class StepRenderer extends JPanel
 
     /** The manager for changing line appearances. */
     protected LineAppearanceManager  lineAppearanceManager  = new LineAppearanceManager();
+
+    /** The manager for changing point appearances. */
+    protected PointAppearanceManager pointAppearanceManager = new PointAppearanceManager();
 
     /** The manager of {@link StepRenderer}'s colors. */
     protected ColorManager           colorManager           = new ColorManager(Color.WHITE, Color.WHITE);
@@ -228,6 +255,7 @@ public class StepRenderer extends JPanel
         offscreenCanvas = canvas.getOffscreenCanvas3D();
         universe = new SimpleUniverse(offscreenCanvas);
         updatePickCanvas();
+        updateTransforms();
 
         setOpaque(false);
         MouseListener listener = new MouseListener();
@@ -239,9 +267,8 @@ public class StepRenderer extends JPanel
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                availableItems.clear();
-
                 clearHighlighted();
+                clearAvailableItems();
 
                 switch (pickMode) {
                     case POINT:
@@ -331,6 +358,9 @@ public class StepRenderer extends JPanel
                     availableItems.clear();
                     highlighted = null;
                     selected.clear();
+                    selectedLayers.clear();
+                    selectedLines.clear();
+                    selectedPoints.clear();
                     topTexture = null;
                     bottomTexture = null;
 
@@ -655,6 +685,7 @@ public class StepRenderer extends JPanel
             tGroup.setTransform(transform);
 
             OrderedGroup og = new OrderedGroup();
+            og.setPickable(true);
 
             TransformGroup model = new TransformGroup();
             model.setPickable(true);
@@ -714,6 +745,7 @@ public class StepRenderer extends JPanel
                 shape = new Shape3D(lineArray, appearance3);
 
                 group.addChild(shape);
+                group.compile();
 
                 lines.addChild(group);
             }
@@ -725,7 +757,15 @@ public class StepRenderer extends JPanel
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+            overModel.setPickable(true);
             og.addChild(overModel);
+
+            pointGroup = new BranchGroup();
+            pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+            pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+            pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+            pointGroup.setPickable(true);
+            og.addChild(pointGroup);
 
             og.addChild(getMarkerGroups());
 
@@ -814,7 +854,14 @@ public class StepRenderer extends JPanel
 
         pickCanvas.setShapeLocation(x, y);
 
-        List<PickResult> results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
+        List<PickResult> results;
+        try {
+            results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
+        } catch (NullPointerException ex) {
+            // picking points sometimes causes this exception to be thrown, but if we ignore this pick call, nothing
+            // serious happens
+            return;
+        }
 
         if (results.size() > 0) {
             if (pickMode == PickMode.LAYER) {
@@ -881,6 +928,7 @@ public class StepRenderer extends JPanel
                     for (PickResult r : results) {
                         BranchGroup tg = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
 
+                        // if some layers are selected, provide only those lines that lie in the selected layers
                         boolean isInSelectedLayers = selectedLayers.size() == 0;
                         ModelSegment seg = (ModelSegment) tg.getUserData();
                         for (Layer l : selectedLayers) {
@@ -905,10 +953,140 @@ public class StepRenderer extends JPanel
 
                 if (availableItems.size() > 0)
                     setHighlightedLine(availableItems.get(0));
+            } else if (pickMode == PickMode.POINT) {
+                // update the projection transform
+                updateTransforms();
+
+                HashSet<ModelPoint> points = new HashSet<ModelPoint>(results.size());
+                LinkedHashSet<Group> pointGroups = new LinkedHashSet<Group>();
+                LinkedList<Group> pointsToAttach = new LinkedList<Group>();
+                final double tolerance = 6d;
+
+                Point2d evtPos = new Point2d(x, y);
+
+                // if there are some selected points, add the close ones to the new available layers
+                for (Group g : selected) {
+                    if (g.getUserData() instanceof ModelPoint) {
+                        if (evtPos.distance(getPointCanvasPosition(g)) < tolerance && liesInSelectedLinesOrLayers(g)) {
+                            points.add((ModelPoint) g.getUserData());
+                            pointGroups.add(g);
+                        }
+                    }
+                }
+
+                List<Group> snapPoints = new LinkedList<Group>();
+                main: for (PickResult r : results) {
+                    BranchGroup group = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
+
+                    // if we picked an existing point, just add it
+                    if (group.getUserData() instanceof ModelPoint) {
+                        if (pointGroups.contains(group) || !liesInSelectedLinesOrLayers(group))
+                            continue main;
+                        pointGroups.add(group);
+                        points.add((ModelPoint) group.getUserData());
+                        continue main;
+                    }
+
+                    // we have picked a fold line
+                    ModelSegment userSegment = (ModelSegment) group.getUserData();
+
+                    // if any of the already available points lies on the fold line, skip this line
+                    for (Group g : pointGroups) {
+                        if (userSegment.getOriginal().contains(((ModelPoint) g.getUserData()).getOriginal()))
+                            continue main;
+                    }
+
+                    Point3d[] edges = r.getIntersection(0).getPrimitiveCoordinates();
+                    assert edges.length == 2;
+                    Segment3d vworldSegment = new Segment3d(edges[0], edges[1]);
+
+                    Point3d vworldIntersection = r.getIntersection(0).getPointCoordinates();
+
+                    double param = vworldSegment.getParameterForPoint(vworldIntersection);
+                    Point3d point = userSegment.getPointForParameter(param);
+                    Point2d point2 = userSegment.getOriginal().getPointForParameter(param);
+
+                    ModelPoint modelPoint = new ModelPoint(point, point2);
+
+                    if (points.contains(modelPoint))
+                        continue;
+
+                    for (ModelPoint p : points) {
+                        if (p.epsilonEquals(modelPoint))
+                            continue main;
+                    }
+
+                    boolean isSnapPoint = false;
+                    // create the snap points (edges and center of the line) and try to use them
+                    Point3d center = vworldSegment.getPointForParameter(0.5d);
+                    Point3d[] snaps = new Point3d[] { new Point3d(vworldSegment.getP1()),
+                            new Point3d(vworldSegment.getP2()), center };
+                    for (Point3d p : snaps) {
+                        if (evtPos.distance(getLocalPointCanvasPosition(p, r.getLocalToVworld())) < tolerance) {
+                            vworldIntersection = p;
+                            param = vworldSegment.getParameterForPoint(p);
+                            point = userSegment.getPointForParameter(param);
+                            point2 = userSegment.getOriginal().getPointForParameter(param);
+                            modelPoint = new ModelPoint(point, point2);
+                            isSnapPoint = true;
+                            break;
+                        }
+                    }
+
+                    // the point changed, so we must re-check if it doesn't collide with an already available point
+                    if (isSnapPoint) {
+                        if (points.contains(modelPoint))
+                            continue main;
+
+                        for (ModelPoint p : points) {
+                            if (p.epsilonEquals(modelPoint))
+                                continue main;
+                        }
+                    }
+
+                    Group g = pointFactory.createPoint(modelPoint, vworldIntersection);
+                    // make snap points look like squares
+                    if (isSnapPoint)
+                        ((Shape3D) g.getChild(0)).getAppearance().getPointAttributes()
+                                .setPointAntialiasingEnable(false);
+
+                    if (!liesInSelectedLinesOrLayers(g))
+                        continue main;
+
+                    points.add(modelPoint);
+                    pointGroups.add(g);
+                    pointsToAttach.add(g);
+                    if (isSnapPoint)
+                        snapPoints.add(g);
+                }
+                // we don't rather attach the new points while we iterate over pick results, it could cause mess
+                for (Group g : pointsToAttach) {
+                    pointGroup.addChild(g);
+                }
+
+                // change priorities of points
+                LinkedList<Group> newAvailableItems = new LinkedList<Group>(pointGroups);
+                newAvailableItems.removeAll(pointsToAttach);
+                newAvailableItems.addAll(0, pointsToAttach);
+                newAvailableItems.removeAll(snapPoints);
+                newAvailableItems.addAll(0, snapPoints);
+
+                availableItems.removeAll(newAvailableItems);
+                for (Group g : availableItems) {
+                    if (!selected.contains(g)) {
+                        ((BranchGroup) g).detach();
+                        pointGroup.removeChild(g);
+                    }
+                }
+
+                availableItems = newAvailableItems;
+
+                if (availableItems.size() > 0)
+                    setHighlightedPoint(availableItems.get(0));
             }
         } else if (highlighted != null) {
             clearHighlighted();
-            availableItems.clear();
+            clearAvailableItems();
         }
 
     }
@@ -921,6 +1099,33 @@ public class StepRenderer extends JPanel
         pickCanvas = new PickCanvas(offscreenCanvas, branchGraph);
         pickCanvas.setMode(PickTool.GEOMETRY_INTERSECT_INFO);
         pickCanvas.setTolerance(3f);
+    }
+
+    /**
+     * Return true if the given point group lies in a selected line or layer.
+     * 
+     * @param point The point group to check.
+     * @return true if the given point group lies in a selected line or layer.
+     */
+    protected boolean liesInSelectedLinesOrLayers(Group point)
+    {
+        if (selectedLayers.size() + selectedLines.size() == 0)
+            return true;
+
+        ModelPoint p = (ModelPoint) point.getUserData();
+        Point2d pOrig = p.getOriginal();
+
+        for (ModelSegment line : selectedLines) {
+            if (line.getOriginal().contains(pOrig))
+                return true;
+        }
+
+        for (Layer layer : selectedLayers) {
+            if (layer.contains(p))
+                return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1013,8 +1218,46 @@ public class StepRenderer extends JPanel
         } else if (highlighted.getUserData() instanceof ModelSegment) {
             setHighlightedLine(null);
         } else {
-            // TODO point
+            setHighlightedPoint(null);
         }
+    }
+
+    /**
+     * Performs the changes needed to make all selected items unselected.
+     */
+    protected void clearSelection()
+    {
+        if (selected.size() == 0)
+            return;
+
+        // temp is needed because direct usage of selected would lead to ConcurrentModificaationException
+        List<Group> temp = new LinkedList<Group>(selected);
+        for (Group g : temp) {
+            if (g.getUserData() instanceof Layer)
+                deselectLayer(g);
+            else if (g.getUserData() instanceof ModelSegment)
+                deselectLine(g);
+            else
+                deselectPoint(g);
+        }
+    }
+
+    /**
+     * Performs the changes needed to remove all available items.
+     */
+    protected void clearAvailableItems()
+    {
+        if (availableItems.size() == 0)
+            return;
+
+        for (Group g : availableItems) {
+            if (g.getUserData() instanceof ModelPoint && g != highlighted && !selected.contains(g)) {
+                ((BranchGroup) g).detach();
+                pointGroup.removeChild(g);
+            }
+        }
+
+        availableItems.clear();
     }
 
     /**
@@ -1076,6 +1319,41 @@ public class StepRenderer extends JPanel
                 lineAppearanceManager.setAppearance(line, SelectionState.HIGHLIGHTED);
             else
                 lineAppearanceManager.setAppearance(line, SelectionState.SELECTED_HIGHLIGHTED);
+        }
+    }
+
+    /**
+     * Performs the changes needed to make a point highlighted.
+     * 
+     * If another point has been highlighted, un-highlight it before highlighting the new one.
+     * 
+     * If the given point already has been highlighted, nothing happens.
+     * 
+     * @param point The point to highlight. Pass <code>null</code> to clear the highlight.
+     */
+    protected void setHighlightedPoint(Group point)
+    {
+        if (point == highlighted)
+            return;
+
+        if (highlighted != null) {
+            if (!selected.contains(highlighted)) {
+                pointAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
+                if (!availableItems.contains(highlighted)) {
+                    ((BranchGroup) highlighted).detach();
+                    pointGroup.removeChild(highlighted);
+                }
+            } else
+                pointAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
+            highlighted = null;
+        }
+
+        if (point != null) {
+            highlighted = point;
+            if (!selected.contains(point))
+                pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
+            else
+                pointAppearanceManager.setAppearance(point, SelectionState.SELECTED_HIGHLIGHTED);
         }
     }
 
@@ -1155,6 +1433,176 @@ public class StepRenderer extends JPanel
                 lineAppearanceManager.setAppearance(line, SelectionState.HIGHLIGHTED);
             selectedLines.remove(line.getUserData());
         }
+    }
+
+    /**
+     * Performs the changes needed to make a point selected.
+     * 
+     * If the point has already been selected, nothing happens.
+     * 
+     * @param point The point to select.
+     */
+    protected void selectPoint(Group point)
+    {
+        if (selected.contains(point))
+            return;
+
+        if (point != highlighted)
+            pointAppearanceManager.setAppearance(point, SelectionState.SELECTED);
+        else
+            pointAppearanceManager.setAppearance(point, SelectionState.SELECTED_HIGHLIGHTED);
+
+        selected.add(point);
+        selectedPoints.add((ModelPoint) point.getUserData());
+    }
+
+    /**
+     * Performs the changes needed to make a selected point not selected.
+     * 
+     * If the given point hasn't been selected, nothing happens.
+     * 
+     * @param point The point to deselect.
+     */
+    protected void deselectPoint(Group point)
+    {
+        if (selected.remove(point)) {
+            if (point != highlighted) {
+                pointAppearanceManager.setAppearance(point, SelectionState.NORMAL);
+                if (!availableItems.contains(point)) {
+                    ((BranchGroup) point).detach();
+                    pointGroup.removeChild(point);
+                }
+            } else
+                pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
+            selectedPoints.remove(point.getUserData());
+        }
+    }
+
+    /**
+     * Update the transformation matrices used to calculate on-canvas position of a 3D point.
+     */
+    protected void updateTransforms()
+    {
+        vWorldToImagePlate = new Transform3D();
+        new ViewInfo(offscreenCanvas.getView()).getImagePlateToVworld(offscreenCanvas, vWorldToImagePlate, null);
+        vWorldToImagePlate.invert();
+
+        double pixelsPerMeterX = offscreenCanvas.getScreen3D().getSize().getWidth()
+                / offscreenCanvas.getScreen3D().getPhysicalScreenWidth();
+        double pixelsPerMeterY = offscreenCanvas.getScreen3D().getSize().getHeight()
+                / offscreenCanvas.getScreen3D().getPhysicalScreenHeight();
+        Transform3D scale = new Transform3D();
+        scale.setScale(new Vector3d(pixelsPerMeterX, -pixelsPerMeterY, 1d));
+
+        Transform3D translate = new Transform3D();
+        translate.setTranslation(new Vector3d(-offscreenCanvas.getLocationOnScreen().x, offscreenCanvas.getScreen3D()
+                .getSize().getHeight()
+                - offscreenCanvas.getLocationOnScreen().y, 0));
+
+        imagePlateToCanvas = new Transform3D(translate);
+        imagePlateToCanvas.mul(scale);
+    }
+
+    /**
+     * Get the on-canvas position of the given vworld point.
+     * 
+     * This method doesn't alter the passed-in point.
+     * 
+     * @param point A point in vworld coordinates.
+     * @return The pixel position of the point on the canvas.
+     */
+    protected Point2d getVworldPointCanvasPosition(Point3d point)
+    {
+        return getVworldPointCanvasPosition(point, false);
+    }
+
+    /**
+     * Get the on-canvas position of the given vworld point.
+     * 
+     * @param point A point in vworld coordinates.
+     * @param canAlterArgument If true, the the given point can be altered by this function, otherwise a copy of it is
+     *            created.
+     * @return The pixel position of the point on the canvas.
+     */
+    protected Point2d getVworldPointCanvasPosition(Point3d point, boolean canAlterArgument)
+    {
+        Point3d trans;
+        if (!canAlterArgument)
+            trans = new Point3d(point);
+        else
+            trans = point;
+
+        // TODO sometimes (for large shears) computes bad
+        vWorldToImagePlate.transform(trans);
+        if (offscreenCanvas.getView().getViewPolicy() == View.PERSPECTIVE_PROJECTION) {
+            // see CanvasViewCache#getPixelLocationFromImagePlate for further explanation
+            Point3d eyePos = new Point3d();
+            offscreenCanvas.getCenterEyeInImagePlate(eyePos);
+
+            if (abs(trans.z - eyePos.z) > EPSILON) {
+                trans.sub(eyePos);
+                double zScale = eyePos.z / (-trans.z);
+
+                trans.x = eyePos.x + trans.x * zScale;
+                trans.y = eyePos.y + trans.y * zScale;
+            }
+        }
+        imagePlateToCanvas.transform(trans);
+        return new Point2d(trans.x, trans.y);
+    }
+
+    /**
+     * Get the on-canvas position of the given local point.
+     * 
+     * This method doesn't alter the passed-in point.
+     * 
+     * @param point A point in local coordinates.
+     * @param localToVworld The transform for transforming local coordinates to vworld.
+     * @return The pixel position of the point on the canvas.
+     */
+    protected Point2d getLocalPointCanvasPosition(Point3d point, Transform3D localToVworld)
+    {
+        return getLocalPointCanvasPosition(point, localToVworld, false);
+    }
+
+    /**
+     * Get the on-canvas position of the given local point.
+     * 
+     * @param point A point in local coordinates.
+     * @param localToVworld The transform for transforming local coordinates to vworld.
+     * @param canAlterArgument If true, the the given point can be altered by this function, otherwise a copy of it is
+     *            created.
+     * @return The pixel position of the point on the canvas.
+     */
+    protected Point2d getLocalPointCanvasPosition(Point3d point, Transform3D localToVworld, boolean canAlterArgument)
+    {
+        Point3d trans;
+        if (!canAlterArgument)
+            trans = new Point3d(point);
+        else
+            trans = point;
+
+        localToVworld.transform(trans);
+        return getVworldPointCanvasPosition(trans, true);
+    }
+
+    /**
+     * Get the on-canvas position of the given point.
+     * 
+     * The given group must contain a child node with index 0 having its Geometry of type PointArray.
+     * 
+     * @param point A point group.
+     * @return The pixel position of the point on the canvas.
+     */
+    protected Point2d getPointCanvasPosition(Group point)
+    {
+        Point3d gPoint = new Point3d();
+        ((PointArray) ((Shape3D) point.getChild(0)).getGeometry()).getCoordinate(0, gPoint);
+
+        Transform3D localToVworld = new Transform3D();
+        point.getLocalToVworld(localToVworld);
+
+        return getLocalPointCanvasPosition(gPoint, localToVworld, true);
     }
 
     /**
@@ -1319,6 +1767,10 @@ public class StepRenderer extends JPanel
                 ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST,
                         "toggleHighlightedItemSelection");
                 action.actionPerformed(event);
+            } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() >= 2) {
+                Action action = new ClearSelectionAction();
+                ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "clearSelection");
+                action.actionPerformed(event);
             }
         }
 
@@ -1380,7 +1832,7 @@ public class StepRenderer extends JPanel
                 selIndex = (selIndex + 1) % availableItems.size();
                 switch (pickMode) {
                     case POINT:
-                        // TODO
+                        setHighlightedPoint(availableItems.get(selIndex));
                         break;
                     case LINE:
                         setHighlightedLine(availableItems.get(selIndex));
@@ -1410,7 +1862,7 @@ public class StepRenderer extends JPanel
                     selIndex = availableItems.size() - 1;
                 switch (pickMode) {
                     case POINT:
-                        // TODO
+                        setHighlightedPoint(availableItems.get(selIndex));
                         break;
                     case LINE:
                         setHighlightedLine(availableItems.get(selIndex));
@@ -1450,7 +1902,11 @@ public class StepRenderer extends JPanel
 
             switch (pickMode) {
                 case POINT:
-                    // TODO
+                    if (selected.contains(highlighted)) {
+                        deselectPoint(highlighted);
+                    } else {
+                        selectPoint(highlighted);
+                    }
                     break;
                 case LINE:
                     if (selected.contains(highlighted)) {
@@ -1467,6 +1923,19 @@ public class StepRenderer extends JPanel
                     }
                     break;
             }
+        }
+
+    }
+
+    protected class ClearSelectionAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = 7889712823950928127L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            clearSelection();
         }
 
     }
@@ -1489,7 +1958,23 @@ public class StepRenderer extends JPanel
             @Override
             protected List<PickResult> filterPickResults(PickResult[] results)
             {
-                return new LinkedList<PickResult>(); // TODO
+                List<PickResult> result = new LinkedList<PickResult>();
+                if (results == null)
+                    return result;
+
+                // let points be first in the list
+                List<PickResult> lines = new LinkedList<PickResult>();
+                for (PickResult r : results) {
+                    if (r.getGeometryArray() != null) {
+                        if (r.getGeometryArray() instanceof LineArray) {
+                            lines.add(r);
+                        } else if (r.getGeometryArray() instanceof PointArray) {
+                            result.add(r);
+                        }
+                    }
+                }
+                result.addAll(lines);
+                return result;
             }
         },
         LINE
@@ -1664,26 +2149,32 @@ public class StepRenderer extends JPanel
     protected class ColorManager
     {
         /** Color of textual markers' text. */
-        protected Color marker                  = Color.BLACK;
+        protected Color marker                   = Color.BLACK;
         /** Paper background color. */
         protected Color background;
         /** Paper foreground color. */
         protected Color foreground;
         /** Highlighted layer color for foreground/background. */
-        protected Color highlightBg             = new Color(150, 150, 255), highlightFg = new Color(150, 150, 255);
+        protected Color highlightBg              = new Color(150, 150, 255), highlightFg = new Color(150, 150, 255);
         /** Selected layer color for foreground/background. */
-        protected Color selectedBg              = new Color(100, 100, 200), selectedFg = new Color(100, 100, 200);
+        protected Color selectedBg               = new Color(100, 100, 200), selectedFg = new Color(100, 100, 200);
         /** Highlighted selected layer color for foreground/background. */
-        protected Color selectedHighlightBg     = new Color(125, 125, 225), selectedHighlightFg = new Color(125, 125,
-                                                        225);
+        protected Color selectedHighlightBg      = new Color(125, 125, 225), selectedHighlightFg = new Color(125, 125,
+                                                         225);
         /** Color of a fold line. */
-        protected Color line                    = Color.BLACK;
+        protected Color line                     = Color.BLACK;
         /** Color of a highlighted fold line. */
-        protected Color highlightedLine         = new Color(75, 75, 150);
+        protected Color highlightedLine          = new Color(75, 75, 150);
         /** Color of a selected fold line. */
-        protected Color selectedLine            = new Color(25, 25, 100);
+        protected Color selectedLine             = new Color(25, 25, 100);
         /** Color of a selected highlighted fold line. */
-        protected Color selectedHighlightedLine = new Color(50, 50, 125);
+        protected Color selectedHighlightedLine  = new Color(50, 50, 125);
+        /** Color of a highlighted point. */
+        protected Color highlightedPoint         = new Color(0, 0, 75);
+        /** Color of a selected point. */
+        protected Color selectedPoint            = new Color(50, 125, 50);
+        /** Color of a selected highlighted point. */
+        protected Color selectedHighlightedPoint = new Color(100, 200, 100);
 
         /**
          * @param background Paper background color.
@@ -2105,6 +2596,78 @@ public class StepRenderer extends JPanel
         {
             this.selectedHighlightedLine = selectedHighlightedLine;
         }
+
+        /**
+         * @return Color of a highlighted point.
+         */
+        public Color getHighlightedPoint()
+        {
+            return highlightedPoint;
+        }
+
+        /**
+         * @return Color of a highlighted point.
+         */
+        public Color3f getHighlightedPoint3f()
+        {
+            return new Color3f(highlightedPoint);
+        }
+
+        /**
+         * @param highlightedPoint Color of a highlighted point.
+         */
+        public void setHighlightedPoint(Color highlightedPoint)
+        {
+            this.highlightedPoint = highlightedPoint;
+        }
+
+        /**
+         * @return Color of a selected point.
+         */
+        public Color getSelectedPoint()
+        {
+            return selectedPoint;
+        }
+
+        /**
+         * @return Color of a selected point.
+         */
+        public Color3f getSelectedPoint3f()
+        {
+            return new Color3f(selectedPoint);
+        }
+
+        /**
+         * @param selectedPoint Color of a selected point.
+         */
+        public void setSelectedPoint(Color selectedPoint)
+        {
+            this.selectedPoint = selectedPoint;
+        }
+
+        /**
+         * @return Color of a selected highlighted point.
+         */
+        public Color getSelectedHighlightedPoint()
+        {
+            return selectedHighlightedPoint;
+        }
+
+        /**
+         * @return Color of a selected highlighted point.
+         */
+        public Color3f getSelectedHighlightedPoint3f()
+        {
+            return new Color3f(selectedHighlightedPoint);
+        }
+
+        /**
+         * @param selectedHighlightedPoint Color of a selected highlighted point.
+         */
+        public void setSelectedHighlightedPoint(Color selectedHighlightedPoint)
+        {
+            this.selectedHighlightedPoint = selectedHighlightedPoint;
+        }
     }
 
     /**
@@ -2228,7 +2791,7 @@ public class StepRenderer extends JPanel
             Enumeration<?> children = line.getAllChildren();
 
             Shape3D shape = (Shape3D) children.nextElement();
-            ModelSegment seg = (ModelSegment) shape.getGeometry().getUserData();
+            ModelSegment seg = (ModelSegment) line.getUserData();
             Appearance app = shape.getAppearance();
             Direction dir = seg.getDirection();
             int age = step.getId() - seg.getOriginatingStepId();
@@ -2287,6 +2850,111 @@ public class StepRenderer extends JPanel
                     }
                     break;
             }
+        }
+    }
+
+    /**
+     * A manager for changing point appearance.
+     * 
+     * @author Martin Pecka
+     */
+    protected class PointAppearanceManager
+    {
+        /**
+         * Apply the given appearance on the given point.
+         * 
+         * @param point The point to apply the appearance on.
+         * @param state The state to derive appearance from.
+         */
+        protected void setAppearance(Group point, SelectionState state)
+        {
+            assert point.numChildren() == 1;
+
+            Enumeration<?> children = point.getAllChildren();
+
+            Shape3D shape = (Shape3D) children.nextElement();
+            Appearance app = shape.getAppearance();
+
+            switch (state) {
+                case NORMAL:
+                    app.getRenderingAttributes().setVisible(false);
+                    break;
+                case HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(colorManager.getHighlightedPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+                case SELECTED:
+                    app.getColoringAttributes().setColor(colorManager.getSelectedPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+                case SELECTED_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(colorManager.getSelectedHighlightedPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * A factory for creating point groups from model points.
+     * 
+     * @author Martin Pecka
+     */
+    protected class PointFactory
+    {
+        /**
+         * Create the group from the given point.
+         * 
+         * @param point The source point.
+         * @param position The position of the point in local coordinates.
+         * @return The group.
+         */
+        public Group createPoint(ModelPoint point, Point3d position)
+        {
+            BranchGroup group = new BranchGroup();
+            group.setUserData(point);
+            group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+            group.setCapability(BranchGroup.ALLOW_DETACH);
+            group.setCapability(BranchGroup.ALLOW_PARENT_READ);
+            group.setPickable(true);
+
+            final float pointSize = 10f;
+
+            final Appearance app = new Appearance();
+
+            app.setPointAttributes(new PointAttributes());
+            app.getPointAttributes().setPointAntialiasingEnable(true);
+            app.getPointAttributes().setPointSize(pointSize * (float) getZoom() / 100f);
+            app.getPointAttributes().setCapability(PointAttributes.ALLOW_SIZE_WRITE);
+            app.getPointAttributes().setCapability(PointAttributes.ALLOW_ANTIALIASING_WRITE);
+
+            addPropertyChangeListener("zoom", new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    app.getPointAttributes().setPointSize(pointSize * (float) getZoom() / 100f);
+                }
+            });
+
+            app.setColoringAttributes(new ColoringAttributes());
+            app.getColoringAttributes().setCapability(ColoringAttributes.ALLOW_COLOR_WRITE);
+            app.setTransparencyAttributes(new TransparencyAttributes());
+            app.getTransparencyAttributes().setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
+            app.setRenderingAttributes(new RenderingAttributes());
+            app.getRenderingAttributes().setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+            app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+            app.getRenderingAttributes().setVisible(false);
+
+            PointArray array = new PointArray(1, PointArray.COORDINATES);
+            array.setCoordinate(0, position);
+
+            group.addChild(new Shape3D(array, app));
+            group.compile();
+
+            return group;
         }
     }
 }

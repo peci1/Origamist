@@ -125,6 +125,18 @@ public class Line3d implements Cloneable, Vector<Double>
     }
 
     /**
+     * Return the point on this line that corresponds to <code>this.p + param*this.v</code>.
+     * 
+     * @param param The parameter of the point (scale of the direction vector needed to be added to this.p to get the
+     *            desired point).
+     * @return The point (note that for a line with zero direction vector, this.p will be returned always).
+     */
+    public Point3d getPointForParameter(double param)
+    {
+        return new Point3d(this.p.x + param * this.v.x, this.p.y + param * this.v.y, this.p.z + param * this.v.z);
+    }
+
+    /**
      * Return true if this line is parallel to the other line.
      * 
      * @param line The other line.
