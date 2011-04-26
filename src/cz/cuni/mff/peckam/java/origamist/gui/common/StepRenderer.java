@@ -3,7 +3,6 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
-import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
 import java.awt.AWTEvent;
@@ -65,7 +64,6 @@ import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
-import javax.media.j3d.View;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JPanel;
@@ -146,9 +144,6 @@ public class StepRenderer extends JPanel
 
     /** The transform for transforming vworld coordinates to image plate coordinates. */
     protected Transform3D            vWorldToImagePlate     = new Transform3D();
-
-    /** The transform for transforming image plate coordinates to canvas pixel coordinates. */
-    protected Transform3D            imagePlateToCanvas     = new Transform3D();
 
     /** The transform group containing the whole step. */
     protected TransformGroup         tGroup;
@@ -1483,24 +1478,11 @@ public class StepRenderer extends JPanel
      */
     protected void updateTransforms()
     {
+        ViewInfo viewInfo = new ViewInfo(offscreenCanvas.getView());
+
         vWorldToImagePlate = new Transform3D();
-        new ViewInfo(offscreenCanvas.getView()).getImagePlateToVworld(offscreenCanvas, vWorldToImagePlate, null);
+        viewInfo.getImagePlateToVworld(offscreenCanvas, vWorldToImagePlate, null);
         vWorldToImagePlate.invert();
-
-        double pixelsPerMeterX = offscreenCanvas.getScreen3D().getSize().getWidth()
-                / offscreenCanvas.getScreen3D().getPhysicalScreenWidth();
-        double pixelsPerMeterY = offscreenCanvas.getScreen3D().getSize().getHeight()
-                / offscreenCanvas.getScreen3D().getPhysicalScreenHeight();
-        Transform3D scale = new Transform3D();
-        scale.setScale(new Vector3d(pixelsPerMeterX, -pixelsPerMeterY, 1d));
-
-        Transform3D translate = new Transform3D();
-        translate.setTranslation(new Vector3d(-offscreenCanvas.getLocationOnScreen().x, offscreenCanvas.getScreen3D()
-                .getSize().getHeight()
-                - offscreenCanvas.getLocationOnScreen().y, 0));
-
-        imagePlateToCanvas = new Transform3D(translate);
-        imagePlateToCanvas.mul(scale);
     }
 
     /**
@@ -1532,23 +1514,12 @@ public class StepRenderer extends JPanel
         else
             trans = point;
 
-        // TODO sometimes (for large shears) computes bad
         vWorldToImagePlate.transform(trans);
-        if (offscreenCanvas.getView().getViewPolicy() == View.PERSPECTIVE_PROJECTION) {
-            // see CanvasViewCache#getPixelLocationFromImagePlate for further explanation
-            Point3d eyePos = new Point3d();
-            offscreenCanvas.getCenterEyeInImagePlate(eyePos);
 
-            if (abs(trans.z - eyePos.z) > EPSILON) {
-                trans.sub(eyePos);
-                double zScale = eyePos.z / (-trans.z);
+        Point2d res = new Point2d();
+        offscreenCanvas.getPixelLocationFromImagePlate(trans, res);
 
-                trans.x = eyePos.x + trans.x * zScale;
-                trans.y = eyePos.y + trans.y * zScale;
-            }
-        }
-        imagePlateToCanvas.transform(trans);
-        return new Point2d(trans.x, trans.y);
+        return res;
     }
 
     /**
