@@ -794,7 +794,13 @@ public class StepRenderer extends JPanel
 
             // TODO now these three lines enable rotating. Either make a whole concept of controlling the
             // displayed step, or delete them
-            Behavior rotate = new MouseRotate(tGroup);
+            Behavior rotate = new MouseRotate(tGroup) {
+                @Override
+                public void transformChanged(Transform3D transform)
+                {
+                    StepRenderer.this.transform = transform;
+                }
+            };
             rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
             branchGraph.addChild(rotate);
 
