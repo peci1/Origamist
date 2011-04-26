@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Behavior;
@@ -113,115 +114,121 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 public class StepRenderer extends JPanel
 {
     /** */
-    private static final long        serialVersionUID       = 9198803673578003101L;
+    private static final long         serialVersionUID         = 9198803673578003101L;
 
     /**
      * The origami diagram we are rendering.
      */
-    protected Origami                origami                = null;
+    protected Origami                 origami                  = null;
 
     /**
      * The step this renderer is rendering.
      */
-    protected Step                   step                   = null;
+    protected Step                    step                     = null;
 
     /**
      * The canvas the model is rendered to.
      */
-    protected JCanvas3D              canvas;
+    protected JCanvas3D               canvas;
 
     /** The offscreen canvas used for drawing. */
-    protected Canvas3D               offscreenCanvas;
+    protected Canvas3D                offscreenCanvas;
 
     /** The canvas support for picking. Automatically updated when branch graph changes. */
-    protected PickCanvas             pickCanvas;
+    protected PickCanvas              pickCanvas;
 
     /** The universe we use. */
-    protected SimpleUniverse         universe;
+    protected SimpleUniverse          universe;
 
     /** The main transform used to display the step. */
-    protected Transform3D            transform              = new Transform3D();
+    protected Transform3D             transform                = new Transform3D();
 
     /** The transform for transforming vworld coordinates to image plate coordinates. */
-    protected Transform3D            vWorldToImagePlate     = new Transform3D();
+    protected Transform3D             vWorldToImagePlate       = new Transform3D();
 
     /** The transform group containing the whole step. */
-    protected TransformGroup         tGroup;
+    protected TransformGroup          tGroup;
 
     /** The branch graph to be added to the scene. */
-    protected BranchGroup            branchGraph            = null;
+    protected BranchGroup             branchGraph              = null;
 
     /** The group containing all layers. */
-    protected Group                  layers                 = null;
+    protected Group                   layers                   = null;
 
     /** The group containing all lines. */
-    protected Group                  lines                  = null;
+    protected Group                   lines                    = null;
 
     /** The group that is always drawn after the model is drawn. */
-    protected Group                  overModel              = null;
+    protected Group                   overModel                = null;
 
     /** The group that holds all displayed points. */
-    protected Group                  pointGroup             = null;
+    protected Group                   pointGroup               = null;
 
     /** The group that holds the highlighted point to draw it over all other points. */
-    protected Group                  highlightedPointGroup  = null;
+    protected Group                   highlightedPointGroup    = null;
 
     /** The zoom of the step. */
-    protected double                 zoom                   = 100d;
+    protected double                  zoom                     = 100d;
 
     /** The helper for properties. */
-    protected PropertyChangeSupport  listeners              = new PropertyChangeSupport(this);
+    protected PropertyChangeSupport   listeners                = new PropertyChangeSupport(this);
 
     /** The font to use for drawing markers. */
-    protected Font                   markerFont             = new Font("Arial", Font.BOLD, 12);
+    protected Font                    markerFont               = new Font("Arial", Font.BOLD, 12);
 
     /** The size of the surface texture. */
-    protected final static int       TEXTURE_SIZE           = 512;
+    protected final static int        TEXTURE_SIZE             = 512;
 
     /** The factory that handles different strokes. */
-    protected StrokeFactory          strokeFactory          = new StrokeFactory();
+    protected StrokeFactory           strokeFactory            = new StrokeFactory();
 
     /** The factory that creates groups for given model points. */
-    protected PointFactory           pointFactory           = new PointFactory();
+    protected PointFactory            pointFactory             = new PointFactory();
 
     /** Cached textures for top and bottom side of the paper. */
-    protected Texture                topTexture, bottomTexture;
+    protected Texture                 topTexture, bottomTexture;
 
     /** The maximum level of anisotropic filter that is supported by the current HW. */
-    protected final float            maxAnisotropyLevel;
+    protected final float             maxAnisotropyLevel;
 
     /** The list of (points/lines/layers - depends on pickMode) available by the last performed pick operation. */
-    protected List<Group>            availableItems         = new LinkedList<Group>();
+    protected List<Group>             availableItems           = new LinkedList<Group>();
 
     /** The currently highlighted (picked) (point/line/layer - depends on pickMode). */
-    protected Group                  highlighted            = null;
+    protected Group                   highlighted              = null;
 
     /** The currently selected points, lines and layers. */
-    protected HashSet<Group>         selected               = new HashSet<Group>();
+    protected HashSet<Group>          selected                 = new HashSet<Group>();
 
     /** The set of currently selected layers. */
-    protected Set<Layer>             selectedLayers         = new HashSet<Layer>();
+    protected Set<Layer>              selectedLayers           = new HashSet<Layer>();
 
     /** The set of currently selected lines. */
-    protected Set<ModelSegment>      selectedLines          = new HashSet<ModelSegment>();
+    protected Set<ModelSegment>       selectedLines            = new HashSet<ModelSegment>();
 
     /** The set of currently selected points. */
-    protected Set<ModelPoint>        selectedPoints         = new HashSet<ModelPoint>();
+    protected Set<ModelPoint>         selectedPoints           = new HashSet<ModelPoint>();
 
     /** The type of primitves the user can pick. */
-    protected PickMode               pickMode               = PickMode.POINT;
+    protected PickMode                pickMode                 = PickMode.POINT;
 
     /** The manager for changing layer appearances. */
-    protected LayerAppearanceManager layerAppearanceManager = new LayerAppearanceManager();
+    protected LayerAppearanceManager  layerAppearanceManager   = new LayerAppearanceManager();
 
     /** The manager for changing line appearances. */
-    protected LineAppearanceManager  lineAppearanceManager  = new LineAppearanceManager();
+    protected LineAppearanceManager   lineAppearanceManager    = new LineAppearanceManager();
 
     /** The manager for changing point appearances. */
-    protected PointAppearanceManager pointAppearanceManager = new PointAppearanceManager();
+    protected PointAppearanceManager  pointAppearanceManager   = new PointAppearanceManager();
 
     /** The manager of {@link StepRenderer}'s colors. */
-    protected ColorManager           colorManager           = new ColorManager(Color.WHITE, Color.WHITE);
+    protected ColorManager            colorManager             = new ColorManager(Color.WHITE, Color.WHITE);
+
+    /**
+     * These callbacks will handle removing unnecessary callbacks. A callback returning true will be removed from this
+     * list, too, after being called.
+     */
+    protected List<Callable<Boolean>> removeListenersCallbacks = new LinkedList<Callable<Boolean>>();
 
     /**
      * 
@@ -1595,6 +1602,19 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * Call all removeListenersCallbacks and remove those that have succeeded.
+     */
+    protected void removeUnnecessaryListeners()
+    {
+        for (Iterator<Callable<Boolean>> it = removeListenersCallbacks.iterator(); it.hasNext();) {
+            try {
+                if (it.next().call())
+                    it.remove();
+            } catch (Exception e) {}
+        }
+    }
+
+    /**
      * @param listener
      * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
      */
@@ -1745,6 +1765,7 @@ public class StepRenderer extends JPanel
         public void mouseMoved(MouseEvent e)
         {
             pick(e.getX(), e.getY(), e);
+            removeUnnecessaryListeners();
         }
 
         @Override
@@ -1774,6 +1795,7 @@ public class StepRenderer extends JPanel
                 ActionEvent event = new ActionEvent(StepRenderer.this, ActionEvent.ACTION_FIRST, "togglePickMode");
                 action.actionPerformed(event);
                 pick(e.getX(), e.getY(), e);
+                removeUnnecessaryListeners();
             }
         }
     }
@@ -2902,7 +2924,7 @@ public class StepRenderer extends JPanel
          */
         public Group createPoint(ModelPoint point, Point3d position)
         {
-            BranchGroup group = new BranchGroup();
+            final BranchGroup group = new BranchGroup();
             group.setUserData(point);
             group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
             group.setCapability(BranchGroup.ALLOW_DETACH);
@@ -2919,11 +2941,24 @@ public class StepRenderer extends JPanel
             app.getPointAttributes().setCapability(PointAttributes.ALLOW_SIZE_WRITE);
             app.getPointAttributes().setCapability(PointAttributes.ALLOW_ANTIALIASING_WRITE);
 
-            addPropertyChangeListener("zoom", new PropertyChangeListener() {
+            final PropertyChangeListener listener = new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt)
                 {
                     app.getPointAttributes().setPointSize(pointSize * (float) getZoom() / 100f);
+                }
+            };
+            addPropertyChangeListener("zoom", listener);
+
+            removeListenersCallbacks.add(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception
+                {
+                    if (group.getParent() == null) {
+                        listeners.removePropertyChangeListener("zoom", listener);
+                        return true;
+                    }
+                    return false;
                 }
             });
 
