@@ -163,6 +163,9 @@ public class StepRenderer extends JPanel
     /** The group that holds all displayed points. */
     protected Group                  pointGroup             = null;
 
+    /** The group that holds the highlighted point to draw it over all other points. */
+    protected Group                  highlightedPointGroup  = null;
+
     /** The zoom of the step. */
     protected double                 zoom                   = 100d;
 
@@ -762,6 +765,13 @@ public class StepRenderer extends JPanel
             pointGroup.setPickable(true);
             og.addChild(pointGroup);
 
+            highlightedPointGroup = new BranchGroup();
+            highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+            highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+            highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+            highlightedPointGroup.setPickable(true);
+            og.addChild(highlightedPointGroup);
+
             og.addChild(getMarkerGroups());
 
             tGroup.addChild(og);
@@ -1076,7 +1086,6 @@ public class StepRenderer extends JPanel
                 for (Group g : availableItems) {
                     if (!selected.contains(g)) {
                         ((BranchGroup) g).detach();
-                        pointGroup.removeChild(g);
                     }
                 }
 
@@ -1254,7 +1263,6 @@ public class StepRenderer extends JPanel
         for (Group g : availableItems) {
             if (g.getUserData() instanceof ModelPoint && g != highlighted && !selected.contains(g)) {
                 ((BranchGroup) g).detach();
-                pointGroup.removeChild(g);
             }
         }
 
@@ -1340,12 +1348,15 @@ public class StepRenderer extends JPanel
         if (highlighted != null) {
             if (!selected.contains(highlighted)) {
                 pointAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
-                if (!availableItems.contains(highlighted)) {
-                    ((BranchGroup) highlighted).detach();
-                    pointGroup.removeChild(highlighted);
+                ((BranchGroup) highlighted).detach();
+                if (availableItems.contains(highlighted)) {
+                    pointGroup.addChild(highlighted);
                 }
-            } else
+            } else {
                 pointAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
+                ((BranchGroup) highlighted).detach();
+                pointGroup.addChild(highlighted);
+            }
             highlighted = null;
         }
 
@@ -1355,6 +1366,8 @@ public class StepRenderer extends JPanel
                 pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
             else
                 pointAppearanceManager.setAppearance(point, SelectionState.SELECTED_HIGHLIGHTED);
+            ((BranchGroup) highlighted).detach();
+            highlightedPointGroup.addChild(highlighted);
         }
     }
 
@@ -1471,7 +1484,6 @@ public class StepRenderer extends JPanel
                 pointAppearanceManager.setAppearance(point, SelectionState.NORMAL);
                 if (!availableItems.contains(point)) {
                     ((BranchGroup) point).detach();
-                    pointGroup.removeChild(point);
                 }
             } else
                 pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
