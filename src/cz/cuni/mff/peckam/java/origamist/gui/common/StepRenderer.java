@@ -1696,6 +1696,7 @@ public class StepRenderer extends JPanel
         @Override
         public void mouseWheelMoved(MouseWheelEvent e)
         {
+            e.consume();
             int steps = e.getWheelRotation();
             if (steps == 0)
                 return;
@@ -1712,7 +1713,6 @@ public class StepRenderer extends JPanel
                     for (int i = steps; i < 0; i++)
                         action.actionPerformed(event);
                 }
-                e.consume();
             } else if (availableItems.size() > 1 && highlighted != null) {
                 // perform selection among available items
                 if (steps > 0) {
@@ -1726,7 +1726,6 @@ public class StepRenderer extends JPanel
                             "highlightPreviousItem");
                     action.actionPerformed(event);
                 }
-                e.consume();
             }
         }
 
