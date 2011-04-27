@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<m:listing version="1" xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/files/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/files/ files.xsd http://www.mff.cuni.cz/~peckam/java/origamist/common/ common.xsd ">
+<m:listing xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/files/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mff.cuni.cz/~peckam/java/origamist/files/v1 http://www.mff.cuni.cz/~peckam/java/origamist/schemata/files_v1.xsd">
   <files>
     <file src="diagram.xml">
     	<author>
@@ -18,7 +18,6 @@
     		<permission>edit</permission>
     		<permission>distribute</permission>    
   		</license>
-  		<original>http://www.mff.cuni.cz</original>
   		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
     </file>
   </files>
@@ -44,7 +43,6 @@
 	    		<permission>edit</permission>
 	    		<permission>distribute</permission>    
 	  		</license>
-	  		<original>http://www.mff.cuni.cz</original>
 	  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
 	    </file>
       </files>
@@ -70,7 +68,6 @@
 			    		<permission>edit</permission>
 			    		<permission>distribute</permission>    
 			  		</license>
-			  		<original>http://www.mff.cuni.cz</original>
 			  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
 			    </file>		
       		</files>
@@ -96,7 +93,6 @@
 			    		<permission>edit</permission>
 			    		<permission>distribute</permission>    
 			  		</license>
-			  		<original>http://www.mff.cuni.cz</original>
 			  		<!--thumbnail><image type="image/jpeg"></image></thumbnail-->
 			    </file>		
       		</files>
