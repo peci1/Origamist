@@ -30,15 +30,14 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
 {
 
     /** Parent property. */
-    public static final String          PARENT_PROPERTY = "parent";
+    public static final String              PARENT_PROPERTY = "parent";
 
     /** The category or listing this category is a subcategory of. */
-    @XmlTransient
-    protected CategoriesContainer       parent          = null;
+    protected transient CategoriesContainer parent          = null;
 
     /** The hastable for more comfortable search in localized names. */
     @XmlTransient
-    protected Hashtable<Locale, String> names           = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String>     names           = new Hashtable<Locale, String>();
 
     /**
      * Create a new listing category.
@@ -128,6 +127,7 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     /**
      * @return The category or listing this category is a subcategory of.
      */
+    @XmlTransient
     public CategoriesContainer getParent()
     {
         return parent;

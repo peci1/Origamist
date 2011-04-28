@@ -15,6 +15,10 @@
 	<!-- Whether to generate debugging symbols in compiled classes. -->
 	<property name="debug" value="false" />
 	
+	<!-- Temporary directory into which XJC plugins will be built. -->
+	<property name="plugin.bin" value="lib-compile-time/plugin-bin"/>
+	
+	<!-- Temporary directory into which will be put files needed to be compiled and referenced from XJC classpath --> 
 	<property name="xjc.temp.dir" value="xjc-bin" />
 
 	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
@@ -64,80 +68,64 @@
 		<mkdir dir="bin" />
 	</target>
 
+    <macrodef name="xjc-plugin">
+        <attribute name="includes" description="The string to put into javac's includes attribute; selects files that belong to the plugin." />
+    	<attribute name="dotPluginFilename" description="Name of the file to be copied to META-INF/services/com.sun.tools.xjc.Plugin. Will be appended to @dotPluginDir." />
+    	<attribute name="dotPluginDir" default="src/com/sun/tools/xjc/addon/" description="The directory containing @dotPluginFilename. Must be either empty or end with /" />
+    	<attribute name="jarName" description="Name of the generated JAR (include the extension)." />
+    	<attribute name="jarPath" default="lib-compile-time/" description="Path to the directory where to put the generated JAR. Must be either empty or end with /" />
+        <sequential>
+        	<mkdir dir="${plugin.bin}" />
+        	<javac srcdir="src" destdir="${plugin.bin}" debug="${debug}" includes="@{includes}">
+				<classpath>
+					<pathelement path="src" />
+					<fileset dir="lib-compile-time">
+						<include name="**/*.jar" />
+					</fileset>
+				</classpath>
+			</javac>
+			<mkdir dir="${plugin.bin}/META-INF" />
+			<mkdir dir="${plugin.bin}/META-INF/services" />
+			<copy file="@{dotPluginDir}@{dotPluginFilename}" tofile="${plugin.bin}/META-INF/services/com.sun.tools.xjc.Plugin" />
+        	<copy includeemptydirs="false" todir="${plugin.bin}">
+        		<fileset dir="src" includes="@{includes}" excludes="**/*.java" />
+        	</copy>
+			<jar destfile="@{jarPath}@{jarName}">
+				<fileset dir="${plugin.bin}" includes="**/*.*" />
+			</jar>
+			<delete dir="${plugin.bin}" />
+        </sequential>
+    </macrodef>
+	
 	<target name="jaxb-implClass-plugin" depends="init">
-		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java">
-			<classpath>
-				<pathelement path="src" />
-				<fileset dir="lib-compile-time">
-					<include name="**/*.jar" />
-				</fileset>
-			</classpath>
-		</javac>
-		<mkdir dir="lib-compile-time/plugin-jar" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF/services" />
-		<move todir="lib-compile-time/plugin-jar">
-			<fileset dir="bin">
-				<include name="com/sun/tools/xjc/addon/PatchForImplClassAndList.class" />
-			</fileset>
-		</move>
-		<copy file="src/com/sun/tools/xjc/addon/PatchForImplClassAndList-com.sun.tools.xjc.Plugin" tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" />
-		<jar destfile="lib-compile-time/xjc-patch-for-implClass-and-list.jar">
-			<fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
-		</jar>
-		<delete dir="lib-compile-time/plugin-jar" />
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java" 
+			dotpluginfilename="PatchForImplClassAndList-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-patch-for-implClass-and-list.jar"/>
+	</target>
+	
+	<target name="jaxb-property-access-plugin" depends="init">
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/PropertyAccessPlugin.java" 
+			dotpluginfilename="PropertyAccessPlugin-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-property-access-plugin.jar"/>
 	</target>
 
 	<target name="jaxb-objFactoryCast-plugin" depends="init">
-		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
-			<classpath>
-				<pathelement path="src" />
-				<fileset dir="lib-compile-time">
-					<include name="**/*.jar" />
-				</fileset>
-			</classpath>
-		</javac>
-		<mkdir dir="lib-compile-time/plugin-jar" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF/services" />
-		<move todir="lib-compile-time/plugin-jar">
-			<fileset dir="bin">
-				<include name="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.class" />
-			</fileset>
-		</move>
-		<copy tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" file="src/com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage-com.sun.tools.xjc.Plugin" />
-		<jar destfile="lib-compile-time/xjc-patch-for-objectFactory-unchecked-cast-usage.jar">
-			<fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
-		</jar>
-		<delete dir="lib-compile-time/plugin-jar" />
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java" 
+			dotpluginfilename="PatchForObjectFactoryUncheckedCastUsage-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-patch-for-objectFactory-unchecked-cast-usage.jar"/>
 	</target>
 	
 	<target name="jaxb-propertyListenerInjector-plugin" depends="init">
-		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/property_listener_injector/*.java">
-			<classpath>
-				<pathelement path="src" />
-				<fileset dir="lib-compile-time">
-					<include name="**/*.jar" />
-				</fileset>
-			</classpath>
-		</javac>
-		<mkdir dir="lib-compile-time/plugin-jar" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF" />
-		<mkdir dir="lib-compile-time/plugin-jar/META-INF/services" />
-		<move todir="lib-compile-time/plugin-jar">
-			<fileset dir="bin">
-				<include name="com/sun/tools/xjc/addon/property_listener_injector/*.class" />
-			</fileset>
-		</move>
-		<copy file="src/com/sun/tools/xjc/addon/PropertyListenerInjector-com.sun.tools.xjc.Plugin" tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" />
-		<copy file="src/com/sun/tools/xjc/addon/property_listener_injector/localstrings.properties" tofile="lib-compile-time/plugin-jar/com/sun/tools/xjc/addon/property_listener_injector/localstrings.properties" />
-		<jar destfile="lib-compile-time/xjc-property-listener-injector.jar">
-			<fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
-		</jar>
-		<delete dir="lib-compile-time/plugin-jar" />
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/property_listener_injector/*.*" 
+			dotpluginfilename="PropertyListenerInjector-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-property-listener-injector.jar"/>
 	</target>
 
-	<target name="xjc-plugins" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin,jaxb-propertyListenerInjector-plugin" description="Compiles and packs XJC plugins.">
+	<target name="xjc-plugins" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin,jaxb-propertyListenerInjector-plugin,jaxb-property-access-plugin" description="Compiles and packs XJC plugins.">
 		<mkdir dir="${xjc.temp.dir}" />
 		<!-- XJC needs the following file to be compiled on the path for the property-listener-injector plugin to work. -->
 		<javac srcdir="src" destdir="${xjc.temp.dir}" debug="${debug}" includes="${customPropertyChangeSupport.as.path}">
@@ -154,37 +142,39 @@
 		<delete dir="${xjc.temp.dir}" />
 	</target>
 	
-	<property name="xjc.arguments" value="-extension
-		-Xpatch-implClass-list
-		-Xpatch-objFactory-uncheckedCast
-		-Xequals
-		-XhashCode
-		-Xinject-listener-code
-		-Xinject-listener-code-interface-bound
-		cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties
-		-Xinject-listener-code-supportClass-bound
-		${customPropertyChangeSupport.as.class}" />
+	<presetdef name="xjc-make" description="A preset XJC schema compilation. Just specify the schema attribute and produces elements.">
+		<xjc destdir="src" removeOldOutput="true">
+			<arg value="-extension"/>
+			<arg value="-Xpatch-implClass-list"/>
+			<arg value="-Xpatch-objFactory-uncheckedCast"/>
+			<arg value="-Xequals"/>
+			<arg value="-XhashCode"/>
+			<arg value="-Xproperty-access"/>
+			<arg value="-Xinject-listener-code"/>
+			<arg value="-Xinject-listener-code-interface-bound"/>
+			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties"/>
+			<arg value="-Xinject-listener-code-supportClass-bound"/>
+			<arg value="${customPropertyChangeSupport.as.class}"/>
+		</xjc>
+	</presetdef>
 	
 	<target name="jaxb-common" depends="xjc-plugins" description="Generates JAXB source files from common.xsd">
-		<xjc schema="${path.to.latest.schema.common}" destdir="src" removeOldOutput="true">
-			<arg line="${xjc.arguments}" />
+		<xjc-make schema="${path.to.latest.schema.common}">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
 			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
-		</xjc>
+		</xjc-make>
 	</target>
 
 	<target name="jaxb-files" depends="xjc-plugins" description="Generates JAXB source files from files.xsd">
-		<xjc schema="${path.to.latest.schema.files}" destdir="src" removeOldOutput="true">
-			<arg line="${xjc.arguments}" />
+		<xjc-make schema="${path.to.latest.schema.files}">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
-		</xjc>
+		</xjc-make>
 	</target>
 
 	<target name="jaxb-diagram" depends="xjc-plugins" description="Generates JAXB source files from diagram.xsd">
-		<xjc schema="${path.to.latest.schema.diagram}" destdir="src" removeOldOutput="true">
-			<arg line="${xjc.arguments}" />
+		<xjc-make schema="${path.to.latest.schema.diagram}">
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
-		</xjc>
+		</xjc-make>
 	</target>
 
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram,xjc-plugins-cleanup" />
@@ -210,12 +200,24 @@
 		</copy>
 	</target>
 
+	<!-- TODO Linux support should be added. -->
+	<macrodef name="killjava" description="Kills all running java processes to avoid JAR files being locked by eg. browser plugins.">
+		<sequential>
+			<if>
+				<os name="windows"/>
+				<then>
+					<exec executable="taskkill">
+						<arg value="/F" />
+						<arg value="/IM" />
+						<arg value="java.exe" />
+					</exec>
+				</then>
+			</if>
+		</sequential>
+	</macrodef>
+	
 	<target name="jar" depends="compile" description="Makes JAR and signs it">
-		<exec executable="taskkill">
-			<arg value="/F" />
-			<arg value="/IM" />
-			<arg value="java.exe" />
-		</exec>
+		<killjava />
 
 		<pathconvert property="mf.classpath" pathsep=" ">
 			<path refid="project.classpath" />
@@ -269,8 +271,37 @@
 		<input addproperty="jnlp.codebase" defaultvalue="file:/${basedir}" message="Enter the URI of the JNLP files codebase. Leave blank if you deploy the application onto your local machine."/>
 	</target>
 	
+	<macrodef name="create-jnlp">
+		<attribute name="jnlp-file" description="" />
+		<attribute name="jar-file" description="" />
+		<element name="additional" implicit="true" />
+		<sequential>
+			<jnlp href="@{jnlp-file}" tofile="@{jnlp-file}" codebase="${jnlp.codebase}">
+				<additional />
+				
+				<security>
+					<all_permissions />
+				</security>
+
+				<resources os="Windows">
+					<property name="sun.java2d.noddraw" value="true" />
+				</resources>
+
+				<resources os="Mac OS X">
+					<property name="j3d.rend" value="jogl" />
+				</resources>
+
+				<resources>
+					<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="256m" initial_heap_size="128m" />
+					<jar href="@{jar-file}" main="true" />
+					<fileset dir="lib" includes="**/*.jar" />
+				</resources>
+			</jnlp>
+		</sequential>
+	</macrodef>
+	
 	<target name="jnlp-viewer" depends="jnlp-init">
-		<jnlp href="origami_viewer.jnlp" tofile="origami_viewer.jnlp" codebase="${jnlp.codebase}">
+		<create-jnlp jar-file="OrigamistViewer.jar" jnlp-file="origami_viewer.jnlp">
 			<information>
 				<title>Origamist viewer</title>
 				<vendor>Martin Pecka</vendor>
@@ -279,30 +310,12 @@
 				<description kind="short">An origami viewer application.</description>
 				<offline_allowed />
 			</information>
-			<security>
-				<all_permissions />
-			</security>
-
-			<resources os="Windows">
-				<property name="sun.java2d.noddraw" value="true" />
-			</resources>
-
-			<resources os="Mac OS X">
-				<property name="j3d.rend" value="jogl" />
-			</resources>
-
-			<resources>
-				<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="256m" initial_heap_size="128m" />
-				<jar href="OrigamistViewer.jar" main="true" />
-				<fileset dir="lib" includes="**/*.jar" />
-			</resources>
-
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600" />
-		</jnlp>
+		</create-jnlp>
 	</target>
 
 	<target name="jnlp-viewer-test" depends="jnlp-init">
-		<jnlp href="origami_viewer.test.jnlp" tofile="origami_viewer.test.jnlp" codebase="${jnlp.codebase}">
+		<create-jnlp jnlp-file="origami_viewer.test.jnlp" jar-file="OrigamistViewer.jar">
 			<information>
 				<title>Origamist viewer</title>
 				<vendor>Martin Pecka</vendor>
@@ -311,33 +324,15 @@
 				<description kind="short">An origami viewer application.</description>
 				<offline_allowed />
 			</information>
-			<security>
-				<all_permissions />
-			</security>
-
-			<resources os="Windows">
-				<property name="sun.java2d.noddraw" value="true" />
-			</resources>
-
-			<resources os="Mac OS X">
-				<property name="j3d.rend" value="jogl" />
-			</resources>
-
-			<resources>
-				<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="256m" initial_heap_size="128m" />
-				<jar href="OrigamistViewer.jar" main="true" />
-				<fileset dir="lib" includes="**/*.jar" />
-			</resources>
-
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600">
 				<param name="files" value="diagrams/listing.xml" />
 				<param name="displayMode" value="PAGE" />
 			</applet_desc>
-		</jnlp>
+		</create-jnlp>
 	</target>
 
 	<target name="jnlp-editor" depends="jnlp-init">
-		<jnlp href="origami_editor.jnlp" tofile="origami_editor.jnlp" codebase="${jnlp.codebase}">
+		<create-jnlp jnlp-file="origami_editor.jnlp" jar-file="OrigamistEditor.jar">
 			<information>
 				<title>Origamist editor</title>
 				<vendor>Martin Pecka</vendor>
@@ -346,105 +341,102 @@
 				<description kind="short">An origami editor application.</description>
 				<offline_allowed />
 			</information>
-			<security>
-				<all_permissions />
-			</security>
-
-			<resources os="Windows">
-				<property name="sun.java2d.noddraw" value="true" />
-			</resources>
-
-			<resources os="Mac OS X">
-				<property name="j3d.rend" value="jogl" />
-			</resources>
-
-			<resources>
-				<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="256m" initial_heap_size="128m" />
-				<jar href="OrigamistEditor.jar" main="true" />
-				<fileset dir="lib" includes="**/*.jar" />
-			</resources>
-
+			
 			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768" />
-		</jnlp>
+		</create-jnlp>
+	</target>
+	
+	<target name="jnlp-editor-test" depends="jnlp-init">
+		<create-jnlp jnlp-file="origami_editor.test.jnlp" jar-file="OrigamistEditor.jar">
+			<information>
+				<title>Origamist editor</title>
+				<vendor>Martin Pecka</vendor>
+				<homepage href="http://github.com/peci1/Origamist" />
+				<description>An editor for digital origami models.</description>
+				<description kind="short">An origami editor application.</description>
+				<offline_allowed />
+			</information>
+			
+			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768">
+				<param name="file" value="diagrams\paper_plane.xml" />
+			</applet_desc>
+		</create-jnlp>
 	</target>
 
 	<target name="run-browser-viewer" depends="default,just-run-browser-viewer" description="Builds and runs the applet in web browser. This task needs to have the JAR files signed." />
 
-	<target name="just-run-browser-viewer" description="Runs the applet in web browser. This task needs to have the JAR files signed.">
-		<if>
-			<available property="" file="${browserExecutable}" />
-			<then>
-				<exec executable="${browserExecutable}" dir=".">
-					<arg value="preview.html" />
-				</exec>
-			</then>
-			<else>
-				<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
-			</else>
-		</if>
-	</target>
+    <macrodef name="run-browser">
+        <attribute name="file" description="The file to open in the browser." />
+        <sequential>
+        	<if>
+				<available property="" file="${browserExecutable}" />
+				<then>
+					<exec executable="${browserExecutable}" dir=".">
+						<arg value="@{file}" />
+					</exec>
+				</then>
+				<else>
+					<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
+				</else>
+			</if>
+        </sequential>
+    </macrodef>
 
+	<macrodef name="run-appletviewer">
+		<attribute name="file" description="The file to open in the appletviewer." />
+		<sequential>
+			<exec executable="appletviewer" dir=".">
+				<arg value="-J-Djava.security.policy=java.policy.applet" />
+				<arg value="@{file}" />
+			</exec>
+		</sequential>
+	</macrodef>
+	
+    <macrodef name="run-jnlp">
+        <attribute name="jnlp-file" description="The JNLP file to be run." />
+        <sequential>
+        	<killjava />
+			<exec executable="javaws" dir=".">
+				<arg value="@{jnlp-file}" />
+			</exec>
+			<delete>
+				<fileset file="@{jnlp-file}" />
+			</delete>
+        </sequential>
+    </macrodef>
+	
+	<target name="just-run-browser-viewer" description="Runs the applet in web browser. This task needs to have the JAR files signed.">
+		<run-browser file="preview.html"/>
+	</target>
+	
 	<target name="run-appletviewer-viewer" depends="default,just-run-appletviewer-viewer" description="Builds and runs the applet in appletviewer. This task doesn't need to have the JAR files signed." />
 
 	<target name="just-run-appletviewer-viewer" description="Runs the applet in appletviewer. This task doesn't need to have the JAR files signed.">
-		<exec executable="appletviewer" dir=".">
-			<arg value="-J-Djava.security.policy=java.policy.applet" />
-			<arg value="preview.html" />
-		</exec>
+		<run-appletviewer file="preview.html"/>
 	</target>
 
 	<target name="run-jnlp-viewer" depends="default,just-run-jnlp-viewer" description="Builds and runs the applet using JavaWS JNLP launcher. This task doesn't need to have the JAR files signed." />
 
 	<target name="just-run-jnlp-viewer" depends="jnlp-viewer-test" description="Runs the applet using JavaWS JNLP launcher. This task doesn't need to have the JAR files signed.">
-		<exec executable="taskkill">
-			<arg value="/F" />
-			<arg value="/IM" />
-			<arg value="javaws.exe" />
-		</exec>
-		<exec executable="javaws" dir=".">
-			<arg value="origami_viewer.test.jnlp" />
-		</exec>
-		<delete>
-			<fileset file="origami_viewer.test.jnlp" />
-		</delete>
+		<run-jnlp jnlp-file="origami_viewer.test.jnlp"/>
 	</target>
 
 	<target name="run-jnlp-editor" depends="default,just-run-jnlp-editor" description="Builds and runs the applet using JavaWS JNLP launcher. This task doesn't need to have the JAR files signed." />
 
-	<target name="just-run-jnlp-editor" description="Runs the applet using JavaWS JNLP launcher. This task doesn't need to have the JAR files signed.">
-		<exec executable="taskkill">
-			<arg value="/F" />
-			<arg value="/IM" />
-			<arg value="javaws.exe" />
-		</exec>
-		<exec executable="javaws" dir=".">
-			<arg value="origami_editor.jnlp" />
-		</exec>
+	<target name="just-run-jnlp-editor" depends="jnlp-editor-test" description="Runs the applet using JavaWS JNLP launcher. This task doesn't need to have the JAR files signed.">
+		<run-jnlp jnlp-file="origami_editor.test.jnlp"/>
 	</target>
 
 	<target name="run-browser-editor" depends="default,just-run-browser-editor" description="Builds and runs the applet in web browser. This task needs to have the JAR files signed." />
 
 	<target name="just-run-browser-editor" description="Runs the applet in web browser. This task needs to have the JAR files signed.">
-		<if>
-			<available property="" file="${browserExecutable}" />
-			<then>
-				<exec executable="${browserExecutable}" dir=".">
-					<arg value="preview-editor.html" />
-				</exec>
-			</then>
-			<else>
-				<echo>Please create your ${browserExecutable} file to preview the applets in a web browser. Look in ${browserExecutable}.example for example contents of that file.</echo>
-			</else>
-		</if>
+		<run-browser file="preview-editor.html"/>
 	</target>
 
 	<target name="run-appletviewer-editor" depends="default,just-run-appletviewer-editor" description="Builds and runs the applet in appletviewer. This task doesn't need to have the JAR files signed." />
 
 	<target name="just-run-appletviewer-editor" description="Runs the applet in appletviewer. This task doesn't need to have the JAR files signed.">
-		<exec executable="appletviewer" dir=".">
-			<arg value="-J-Djava.security.policy=java.policy.applet" />
-			<arg value="preview-editor.html" />
-		</exec>
+		<run-appletviewer file="preview-editor.html"/>
 	</target>
 
 	<!--target name="javadoc">

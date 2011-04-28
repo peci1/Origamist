@@ -27,20 +27,20 @@ import sun.awt.image.ToolkitImage;
 public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.BinaryImage
 {
     /** The image this class holds. */
-    @XmlTransient
-    protected ImageIcon        icon          = null;
+    protected transient ImageIcon icon          = null;
 
     /** The icon property. */
-    public static final String ICON_PROPERTY = "icon";
+    public static final String    ICON_PROPERTY = "icon";
 
     /** The default type of images. */
-    public static String       DEFAULT_TYPE  = "jpg";
+    public static String          DEFAULT_TYPE  = "jpg";
 
     /**
      * Return the content as an ImageIcon.
      * 
      * @return the content as an ImageIcon.
      */
+    @XmlTransient
     public ImageIcon getImageIcon()
     {
         if (icon == null)

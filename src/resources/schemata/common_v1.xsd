@@ -5,7 +5,8 @@
 	xmlns:s="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1"
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
 	xmlns:pli="http://jaxb.dev.java.net/plugin/listener-injector"
-	jxb:extensionBindingPrefixes="xjc pli"
+	xmlns:plugins="http://www.mff.cuni.cz/~peckam/java/origamist/jaxb/plugins"
+	jxb:extensionBindingPrefixes="xjc pli plugins"
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1">
  	 
 	<annotation>
@@ -26,6 +27,7 @@
 			<jxb:schemaBindings>
 				<jxb:package name="cz.cuni.mff.peckam.java.origamist.common.jaxb"/>
 			</jxb:schemaBindings>
+			<plugins:property-access />
 		</appinfo>
 	</annotation>
 	

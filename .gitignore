@@ -2,6 +2,7 @@
 /lib-compile-time/xjc-patch-for-implClass-and-list.jar
 /lib-compile-time/xjc-patch-for-objectFactory-unchecked-cast-usage.jar
 /lib-compile-time/xjc-property-listener-injector.jar
+/lib-compile-time/xjc-property-access-plugin.jar
 /doc/*.aux
 /doc/*.log
 /doc/*.out

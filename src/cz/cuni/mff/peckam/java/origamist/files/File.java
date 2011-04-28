@@ -68,8 +68,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     protected Origami                   origami          = null;
 
     /** The category or listing this file is contained in. */
-    @XmlTransient
-    protected FilesContainer            parent           = null;
+    protected transient FilesContainer  parent           = null;
 
     /** True if the origami is being loaded right now. */
     @XmlTransient
@@ -279,6 +278,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     /**
      * @return The category or listing this file is contained in.
      */
+    @XmlTransient
     public FilesContainer getParent()
     {
         return parent;

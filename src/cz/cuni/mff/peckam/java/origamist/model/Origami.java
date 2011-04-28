@@ -10,7 +10,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -28,9 +27,6 @@ import cz.cuni.mff.peckam.java.origamist.common.BinaryImage;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.License;
 import cz.cuni.mff.peckam.java.origamist.files.File;
-import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
-import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
-import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
@@ -81,6 +77,16 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
         ((ObservableList<LangString>) getShortdesc()).addObserver(new LangStringHashtableObserver(shortDescs));
         ((ObservableList<LangString>) getDescription()).addObserver(new LangStringHashtableObserver(descriptions));
+        addPropertyChangeListener(MODEL_PROPERTY, new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (evt.getOldValue() != null)
+                    ((Model) evt.getOldValue()).setOrigami(null);
+                if (evt.getNewValue() != null)
+                    ((Model) evt.getNewValue()).setOrigami(Origami.this);
+            }
+        });
     }
 
     /**
@@ -198,7 +204,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 this.model = callable.call();
                 init();
             } catch (Exception e) {
-                this.model = new ObjectFactory().createModel();
+                this.model = (Model) new ObjectFactory().createModel();
                 Logger.getLogger("application").l7dlog(Level.ERROR, "modelLazyLoadException", e);
             }
         }
@@ -266,7 +272,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         if (!preserveExisting || getThumbnail().getImage() == null)
             this.getThumbnail().setImage((BinaryImage) cof.createBinaryImage());
         if (!preserveExisting || getModel() == null)
-            this.setModel(of.createModel());
+            this.setModel((Model) of.createModel());
         if (!preserveExisting || getModel().getPaper() == null)
             this.getModel().setPaper((ModelPaper) of.createModelPaper());
         if (!preserveExisting || getModel().getPaper().getSize() == null)
@@ -350,31 +356,6 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void init()
     {
-        List<cz.cuni.mff.peckam.java.origamist.model.Step> list = this.getModel().getSteps().getStep();
-
-        ModelState defaultModelState = new DefaultModelState(this);
-        if (list.size() == 0)
-            return;
-        else if (list.size() == 1) {
-            list.get(0).setDefaultModelState(defaultModelState);
-        } else {
-            Iterator<Step> i = list.iterator();
-            Step prev = null, curr = null, next = i.next();
-            next.setDefaultModelState(defaultModelState);
-            while (i.hasNext()) {
-                prev = curr;
-                curr = next;
-                next = i.next();
-                curr.setPrevious(prev);
-                curr.setNext(next);
-            }
-            prev = curr;
-            curr = next;
-            next = null;
-            curr.setPrevious(prev);
-            curr.setNext(next);
-        }
-
         final PropertyChangeListener listener = new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)

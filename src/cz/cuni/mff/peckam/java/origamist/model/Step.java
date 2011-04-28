@@ -15,20 +15,37 @@ import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * A step of the model creation.
- * 
+ * <p>
  * A step is a group of operations displayed at once.
+ * <p>
+ * Provides property: previous
+ * <p>
+ * Provides property: next
+ * <p>
+ * Provides property: steps
  * 
  * @author Martin Pecka
  */
 @XmlTransient
 public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
 {
+
+    /** The previous property. */
+    public static final String                PREVIOUS_PROPERTY               = "previous";
+
+    /** The next property. */
+    public static final String                NEXT_PROPERTY                   = "next";
+
+    /** The steps property. */
+    public static final String                STEPS_PROPERTY                  = "steps";
+
     /**
      * The hastable for more comfortable search in localized descriptions.
      */
@@ -53,6 +70,9 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      * The step succeeding this one. If this is the last one, next is null.
      */
     protected Step                            next                            = null;
+
+    /** The {@link Steps} object this step is part of. */
+    protected Steps                           steps                           = null;
 
     /** Callbacks to be performed when the model state is invalidated. */
     protected List<Callable<?>>               modelStateInvalidationCallbacks = new LinkedList<Callable<?>>();
@@ -114,10 +134,17 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         if (this.modelState != null)
             return this.modelState;
 
-        if (previous != null)
+        if (previous != null) {
             this.modelState = previous.getModelState().clone();
-        else
+        } else {
+            if (this.defaultModelState == null) {
+                if (getSteps() == null || getSteps().getModel() == null || getSteps().getModel().getOrigami() == null) {
+                    throw new IllegalStateException("Cannot create the default model state for step " + getId());
+                }
+                this.defaultModelState = new DefaultModelState(getSteps().getModel().getOrigami());
+            }
             this.modelState = this.defaultModelState.clone();
+        }
 
         this.modelState.proceedToNextStep();
 
@@ -143,7 +170,12 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void setPrevious(Step previous)
     {
+        Step old = this.previous;
         this.previous = previous;
+        if ((old != previous && (old == null || previous == null)) || (old != null && !old.equals(previous))) {
+            support.firePropertyChange(PREVIOUS_PROPERTY, old, previous);
+            invalidateModelState();
+        }
     }
 
     /**
@@ -151,7 +183,12 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void setNext(Step next)
     {
+        Step old = this.next;
         this.next = next;
+        if ((old != next && (old == null || next == null)) || (old != null && !old.equals(next))) {
+            support.firePropertyChange(NEXT_PROPERTY, old, next);
+            invalidateModelState();
+        }
     }
 
     /**
@@ -176,7 +213,10 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void setDefaultModelState(ModelState modelState)
     {
+        ModelState oldState = this.defaultModelState;
         this.defaultModelState = modelState;
+        if (oldState != modelState)
+            invalidateModelState();
     }
 
     /**
@@ -223,5 +263,24 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     public List<Callable<?>> getModelStateInvalidationCallbacks()
     {
         return modelStateInvalidationCallbacks;
+    }
+
+    /**
+     * @return The {@link Steps} object this step is part of.
+     */
+    public Steps getSteps()
+    {
+        return steps;
+    }
+
+    /**
+     * @param steps The {@link Steps} object this step is part of.
+     */
+    void setSteps(Steps steps)
+    {
+        Steps old = this.steps;
+        this.steps = steps;
+        if ((old != steps && (old == null || steps == null)) || (old != null && !old.equals(steps)))
+            support.firePropertyChange(STEPS_PROPERTY, old, steps);
     }
 }

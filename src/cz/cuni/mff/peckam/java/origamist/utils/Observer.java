@@ -15,7 +15,7 @@ public interface Observer<T>
     /**
      * Called when the observed object gets modified
      * 
-     * @param change The change that has happened.
+     * @param change The change that has happened. For change types ADD/REMOVE the item and oldItem would be the same.
      */
     void changePerformed(ChangeNotification<T> change);
 }

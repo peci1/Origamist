@@ -91,6 +91,7 @@
 	<complexType name="Model">
 		<annotation>
 			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Model" />
 				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>

@@ -40,12 +40,12 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     /**
      * Icon of this operation.
      */
-    @XmlTransient
-    protected ImageIcon                             icon          = null;
+    protected transient ImageIcon                   icon          = null;
 
     /**
      * @return The icon of this operation
      */
+    @XmlTransient
     public ImageIcon getIcon()
     {
         return icon;
