@@ -154,18 +154,20 @@
 		<delete dir="${xjc.temp.dir}" />
 	</target>
 	
+	<property name="xjc.arguments" value="-extension
+		-Xpatch-implClass-list
+		-Xpatch-objFactory-uncheckedCast
+		-Xequals
+		-XhashCode
+		-Xinject-listener-code
+		-Xinject-listener-code-interface-bound
+		cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties
+		-Xinject-listener-code-supportClass-bound
+		${customPropertyChangeSupport.as.class}" />
+	
 	<target name="jaxb-common" depends="xjc-plugins" description="Generates JAXB source files from common.xsd">
 		<xjc schema="${path.to.latest.schema.common}" destdir="src" removeOldOutput="true">
-			<arg value="-extension" />
-			<arg value="-Xpatch-implClass-list" />
-			<arg value="-Xpatch-objFactory-uncheckedCast" />
-			<arg value="-Xequals" />
-			<arg value="-XhashCode" />
-			<arg value="-Xinject-listener-code" />
-			<arg value="-Xinject-listener-code-interface-bound" />
-			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
-			<arg value="-Xinject-listener-code-supportClass-bound" />
-			<arg value="${customPropertyChangeSupport.as.class}" />
+			<arg line="${xjc.arguments}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
 			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
 		</xjc>
@@ -173,32 +175,14 @@
 
 	<target name="jaxb-files" depends="xjc-plugins" description="Generates JAXB source files from files.xsd">
 		<xjc schema="${path.to.latest.schema.files}" destdir="src" removeOldOutput="true">
-			<arg value="-extension" />
-			<arg value="-Xpatch-implClass-list" />
-			<arg value="-Xpatch-objFactory-uncheckedCast" />
-			<arg value="-Xequals" />
-			<arg value="-XhashCode" />
-			<arg value="-Xinject-listener-code" />
-			<arg value="-Xinject-listener-code-interface-bound" />
-			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
-			<arg value="-Xinject-listener-code-supportClass-bound" />
-			<arg value="${customPropertyChangeSupport.as.class}" />
+			<arg line="${xjc.arguments}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
 		</xjc>
 	</target>
 
 	<target name="jaxb-diagram" depends="xjc-plugins" description="Generates JAXB source files from diagram.xsd">
 		<xjc schema="${path.to.latest.schema.diagram}" destdir="src" removeOldOutput="true">
-			<arg value="-extension" />
-			<arg value="-Xpatch-implClass-list" />
-			<arg value="-Xpatch-objFactory-uncheckedCast" />
-			<arg value="-Xequals" />
-			<arg value="-XhashCode" />
-			<arg value="-Xinject-listener-code" />
-			<arg value="-Xinject-listener-code-interface-bound" />
-			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
-			<arg value="-Xinject-listener-code-supportClass-bound" />
-			<arg value="${customPropertyChangeSupport.as.class}" />
+			<arg line="${xjc.arguments}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
 		</xjc>
 	</target>
