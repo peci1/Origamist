@@ -147,8 +147,6 @@ public class PatchForImplClassAndList extends Plugin
                     } else if (setterName.equals(m.name())) {
                         setValueWithReflection("params", m, m.getClass(), new ArrayList<JVar>());
                         m.param(fieldClass, "value");
-                        JBlock newBody = new JBlock();
-                        newBody.assign(JExpr._this().ref(newField), m.listParams()[0]);
 
                         // change the javadoc to reflect the new reality
                         if (m.javadoc().size() >= 3) {
@@ -159,13 +157,24 @@ public class PatchForImplClassAndList extends Plugin
                             m.javadoc().append("Allowed object is: ");
                             m.javadoc().append(fieldClass);
                         }
-
-                        setValueWithReflection("body", m, m.getClass(), newBody);
                     }
 
                 }
             }
         }
+
+        // BEWARE: uncommenting the next lines would be nice (object factories would return elements of implClass type),
+        // but JAXB cannot handle that and unmarshalling ens up with a ClassCastException.
+
+        // Set<String> oldClasses = elementsWithImplClassSet.keySet();
+        // for (PackageOutline pack : model.getAllPackageContexts()) {
+        // JDefinedClass factory = pack.objectFactory();
+        // for (JMethod m : factory.methods()) {
+        // if (oldClasses.contains(m.type().fullName())) {
+        // m.type(model.getCodeModel().ref(elementsWithImplClassSet.get(m.type().fullName())));
+        // }
+        // }
+        // }
 
         return true;
 

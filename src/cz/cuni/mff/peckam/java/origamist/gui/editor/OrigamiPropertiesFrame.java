@@ -830,7 +830,7 @@ public class OrigamiPropertiesFrame extends JDialog
         this.origami = origami;
 
         tempOrigami = (Origami) new ObjectFactory().createOrigami();
-        tempOrigami.initStructure();
+        tempOrigami.initStructure(false);
 
         if (origami != null) {
             tempOrigami.getMetadataFrom(origami);

@@ -20,6 +20,8 @@ import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 
 /**
  * A category containing some diagram metadata.
+ * <p>
+ * Provides property: parent
  * 
  * @author Martin Pecka
  */
@@ -27,13 +29,16 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
         CategoriesContainer
 {
 
+    /** Parent property. */
+    public static final String          PARENT_PROPERTY = "parent";
+
     /** The category or listing this category is a subcategory of. */
     @XmlTransient
-    protected CategoriesContainer       parent = null;
+    protected CategoriesContainer       parent          = null;
 
     /** The hastable for more comfortable search in localized names. */
     @XmlTransient
-    protected Hashtable<Locale, String> names  = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> names           = new Hashtable<Locale, String>();
 
     /**
      * Create a new listing category.
@@ -133,7 +138,11 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
      */
     public void setParent(CategoriesContainer parent)
     {
+        CategoriesContainer oldParent = this.parent;
         this.parent = parent;
+        if ((oldParent != parent && (oldParent != null || parent != null))
+                || (oldParent != null && !oldParent.equals(parent)))
+            support.firePropertyChange(PARENT_PROPERTY, oldParent, parent);
     }
 
     /**

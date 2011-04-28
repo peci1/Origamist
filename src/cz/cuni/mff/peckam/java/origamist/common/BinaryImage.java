@@ -17,6 +17,10 @@ import sun.awt.image.ToolkitImage;
 
 /**
  * This class represents an image.
+ * <p>
+ * Provided property: icon.
+ * <p>
+ * See {@link cz.cuni.mff.peckam.java.origamist.common.jaxb.BinaryImage} for other provided properties.
  * 
  * @author Martin Pecka
  */
@@ -24,7 +28,13 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
 {
     /** The image this class holds. */
     @XmlTransient
-    protected ImageIcon icon = null;
+    protected ImageIcon        icon          = null;
+
+    /** The icon property. */
+    public static final String ICON_PROPERTY = "icon";
+
+    /** The default type of images. */
+    public static String       DEFAULT_TYPE  = "jpg";
 
     /**
      * Return the content as an ImageIcon.
@@ -38,6 +48,21 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
         return icon;
     }
 
+    @Override
+    public void setValue(byte[] value)
+    {
+        setValue(value, true);
+    }
+
+    protected void setValue(byte[] value, boolean setIcon)
+    {
+        super.setValue(value);
+        if (setIcon) {
+            icon = null;
+            setImageIcon(getImageIcon(), false);
+        }
+    }
+
     /**
      * Set the image from the given ImageIcon
      * 
@@ -45,9 +70,23 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
      */
     public void setImageIcon(ImageIcon icon)
     {
+        setImageIcon(icon, true);
+    }
+
+    /**
+     * Set the image from the given ImageIcon
+     * 
+     * @param icon The image to set
+     * @param setValue If true, set also value to the bytes corresponding to this image.
+     */
+    public void setImageIcon(ImageIcon icon, boolean setValue)
+    {
         if (icon == null) {
-            value = null;
+            if (setValue)
+                setValue(null, false);
+            ImageIcon oldIcon = this.icon;
             this.icon = null;
+            support.firePropertyChange(ICON_PROPERTY, oldIcon, null);
             return;
         }
 
@@ -59,16 +98,22 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
         }
 
         if (image == null) {
-            value = null;
+            if (setValue)
+                setValue(null, false);
+            ImageIcon oldIcon = this.icon;
             this.icon = null;
+            support.firePropertyChange(ICON_PROPERTY, oldIcon, null);
             return;
         }
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            ImageIO.write(image, type.replaceAll("[^/]*/", ""), os);
-            value = os.toByteArray();
+            ImageIO.write(image, type != null ? type.replaceAll("[^/]*/", "") : DEFAULT_TYPE, os);
+            if (setValue)
+                setValue(os.toByteArray(), false);
+            ImageIcon oldIcon = this.icon;
             this.icon = icon;
+            support.firePropertyChange(ICON_PROPERTY, oldIcon, icon);
         } catch (IOException e) {
             Logger.getLogger("application").warn("IO error while setting a thumbnail of origami.", e);
         } finally {

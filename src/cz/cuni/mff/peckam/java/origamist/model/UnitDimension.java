@@ -29,12 +29,6 @@ public class UnitDimension extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     /** The localization resource bundle. */
     private static ResourceBundle messages;
 
-    /** The unit of the associated reference dimension. */
-    protected Unit                referenceUnit   = null;
-
-    /** The length of the reference dimension. */
-    protected Double              referenceLength = null;
-
     static {
         PropertyChangeListener l = new PropertyChangeListener() {
             @Override
@@ -123,23 +117,7 @@ public class UnitDimension extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
      */
     public void setReference(Unit unit, Double length)
     {
-        this.referenceUnit = unit;
-        this.referenceLength = length;
-    }
-
-    /**
-     * @return the referenceUnit
-     */
-    public Unit getReferenceUnit()
-    {
-        return referenceUnit;
-    }
-
-    /**
-     * @return the referenceLength
-     */
-    public Double getReferenceLength()
-    {
-        return referenceLength;
+        setReferenceUnit(unit);
+        setReferenceLength(length);
     }
 }

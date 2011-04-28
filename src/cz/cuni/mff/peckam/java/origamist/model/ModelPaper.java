@@ -106,5 +106,4 @@ public class ModelPaper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Mod
         s.setValue(note);
         this.note.add(s);
     }
-
 }

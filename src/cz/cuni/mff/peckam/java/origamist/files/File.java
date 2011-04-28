@@ -3,19 +3,14 @@
  */
 package cz.cuni.mff.peckam.java.origamist.files;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -27,50 +22,62 @@ import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
  * Metadata of a model.
  * 
  * Provides the following bound properties:
- * isOrigamiLoaded - fired when the origami this file references to gets loaded
- * origami
- * author
- * license
- * year
- * thumbnail
- * src
- * original
+ * <ul>
+ * <li>isOrigamiLoaded - fired when the origami this file references to gets loaded</li>
+ * <li>origami</li>
+ * <li>parent</li>
+ * <li>loading</li>
+ * <li>invalid</li>
+ * <li>author</li>
+ * <li>license</li>
+ * <li>year</li>
+ * <li>thumbnail</li>
+ * <li>src</li>
+ * <li>original</li>
+ * </ul>
  * 
  * @author Martin Pecka
  */
 public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File implements HierarchicalComponent
 {
 
+    /** The origami property. */
+    public static final String          ORIGAMI_PROPERTY = "origami";
+    /** The parent property. */
+    public static final String          PARENT_PROPERTY  = "parent";
+    /** The loading property. */
+    public static final String          LOADING_PROPERTY = "loading";
+    /** The invalid property. */
+    public static final String          INVALID_PROPERTY = "invalid";
+    /** The loaded property. */
+    public static final String          LOADED_PROPERTY  = "loaded";
+
     /**
      * The hastable for more comfortable search in localized names.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> names             = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> names            = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized short descriptions.
      */
     @XmlTransient
-    protected Hashtable<Locale, String> shortDescs        = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> shortDescs       = new Hashtable<Locale, String>();
 
     /** The origami model corresponding to this file. */
     @XmlTransient
-    protected Origami                   origami           = null;
+    protected Origami                   origami          = null;
 
     /** The category or listing this file is contained in. */
     @XmlTransient
-    protected FilesContainer            parent            = null;
-
-    /** Property change listeners. */
-    @XmlTransient
-    protected PropertyChangeSupport     propertyListeners = new PropertyChangeSupport(this);
+    protected FilesContainer            parent           = null;
 
     /** True if the origami is being loaded right now. */
     @XmlTransient
-    protected volatile boolean          origamiLoading    = false;
+    protected volatile boolean          origamiLoading   = false;
 
     /** True if this file doesn't point to a valid origami. */
     @XmlTransient
-    protected volatile boolean          invalid           = false;
+    protected volatile boolean          invalid          = false;
 
     /**
      * Create a new origami metadata.
@@ -196,25 +203,28 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
             IOException
     {
         if (origami == null) {
-            origamiLoading = true;
+            setOrigamiLoading(true);
             try {
                 Origami origami = ServiceLocator.get(OrigamiHandler.class).loadModel(getSrc(), onlyMetadata);
                 setOrigami(origami);
+                setInvalid(false);
             } catch (UnsupportedDataFormatException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
                 }
-                origamiLoading = false;
+                setInvalid(true);
+                setOrigamiLoading(false);
                 throw e;
             } catch (IOException e) {
                 if (autoRemoveBad && this.parent != null) {
                     this.parent.getFiles().getFile().remove(this);
                 }
-                origamiLoading = false;
+                setInvalid(true);
+                setOrigamiLoading(false);
                 throw e;
             }
         }
-        origamiLoading = false;
+        setOrigamiLoading(false);
         return origami;
 
     }
@@ -229,15 +239,19 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     {
         Origami oldOrigami = this.origami;
         this.origami = origami;
-        origami.setFile(this);
-        fillFromOrigami();
+        if (origami != null) {
+            origami.setFile(this);
+            fillFromOrigami();
+        }
 
         if (oldOrigami == null && origami != null)
-            propertyListeners.firePropertyChange("isOrigamiLoaded", null, origami);
-        if ((oldOrigami == null && origami != null) || (oldOrigami != null && origami == null)
-                || (oldOrigami != null && origami != null && !oldOrigami.equals(origami))) {
-            propertyListeners.firePropertyChange("origami", oldOrigami, origami);
+            support.firePropertyChange(LOADED_PROPERTY, null, origami);
+        if ((oldOrigami != origami && (oldOrigami == null || origami == null))
+                || (oldOrigami != null && !oldOrigami.equals(origami))) {
+            support.firePropertyChange(ORIGAMI_PROPERTY, oldOrigami, origami);
         }
+        if (origami != null)
+            setInvalid(false);
     }
 
     /**
@@ -275,7 +289,11 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      */
     public void setParent(FilesContainer parent)
     {
+        FilesContainer oldParent = this.parent;
         this.parent = parent;
+        if ((oldParent != parent && (oldParent == null || parent == null))
+                || (oldParent != null && !oldParent.equals(parent)))
+            support.firePropertyChange(PARENT_PROPERTY, oldParent, parent);
     }
 
     @Override
@@ -309,6 +327,17 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     }
 
     /**
+     * @param origamiLoading True if the origami is being loaded right now.
+     */
+    protected void setOrigamiLoading(boolean origamiLoading)
+    {
+        boolean oldLoading = this.origamiLoading;
+        this.origamiLoading = origamiLoading;
+        if (oldLoading != origamiLoading)
+            support.firePropertyChange(LOADING_PROPERTY, oldLoading, origamiLoading);
+    }
+
+    /**
      * @return False if this file points to a valid origami or the origami isn't loaded.
      */
     public boolean isInvalid()
@@ -321,126 +350,9 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      */
     public void setInvalid(boolean invalid)
     {
+        boolean oldInvalid = this.invalid;
         this.invalid = invalid;
+        if (oldInvalid != invalid)
+            support.firePropertyChange(INVALID_PROPERTY, oldInvalid, invalid);
     }
-
-    @Override
-    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.Author value)
-    {
-        cz.cuni.mff.peckam.java.origamist.common.Author oldValue = getAuthor();
-        super.setAuthor(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("author", oldValue, value);
-    }
-
-    @Override
-    public void setYear(XMLGregorianCalendar value)
-    {
-        XMLGregorianCalendar oldValue = getYear();
-        super.setYear(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("year", oldValue, value);
-    }
-
-    @Override
-    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.License value)
-    {
-        cz.cuni.mff.peckam.java.origamist.common.License oldValue = getLicense();
-        super.setLicense(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("license", oldValue, value);
-    }
-
-    @Override
-    public void setOriginal(URI value)
-    {
-        URI oldValue = getOriginal();
-        super.setOriginal(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("original", oldValue, value);
-    }
-
-    @Override
-    public void setThumbnail(Image value)
-    {
-        Image oldValue = getThumbnail();
-        super.setThumbnail(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("thumbnail", oldValue, value);
-    }
-
-    @Override
-    public void setSrc(URI value)
-    {
-        URI oldValue = getSrc();
-        super.setSrc(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("src", oldValue, value);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyListeners.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyListeners.removePropertyChangeListener(listener);
-    }
-
-    /**
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners()
-    {
-        return propertyListeners.getPropertyChangeListeners();
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        propertyListeners.addPropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        propertyListeners.removePropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
-    {
-        return propertyListeners.getPropertyChangeListeners(propertyName);
-    }
-
 }

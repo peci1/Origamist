@@ -3,12 +3,15 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -24,26 +27,22 @@ import cz.cuni.mff.peckam.java.origamist.common.Author;
 import cz.cuni.mff.peckam.java.origamist.common.BinaryImage;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.common.License;
-import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import cz.cuni.mff.peckam.java.origamist.files.File;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
+import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
 /**
  * The origami diagram.
- * 
- * Provides the following bound properties:
- * author
- * license
- * year
- * thumbnail
- * src
- * original
- * model
- * paper
+ * <p>
+ * Provided property: src
+ * <p>
+ * See {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Origami} for other bound properties.
  * 
  * @author Martin Pecka
  */
@@ -73,10 +72,6 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      * The URL this origami was created from. Obviously this will be <code>null</code> for the just-being-created model.
      */
     protected URL                       src               = null;
-
-    /** Property change listeners. */
-    @XmlTransient
-    protected PropertyChangeSupport     propertyListeners = new PropertyChangeSupport(this);
 
     /**
      * Create a new origami diagram.
@@ -201,7 +196,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 Callable<Model> callable = loadModelCallable;
                 loadModelCallable = null;
                 this.model = callable.call();
-                initSteps();
+                init();
             } catch (Exception e) {
                 this.model = new ObjectFactory().createModel();
                 Logger.getLogger("application").l7dlog(Level.ERROR, "modelLazyLoadException", e);
@@ -247,100 +242,45 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void setSrc(URL value)
     {
-        URL oldValue = getSrc();
+        URL oldValue = this.src;
+        this.src = value;
         if ((oldValue == null && value != null) || (oldValue != null && value == null)
                 || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("src", oldValue, value);
-    }
-
-    @Override
-    public void setAuthor(cz.cuni.mff.peckam.java.origamist.common.Author value)
-    {
-        cz.cuni.mff.peckam.java.origamist.common.Author oldValue = getAuthor();
-        super.setAuthor(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("author", oldValue, value);
-    }
-
-    @Override
-    public void setYear(XMLGregorianCalendar value)
-    {
-        XMLGregorianCalendar oldValue = getYear();
-        super.setYear(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("year", oldValue, value);
-    }
-
-    @Override
-    public void setLicense(cz.cuni.mff.peckam.java.origamist.common.License value)
-    {
-        cz.cuni.mff.peckam.java.origamist.common.License oldValue = getLicense();
-        super.setLicense(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("license", oldValue, value);
-    }
-
-    @Override
-    public void setOriginal(URI value)
-    {
-        URI oldValue = getOriginal();
-        super.setOriginal(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("original", oldValue, value);
-    }
-
-    @Override
-    public void setThumbnail(Image value)
-    {
-        Image oldValue = getThumbnail();
-        super.setThumbnail(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("thumbnail", oldValue, value);
-    }
-
-    @Override
-    public void setPaper(cz.cuni.mff.peckam.java.origamist.model.DiagramPaper value)
-    {
-        cz.cuni.mff.peckam.java.origamist.model.DiagramPaper oldValue = getPaper();
-        super.setPaper(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("paper", oldValue, value);
-    }
-
-    @Override
-    public void setModel(Model value)
-    {
-        Model oldValue = getModel();
-        super.setModel(value);
-        if ((oldValue == null && value != null) || (oldValue != null && value == null)
-                || (oldValue != null && value != null && !oldValue.equals(value)))
-            propertyListeners.firePropertyChange("model", oldValue, value);
+            support.firePropertyChange("src", oldValue, value);
     }
 
     /**
      * Initializes the substructures, so that no structure that may contain other structures will be <code>null</code>.
      */
-    public void initStructure()
+    public void initStructure(boolean preserveExisting)
     {
-        this.setAuthor((Author) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createAuthor());
-        this.setLicense((License) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createLicense());
-        this.setThumbnail(new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createImage());
-        this.getThumbnail().setImage(
-                (BinaryImage) new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory().createBinaryImage());
-        this.setModel(new ObjectFactory().createModel());
-        this.getModel().setPaper((ModelPaper) new ObjectFactory().createModelPaper());
-        this.getModel().getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
-        this.getModel().getPaper().setColors(new ObjectFactory().createModelColors());
-        this.getModel().setSteps((cz.cuni.mff.peckam.java.origamist.model.Steps) new ObjectFactory().createSteps());
-        this.setPaper((DiagramPaper) new ObjectFactory().createDiagramPaper());
-        this.getPaper().setColor(new ObjectFactory().createDiagramColors());
-        this.getPaper().setSize((UnitDimension) new ObjectFactory().createUnitDimension());
+        ObjectFactory of = new ObjectFactory();
+        cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory cof = new cz.cuni.mff.peckam.java.origamist.common.jaxb.ObjectFactory();
+
+        if (!preserveExisting || getAuthor() == null)
+            this.setAuthor((Author) cof.createAuthor());
+        if (!preserveExisting || getLicense() == null)
+            this.setLicense((License) cof.createLicense());
+        if (!preserveExisting || getThumbnail() == null)
+            this.setThumbnail(cof.createImage());
+        if (!preserveExisting || getThumbnail().getImage() == null)
+            this.getThumbnail().setImage((BinaryImage) cof.createBinaryImage());
+        if (!preserveExisting || getModel() == null)
+            this.setModel(of.createModel());
+        if (!preserveExisting || getModel().getPaper() == null)
+            this.getModel().setPaper((ModelPaper) of.createModelPaper());
+        if (!preserveExisting || getModel().getPaper().getSize() == null)
+            this.getModel().getPaper().setSize((UnitDimension) of.createUnitDimension());
+        if (!preserveExisting || getModel().getPaper().getColors() == null)
+            this.getModel().getPaper().setColors(of.createModelColors());
+        if (!preserveExisting || getModel().getSteps() == null)
+            this.getModel().setSteps((cz.cuni.mff.peckam.java.origamist.model.Steps) of.createSteps());
+        if (!preserveExisting || getPaper() == null)
+            this.setPaper((DiagramPaper) of.createDiagramPaper());
+        if (!preserveExisting || getPaper().getColor() == null)
+            this.getPaper().setColor(of.createDiagramColors());
+        if (!preserveExisting || getPaper().getSize() == null)
+            this.getPaper().setSize((UnitDimension) of.createUnitDimension());
     }
 
     /**
@@ -351,28 +291,31 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     public void getMetadataFrom(Origami from)
     {
-        // initStucture() also clears steps, but we are only resetting metadata
-        cz.cuni.mff.peckam.java.origamist.model.Steps oldSteps = getModel().getSteps();
         // reset the metadata to the empty ones
-        initStructure();
-        getModel().setSteps(oldSteps);
+        initStructure(true);
 
         getName().addAll(from.getName());
-        setYear(from.getYear());
+        setYear((XMLGregorianCalendar) from.getYear().clone());
         getShortdesc().addAll(from.getShortdesc());
         getDescription().addAll(from.getDescription());
-        setOriginal(from.getOriginal());
+        try {
+            setOriginal(new URI(from.getOriginal().toString()));
+        } catch (URISyntaxException e) {} catch (NullPointerException e) {}
 
         getAuthor().setName(from.getAuthor().getName());
         getAuthor().setHomepage(from.getAuthor().getHomepage());
 
         getLicense().setContent(from.getLicense().getContent());
-        getLicense().setHomepage(from.getLicense().getHomepage());
+        try {
+            getLicense().setHomepage(new URI(from.getLicense().getHomepage().toString()));
+        } catch (URISyntaxException e) {} catch (NullPointerException e) {}
         getLicense().setName(from.getLicense().getName());
         getLicense().getPermission().addAll(from.getLicense().getPermission());
 
-        getThumbnail().getImage().setValue(from.getThumbnail().getImage().getValue());
+        byte[] newImage = Arrays.copyOf(from.getThumbnail().getImage().getValue(), from.getThumbnail().getImage()
+                .getValue().length);
         getThumbnail().getImage().setType(from.getThumbnail().getImage().getType());
+        getThumbnail().getImage().setValue(newImage);
 
         getModel().getPaper().setWeight(from.getModel().getPaper().getWeight());
         getModel().getPaper().getColors().setBackground(from.getModel().getPaper().getColors().getBackground());
@@ -398,12 +341,14 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         getPaper().getSize().setUnit(from.getPaper().getSize().getUnit());
         getPaper().getSize().setReference(from.getPaper().getSize().getReferenceUnit(),
                 from.getPaper().getSize().getReferenceLength());
+
+        init();
     }
 
     /**
-     * Create pointers to previous/next steps.
+     * Create pointers to previous/next steps and setup model state invalidation callbacks.
      */
-    public void initSteps()
+    public void init()
     {
         List<cz.cuni.mff.peckam.java.origamist.model.Step> list = this.getModel().getSteps().getStep();
 
@@ -411,10 +356,9 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         if (list.size() == 0)
             return;
         else if (list.size() == 1) {
-            (list.get(0)).setDefaultModelState(defaultModelState);
-            return;
+            list.get(0).setDefaultModelState(defaultModelState);
         } else {
-            Iterator<cz.cuni.mff.peckam.java.origamist.model.Step> i = list.iterator();
+            Iterator<Step> i = list.iterator();
             Step prev = null, curr = null, next = i.next();
             next.setDefaultModelState(defaultModelState);
             while (i.hasNext()) {
@@ -429,9 +373,94 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
             next = null;
             curr.setPrevious(prev);
             curr.setNext(next);
-
-            return;
         }
+
+        final PropertyChangeListener listener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                List<String> oldProperties = new LinkedList<String>();
+                if (evt.getOldValue() instanceof HasBoundProperties) {
+                    oldProperties = ((HasBoundProperties) evt.getOldValue()).removeAllListeners(this);
+                }
+
+                if (oldProperties.size() == 0)
+                    oldProperties.add(null);
+
+                if (evt.getNewValue() instanceof HasBoundProperties) {
+                    for (String property : oldProperties) {
+                        if (property == null)
+                            ((HasBoundProperties) evt.getNewValue()).addPropertyChangeListener(this);
+                        else
+                            ((HasBoundProperties) evt.getNewValue()).addPropertyChangeListener(property, this);
+                    }
+                }
+
+                if (getModel() != null && getModel().getSteps() != null && getModel().getSteps().getStep() != null
+                        && getModel().getSteps().getStep().size() > 0)
+                    getModel().getSteps().getStep().get(0).invalidateModelState();
+            }
+        };
+
+        final Observer<Operation> operationObserver = new Observer<Operation>() {
+            @Override
+            public void changePerformed(ChangeNotification<Operation> change)
+            {
+                if (change.getOldItem() != null)
+                    change.getOldItem().removeAllListeners(listener);
+                if (change.getItem() != null)
+                    change.getItem().addPropertyChangeListener(listener);
+                if (getModel() != null && getModel().getSteps() != null && getModel().getSteps().getStep() != null
+                        && getModel().getSteps().getStep().size() > 0)
+                    getModel().getSteps().getStep().get(0).invalidateModelState();
+            }
+        };
+
+        final Observer<Step> stepObserver = new Observer<Step>() {
+            @Override
+            public void changePerformed(ChangeNotification<Step> change)
+            {
+                if (change.getOldItem() != null) {
+                    change.getOldItem().removeAllListeners(listener);
+                    for (Operation op : change.getOldItem().getOperations()) {
+                        op.removeAllListeners(listener);
+                    }
+                    ((ObservableList<Operation>) change.getOldItem().getOperations()).removeObserver(operationObserver);
+                }
+
+                if (change.getItem() != null) {
+                    change.getItem().addPropertyChangeListener(Step.IMAGE_PROPERTY, listener);
+                    change.getItem().addPropertyChangeListener(Step.ZOOM_PROPERTY, listener);
+                    for (Operation op : change.getItem().getOperations()) {
+                        op.addPropertyChangeListener(listener);
+                    }
+                    ((ObservableList<Operation>) change.getItem().getOperations()).addObserver(operationObserver);
+                }
+                if (getModel() != null && getModel().getSteps() != null && getModel().getSteps().getStep() != null
+                        && getModel().getSteps().getStep().size() > 0)
+                    getModel().getSteps().getStep().get(0).invalidateModelState();
+            }
+        };
+
+        this.addPropertyChangeListener(MODEL_PROPERTY, listener);
+        this.addPropertyChangeListener(PAPER_PROPERTY, listener);
+        paper.addPropertyChangeListener(DiagramPaper.COLOR_PROPERTY, listener);
+        paper.addPropertyChangeListener(DiagramPaper.SIZE_PROPERTY, listener);
+        paper.getColor().addPropertyChangeListener(listener);
+        paper.getSize().addPropertyChangeListener(listener);
+        model.addPropertyChangeListener(listener);
+        model.getPaper().addPropertyChangeListener(listener);
+        model.getPaper().getColors().addPropertyChangeListener(listener);
+        model.getPaper().getSize().addPropertyChangeListener(listener);
+        for (Step step : model.getSteps().getStep()) {
+            step.addPropertyChangeListener(Step.IMAGE_PROPERTY, listener);
+            // step.addPropertyChangeListener(Step.ZOOM_PROPERTY, listener);
+            for (Operation op : step.getOperations()) {
+                op.addPropertyChangeListener(listener);
+            }
+            ((ObservableList<Operation>) step.getOperations()).addObserver(operationObserver);
+        }
+        ((ObservableList<Step>) model.getSteps().getStep()).addObserver(stepObserver);
     }
 
     @Override
@@ -459,64 +488,5 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         } else if (!src.equals(other.src))
             return false;
         return true;
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyListeners.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyListeners.removePropertyChangeListener(listener);
-    }
-
-    /**
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners()
-    {
-        return propertyListeners.getPropertyChangeListeners();
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        propertyListeners.addPropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        propertyListeners.removePropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
-    {
-        return propertyListeners.getPropertyChangeListeners(propertyName);
     }
 }

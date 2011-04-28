@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:m="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2"
 	xmlns:c="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:pli="http://jaxb.dev.java.net/plugin/listener-injector"
+	jxb:extensionBindingPrefixes="pli"
 	jxb:version="2.0" targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
 
 	<import namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" schemaLocation="common_v1.xsd" />
@@ -20,6 +22,7 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Origami" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -59,6 +62,7 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Paper" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -70,6 +74,7 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DiagramPaper" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
@@ -84,6 +89,11 @@
 	</complexType>
 
 	<complexType name="Model">
+		<annotation>
+			<appinfo>
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
+			</appinfo>
+		</annotation>
 		<sequence>
 			<element name="paper" type="m:ModelPaper" />
 			<element name="steps" type="m:Steps">
@@ -99,12 +109,17 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.UnitDimension" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
 			<extension base="m:Dimension">
 				<sequence>
 					<element name="unit" type="m:Unit" />
+					<sequence minOccurs="0">
+						<element name="referenceLength" type="double" />
+						<element name="referenceUnit" type="m:Unit" />
+					</sequence>
 				</sequence>
 			</extension>
 		</complexContent>
@@ -116,9 +131,10 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DoubleDimension" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
-		<sequence>
+		<sequence> 
 			<element name="width" type="double" />
 			<element name="height" type="double" />
 		</sequence>
@@ -150,15 +166,25 @@
 	</simpleType>
 
 	<complexType name="DiagramColors">
-		<sequence>
-			<element name="background" type="m:Color" />
-		</sequence>
+		<annotation>
+			<appinfo>
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:Colors">
+				<sequence>
+					<element name="background" type="m:Color" />
+				</sequence>
+			</extension>
+		</complexContent>
 	</complexType>
 
 	<complexType name="ModelPaper">
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ModelPaper" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
@@ -196,16 +222,26 @@
 	</complexType>
 
 	<complexType name="ModelColors">
-		<sequence>
-			<element name="background" type="m:Color" />
-			<element name="foreground" type="m:Color" />
-		</sequence>
+		<annotation>
+			<appinfo>
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:Colors">
+				<sequence>
+					<element name="background" type="m:Color" />
+					<element name="foreground" type="m:Color" />
+				</sequence>
+			</extension>
+		</complexContent>
 	</complexType>
 
 	<complexType name="Step">
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Step" />
+				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -219,7 +255,7 @@
 			<element name="colspan" type="positiveInteger" default="1" maxOccurs="1" minOccurs="0" />
 			<element name="rowspan" type="positiveInteger" default="1" maxOccurs="1" minOccurs="0" />
 			<element name="zoom" type="m:Percent" maxOccurs="1" minOccurs="0" default="100" />
-			<choice>
+			<choice> 
 				<element name="image" type="c:BinaryImage" />
 				<sequence minOccurs="0" maxOccurs="unbounded">
 					<annotation>

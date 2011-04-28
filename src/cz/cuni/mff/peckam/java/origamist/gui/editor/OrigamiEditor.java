@@ -1330,7 +1330,7 @@ public class OrigamiEditor extends CommonGui
 
             if (steps.size() == 1) {
                 // we have just created the very first step
-                origami.initSteps();
+                origami.init();
             }
 
             setStep(newStep);
@@ -1363,7 +1363,7 @@ public class OrigamiEditor extends CommonGui
                 newStep = (Step) new ObjectFactory().createStep();
                 newStep.setId(1);
                 steps.add(newStep);
-                origami.initSteps();
+                origami.init();
             } else {
                 steps.remove(steps.size() - 1);
                 newStep = steps.get(steps.size() - 1);

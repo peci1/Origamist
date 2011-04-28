@@ -5,8 +5,9 @@
 	xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
 	xmlns:patch="http://www.mff.cuni.cz/~peckam/java/origamist/jaxb/plugins/patch"
 	jxb:version="2.0" 
-	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/files/v1" 
-	jxb:extensionBindingPrefixes="patch">    
+	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/files/v1"
+	xmlns:pli="http://jaxb.dev.java.net/plugin/listener-injector" 
+	jxb:extensionBindingPrefixes="patch pli">
  	 
 	<import schemaLocation="common_v1.xsd" namespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1" />
 
@@ -25,6 +26,7 @@
     	<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Listing"/>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>
     	<sequence>
@@ -55,6 +57,7 @@
     	<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.File"/>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>
     	<sequence>
@@ -65,6 +68,7 @@
 					<appinfo>
 						<jxb:property 
 							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
+						<!-- pli:listener>none</pli:listener-->
 					</appinfo>
 				</annotation>
     		</element>
@@ -75,6 +79,7 @@
 					<appinfo>
 						<jxb:property 
 							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
+						<!-- pli:listener>none</pli:listener-->
 					</appinfo>
 				</annotation>
     		</element>
@@ -107,7 +112,8 @@
     <complexType name="Category">
     	<annotation>
     		<appinfo>
-    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Category"/> 
+    			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.files.Category"/>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener> 
     		</appinfo>
     	</annotation>
     	<sequence>
@@ -116,6 +122,7 @@
 					<appinfo>
 						<jxb:property 
 							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList"/>
+						<!-- pli:listener>none</pli:listener-->
 					</appinfo>
 				</annotation>
     		</element>

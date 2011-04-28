@@ -89,9 +89,13 @@ import com.sun.j3d.utils.universe.ViewInfo;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
+import cz.cuni.mff.peckam.java.origamist.model.ModelPaper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.Paper;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.ModelColors;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
@@ -316,11 +320,53 @@ public class StepRenderer extends JPanel
      */
     public void setOrigami(Origami origami)
     {
+        Origami oldOrigami = this.origami;
         this.origami = origami;
         if (origami != null) {
             setBackground(origami.getPaper().getColor().getBackground());
             colorManager = new ColorManager(origami.getModel().getPaper().getBackgroundColor(), origami.getModel()
                     .getPaper().getForegroundColor());
+
+            final PropertyChangeListener m = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    if (evt.getPropertyName().equals(ModelColors.BACKGROUND_PROPERTY)) {
+                        colorManager.setBackground((Color) evt.getNewValue());
+                    } else if (evt.getPropertyName().equals(ModelColors.FOREGROUND_PROPERTY)) {
+                        colorManager.setForeground((Color) evt.getNewValue());
+                    }
+                }
+            };
+            final PropertyChangeListener p = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    if (evt.getOldValue() != null)
+                        ((ModelColors) evt.getOldValue()).removeAllListeners(m);
+                    if (evt.getNewValue() != null)
+                        ((ModelColors) evt.getNewValue()).addPropertyChangeListener(m);
+                }
+            };
+            PropertyChangeListener l = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt)
+                {
+                    if (evt.getOldValue() != null)
+                        ((Paper) evt.getOldValue()).removeAllListeners(p);
+                    if (evt.getNewValue() != null)
+                        ((Paper) evt.getNewValue()).addPropertyChangeListener(ModelPaper.COLORS_PROPERTY, p);
+                }
+            };
+            l.propertyChange(new PropertyChangeEvent(origami.getModel(), Model.PAPER_PROPERTY, null, origami.getModel()
+                    .getPaper()));
+            p.propertyChange(new PropertyChangeEvent(origami.getModel().getPaper(), ModelPaper.COLORS_PROPERTY, null,
+                    origami.getModel().getPaper().getColors()));
+            p.propertyChange(new PropertyChangeEvent(origami.getModel().getPaper(), ModelPaper.COLORS_PROPERTY, null,
+                    origami.getModel().getPaper().getColors()));
+            origami.getModel().addPropertyChangeListener(Model.PAPER_PROPERTY, l);
+            if (oldOrigami != null)
+                oldOrigami.removeAllListeners(l);
         } else {
             setBackground(Color.GRAY);
         }
@@ -339,6 +385,21 @@ public class StepRenderer extends JPanel
      */
     public void setStep(final Step step)
     {
+        final Callable<Void> callback = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception
+            {
+                setStep(StepRenderer.this.step); // rebuild the view
+                return null;
+            }
+        };
+
+        if (this.step != step) {
+            step.getModelStateInvalidationCallbacks().add(callback);
+            if (this.step != null)
+                this.step.getModelStateInvalidationCallbacks().remove(callback);
+        }
+
         Runnable run = new Runnable() {
             @Override
             public void run()
@@ -867,7 +928,7 @@ public class StepRenderer extends JPanel
      */
     protected void pick(int x, int y, MouseEvent e)
     {
-        if (!branchGraph.isLive())
+        if (branchGraph == null || !branchGraph.isLive())
             return;
 
         pickCanvas.setShapeLocation(x, y);

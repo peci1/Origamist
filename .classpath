@@ -5,7 +5,8 @@
 	<classpathentry kind="lib" path="lib/j3dcore.jar" sourcepath="F:/Program Files/Java/libs-sources/j3d-1_5_2-src"/>
 	<classpathentry kind="lib" path="lib/j3dutils.jar" sourcepath="F:/Program Files/Java/libs-sources/j3d-1_5_2-src"/>
 	<classpathentry kind="lib" path="lib/vecmath.jar" sourcepath="F:/Program Files/Java/libs-sources/vecmath-1_5_2-src"/>
-	<classpathentry kind="lib" path="lib-compile-time/jaxb-xjc-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-xjc-2_1_13.src"/>
+    <classpathentry kind="lib" path="lib-compile-time/jaxb-xjc-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-xjc-2_1_13.src"/>
+    <classpathentry kind="lib" path="lib-compile-time/jaxb-impl-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-impl-2.1.12-sources"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar" sourcepath="F:/Program Files/Java/libs-sources/log4j-1.2.16">
 		<attributes>
 			<attribute name="javadoc_location" value="file:/F:/Program Files/Java/javadoc/log4j-1.2.16/"/>

@@ -4,7 +4,8 @@
 	jxb:version="2.0" 
 	xmlns:s="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1"
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
-	jxb:extensionBindingPrefixes="xjc"
+	xmlns:pli="http://jaxb.dev.java.net/plugin/listener-injector"
+	jxb:extensionBindingPrefixes="xjc pli"
 	targetNamespace="http://www.mff.cuni.cz/~peckam/java/origamist/common/v1">
  	 
 	<annotation>
@@ -32,6 +33,7 @@
 		<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.Author"/>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>		
 		<sequence>
@@ -80,6 +82,11 @@
     </complexType>
     
     <complexType name="Image">
+    	<annotation>
+    		<appinfo>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
+    		</appinfo>
+    	</annotation>
     	<sequence>
     		<element name="image" type="s:BinaryImage"/>
     	</sequence>
@@ -89,6 +96,7 @@
     	<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.BinaryImage"/>
+    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>
     	<simpleContent>

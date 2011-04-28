@@ -4,9 +4,14 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 
 import javax.xml.bind.annotation.XmlTransient;
+
+import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
@@ -27,27 +32,30 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     /**
      * The hastable for more comfortable search in localized descriptions.
      */
-    protected Hashtable<Locale, String> descriptions      = new Hashtable<Locale, String>();
+    protected Hashtable<Locale, String> descriptions                    = new Hashtable<Locale, String>();
 
     /**
      * The cached model state after performing this step.
      */
-    protected ModelState                modelState        = null;
+    protected ModelState                modelState                      = null;
 
     /**
      * If this is the first step, use this model state as the previous one.
      */
-    protected ModelState                defaultModelState = null;
+    protected ModelState                defaultModelState               = null;
 
     /**
      * The step preceeding this one. If this is the first one, previous is null.
      */
-    protected Step                      previous          = null;
+    protected Step                      previous                        = null;
 
     /**
      * The step succeeding this one. If this is the last one, next is null.
      */
-    protected Step                      next              = null;
+    protected Step                      next                            = null;
+
+    /** Callbacks to be performed when the model state is invalidated. */
+    protected List<Callable<?>>         modelStateInvalidationCallbacks = new LinkedList<Callable<?>>();
 
     /**
      * Create a new step.
@@ -176,7 +184,17 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void invalidateModelState()
     {
-        this.modelState = null;
+        if (this.modelState != null) {
+            this.modelState = null;
+            for (Callable<?> callback : modelStateInvalidationCallbacks) {
+                try {
+                    callback.call();
+                } catch (Exception e) {
+                    Logger.getLogger(getClass()).warn("Model state invalidation callback threw exception", e);
+                }
+            }
+        }
+
         if (this.next != null)
             this.next.invalidateModelState();
     }
@@ -197,5 +215,13 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
             super.setRowspan(value);
         else
             super.setRowspan(null);
+    }
+
+    /**
+     * @return the modelStateInvalidationCallbacks
+     */
+    public List<Callable<?>> getModelStateInvalidationCallbacks()
+    {
+        return modelStateInvalidationCallbacks;
     }
 }

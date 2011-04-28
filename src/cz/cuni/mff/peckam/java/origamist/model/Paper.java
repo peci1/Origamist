@@ -14,7 +14,6 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
  */
 public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
 {
-
     /**
      * Return the relative dimensions of the paper (so that one of them will be 1.0 and the second one will be <= 1.0).
      * 
@@ -71,5 +70,4 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
         value.setReference(value.getUnit(), value.getMax());
         super.setSize(value);
     }
-
 }

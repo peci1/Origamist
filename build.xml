@@ -7,10 +7,22 @@
 	<property name="path.to.latest.schema.common" value="src/resources/schemata/common_v1.xsd" />
 	<property name="path.to.latest.schema.files" value="src/resources/schemata/files_v1.xsd" />
 	<property name="path.to.latest.schema.diagram" value="src/resources/schemata/diagram_v2.xsd" />
+	
+	<!-- These properties are needed for the property-listener-injector XJC plugin. -->
+	<property name="customPropertyChangeSupport.as.path" value="cz/cuni/mff/peckam/java/origamist/utils/CustomPropertyChangeSupport.java" />
+	<property name="customPropertyChangeSupport.as.class" value="cz.cuni.mff.peckam.java.origamist.utils.CustomPropertyChangeSupport" />
+	
+	<!-- Whether to generate debugging symbols in compiled classes. -->
+	<property name="debug" value="false" />
+	
+	<property name="xjc.temp.dir" value="xjc-bin" />
 
 	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
 		<classpath>
 			<fileset dir="lib-compile-time" includes="*.jar" />
+			<!-- BEWARE: don't put "bin/" directory here - XJC doesn't like it (ExceptionInInitializerError)! 
+			If you need to add some classes to XJC's classpath, copy them (compiled) to ${xjc.temp.dir} -->
+			<pathelement path="${xjc.temp.dir}" />
 		</classpath>
 	</taskdef>
 
@@ -53,7 +65,7 @@
 	</target>
 
 	<target name="jaxb-implClass-plugin" depends="init">
-		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java">
+		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/PatchForImplClassAndList.java">
 			<classpath>
 				<pathelement path="src" />
 				<fileset dir="lib-compile-time">
@@ -77,7 +89,7 @@
 	</target>
 
 	<target name="jaxb-objFactoryCast-plugin" depends="init">
-		<javac srcdir="src" destdir="bin" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
+		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage.java">
 			<classpath>
 				<pathelement path="src" />
 				<fileset dir="lib-compile-time">
@@ -99,45 +111,102 @@
 		</jar>
 		<delete dir="lib-compile-time/plugin-jar" />
 	</target>
+	
+	<target name="jaxb-propertyListenerInjector-plugin" depends="init">
+		<javac srcdir="src" destdir="bin" debug="${debug}" includes="com/sun/tools/xjc/addon/property_listener_injector/*.java">
+			<classpath>
+				<pathelement path="src" />
+				<fileset dir="lib-compile-time">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+		<mkdir dir="lib-compile-time/plugin-jar" />
+		<mkdir dir="lib-compile-time/plugin-jar/META-INF" />
+		<mkdir dir="lib-compile-time/plugin-jar/META-INF/services" />
+		<move todir="lib-compile-time/plugin-jar">
+			<fileset dir="bin">
+				<include name="com/sun/tools/xjc/addon/property_listener_injector/*.class" />
+			</fileset>
+		</move>
+		<copy file="src/com/sun/tools/xjc/addon/PropertyListenerInjector-com.sun.tools.xjc.Plugin" tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" />
+		<copy file="src/com/sun/tools/xjc/addon/property_listener_injector/localstrings.properties" tofile="lib-compile-time/plugin-jar/com/sun/tools/xjc/addon/property_listener_injector/localstrings.properties" />
+		<jar destfile="lib-compile-time/xjc-property-listener-injector.jar">
+			<fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
+		</jar>
+		<delete dir="lib-compile-time/plugin-jar" />
+	</target>
 
-	<target name="jaxb-common" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from common.xsd">
+	<target name="xjc-plugins" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin,jaxb-propertyListenerInjector-plugin" description="Compiles and packs XJC plugins.">
+		<mkdir dir="${xjc.temp.dir}" />
+		<!-- XJC needs the following file to be compiled on the path for the property-listener-injector plugin to work. -->
+		<javac srcdir="src" destdir="${xjc.temp.dir}" debug="${debug}" includes="${customPropertyChangeSupport.as.path}">
+			<classpath>
+				<pathelement path="src" />
+				<fileset dir="lib">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="xjc-plugins-cleanup">
+		<delete dir="${xjc.temp.dir}" />
+	</target>
+	
+	<target name="jaxb-common" depends="xjc-plugins" description="Generates JAXB source files from common.xsd">
 		<xjc schema="${path.to.latest.schema.common}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
 			<arg value="-Xequals" />
 			<arg value="-XhashCode" />
+			<arg value="-Xinject-listener-code" />
+			<arg value="-Xinject-listener-code-interface-bound" />
+			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
+			<arg value="-Xinject-listener-code-supportClass-bound" />
+			<arg value="${customPropertyChangeSupport.as.class}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/common/jaxb" includes="**/*" />
 			<produces dir="src/org/w3/_2001/xmlschema" includes="**/*" />
 		</xjc>
 	</target>
 
-	<target name="jaxb-files" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from files.xsd">
+	<target name="jaxb-files" depends="xjc-plugins" description="Generates JAXB source files from files.xsd">
 		<xjc schema="${path.to.latest.schema.files}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
 			<arg value="-Xequals" />
 			<arg value="-XhashCode" />
+			<arg value="-Xinject-listener-code" />
+			<arg value="-Xinject-listener-code-interface-bound" />
+			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
+			<arg value="-Xinject-listener-code-supportClass-bound" />
+			<arg value="${customPropertyChangeSupport.as.class}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/files/jaxb" includes="**/*" />
 		</xjc>
 	</target>
 
-	<target name="jaxb-diagram" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin" description="Generates JAXB source files from diagram.xsd">
+	<target name="jaxb-diagram" depends="xjc-plugins" description="Generates JAXB source files from diagram.xsd">
 		<xjc schema="${path.to.latest.schema.diagram}" destdir="src" removeOldOutput="true">
 			<arg value="-extension" />
 			<arg value="-Xpatch-implClass-list" />
 			<arg value="-Xpatch-objFactory-uncheckedCast" />
 			<arg value="-Xequals" />
 			<arg value="-XhashCode" />
+			<arg value="-Xinject-listener-code" />
+			<arg value="-Xinject-listener-code-interface-bound" />
+			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties" />
+			<arg value="-Xinject-listener-code-supportClass-bound" />
+			<arg value="${customPropertyChangeSupport.as.class}" />
 			<produces dir="src/cz/cuni/mff/peckam/java/origamist/model/jaxb" includes="**/*" />
 		</xjc>
 	</target>
 
-	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram" />
+	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram,xjc-plugins-cleanup" />
 
 	<target name="compile" depends="init,jaxb" description="Compiles the application">
-		<javac srcdir="src" destdir="bin" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java">
+		<javac srcdir="src" destdir="bin" debug="${debug}" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java">
 			<classpath>
 				<pathelement path="src" />
 				<fileset dir="lib">
@@ -404,7 +473,7 @@
 
 	<target name="tests" depends="compile" description="Runs JUnit tests">
 		<mkdir dir="tests/bin" />
-		<javac srcdir="src" sourcepath="" destdir="tests/bin" includes="cz/cuni/mff/peckam/java/origamist/tests/*.java">
+		<javac srcdir="src" sourcepath="" destdir="tests/bin" debug="${debug}" includes="cz/cuni/mff/peckam/java/origamist/tests/*.java">
 			<classpath>
 				<pathelement path="bin" />
 				<fileset dir="lib">
