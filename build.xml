@@ -106,7 +106,7 @@
 			</fileset>
 		</move>
 		<copy tofile="lib-compile-time/plugin-jar/META-INF/services/com.sun.tools.xjc.Plugin" file="src/com/sun/tools/xjc/addon/PatchForObjectFactoryUncheckedCastUsage-com.sun.tools.xjc.Plugin" />
-		<jar destfile="lib-compile-time/xjc-patch-for-pbjectFactory-unchecked-cast-usage.jar">
+		<jar destfile="lib-compile-time/xjc-patch-for-objectFactory-unchecked-cast-usage.jar">
 			<fileset dir="lib-compile-time/plugin-jar" includes="**/*.*" />
 		</jar>
 		<delete dir="lib-compile-time/plugin-jar" />
