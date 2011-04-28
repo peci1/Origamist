@@ -32,30 +32,30 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     /**
      * The hastable for more comfortable search in localized descriptions.
      */
-    protected Hashtable<Locale, String> descriptions                    = new Hashtable<Locale, String>();
+    protected final Hashtable<Locale, String> descriptions                    = new Hashtable<Locale, String>();
 
     /**
      * The cached model state after performing this step.
      */
-    protected ModelState                modelState                      = null;
+    protected ModelState                      modelState                      = null;
 
     /**
      * If this is the first step, use this model state as the previous one.
      */
-    protected ModelState                defaultModelState               = null;
+    protected ModelState                      defaultModelState               = null;
 
     /**
      * The step preceeding this one. If this is the first one, previous is null.
      */
-    protected Step                      previous                        = null;
+    protected Step                            previous                        = null;
 
     /**
      * The step succeeding this one. If this is the last one, next is null.
      */
-    protected Step                      next                            = null;
+    protected Step                            next                            = null;
 
     /** Callbacks to be performed when the model state is invalidated. */
-    protected List<Callable<?>>         modelStateInvalidationCallbacks = new LinkedList<Callable<?>>();
+    protected List<Callable<?>>               modelStateInvalidationCallbacks = new LinkedList<Callable<?>>();
 
     /**
      * Create a new step.

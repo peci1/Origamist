@@ -27,11 +27,10 @@ public class Categories extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Cat
      * The hastable for more comfortable search in subcatagories.
      */
     @XmlTransient
-    protected Hashtable<String, Category> categories = new Hashtable<String, Category>();
+    protected final Hashtable<String, Category> categories = new Hashtable<String, Category>();
 
     public Categories()
     {
-        category = new ObservableList<Category>();
         HashtableElementAdapter<Category, String, Category> elementAdapter = new HashtableElementAdapter<Category, String, Category>() {
 
             @Override

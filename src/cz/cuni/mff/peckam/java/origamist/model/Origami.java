@@ -52,26 +52,26 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     /**
      * The hastable for more comfortable search in localized names.
      */
-    protected Hashtable<Locale, String> names             = new Hashtable<Locale, String>();
+    protected final Hashtable<Locale, String> names             = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized short descriptions.
      */
-    protected Hashtable<Locale, String> shortDescs        = new Hashtable<Locale, String>();
+    protected final Hashtable<Locale, String> shortDescs        = new Hashtable<Locale, String>();
     /**
      * The hastable for more comfortable search in localized descriptions.
      */
-    protected Hashtable<Locale, String> descriptions      = new Hashtable<Locale, String>();
+    protected final Hashtable<Locale, String> descriptions      = new Hashtable<Locale, String>();
 
     /** If the origami is loaded without the model, then this task will be run the first time the model is read. */
-    protected Callable<Model>           loadModelCallable = null;
+    protected Callable<Model>                 loadModelCallable = null;
 
     /** The file in the listing containing this origami. */
-    protected File                      file              = null;
+    protected File                            file              = null;
 
     /**
      * The URL this origami was created from. Obviously this will be <code>null</code> for the just-being-created model.
      */
-    protected URL                       src               = null;
+    protected URL                             src               = null;
 
     /**
      * Create a new origami diagram.

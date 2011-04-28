@@ -71,10 +71,12 @@ public class PatchForImplClassAndList extends Plugin
                 String implClassName = elementsWithImplClassSet.get(clazz.fullName()); // name of the user-defined class
                 JClass implClass;
                 JClass fieldClass;
+                boolean isList;
                 if (implClassName != null) {
                     // not a field with implClass resulting in a List
                     implClass = model.getCodeModel().ref(implClassName);
                     fieldClass = implClass;
+                    isList = false;
                 } else if ("java.util.List".equals(fo.getRawType().erasure().fullName())) {
                     // a field with implClass resulting in a list
                     List<JClass> parameters = ((JClass) fo.getRawType()).getTypeParameters();
@@ -93,40 +95,56 @@ public class PatchForImplClassAndList extends Plugin
                     implClass = model.getCodeModel().ref(implClassName);
                     // a java.util.List with the corect type argument
                     fieldClass = ((JClass) fo.getRawType().erasure()).narrow(implClass);
+                    isList = true;
                 } else {
                     // this is nor a field with implClass nor a list field with implClass
                     continue;
                 }
 
-                // remove the old invalid field
                 JFieldVar field = co.implClass.fields().get(fo.getPropertyInfo().getName(false));
-                co.implClass.removeField(field);
 
-                // replace the old field with the correct one
-                JFieldVar newField = co.implClass.field(field.mods().getValue(), fieldClass, field.name());
-                copyFieldValueWithReflection("annotations", field, newField, field.getClass().getSuperclass());
-                copyFieldValueWithReflection("jdoc", field, newField, field.getClass());
-
-                // update getter for the list (no setter is created)
                 String getterName = "get" + field.name().substring(0, 1).toUpperCase() + field.name().substring(1);
                 String setterName = "set" + field.name().substring(0, 1).toUpperCase() + field.name().substring(1);
+
+                JClass listImplClass = null;
+                JClass newListImplClass = null;
+
+                if (isList) {
+                    listImplClass = (JClass) getValueWithReflection("coreList", fo, fo.getClass());
+                    assert listImplClass != null;
+                    newListImplClass = listImplClass.erasure().narrow(implClass);
+
+                    // remove the old invalid field
+                    co.implClass.removeField(field);
+
+                    // replace the old field with the correct one
+                    JFieldVar newField = co.implClass.field(field.mods().getValue(), fieldClass, field.name(),
+                            JExpr._new(newListImplClass));
+                    copyFieldValueWithReflection("annotations", field, newField, field.getClass().getSuperclass());
+                    copyFieldValueWithReflection("jdoc", field, newField, field.getClass());
+                    field = newField;
+                }
+
+                // update getter for the list (no setter is created) getter/setter arguments types
                 for (JMethod m : co.implClass.methods()) {
                     if (getterName.equals(m.name())) {
                         // change the return type of the method
                         m.type(fieldClass);
 
-                        JBlock body = m.body();
-                        JBlock newBody = new JBlock(true, true);
-                        for (Object o : body.getContents()) {
-                            if (o instanceof JConditional) {
-                                JConditional cond = newBody._if(newField.eq(JExpr._null()));
-                                JBlock thenBlock = cond._then();
-                                JClass listImplClass = (JClass) getValueWithReflection("coreList", fo, fo.getClass());
-                                JClass newListImplClass = listImplClass.erasure().narrow(implClass);
-                                thenBlock.assign(newField, JExpr._new(newListImplClass));
-                            } else if (o instanceof JStatement) {
-                                newBody.add((JStatement) o);
+                        if (isList) {
+                            assert newListImplClass != null;
+                            JBlock body = m.body();
+                            JBlock newBody = new JBlock(true, true);
+                            for (Object o : body.getContents()) {
+                                if (o instanceof JConditional) {
+                                    JConditional cond = newBody._if(field.eq(JExpr._null()));
+                                    JBlock thenBlock = cond._then();
+                                    thenBlock.assign(field, JExpr._new(newListImplClass));
+                                } else if (o instanceof JStatement) {
+                                    newBody.add((JStatement) o);
+                                }
                             }
+                            setValueWithReflection("body", m, m.getClass(), newBody);
                         }
 
                         // change the javadoc to reflect the new reality
@@ -142,8 +160,6 @@ public class PatchForImplClassAndList extends Plugin
                             }
                             m.javadoc().append(implClass);
                         }
-
-                        setValueWithReflection("body", m, m.getClass(), newBody);
                     } else if (setterName.equals(m.name())) {
                         setValueWithReflection("params", m, m.getClass(), new ArrayList<JVar>());
                         m.param(fieldClass, "value");
