@@ -24,8 +24,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.PropertyException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.log4j.BasicConfigurator;
@@ -36,9 +34,10 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.configuration.ConfigurationManagerImpl;
 import cz.cuni.mff.peckam.java.origamist.jaxb.BindingsManager;
+import cz.cuni.mff.peckam.java.origamist.jaxb.ObjectFactoryConfigurator;
 import cz.cuni.mff.peckam.java.origamist.jaxb.SchemaInfo;
-import cz.cuni.mff.peckam.java.origamist.jaxb.UnmarshallerConfigurator;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
+import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.services.HashCodeAndEqualsHelperImpl;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBListingHandler;
 import cz.cuni.mff.peckam.java.origamist.services.JAXBOrigamiHandler;
@@ -167,8 +166,6 @@ public abstract class CommonGui extends JApplet
 
             BindingsManager manager = ServiceLocator.get(BindingsManager.class);
 
-            final String OBJECT_FACTORY_PROPERTY = "com.sun.xml.internal.bind.ObjectFactory";
-
             @SuppressWarnings("unused")
             SchemaInfo c1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/common/v1",
                     "resources/schemata/common_v1.xsd", true);
@@ -181,37 +178,12 @@ public abstract class CommonGui extends JApplet
 
             manager.addTransform(d1, d2, "resources/schemata/diagram_v1_to_v2.xsl", null);
 
-            manager.addUnmarshallerConfigurator(d2, new UnmarshallerConfigurator() {
-                @Override
-                public void configure(Unmarshaller unmarshaller)
-                {
-                    try {
-                        unmarshaller.setProperty(OBJECT_FACTORY_PROPERTY,
-                                new cz.cuni.mff.peckam.java.origamist.model.ObjectFactory());
-                    } catch (PropertyException e) {
-                        Logger.getLogger(getClass()).warn(
-                                "Cannot set the property " + OBJECT_FACTORY_PROPERTY
-                                        + " for unmarshaller. The unmarshaller is of class " + unmarshaller.getClass());
-                    }
-                }
-            });
+            manager.addUnmarshallerConfigurator(d2, new ObjectFactoryConfigurator(new ObjectFactory()));
 
             SchemaInfo f1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/files/v1",
                     "resources/schemata/files_v1.xsd", true);
-            manager.addUnmarshallerConfigurator(f1, new UnmarshallerConfigurator() {
-                @Override
-                public void configure(Unmarshaller unmarshaller)
-                {
-                    try {
-                        unmarshaller.setProperty(OBJECT_FACTORY_PROPERTY,
-                                new cz.cuni.mff.peckam.java.origamist.files.ObjectFactory());
-                    } catch (PropertyException e) {
-                        Logger.getLogger(getClass()).warn(
-                                "Cannot set the property " + OBJECT_FACTORY_PROPERTY
-                                        + " for unmarshaller. The unmarshaller is of class " + unmarshaller.getClass());
-                    }
-                }
-            });
+            manager.addUnmarshallerConfigurator(f1, new ObjectFactoryConfigurator(
+                    new cz.cuni.mff.peckam.java.origamist.files.ObjectFactory()));
 
         } catch (JAXBException e) {
             Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
