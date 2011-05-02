@@ -290,6 +290,13 @@ public class OrigamiPropertiesFrame extends JDialog
         });
 
         licenseName = new JTextField(tempOrigami.getLicense().getName(), 20);
+        licenseName.getDocument().addDocumentListener(new UniversalDocumentListener() {
+            @Override
+            protected void update(DocumentEvent e)
+            {
+                tempOrigami.getLicense().setName(licenseName.getText());
+            }
+        });
 
         licenseHomepage = new JTextField(tempOrigami.getLicense().getHomepage() != null ? tempOrigami.getLicense()
                 .getHomepage().toString() : "", 20);
@@ -381,16 +388,18 @@ public class OrigamiPropertiesFrame extends JDialog
                 licensePermissionDoNothing.setText(text);
             }
         });
-        licensePermissionDoNothing.addActionListener(new ActionListener() {
+        licensePermissionDoNothing.addItemListener(new ItemListener() {
             @Override
-            public void actionPerformed(ActionEvent e)
+            public void itemStateChanged(ItemEvent e)
             {
-                if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionEdit.setSelected(!licensePermissionDoNothing.isSelected());
-                if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionExport.setSelected(!licensePermissionDoNothing.isSelected());
-                if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionDistribute.setSelected(!licensePermissionDoNothing.isSelected());
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionEdit.setSelected(!licensePermissionDoNothing.isSelected());
+                    if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionExport.setSelected(!licensePermissionDoNothing.isSelected());
+                    if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionDistribute.setSelected(!licensePermissionDoNothing.isSelected());
+                }
 
                 Permission perm = PermissionConverter.parse("doNothing");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
@@ -412,16 +421,18 @@ public class OrigamiPropertiesFrame extends JDialog
                 licensePermissionEdit.setText(text);
             }
         });
-        licensePermissionEdit.addActionListener(new ActionListener() {
+        licensePermissionEdit.addItemListener(new ItemListener() {
             @Override
-            public void actionPerformed(ActionEvent e)
+            public void itemStateChanged(ItemEvent e)
             {
-                if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionDoNothing.setSelected(!licensePermissionEdit.isSelected());
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    if (licensePermissionEdit.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionDoNothing.setSelected(!licensePermissionEdit.isSelected());
+                }
 
                 Permission perm = PermissionConverter.parse("edit");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
-                if (licensePermissionDoNothing.isSelected()) {
+                if (licensePermissionEdit.isSelected()) {
                     if (!perms.contains(perm))
                         perms.add(perm);
                 } else {
@@ -439,16 +450,18 @@ public class OrigamiPropertiesFrame extends JDialog
                 licensePermissionExport.setText(text);
             }
         });
-        licensePermissionExport.addActionListener(new ActionListener() {
+        licensePermissionExport.addItemListener(new ItemListener() {
             @Override
-            public void actionPerformed(ActionEvent e)
+            public void itemStateChanged(ItemEvent e)
             {
-                if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionDoNothing.setSelected(!licensePermissionExport.isSelected());
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    if (licensePermissionExport.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionDoNothing.setSelected(!licensePermissionExport.isSelected());
+                }
 
                 Permission perm = PermissionConverter.parse("export");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
-                if (licensePermissionDoNothing.isSelected()) {
+                if (licensePermissionExport.isSelected()) {
                     if (!perms.contains(perm))
                         perms.add(perm);
                 } else {
@@ -466,16 +479,18 @@ public class OrigamiPropertiesFrame extends JDialog
                 licensePermissionDistribute.setText(text);
             }
         });
-        licensePermissionDistribute.addActionListener(new ActionListener() {
+        licensePermissionDistribute.addItemListener(new ItemListener() {
             @Override
-            public void actionPerformed(ActionEvent e)
+            public void itemStateChanged(ItemEvent e)
             {
-                if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
-                    licensePermissionDoNothing.setSelected(!licensePermissionDistribute.isSelected());
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    if (licensePermissionDistribute.isSelected() == licensePermissionDoNothing.isSelected())
+                        licensePermissionDoNothing.setSelected(!licensePermissionDistribute.isSelected());
+                }
 
                 Permission perm = PermissionConverter.parse("distribute");
                 List<Permission> perms = tempOrigami.getLicense().getPermission();
-                if (licensePermissionDoNothing.isSelected()) {
+                if (licensePermissionDistribute.isSelected()) {
                     if (!perms.contains(perm))
                         perms.add(perm);
                 } else {
