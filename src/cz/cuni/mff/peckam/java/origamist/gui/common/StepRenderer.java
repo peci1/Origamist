@@ -772,8 +772,10 @@ public class StepRenderer extends JPanel
         this.zoom = zoom;
         listeners.firePropertyChange("zoom", oldZoom, zoom);
 
-        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
-        tGroup.setTransform(transform);
+        if (step != null) {
+            transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+            tGroup.setTransform(transform);
+        }
     }
 
     /**
