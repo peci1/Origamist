@@ -212,7 +212,7 @@ public class Polygon3d<T extends Triangle3d>
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
-                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
+                observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.ADD));
             }
         }
     }
@@ -283,7 +283,7 @@ public class Polygon3d<T extends Triangle3d>
         }
 
         for (Observer<T> observer : trianglesObservers) {
-            observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
+            observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.ADD));
         }
     }
 
@@ -357,7 +357,7 @@ public class Polygon3d<T extends Triangle3d>
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
-                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.REMOVE));
+                observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.REMOVE));
             }
         }
     }
@@ -411,14 +411,14 @@ public class Polygon3d<T extends Triangle3d>
         this.triangles.remove(segment.triangle);
 
         for (Observer<T> observer : trianglesObservers) {
-            observer.changePerformed(new ChangeNotification<T>(segment.triangle, ChangeTypes.REMOVE));
+            observer.changePerformed(new ChangeNotification<T>(triangles, segment.triangle, ChangeTypes.REMOVE));
         }
 
         this.triangles.addAll(triangles);
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
-                observer.changePerformed(new ChangeNotification<T>(triangle, ChangeTypes.ADD));
+                observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.ADD));
             }
         }
 

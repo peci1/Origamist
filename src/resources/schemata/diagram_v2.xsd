@@ -22,7 +22,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Origami" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -62,7 +61,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Paper" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -74,7 +72,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DiagramPaper" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
@@ -92,7 +89,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Model" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>
@@ -110,7 +106,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.UnitDimension" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
@@ -132,7 +127,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.DoubleDimension" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence> 
@@ -167,11 +161,6 @@
 	</simpleType>
 
 	<complexType name="DiagramColors">
-		<annotation>
-			<appinfo>
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
-			</appinfo>
-		</annotation>
 		<complexContent>
 			<extension base="m:Colors">
 				<sequence>
@@ -185,7 +174,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ModelPaper" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<complexContent>
@@ -223,11 +211,6 @@
 	</complexType>
 
 	<complexType name="ModelColors">
-		<annotation>
-			<appinfo>
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
-			</appinfo>
-		</annotation>
 		<complexContent>
 			<extension base="m:Colors">
 				<sequence>
@@ -242,7 +225,6 @@
 		<annotation>
 			<appinfo>
 				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.Step" />
-				<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 			</appinfo>
 		</annotation>
 		<sequence>

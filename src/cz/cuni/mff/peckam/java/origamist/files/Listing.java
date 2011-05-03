@@ -23,6 +23,8 @@ import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyEvent;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyListener;
 
 /**
  * Additional functionality for the JAXB generated listing element.
@@ -32,6 +34,29 @@ import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
 public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listing implements FilesContainer,
         CategoriesContainer
 {
+
+    /**
+     * 
+     */
+    public Listing()
+    {
+        addObservablePropertyListener(new ObservablePropertyListener<Category>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends Category> evt)
+            {
+                evt.getEvent().getItem().setParent(Listing.this);
+            }
+        }, Listing.CATEGORIES_PROPERTY, Categories.CATEGORY_PROPERTY);
+
+        addObservablePropertyListener(new ObservablePropertyListener<File>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends File> evt)
+            {
+                evt.getEvent().getItem().setParent(Listing.this);
+            }
+        }, Listing.FILES_PROPERTY, Files.FILE_PROPERTY);
+    }
+
     /**
      * Adds the <code>java.net.URI</code>s to this listing. If recursive is non-<code>null</code> and greater than 0,
      * add files from subdirectories and create a category for each subdirectory of depth <code>recurseDepth</code> and
@@ -468,24 +493,6 @@ public class Listing extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Listin
         }
 
         return (getCategories()).recursiveCategoryIterator();
-    }
-
-    /**
-     * Set this listing as the parent of its files and subcategories and recursively do the same for all subcategories.
-     */
-    public void updateChildParents()
-    {
-        if (getFiles() != null) {
-            for (File f : getFiles().getFile()) {
-                f.setParent(this);
-            }
-        }
-        if (getCategories() != null) {
-            for (Category c : getCategories().getCategory()) {
-                c.setParent(this);
-                c.updateChildParents();
-            }
-        }
     }
 
     @Override

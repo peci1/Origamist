@@ -19,12 +19,12 @@ import java.util.List;
 public class ObservableList<T> extends ArrayList<T>
 {
     /** */
-    private static final long   serialVersionUID = 3207567353639585374L;
+    private static final long           serialVersionUID = 3207567353639585374L;
 
     /**
      * Observers of the change notifications.
      */
-    protected List<Observer<T>> observers        = new LinkedList<Observer<T>>();
+    protected List<Observer<? super T>> observers        = new LinkedList<Observer<? super T>>();
 
     /**
      * Constructs an empty list with an initial capacity of ten.
@@ -66,7 +66,7 @@ public class ObservableList<T> extends ArrayList<T>
      * 
      * @param observer The observer to add.
      */
-    public void addObserver(Observer<T> observer)
+    public void addObserver(Observer<? super T> observer)
     {
         observers.add(observer);
     }
@@ -76,7 +76,7 @@ public class ObservableList<T> extends ArrayList<T>
      * 
      * @param observer The observer to remove.
      */
-    public void removeObserver(Observer<T> observer)
+    public void removeObserver(Observer<? super T> observer)
     {
         observers.remove(observer);
     }
@@ -84,7 +84,7 @@ public class ObservableList<T> extends ArrayList<T>
     /**
      * @return the observers
      */
-    public List<Observer<T>> getObservers()
+    public List<Observer<? super T>> getObservers()
     {
         return observers;
     }
@@ -96,7 +96,7 @@ public class ObservableList<T> extends ArrayList<T>
      */
     protected void fireChangeNotification(ChangeNotification<T> change)
     {
-        for (Observer<T> l : observers)
+        for (Observer<? super T> l : observers)
             l.changePerformed(change);
     }
 
@@ -108,7 +108,7 @@ public class ObservableList<T> extends ArrayList<T>
      */
     protected void fireChangeNotification(T item, ChangeTypes type)
     {
-        fireChangeNotification(new ChangeNotification<T>(item, type));
+        fireChangeNotification(new ChangeNotification<T>(this, item, type));
     }
 
     /**
@@ -120,7 +120,7 @@ public class ObservableList<T> extends ArrayList<T>
      */
     protected void fireChangeNotification(T item, T oldItem, ChangeTypes type)
     {
-        fireChangeNotification(new ChangeNotification<T>(item, oldItem, type));
+        fireChangeNotification(new ChangeNotification<T>(this, item, oldItem, type));
     }
 
     @Override

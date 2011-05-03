@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.utils;
 
+import java.util.Collection;
+
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 
 /**
@@ -14,40 +16,50 @@ import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
  */
 public class ChangeNotification<T>
 {
-    /**
-     * The item that was changed
-     */
-    protected T           item;
+    /** The collection that fired this notification. */
+    protected Collection<?> source;
 
-    /**
-     * The old value (only for change)
-     */
-    protected T           oldItem;
+    /** The item that was changed. */
+    protected T             item;
+
+    /** The old value (only for change). */
+    protected T             oldItem;
 
     /**
      * Type of the change
      */
-    protected ChangeTypes changeType;
+    protected ChangeTypes   changeType;
 
     /**
+     * @param source The collection that fired this notification.
      * @param item The item that was changed
      * @param changeType The type of the change
      */
-    public ChangeNotification(T item, ChangeTypes changeType)
+    public ChangeNotification(Collection<?> source, T item, ChangeTypes changeType)
     {
-        this(item, item, changeType);
+        this(source, item, item, changeType);
     }
 
     /**
+     * @param source The collection that fired this notification.
      * @param item The item that was changed
      * @param oldItem The previous item (if the type is CHANGE)
      * @param changeType The type of the change
      */
-    public ChangeNotification(T item, T oldItem, ChangeTypes changeType)
+    public ChangeNotification(Collection<?> source, T item, T oldItem, ChangeTypes changeType)
     {
+        this.source = source;
         this.item = item;
         this.oldItem = oldItem;
         this.changeType = changeType;
+    }
+
+    /**
+     * @return the source
+     */
+    public Collection<?> getSource()
+    {
+        return source;
     }
 
     /**

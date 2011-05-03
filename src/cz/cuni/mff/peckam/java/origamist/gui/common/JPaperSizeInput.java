@@ -164,7 +164,7 @@ public class JPaperSizeInput extends JUnitDimensionInput
         ServiceLocator.get(ConfigurationManager.class).get().getPapers()
                 .addObserver(new Observer<UnitDimensionWithLabel>() {
                     @Override
-                    public void changePerformed(ChangeNotification<UnitDimensionWithLabel> change)
+                    public void changePerformed(ChangeNotification<? extends UnitDimensionWithLabel> change)
                     {
                         Object selected = paperSizes.getSelectedItem();
 

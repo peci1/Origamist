@@ -75,6 +75,9 @@ public class PluginImpl extends Plugin
     protected Class<?> boundSupportClass       = PropertyChangeSupport.class;
     protected Class<?> constrainedSupportClass = VetoableChangeSupport.class;
 
+    /** If false, don't generate the PropertyChangeSupport field and its delegate methods. */
+    protected boolean  generateSupport         = true;
+
     public String getOptionName()
     {
         return "Xinject-listener-code";
@@ -96,6 +99,7 @@ public class PluginImpl extends Plugin
     public String getUsage()
     {
         return "  -Xinject-listener-code\t:  inject property change event support to setter methods\n"
+                + "  -Xinject-listener-code-dont-generate-support\t: don't generate the PropertyChangeSupport field and its delegate methods"
                 + "  -Xinject-listener-code-interface-bound fully.qualified.interface.name\t: tag classes containing bound properties with this interface\n"
                 + "  -Xinject-listener-code-interface-constrained fully.qualified.interface.name\t: tag classes containing constrained properties with this interface\n"
                 + "  -Xinject-listener-code-supportClass-bound fully.qualified.interface.name\t: name of the class to be used as PropertyChangeSupport implementation (must extend this class)\n"
@@ -158,6 +162,9 @@ public class PluginImpl extends Plugin
                 constrainedSupportClass = supportClass;
                 return 2;
             }
+        } else if (arg.equals("-Xinject-listener-code-dont-generate-support")) {
+            generateSupport = false;
+            return 1;
         }
 
         return 0;
@@ -185,12 +192,15 @@ public class PluginImpl extends Plugin
                 interfaceName = globalInterfaceSetting;
             }
 
-            if (VetoableChangeListener.class.getName().equals(interfaceName)) {
-                addSupport(VetoableChangeListener.class, constrainedSupportClass, co.implClass, constrainedInterface);
-            }
-            if (PropertyChangeListener.class.getName().equals(interfaceName)) {
-                addSupport(PropertyChangeListener.class, boundSupportClass, co.implClass, boundInterface);
+            if (generateSupport) {
+                if (VetoableChangeListener.class.getName().equals(interfaceName)) {
+                    addSupport(VetoableChangeListener.class, constrainedSupportClass, co.implClass,
+                            constrainedInterface);
+                }
+                if (PropertyChangeListener.class.getName().equals(interfaceName)) {
+                    addSupport(PropertyChangeListener.class, boundSupportClass, co.implClass, boundInterface);
 
+                }
             }
 
         }

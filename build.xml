@@ -19,14 +19,14 @@
 	<property name="plugin.bin" value="lib-compile-time/plugin-bin"/>
 	
 	<!-- Temporary directory into which will be put files needed to be compiled and referenced from XJC classpath --> 
-	<property name="xjc.temp.dir" value="xjc-bin" />
+	<!--property name="xjc.temp.dir" value="xjc-bin" /-->
 
 	<taskdef name="xjc" classname="org.jvnet.jaxb2_commons.xjc.XJC2Task">
 		<classpath>
 			<fileset dir="lib-compile-time" includes="*.jar" />
 			<!-- BEWARE: don't put "bin/" directory here - XJC doesn't like it (ExceptionInInitializerError)! 
 			If you need to add some classes to XJC's classpath, copy them (compiled) to ${xjc.temp.dir} -->
-			<pathelement path="${xjc.temp.dir}" />
+			<!--pathelement path="${xjc.temp.dir}" /-->
 		</classpath>
 	</taskdef>
 
@@ -124,37 +124,54 @@
 			dotpluginfilename="PropertyListenerInjector-com.sun.tools.xjc.Plugin" 
 			jarname="xjc-property-listener-injector.jar"/>
 	</target>
+	
+	<target name="jaxb-enumerate-list-fields-plugin" depends="init">
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/EnumerateListFieldsPlugin.java" 
+			dotpluginfilename="EnumerateListFieldsPlugin-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-enumerate-list-fields-plugin.jar"/>
+	</target>
+	
+	<target name="jaxb-call-init-after-construct" depends="init">
+		<xjc-plugin 
+			includes="com/sun/tools/xjc/addon/CallInitAfterConstructPlugin.java" 
+			dotpluginfilename="CallInitAfterConstructPlugin-com.sun.tools.xjc.Plugin" 
+			jarname="xjc-call-init-after-construct-plugin.jar"/>
+	</target>
 
-	<target name="xjc-plugins" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin,jaxb-propertyListenerInjector-plugin,jaxb-property-access-plugin" description="Compiles and packs XJC plugins.">
-		<mkdir dir="${xjc.temp.dir}" />
+	<target name="xjc-plugins" depends="jaxb-implClass-plugin,jaxb-objFactoryCast-plugin,jaxb-propertyListenerInjector-plugin,jaxb-property-access-plugin,jaxb-enumerate-list-fields-plugin,jaxb-call-init-after-construct" description="Compiles and packs XJC plugins.">
+		<!--mkdir dir="${xjc.temp.dir}" /-->
 		<!-- XJC needs the following file to be compiled on the path for the property-listener-injector plugin to work. -->
-		<javac srcdir="src" destdir="${xjc.temp.dir}" debug="${debug}" includes="${customPropertyChangeSupport.as.path}">
+		<!--javac srcdir="src" destdir="${xjc.temp.dir}" debug="${debug}" includes="${customPropertyChangeSupport.as.path}">
 			<classpath>
 				<pathelement path="src" />
 				<fileset dir="lib">
 					<include name="**/*.jar" />
 				</fileset>
 			</classpath>
-		</javac>
+		</javac-->
 	</target>
 	
 	<target name="xjc-plugins-cleanup">
-		<delete dir="${xjc.temp.dir}" />
+		<!--delete dir="${xjc.temp.dir}" /-->
 	</target>
 	
 	<presetdef name="xjc-make" description="A preset XJC schema compilation. Just specify the schema attribute and produces elements.">
 		<xjc destdir="src" removeOldOutput="true">
 			<arg value="-extension"/>
+			<arg value="-Xenumerate-list-fields"/>
+			<arg value="-Xenumerate-list-fields-generate-properties"/>
+			<arg value="-Xenumerate-list-fields-enumerate-properties"/>
 			<arg value="-Xpatch-implClass-list"/>
 			<arg value="-Xpatch-objFactory-uncheckedCast"/>
 			<arg value="-Xequals"/>
 			<arg value="-XhashCode"/>
 			<arg value="-Xproperty-access"/>
+			<arg value="-Xcall-init-after-construct"/>
 			<arg value="-Xinject-listener-code"/>
 			<arg value="-Xinject-listener-code-interface-bound"/>
 			<arg value="cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties"/>
-			<arg value="-Xinject-listener-code-supportClass-bound"/>
-			<arg value="${customPropertyChangeSupport.as.class}"/>
+			<arg value="-Xinject-listener-code-dont-generate-support"/>
 		</xjc>
 	</presetdef>
 	

@@ -77,7 +77,7 @@ public class Fold implements Cloneable
         if (linesObserver == null) {
             linesObserver = new Observer<FoldLine>() {
                 @Override
-                public void changePerformed(ChangeNotification<FoldLine> change)
+                public void changePerformed(ChangeNotification<? extends FoldLine> change)
                 {
                     if (change.getChangeType() != ChangeTypes.ADD) {
                         change.getOldItem().setFold(null);
@@ -161,7 +161,7 @@ public class Fold implements Cloneable
             }
 
             // add the rest of observers to avoid calling them when cloning the lines list
-            for (Observer<FoldLine> o : lines.getObservers()) {
+            for (Observer<? super FoldLine> o : lines.getObservers()) {
                 if (o != linesObserver)
                     result.lines.addObserver(o);
             }

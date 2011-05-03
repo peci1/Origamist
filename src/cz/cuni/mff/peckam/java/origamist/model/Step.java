@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,7 +17,6 @@ import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
-import cz.cuni.mff.peckam.java.origamist.modelstate.DefaultModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
@@ -38,13 +39,10 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
 {
 
     /** The previous property. */
-    public static final String                PREVIOUS_PROPERTY               = "previous";
+    public static final String                PREVIOUS_PROPERTY               = "previous:cz.cuni.mff.peckam.java.origamist.model.Step";
 
     /** The next property. */
-    public static final String                NEXT_PROPERTY                   = "next";
-
-    /** The steps property. */
-    public static final String                STEPS_PROPERTY                  = "steps";
+    public static final String                NEXT_PROPERTY                   = "next:cz.cuni.mff.peckam.java.origamist.model.Step";
 
     /**
      * The hastable for more comfortable search in localized descriptions.
@@ -82,7 +80,17 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public Step()
     {
+        setId(1); // the default step id
+
         ((ObservableList<LangString>) getDescription()).addObserver(new LangStringHashtableObserver(descriptions));
+        addPropertyChangeListener(IMAGE_PROPERTY, new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                invalidateThisModelState();
+            }
+        });
+
         if (zoom == null)
             zoom = 100.0;
     }
@@ -138,10 +146,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
             this.modelState = previous.getModelState().clone();
         } else {
             if (this.defaultModelState == null) {
-                if (getSteps() == null || getSteps().getModel() == null || getSteps().getModel().getOrigami() == null) {
-                    throw new IllegalStateException("Cannot create the default model state for step " + getId());
-                }
-                this.defaultModelState = new DefaultModelState(getSteps().getModel().getOrigami());
+                throw new IllegalStateException("Cannot create the default model state for step " + getId());
             }
             this.modelState = this.defaultModelState.clone();
         }
@@ -224,6 +229,18 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      */
     public void invalidateModelState()
     {
+        invalidateThisModelState();
+
+        if (this.next != null)
+            this.next.invalidateModelState();
+    }
+
+    /**
+     * Invalidate only this step's model state. You should call this only if you are sure that this model state's change
+     * won't affect any further steps (eg. if you change the image in the step).
+     */
+    protected void invalidateThisModelState()
+    {
         if (this.modelState != null) {
             this.modelState = null;
             for (Callable<?> callback : modelStateInvalidationCallbacks) {
@@ -234,9 +251,6 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
                 }
             }
         }
-
-        if (this.next != null)
-            this.next.invalidateModelState();
     }
 
     @Override
@@ -265,22 +279,9 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
         return modelStateInvalidationCallbacks;
     }
 
-    /**
-     * @return The {@link Steps} object this step is part of.
-     */
-    public Steps getSteps()
+    @Override
+    protected String[] getNonChildProperties()
     {
-        return steps;
-    }
-
-    /**
-     * @param steps The {@link Steps} object this step is part of.
-     */
-    void setSteps(Steps steps)
-    {
-        Steps old = this.steps;
-        this.steps = steps;
-        if ((old != steps && (old == null || steps == null)) || (old != null && !old.equals(steps)))
-            support.firePropertyChange(STEPS_PROPERTY, old, steps);
+        return new String[] { PREVIOUS_PROPERTY, NEXT_PROPERTY };
     }
 }

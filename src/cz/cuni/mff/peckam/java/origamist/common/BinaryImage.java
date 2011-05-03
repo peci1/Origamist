@@ -30,7 +30,7 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
     protected transient ImageIcon icon          = null;
 
     /** The icon property. */
-    public static final String    ICON_PROPERTY = "icon";
+    public static final String    ICON_PROPERTY = "icon:cz.cuni.mff.peckam.java.origamist.common.BinaryImage";
 
     /** The default type of images. */
     public static String          DEFAULT_TYPE  = "jpg";

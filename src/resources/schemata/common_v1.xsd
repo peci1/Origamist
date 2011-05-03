@@ -23,11 +23,13 @@
 				<jxb:javaType name="java.security.Permission" xmlType="s:Permission" 
 					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.parse"
 					printMethod="cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter.print"/>
+				<xjc:superClass name="cz.cuni.mff.peckam.java.origamist.common.GeneratedClassBase" />
 			</jxb:globalBindings>
 			<jxb:schemaBindings>
 				<jxb:package name="cz.cuni.mff.peckam.java.origamist.common.jaxb"/>
 			</jxb:schemaBindings>
 			<plugins:property-access />
+			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
 		</appinfo>
 	</annotation>
 	
@@ -35,7 +37,6 @@
 		<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.Author"/>
-    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>		
 		<sequence>
@@ -79,16 +80,16 @@
     		</choice>
     		<element name="permission" type="s:Permission"
     			maxOccurs="unbounded" minOccurs="0">
+    			<annotation>
+    				<appinfo>
+    					<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+    				</appinfo>
+    			</annotation>
     		</element>
     	</sequence>
     </complexType>
     
     <complexType name="Image">
-    	<annotation>
-    		<appinfo>
-    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
-    		</appinfo>
-    	</annotation>
     	<sequence>
     		<element name="image" type="s:BinaryImage"/>
     	</sequence>
@@ -98,7 +99,6 @@
     	<annotation>
     		<appinfo>
     			<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.common.BinaryImage"/>
-    			<pli:listener>java.beans.PropertyChangeListener</pli:listener>
     		</appinfo>
     	</annotation>
     	<simpleContent>

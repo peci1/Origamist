@@ -10,7 +10,7 @@ import java.util.Locale;
  * 
  * @author Martin Pecka
  */
-public class LangString extends cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString
+public class LangString extends cz.cuni.mff.peckam.java.origamist.common.jaxb.LangString implements Cloneable
 {
 
     /**
@@ -32,5 +32,11 @@ public class LangString extends cz.cuni.mff.peckam.java.origamist.common.jaxb.La
     public String toString()
     {
         return getLang().toString() + ":" + getValue();
+    }
+
+    @Override
+    public LangString clone()
+    {
+        return new LangString(this.value, this.lang);
     }
 }

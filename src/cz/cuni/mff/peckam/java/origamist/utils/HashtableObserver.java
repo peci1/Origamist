@@ -36,7 +36,7 @@ public class HashtableObserver<T, K, V> implements Observer<T>
     }
 
     @Override
-    public void changePerformed(ChangeNotification<T> change)
+    public void changePerformed(ChangeNotification<? extends T> change)
     {
         switch (change.getChangeType()) {
             case ADD:

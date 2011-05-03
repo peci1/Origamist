@@ -151,14 +151,14 @@ public class ModelState implements Cloneable
     {
         folds.addObserver(new Observer<Fold>() {
             @Override
-            public void changePerformed(ChangeNotification<Fold> change)
+            public void changePerformed(ChangeNotification<? extends Fold> change)
             {
                 ModelState.this.foldLineArraysDirty = true;
 
                 if (change.getChangeType() == ChangeTypes.ADD) {
                     change.getItem().lines.addObserver(new Observer<FoldLine>() {
                         @Override
-                        public void changePerformed(ChangeNotification<FoldLine> change)
+                        public void changePerformed(ChangeNotification<? extends FoldLine> change)
                         {
                             ModelState.this.foldLineArraysDirty = true;
                         }
@@ -169,7 +169,7 @@ public class ModelState implements Cloneable
 
         triangles.addObserver(new Observer<ModelTriangle>() {
             @Override
-            public void changePerformed(ChangeNotification<ModelTriangle> change)
+            public void changePerformed(ChangeNotification<? extends ModelTriangle> change)
             {
                 ModelState.this.trianglesArraysDirty = true;
                 ModelState.this.foldLineArraysDirty = true;
@@ -187,7 +187,7 @@ public class ModelState implements Cloneable
 
         layers.addObserver(new Observer<Layer>() {
             @Override
-            public void changePerformed(ChangeNotification<Layer> change)
+            public void changePerformed(ChangeNotification<? extends Layer> change)
             {
                 if (change.getChangeType() != ChangeTypes.ADD) {
                     Layer old = change.getOldItem();
@@ -202,7 +202,7 @@ public class ModelState implements Cloneable
                     }
                     layer.addTrianglesObserver(new Observer<ModelTriangle>() {
                         @Override
-                        public void changePerformed(ChangeNotification<ModelTriangle> change)
+                        public void changePerformed(ChangeNotification<? extends ModelTriangle> change)
                         {
                             if (change.getChangeType() != ChangeTypes.ADD) {
                                 trianglesToLayers.remove(change.getOldItem());
@@ -219,7 +219,7 @@ public class ModelState implements Cloneable
 
         markers.addObserver(new Observer<Marker>() {
             @Override
-            public void changePerformed(ChangeNotification<Marker> change)
+            public void changePerformed(ChangeNotification<? extends Marker> change)
             {
                 if (change.getChangeType() != ChangeTypes.ADD)
                     markerData.remove(change.getOldItem().getRenderData());

@@ -188,11 +188,41 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
         LinkedHashSet<Locale> result = new LinkedHashSet<Locale>(2);
 
         Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
-        result.add(conf.getLocale());
-        result.add(conf.getDiagramLocale());
+
+        boolean isSetForLocale = false, isSetForDiagramLocale = false;
+
+        Locale locale = conf.getLocale();
+        for (LangString s : strings) {
+            if (s.getLang().equals(locale)) {
+                isSetForLocale = true;
+                break;
+            }
+        }
+
+        Locale diagramLocale = conf.getDiagramLocale();
+        if (diagramLocale.equals(locale)) {
+            isSetForDiagramLocale = isSetForLocale;
+        } else {
+            for (LangString s : strings) {
+                if (s.getLang().equals(diagramLocale)) {
+                    isSetForDiagramLocale = true;
+                    break;
+                }
+            }
+        }
+
+        if (isSetForLocale)
+            result.add(conf.getLocale());
+        if (isSetForDiagramLocale)
+            result.add(conf.getDiagramLocale());
 
         for (LangString s : strings)
             result.add(s.getLang());
+
+        if (!isSetForLocale)
+            result.add(conf.getLocale());
+        if (!isSetForDiagramLocale)
+            result.add(conf.getDiagramLocale());
 
         return result;
     }

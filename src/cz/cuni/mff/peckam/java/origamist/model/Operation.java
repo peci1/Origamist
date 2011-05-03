@@ -3,9 +3,6 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
-import java.beans.PropertyChangeListener;
-import java.util.List;
-
 import javax.swing.ImageIcon;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -14,7 +11,6 @@ import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
-import cz.cuni.mff.peckam.java.origamist.utils.CustomPropertyChangeSupport;
 import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
 
 /**
@@ -29,18 +25,16 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
         HasBoundProperties
 {
 
-    protected transient CustomPropertyChangeSupport support       = new CustomPropertyChangeSupport(this);
-
     /** The icon property. */
-    public static final String                      ICON_PROPERTY = "icon";
+    public static final String    ICON_PROPERTY = "icon:cz.cuni.mff.peckam.java.origamist.model.Operation";
 
     /** The type property. */
-    public static final String                      TYPE_PROPERTY = "type";
+    public static final String    TYPE_PROPERTY = "type:cz.cuni.mff.peckam.java.origamist.model.Operation";
 
     /**
      * Icon of this operation.
      */
-    protected transient ImageIcon                   icon          = null;
+    protected transient ImageIcon icon          = null;
 
     /**
      * @return The icon of this operation
@@ -125,55 +119,4 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
             return false;
         return true;
     }
-
-    /**
-     * @param listener
-     * @return
-     * @see cz.cuni.mff.peckam.java.origamist.utils.CustomPropertyChangeSupport#removeAllListeners(java.beans.PropertyChangeListener)
-     */
-    public List<String> removeAllListeners(PropertyChangeListener listener)
-    {
-        return support.removeAllListeners(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        support.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        support.removePropertyChangeListener(listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        support.addPropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        support.removePropertyChangeListener(propertyName, listener);
-    }
-
 }

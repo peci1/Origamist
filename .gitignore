@@ -3,6 +3,8 @@
 /lib-compile-time/xjc-patch-for-objectFactory-unchecked-cast-usage.jar
 /lib-compile-time/xjc-property-listener-injector.jar
 /lib-compile-time/xjc-property-access-plugin.jar
+/lib-compile-time/xjc-call-init-after-construct-plugin.jar
+/lib-compile-time/xjc-enumerate-list-fields-plugin.jar
 /doc/*.aux
 /doc/*.log
 /doc/*.out

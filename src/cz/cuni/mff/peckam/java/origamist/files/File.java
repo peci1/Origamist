@@ -355,4 +355,11 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
         if (oldInvalid != invalid)
             support.firePropertyChange(INVALID_PROPERTY, oldInvalid, invalid);
     }
+
+    @Override
+    protected String[] getNonChildProperties()
+    {
+        return new String[] { File.PARENT_PROPERTY, File.INVALID_PROPERTY, File.LOADED_PROPERTY, File.LOADING_PROPERTY,
+                File.ORIGAMI_PROPERTY };
+    }
 }

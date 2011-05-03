@@ -17,6 +17,8 @@ import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.utils.EmptyIterator;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyEvent;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyListener;
 
 /**
  * A category containing some diagram metadata.
@@ -45,6 +47,22 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     public Category()
     {
         ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
+
+        addObservablePropertyListener(new ObservablePropertyListener<Category>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends Category> evt)
+            {
+                evt.getEvent().getItem().setParent(Category.this);
+            }
+        }, Category.CATEGORIES_PROPERTY, Categories.CATEGORY_PROPERTY);
+
+        addObservablePropertyListener(new ObservablePropertyListener<File>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends File> evt)
+            {
+                evt.getEvent().getItem().setParent(Category.this);
+            }
+        }, Category.FILES_PROPERTY, Files.FILE_PROPERTY);
     }
 
     /**
@@ -146,25 +164,6 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
     }
 
     /**
-     * Set this category as the parent of its files and subcategories and recursively does the same for all
-     * subcategories.
-     */
-    public void updateChildParents()
-    {
-        if (getFiles() != null) {
-            for (File f : getFiles().getFile()) {
-                f.setParent(this);
-            }
-        }
-        if (getCategories() != null) {
-            for (Category c : getCategories().getCategory()) {
-                c.setParent(this);
-                c.updateChildParents();
-            }
-        }
-    }
-
-    /**
      * Create a category with the given id. If the id contains slashes ("/"), it is concerned as a category id hierarchy
      * and all missing categories are created.
      * 
@@ -248,4 +247,9 @@ public class Category extends cz.cuni.mff.peckam.java.origamist.files.jaxb.Categ
         this.name.add(s);
     }
 
+    @Override
+    protected String[] getNonChildProperties()
+    {
+        return new String[] { PARENT_PROPERTY };
+    }
 }

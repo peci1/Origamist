@@ -90,16 +90,17 @@ import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Steps;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
-import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
-import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
-import cz.cuni.mff.peckam.java.origamist.utils.Observer;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyEvent;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyListener;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
@@ -116,83 +117,83 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long                      serialVersionUID        = -6853141518719373854L;
+    private static final long                       serialVersionUID        = -6853141518719373854L;
 
     /** The resource bundle with editor strings. */
-    protected ResourceBundle                       editorMessages;
+    protected ResourceBundle                        editorMessages;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet                              bootstrap               = null;
+    protected JApplet                               bootstrap               = null;
 
     /** The currently displayed origami. May be <code>null</code>. */
-    protected Origami                              origami                 = null;
+    protected Origami                               origami                 = null;
 
     /** The currently displayed step. */
-    protected Step                                 step                    = null;
+    protected Step                                  step                    = null;
 
     /** The currently selected operation. */
-    protected Operations                           currentOperation        = null;
+    protected Operations                            currentOperation        = null;
 
     /** Reflects whether alternative action buttons are shown. */
-    protected boolean                              alternativeActionsShown = false;
+    protected boolean                               alternativeActionsShown = false;
 
     /** The main application toolbar. */
-    protected JToolBarWithBgImage                  toolbar                 = null;
+    protected JToolBarWithBgImage                   toolbar                 = null;
 
     /** The dropdown button for saving the model. */
-    protected JDropDownButton                      saveButton              = null;
+    protected JDropDownButton                       saveButton              = null;
 
     /** The button for displaying model properties. */
-    protected JButton                              propertiesButton        = null;
+    protected JButton                               propertiesButton        = null;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleButton                        operationMountainFold, operationValleyFold,
+    protected JToggleButton                         operationMountainFold, operationValleyFold,
             operationMountainFoldUnfold, operationValleyFoldUnfold, operationThunderboltFoldMountainFirst,
             operationThunderboltFoldValleyFirst, operationTurnOver, operationRotate, operationPull,
             operationCrimpFoldInside, operationCrimpFoldOutside, operationOpen, operationReverseFoldInside,
             operationReverseFoldOutside, operationRepeatAction, operationMark;
 
     /** Toolbar buttons for model operations. */
-    protected JToggleMenuItem                      operationRabbitFold, operationSquashFold;
+    protected JToggleMenuItem                       operationRabbitFold, operationSquashFold;
 
     /** The table of action alternatives. The key is the primary action and the value is its alternative. */
-    protected Hashtable<JComponent, JComponent>    alternativeActions      = new Hashtable<JComponent, JComponent>();
+    protected Hashtable<JComponent, JComponent>     alternativeActions      = new Hashtable<JComponent, JComponent>();
 
     /** The panel with step tools. */
-    protected JPanel                               leftPanel;
+    protected JPanel                                leftPanel;
 
     /** The component used to render and edit the step. */
-    protected StepEditor                           stepEditor;
+    protected StepEditor                            stepEditor;
 
     /** The status bar. */
-    protected JStatusBar                           statusBar               = null;
+    protected JStatusBar                            statusBar               = null;
 
     /** The slider for zoom. */
-    protected JEditableSlider                      zoomSlider;
+    protected JEditableSlider                       zoomSlider;
 
     /** Toolbar button. */
-    protected JButton                              addStep, nextStep, prevStep, removeStep, cancelLastOperation;
+    protected JButton                               addStep, nextStep, prevStep, removeStep, cancelLastOperation;
 
     /** The string displaying the current position in the list of steps. */
-    protected ParametrizedLocalizedString          stepXofY;
+    protected ParametrizedLocalizedString           stepXofY;
 
     /** Observer for the number of steps. */
-    protected Observer<Step>                       stepsObserver;
+    protected ObservablePropertyListener<Step>      stepsObserver;
 
     /** Observer for the number of steps. */
-    protected Observer<Operation>                  operationsObserver;
+    protected ObservablePropertyListener<Operation> operationsObserver;
 
     /** The list of operations defined for the current step. */
-    protected JList                                operationsList;
+    protected JList                                 operationsList;
 
     /** The description of the step. */
-    protected JLangStringListTextField<JTextField> description;
+    protected JLangStringListTextField<JTextField>  description;
 
     /** Span of the step. */
-    protected JSpinner                             colSpan, rowSpan;
+    protected JSpinner                              colSpan, rowSpan;
 
     /** The combobox for selecting the current step. */
-    protected JComboBox                            steps;
+    protected JComboBox                             steps;
 
     /**
      * Instantiate the origami viewer without a bootstrapper.
@@ -230,9 +231,9 @@ public class OrigamiEditor extends CommonGui
     @Override
     public void init()
     {
-        stepsObserver = new Observer<Step>() {
+        stepsObserver = new ObservablePropertyListener<Step>() {
             @Override
-            public void changePerformed(ChangeNotification<Step> change)
+            public void changePerformed(ObservablePropertyEvent<? extends Step> evt)
             {
                 stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
                 updateOperationsModel();
@@ -240,21 +241,22 @@ public class OrigamiEditor extends CommonGui
             }
         };
 
-        operationsObserver = new Observer<Operation>() {
+        operationsObserver = new ObservablePropertyListener<Operation>() {
             @Override
-            public void changePerformed(ChangeNotification<Operation> change)
+            public void changePerformed(ObservablePropertyEvent<? extends Operation> evt)
             {
                 if (step == null || origami == null)
                     return;
+
                 addStep.setEnabled(step.getOperations().size() > 0);
                 cancelLastOperation.setEnabled(step.getOperations().size() > 0);
 
                 DefaultListModel model = ((DefaultListModel) operationsList.getModel());
-                if (change.getChangeType() == ChangeTypes.REMOVE || change.getChangeType() == ChangeTypes.CHANGE) {
-                    model.removeElement(change.getItem());
+                if (evt.getEvent().getChangeType() != ChangeTypes.ADD) {
+                    model.removeElement(evt.getEvent().getItem());
                 }
-                if (change.getChangeType() == ChangeTypes.ADD || change.getChangeType() == ChangeTypes.CHANGE) {
-                    model.addElement(change.getItem());
+                if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
+                    model.addElement(evt.getEvent().getItem());
                 }
             }
 
@@ -757,8 +759,10 @@ public class OrigamiEditor extends CommonGui
      */
     public void setOrigami(Origami origami)
     {
-        if (this.origami != null)
-            ((ObservableList<Step>) this.origami.getModel().getSteps().getStep()).removeObserver(stepsObserver);
+        if (this.origami != null) {
+            this.origami.removeObservablePropertyListener(stepsObserver, Origami.MODEL_PROPERTY, Model.STEPS_PROPERTY,
+                    Steps.STEP_PROPERTY);
+        }
 
         this.origami = origami;
 
@@ -769,15 +773,15 @@ public class OrigamiEditor extends CommonGui
 
         stepXofY.setParameter(1, origami != null ? origami.getModel().getSteps().getStep().size() : 0);
 
+        setStep(null);
         if (origami != null) {
-            ((ObservableList<Step>) origami.getModel().getSteps().getStep()).addObserver(stepsObserver);
+            this.origami.addObservablePropertyListener(stepsObserver, Origami.MODEL_PROPERTY, Model.STEPS_PROPERTY,
+                    Steps.STEP_PROPERTY);
             if (origami.getModel().getSteps().getStep().size() == 0) {
                 // we have just created the origami, so initialize the first step
                 new AddStepAction().actionPerformed(new ActionEvent(this, 0, ""));
             }
             setStep(origami.getModel().getSteps().getStep().get(0));
-        } else {
-            setStep(null);
         }
 
         getContentPane().repaint();
@@ -797,7 +801,8 @@ public class OrigamiEditor extends CommonGui
     public void setStep(Step step)
     {
         if (this.step != null)
-            ((ObservableList<Operation>) this.step.getOperations()).removeObserver(operationsObserver);
+            this.origami.removeObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
+                    Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
 
         this.step = step;
         stepEditor.setStep(step);
@@ -812,7 +817,8 @@ public class OrigamiEditor extends CommonGui
 
         if (step != null) {
             numOperations = step.getOperations().size();
-            ((ObservableList<Operation>) step.getOperations()).addObserver(operationsObserver);
+            this.origami.addObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
+                    Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
             zoomSlider.setValue((int) ((double) step.getZoom()));
             description.setStrings(step.getDescription());
             colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
@@ -1328,11 +1334,6 @@ public class OrigamiEditor extends CommonGui
             }
             steps.add(newStep);
 
-            if (steps.size() == 1) {
-                // we have just created the very first step
-                origami.init();
-            }
-
             setStep(newStep);
         }
     }
@@ -1359,18 +1360,17 @@ public class OrigamiEditor extends CommonGui
             if (steps.size() == 0) {
                 return;
             } else if (steps.size() == 1) {
-                steps.clear();
+                setStep(null); // avoid getting the modelState of the new step before being attached to the tree
                 newStep = (Step) new ObjectFactory().createStep();
                 newStep.setId(1);
-                steps.add(newStep);
-                origami.init();
+                steps.set(0, newStep);
+                setStep(newStep);
             } else {
+                setStep(null); // avoid getting the modelState of the new step before being attached to the tree
+                newStep = steps.get(steps.size() - 2);
                 steps.remove(steps.size() - 1);
-                newStep = steps.get(steps.size() - 1);
-                newStep.setNext(null);
+                setStep(newStep);
             }
-
-            setStep(newStep);
         }
     }
 

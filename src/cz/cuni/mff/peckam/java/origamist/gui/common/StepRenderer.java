@@ -91,7 +91,6 @@ import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.ModelPaper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
-import cz.cuni.mff.peckam.java.origamist.model.Paper;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
@@ -320,55 +319,42 @@ public class StepRenderer extends JPanel
      */
     public void setOrigami(Origami origami)
     {
-        Origami oldOrigami = this.origami;
+        PropertyChangeListener bgListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                colorManager.setBackground((Color) evt.getNewValue());
+            }
+        };
+
+        PropertyChangeListener fgListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                colorManager.setForeground((Color) evt.getNewValue());
+            }
+        };
+
+        if (this.origami != null) {
+            this.origami.removePropertyChangeListener(bgListener, Origami.MODEL_PROPERTY, Model.PAPER_PROPERTY,
+                    ModelPaper.COLORS_PROPERTY, ModelColors.BACKGROUND_PROPERTY);
+            this.origami.removePropertyChangeListener(fgListener, Origami.MODEL_PROPERTY, Model.PAPER_PROPERTY,
+                    ModelPaper.COLORS_PROPERTY, ModelColors.FOREGROUND_PROPERTY);
+        }
+
         this.origami = origami;
+
         if (origami != null) {
             setBackground(origami.getPaper().getColor().getBackground());
             colorManager = new ColorManager(origami.getModel().getPaper().getBackgroundColor(), origami.getModel()
                     .getPaper().getForegroundColor());
 
-            final PropertyChangeListener m = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt)
-                {
-                    if (evt.getPropertyName().equals(ModelColors.BACKGROUND_PROPERTY)) {
-                        colorManager.setBackground((Color) evt.getNewValue());
-                    } else if (evt.getPropertyName().equals(ModelColors.FOREGROUND_PROPERTY)) {
-                        colorManager.setForeground((Color) evt.getNewValue());
-                    }
-                }
-            };
-            final PropertyChangeListener p = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt)
-                {
-                    if (evt.getOldValue() != null)
-                        ((ModelColors) evt.getOldValue()).removeAllListeners(m);
-                    if (evt.getNewValue() != null)
-                        ((ModelColors) evt.getNewValue()).addPropertyChangeListener(m);
-                }
-            };
-            PropertyChangeListener l = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt)
-                {
-                    if (evt.getOldValue() != null)
-                        ((Paper) evt.getOldValue()).removeAllListeners(p);
-                    if (evt.getNewValue() != null)
-                        ((Paper) evt.getNewValue()).addPropertyChangeListener(ModelPaper.COLORS_PROPERTY, p);
-                }
-            };
-            l.propertyChange(new PropertyChangeEvent(origami.getModel(), Model.PAPER_PROPERTY, null, origami.getModel()
-                    .getPaper()));
-            p.propertyChange(new PropertyChangeEvent(origami.getModel().getPaper(), ModelPaper.COLORS_PROPERTY, null,
-                    origami.getModel().getPaper().getColors()));
-            p.propertyChange(new PropertyChangeEvent(origami.getModel().getPaper(), ModelPaper.COLORS_PROPERTY, null,
-                    origami.getModel().getPaper().getColors()));
-            origami.getModel().addPropertyChangeListener(Model.PAPER_PROPERTY, l);
-            if (oldOrigami != null)
-                oldOrigami.removeAllListeners(l);
+            origami.addPropertyChangeListener(bgListener, Origami.MODEL_PROPERTY, Model.PAPER_PROPERTY,
+                    ModelPaper.COLORS_PROPERTY, ModelColors.BACKGROUND_PROPERTY);
+            origami.addPropertyChangeListener(fgListener, Origami.MODEL_PROPERTY, Model.PAPER_PROPERTY,
+                    ModelPaper.COLORS_PROPERTY, ModelColors.FOREGROUND_PROPERTY);
         } else {
-            setBackground(Color.GRAY);
+            setBackground(Color.GRAY); // TODO some more convenient behavior
         }
     }
 
@@ -395,7 +381,8 @@ public class StepRenderer extends JPanel
         };
 
         if (this.step != step) {
-            step.getModelStateInvalidationCallbacks().add(callback);
+            if (step != null)
+                step.getModelStateInvalidationCallbacks().add(callback);
             if (this.step != null)
                 this.step.getModelStateInvalidationCallbacks().remove(callback);
         }

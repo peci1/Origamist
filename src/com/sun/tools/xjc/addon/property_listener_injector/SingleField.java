@@ -199,7 +199,7 @@ public class SingleField implements FieldOutline
             // the constant for the property
             String propertyConstantName = prop.getName(false).replaceAll("([A-Z])", "_$1").toUpperCase() + "_PROPERTY";
             propertyConstant = outline.implClass.field(JMod.PUBLIC | JMod.STATIC | JMod.FINAL, String.class,
-                    propertyConstantName, JExpr.lit(prop.getName(false)));
+                    propertyConstantName, JExpr.lit(prop.getName(false) + ":" + outline.implClass.fullName()));
             propertyConstant.javadoc().clear();
             propertyConstant.javadoc().add("Property " + prop.getName(false));
         }
