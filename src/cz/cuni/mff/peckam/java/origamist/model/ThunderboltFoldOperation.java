@@ -5,6 +5,9 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.vecmath.Point2d;
 import javax.vecmath.Vector2d;
 
@@ -12,6 +15,11 @@ import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
 
 /**
  * A thunderbolt fold.
@@ -53,6 +61,38 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         previousState.makeFold(dir, secondLine.getP1(), secondLine.getP2(), refPoint, secondLayer, secondAngle);
 
         return previousState;
+    }
+
+    @Override
+    protected List<OperationArgument> initArguments()
+    {
+        List<OperationArgument> result = new ArrayList<OperationArgument>(4);
+
+        LineArgument line;
+        result.add(line = new LineArgument(true));
+        result.add(new LayersArgument(line, true));
+        result.add(new AngleArgument(true));
+        result.add(new PointArgument(false));
+        result.add(line = new LineArgument(true));
+        result.add(new LayersArgument(line, true));
+        result.add(new AngleArgument(false));
+
+        return result;
+    }
+
+    @Override
+    public void fillFromArguments() throws IllegalStateException
+    {
+        super.fillFromArguments();
+        this.line = ((LineArgument) arguments.get(0)).getLine();
+        this.layer = ((LayersArgument) arguments.get(1)).getLayers();
+        this.angle = ((AngleArgument) arguments.get(2)).getAngle();
+        if (arguments.get(3).isComplete())
+            this.refPoint = ((PointArgument) arguments.get(3)).getPoint();
+        this.secondLine = ((LineArgument) arguments.get(4)).getLine();
+        this.secondLayer = ((LayersArgument) arguments.get(5)).getLayers();
+        if (arguments.get(6).isComplete())
+            this.secondAngle = ((AngleArgument) arguments.get(6)).getAngle();
     }
 
     @Override

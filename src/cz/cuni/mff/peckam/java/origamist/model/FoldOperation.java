@@ -3,11 +3,19 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.vecmath.Point2d;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
 
 /**
  * Valley or mountain fold.
@@ -29,6 +37,31 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
                 angle);
 
         return previousState;
+    }
+
+    @Override
+    protected List<OperationArgument> initArguments()
+    {
+        List<OperationArgument> result = new ArrayList<OperationArgument>(4);
+
+        LineArgument line;
+        result.add(line = new LineArgument(true));
+        result.add(new LayersArgument(line, true));
+        result.add(new AngleArgument(true));
+        result.add(new PointArgument(false));
+
+        return result;
+    }
+
+    @Override
+    public void fillFromArguments() throws IllegalStateException
+    {
+        super.fillFromArguments();
+        this.line = ((LineArgument) arguments.get(0)).getLine();
+        this.layer = ((LayersArgument) arguments.get(1)).getLayers();
+        this.angle = ((AngleArgument) arguments.get(2)).getAngle();
+        if (arguments.get(3).isComplete())
+            this.refPoint = ((PointArgument) arguments.get(3)).getPoint();
     }
 
     @Override

@@ -3,12 +3,17 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.swing.ImageIcon;
 import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
@@ -26,15 +31,26 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
 {
 
     /** The icon property. */
-    public static final String    ICON_PROPERTY = "icon:cz.cuni.mff.peckam.java.origamist.model.Operation";
+    public static final String                  ICON_PROPERTY = "icon:cz.cuni.mff.peckam.java.origamist.model.Operation";
 
     /** The type property. */
-    public static final String    TYPE_PROPERTY = "type:cz.cuni.mff.peckam.java.origamist.model.Operation";
+    public static final String                  TYPE_PROPERTY = "type:cz.cuni.mff.peckam.java.origamist.model.Operation";
+
+    /** The list of arguments of this operation. */
+    protected transient List<OperationArgument> arguments     = Collections.unmodifiableList(initArguments());
 
     /**
      * Icon of this operation.
      */
-    protected transient ImageIcon icon          = null;
+    protected transient ImageIcon               icon          = null;
+
+    /**
+     * 
+     */
+    public Operation()
+    {
+        initArguments();
+    }
 
     /**
      * @return The icon of this operation
@@ -87,6 +103,57 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     {
         throw new UnsupportedOperationException("Class " + getClass() + " is a subclass of " + Operation.class
                 + " and therefore must overwrite the getModelState() method.");
+    }
+
+    /**
+     * Create and return the list of arguments of this operation. Do not set it directly into this.arguments.
+     */
+    protected List<OperationArgument> initArguments()
+    {
+        return new ArrayList<OperationArgument>(0);
+    }
+
+    /**
+     * @return The list of arguments of this operation. The returned list is unmodifiable.
+     */
+    public List<OperationArgument> getArguments()
+    {
+        return arguments;
+    }
+
+    /**
+     * @return True if all required arguments of this operation are completely filled-in.
+     */
+    public boolean areRequiredAgrumentsComplete()
+    {
+        for (OperationArgument arg : getArguments()) {
+            if (!arg.isComplete() && arg.isRequired())
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return True if all arguments of this operation are completely filled-in.
+     */
+    public boolean areAgrumentsComplete()
+    {
+        for (OperationArgument arg : getArguments()) {
+            if (!arg.isComplete())
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Fill the properties of this operation from this.arguments.
+     * 
+     * @throws IllegalStateException If {@link #areRequiredAgrumentsComplete()} returns false.
+     */
+    public void fillFromArguments() throws IllegalStateException
+    {
+        if (!areRequiredAgrumentsComplete())
+            throw new IllegalStateException("Cannot fill operation properties from uncompleted argument list.");
     }
 
     @Override

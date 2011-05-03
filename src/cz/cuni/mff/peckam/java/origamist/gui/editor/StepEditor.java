@@ -27,7 +27,6 @@ import javax.media.j3d.BranchGroup;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Group;
 import javax.media.j3d.LineArray;
-import javax.media.j3d.Node;
 import javax.media.j3d.OrderedGroup;
 import javax.media.j3d.PointArray;
 import javax.media.j3d.PointAttributes;
@@ -1295,109 +1294,6 @@ public class StepEditor extends StepRenderer
                 removeUnnecessaryListeners();
             }
         }
-    }
-
-    /**
-     * The type of primitives the user can pick.
-     * 
-     * @author Martin Pecka
-     */
-    protected enum PickMode
-    {
-        POINT
-        {
-            @Override
-            protected PickMode getNext()
-            {
-                return LINE;
-            }
-
-            @Override
-            protected List<PickResult> filterPickResults(PickResult[] results)
-            {
-                List<PickResult> result = new LinkedList<PickResult>();
-                if (results == null)
-                    return result;
-
-                // let points be first in the list
-                List<PickResult> lines = new LinkedList<PickResult>();
-                for (PickResult r : results) {
-                    if (r.getGeometryArray() != null) {
-                        if (r.getGeometryArray() instanceof LineArray) {
-                            lines.add(r);
-                        } else if (r.getGeometryArray() instanceof PointArray) {
-                            result.add(r);
-                        }
-                    }
-                }
-                result.addAll(lines);
-                return result;
-            }
-        },
-        LINE
-        {
-            @Override
-            protected PickMode getNext()
-            {
-                return LAYER;
-            }
-
-            @Override
-            protected List<PickResult> filterPickResults(PickResult[] results)
-            {
-                List<PickResult> result = new LinkedList<PickResult>();
-                if (results == null)
-                    return result;
-
-                for (PickResult r : results) {
-                    if (r.getGeometryArray() != null && r.getGeometryArray() instanceof LineArray) {
-                        result.add(r);
-                    }
-                }
-                return result;
-            }
-        },
-        LAYER
-        {
-            @Override
-            protected PickMode getNext()
-            {
-                return POINT;
-            }
-
-            @Override
-            protected List<PickResult> filterPickResults(PickResult[] results)
-            {
-                List<PickResult> result = new LinkedList<PickResult>();
-                if (results == null)
-                    return result;
-
-                Node node;
-                for (PickResult r : results) {
-                    node = r.getNode(PickResult.TRANSFORM_GROUP);
-                    if (node != null && node.getUserData() instanceof Layer) {
-                        // we have two shapes for each layer and we just want one of them to appear in the list
-                        if (result.size() == 0
-                                || result.get(result.size() - 1).getNode(PickResult.TRANSFORM_GROUP) != node)
-                            result.add(r);
-                    }
-                }
-                return result;
-            }
-        };
-
-        /**
-         * @return The next pick mode in a cycle.
-         */
-        protected abstract PickMode getNext();
-
-        /**
-         * Return only those pick results this pick mode is interested in.
-         * 
-         * @param results Some pick results to filter.
-         * @return The filtered pick results.
-         */
-        protected abstract List<PickResult> filterPickResults(PickResult[] results);
     }
 
     /**
