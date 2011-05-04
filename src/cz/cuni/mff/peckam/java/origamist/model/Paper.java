@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+
 import javax.vecmath.Point2d;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
@@ -37,9 +39,9 @@ public class Paper extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Paper
     public boolean containsRelative(Point2d p)
     {
         DoubleDimension dim = getRelativeDimensions();
-        if (p.getX() < 0 || p.getY() < 0)
+        if (p.getX() < -EPSILON || p.getY() < -EPSILON)
             return false;
-        if (p.getX() > dim.getWidth() || p.getY() > dim.getHeight())
+        if (p.getX() > dim.getWidth() + EPSILON || p.getY() > dim.getHeight() + EPSILON)
             return false;
         return true;
     }
