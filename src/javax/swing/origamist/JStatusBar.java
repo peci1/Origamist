@@ -8,6 +8,8 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -38,6 +40,12 @@ public class JStatusBar extends JPanel implements MessageBar
      */
     protected JLabel                        defaultLabel      = new JLabel();
 
+    /** The text set by a non-timed-out showMessage on the default area. */
+    protected String                        fixedDefaultText  = " ";
+
+    /** The messages with timeout to be displayed. */
+    protected Queue<TimedOutMessage>        timedOutMessages  = new LinkedList<TimedOutMessage>();
+
     /**
      * Areas of the statusbar (always contains an area called DEFAULT_AREA_NAME
      * with a label)
@@ -60,10 +68,9 @@ public class JStatusBar extends JPanel implements MessageBar
     }
 
     /**
-     * Timer used for displaying timed messages. If no timed message is shown,
-     * this should be null.
+     * Timer used for displaying timed messages.
      */
-    protected Timer timer = null;
+    protected final Timer timer = new Timer(2000, null);
 
     {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
@@ -78,6 +85,22 @@ public class JStatusBar extends JPanel implements MessageBar
         defaultArea.add(defaultLabel);
 
         addArea(DEFAULT_AREA_NAME, defaultArea);
+
+        timer.setRepeats(false);
+        timer.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                if (timedOutMessages.isEmpty()) {
+                    defaultLabel.setText(fixedDefaultText);
+                } else {
+                    TimedOutMessage message = timedOutMessages.poll();
+                    timer.setInitialDelay(message.milis);
+                    defaultLabel.setText(message.message);
+                    timer.start();
+                }
+            }
+        });
     }
 
     /**
@@ -148,46 +171,74 @@ public class JStatusBar extends JPanel implements MessageBar
         return getArea(DEFAULT_AREA_NAME);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.MessageBar#showMessage(java.lang.String)
-     */
     @Override
     public synchronized void showMessage(String message)
     {
+        if (message == null)
+            return;
+
         if (getDefaultArea().isAncestorOf(defaultLabel)) {
-            defaultLabel.setText(message);
+            fixedDefaultText = message;
+            if (!timer.isRunning()) {
+                defaultLabel.setText(message);
+            }
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.MessageBar#showMessage(java.lang.String, int)
-     */
     @Override
-    public synchronized void showMessage(String message, int milis)
+    public synchronized void showMessage(String message, Integer milis)
     {
-        final String previousMessage = defaultLabel.getText();
+        if (message == null)
+            return;
 
-        showMessage(message);
+        int timeout;
+        if (milis != null)
+            timeout = milis;
+        else
+            timeout = getTimeout(message);
 
-        if (timer != null)
-            timer.stop();
-
-        timer = new Timer(milis, null);
-        timer.setRepeats(false);
-        timer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                showMessage(previousMessage);
-                timer.stop();
-                timer = null;
-            }
-        });
-        timer.start();
+        if (!timer.isRunning()) {
+            timer.setInitialDelay(timeout);
+            defaultLabel.setText(message);
+            timer.start();
+        } else {
+            timedOutMessages.add(new TimedOutMessage(message, timeout));
+        }
     }
 
+    /**
+     * Compute timeout of the given message based on its length.
+     * 
+     * @param message The message the timeout is computed for. If message contains HTML, ensure that all &lt; are
+     *            properly encoded with &amp;lt; .
+     * @return The timeout.
+     */
+    protected int getTimeout(String message)
+    {
+        // the first regex is for stripping HTML out of the text; the second one counts spaces
+        return Math.max(2000, 200 * message.replaceAll("\\<[^>]*>", "").replaceAll("[^ ]", "").length());
+    }
+
+    /**
+     * A message string with timeout information.
+     * 
+     * @author Martin Pecka
+     */
+    protected class TimedOutMessage
+    {
+        /** The message to display. */
+        protected String message;
+        /** The number of miliseconds the message has to be displayed for. */
+        protected int    milis;
+
+        /**
+         * @param message The message to display.
+         * @param milis The number of miliseconds the message has to be displayed for.
+         */
+        public TimedOutMessage(String message, int milis)
+        {
+            this.message = message;
+            this.milis = milis;
+        }
+    }
 }
