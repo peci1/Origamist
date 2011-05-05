@@ -106,7 +106,7 @@ public class Triangle3d implements Cloneable
 
         s1 = new Segment3d(p1, p2);
         s2 = new Segment3d(p2, p3);
-        s3 = new Segment3d(p1, p3);
+        s3 = new Segment3d(p3, p1);
     }
 
     /**
