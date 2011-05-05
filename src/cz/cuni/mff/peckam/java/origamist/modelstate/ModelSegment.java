@@ -58,6 +58,19 @@ public class ModelSegment extends Segment3d
     }
 
     /**
+     * @param p1 The start point.
+     * @param p2 The end point.
+     * @param direction The direction of the segment. MOUNTAIN/VALLEY is related to the front side of the paper,
+     *            <code>null</code> means that this is an older segment that doesn't need to signalize if it is MOUNTAIN
+     *            or VALLEY.
+     * @param originatingStepId Id of the step "this segment was last touched".
+     */
+    public ModelSegment(ModelPoint p1, ModelPoint p2, Direction direction, int originatingStepId)
+    {
+        this(new Segment3d(p1, p2), new Segment2d(p1.getOriginal(), p2.getOriginal()), direction, originatingStepId);
+    }
+
+    /**
      * @return The image of this segment on the paper in 2D.
      */
     public Segment2d getOriginal()
@@ -133,38 +146,26 @@ public class ModelSegment extends Segment3d
         if ((trial = new Segment3d(this.getP1(), other.getP1())) != null && trial.contains(this.getP2())
                 && trial.contains(other.getP2())) {
             this.p2 = other.getP1();
+            this.original = new Segment2d(this.original.getP1(), other.original.getP1());
         } else if ((trial = new Segment3d(this.getP1(), other.getP2())) != null && trial.contains(this.getP2())
                 && trial.contains(other.getP1())) {
             this.p2 = other.getP2();
+            this.original = new Segment2d(this.original.getP1(), other.original.getP2());
         } else if ((trial = new Segment3d(this.getP2(), other.getP1())) != null && trial.contains(this.getP1())
                 && trial.contains(other.getP2())) {
             this.p = other.getP1();
+            this.original = new Segment2d(other.original.getP1(), this.original.getP2());
         } else if ((trial = new Segment3d(this.getP2(), other.getP2())) != null && trial.contains(this.getP1())
                 && trial.contains(other.getP1())) {
             this.p = other.getP2();
+            this.original = new Segment2d(other.original.getP2(), this.original.getP2());
         } else { // other contains this
             this.p = other.getP1();
             this.p2 = other.getP2();
+            this.original = new Segment2d(other.original);
         }
         this.v = new Vector3d(this.p2);
         this.v.sub(this.p);
-
-        Segment2d trial2;
-        if ((trial2 = new Segment2d(this.original.getP1(), other.original.getP1())) != null
-                && trial2.contains(this.original.getP2()) && trial2.contains(other.original.getP2())) {
-            this.original = trial2;
-        } else if ((trial2 = new Segment2d(this.original.getP1(), other.original.getP2())) != null
-                && trial2.contains(this.original.getP2()) && trial2.contains(other.original.getP1())) {
-            this.original = trial2;
-        } else if ((trial2 = new Segment2d(this.original.getP2(), other.original.getP1())) != null
-                && trial2.contains(this.original.getP1()) && trial2.contains(other.original.getP2())) {
-            this.original = trial2;
-        } else if ((trial2 = new Segment2d(this.original.getP2(), other.original.getP2())) != null
-                && trial2.contains(this.original.getP1()) && trial2.contains(other.original.getP1())) {
-            this.original = trial2;
-        } else { // other contains this
-            this.original = new Segment2d(other.original);
-        }
 
         return true;
     }
@@ -233,7 +234,7 @@ public class ModelSegment extends Segment3d
     }
 
     @Override
-    protected ModelSegment clone()
+    public ModelSegment clone()
     {
         return new ModelSegment(super.clone(), original.clone(), direction, originatingStepId);
     }
