@@ -212,7 +212,7 @@ public class Polygon3d<T extends Triangle3d>
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
-                observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.ADD));
+                observer.changePerformed(new ChangeNotification<T>(this.triangles, triangle, ChangeTypes.ADD));
             }
         }
     }
@@ -318,6 +318,13 @@ public class Polygon3d<T extends Triangle3d>
             // we want to remove all triangles
             this.triangles.clear();
             plane = null;
+
+            for (Observer<T> observer : trianglesObservers) {
+                for (T triangle : triangles) {
+                    observer.changePerformed(new ChangeNotification<T>(this.triangles, triangle, ChangeTypes.REMOVE));
+                }
+            }
+
             return;
         }
 
@@ -357,7 +364,7 @@ public class Polygon3d<T extends Triangle3d>
 
         for (Observer<T> observer : trianglesObservers) {
             for (T triangle : triangles) {
-                observer.changePerformed(new ChangeNotification<T>(triangles, triangle, ChangeTypes.REMOVE));
+                observer.changePerformed(new ChangeNotification<T>(this.triangles, triangle, ChangeTypes.REMOVE));
             }
         }
     }
@@ -722,14 +729,22 @@ public class Polygon3d<T extends Triangle3d>
             Segment3d intersection = triangle.getIntersection(line);
             if (intersection == null
                     || (intersection.v.epsilonEquals(new Vector3d(), EPSILON) && triangle.isVertex(intersection.p))
-                    || intersection.overlaps(triangle.getS1()) || intersection.overlaps(triangle.getS2())
-                    || intersection.overlaps(triangle.getS3())) {
+                    || intersection.overlaps(triangle.getS1())
+                    || intersection.overlaps(triangle.getS2())
+                    || intersection.overlaps(triangle.getS3())
+                    || (intersection.v.epsilonEquals(new Vector3d(), EPSILON) && !triangle.sidesContain(intersection.p) && !triangle
+                            .sidesContain(intersection.p2))) {
                 if (hs.contains(triangle.p1) && hs.contains(triangle.p2) && hs.contains(triangle.p3)) {
                     part1triangles.add(triangle);
                 } else {
                     part2triangles.add(triangle);
                 }
             } else {
+                // it is not an error to have intersection not being the triangle's vertex, it is the case when the line
+                // goes through a vertex;
+
+                // on the other side, if the intersection is a line and doesn't overlap a triangle's edge, it is an
+                // error
                 throw new IllegalArgumentException(
                         "Polygon3d#splitLayer: a line going through the interior of a triangle detected.");
             }
@@ -783,7 +798,7 @@ public class Polygon3d<T extends Triangle3d>
         // - on the other side, a LinkedList doesn't care about the hashcode
         // so we need to remove all triangles, change the vertices and then add them back again - this will also "reset"
         // the neighbors map
-        removeTriangles(triangles);
+        removeTriangles(new HashSet<T>(triangles));
         for (T t : oldTriangles) {
             t.setPoints(MathHelper.rotate(t.getP1(), axis, angle), MathHelper.rotate(t.getP2(), axis, angle),
                     MathHelper.rotate(t.getP3(), axis, angle));
