@@ -37,7 +37,7 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     public static final String                  TYPE_PROPERTY = "type:cz.cuni.mff.peckam.java.origamist.model.Operation";
 
     /** The list of arguments of this operation. */
-    protected transient List<OperationArgument> arguments     = Collections.unmodifiableList(initArguments());
+    protected transient List<OperationArgument> arguments     = null;
 
     /**
      * Icon of this operation.
@@ -118,6 +118,11 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
      */
     public List<OperationArgument> getArguments()
     {
+        if (arguments == null) {
+            arguments = Collections.unmodifiableList(initArguments());
+            for (int i = 0; i + 1 < arguments.size(); i++)
+                arguments.get(i).setNext(arguments.get(i + 1));
+        }
         return arguments;
     }
 

@@ -322,7 +322,6 @@
 			<extension base="m:FoldUnfoldOperationBase">
 				<sequence>
 					<group ref="m:line" />
-					<group ref="m:refPoint" minOccurs="0" />
 					<group ref="m:layerList" />
 				</sequence>
 			</extension>

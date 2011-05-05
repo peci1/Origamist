@@ -375,23 +375,11 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                     getModel().getSteps().invalidateSteps();
             }
         };
-        ObservablePropertyListener<?> invalidateObservableListener = new ObservablePropertyListener<Object>() {
-            @Override
-            public void changePerformed(ObservablePropertyEvent<?> evt)
-            {
-                if (getModel() != null && getModel().getSteps() != null)
-                    getModel().getSteps().invalidateSteps();
-            }
-        };
 
         addPrefixedPropertyChangeListener(invalidateListener, MODEL_PROPERTY, Model.PAPER_PROPERTY,
                 ModelPaper.COLORS_PROPERTY);
         addPrefixedPropertyChangeListener(invalidateListener, MODEL_PROPERTY, Model.PAPER_PROPERTY,
                 ModelPaper.SIZE_PROPERTY);
-        addPrefixedPropertyChangeListener(invalidateListener, MODEL_PROPERTY, Model.STEPS_PROPERTY,
-                Steps.STEP_PROPERTY, Step.IMAGE_PROPERTY);
-        addPrefixedObservablePropertyListener(invalidateObservableListener, MODEL_PROPERTY, Model.STEPS_PROPERTY,
-                Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
 
         ObservablePropertyListener<Step> defaultStateListener = new ObservablePropertyListener<Step>() {
             @Override
@@ -400,7 +388,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 if (evt.getEvent().getItem().getPrevious() == null
                         && (evt.getEvent().getItem().defaultModelState == null || evt.getEvent().getItem().defaultModelState
                                 .getOrigami() != Origami.this))
-                    evt.getEvent().getItem().defaultModelState = new DefaultModelState(Origami.this);
+                    evt.getEvent().getItem().setDefaultModelState(new DefaultModelState(Origami.this));
             }
         };
 
@@ -413,7 +401,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
                 if (getModel() != null && getModel().getSteps() != null && getModel().getSteps().getStep().size() > 0) {
                     Step firstStep = getModel().getSteps().getStep().get(0);
                     if (firstStep.defaultModelState == null || firstStep.defaultModelState.getOrigami() != Origami.this)
-                        firstStep.defaultModelState = new DefaultModelState(Origami.this);
+                        firstStep.setDefaultModelState(new DefaultModelState(Origami.this));
                 }
             }
         };

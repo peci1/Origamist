@@ -18,8 +18,12 @@ import org.apache.log4j.Logger;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.LangStringHashtableObserver;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyEvent;
+import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyListener;
+import cz.cuni.mff.peckam.java.origamist.utils.Observer;
 
 /**
  * A step of the model creation.
@@ -90,6 +94,27 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
                 invalidateThisModelState();
             }
         });
+        ((ObservableList<Operation>) getOperations()).addObserver(new Observer<Operation>() {
+            @Override
+            public void changePerformed(ChangeNotification<? extends Operation> change)
+            {
+                invalidateModelState();
+            }
+        });
+        addPrefixedObservablePropertyListener(new ObservablePropertyListener<Operation>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends Operation> evt)
+            {
+                invalidateModelState();
+            }
+        }, OPERATIONS_PROPERTY);
+        addPrefixedPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                invalidateModelState();
+            }
+        }, OPERATIONS_PROPERTY);
 
         if (zoom == null)
             zoom = 100.0;
@@ -137,7 +162,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
      * 
      * @throws InvalidOperationException If an operation cannot be done.
      */
-    public ModelState getModelState() throws InvalidOperationException
+    public synchronized ModelState getModelState() throws InvalidOperationException
     {
         if (this.modelState != null)
             return this.modelState;
@@ -248,6 +273,8 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
                     callback.call();
                 } catch (Exception e) {
                     Logger.getLogger(getClass()).warn("Model state invalidation callback threw exception", e);
+                    if (e instanceof RuntimeException)
+                        throw (RuntimeException) e;
                 }
             }
         }
@@ -269,6 +296,14 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
             super.setRowspan(value);
         else
             super.setRowspan(null);
+    }
+
+    /**
+     * @return True if this step can be edited.
+     */
+    public boolean isEditable()
+    {
+        return next == null;
     }
 
     /**

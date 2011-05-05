@@ -30,7 +30,7 @@ public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     {
         List<OperationArgument> result = new ArrayList<OperationArgument>(1);
 
-        result.add(new AngleArgument(true));
+        result.add(new AngleArgument(true, "operation.argument.angle"));
 
         return result;
     }

@@ -13,7 +13,7 @@ import javax.vecmath.Point3d;
  * 
  * @author Martin Pecka
  */
-public class ModelPoint extends Point3d
+public class ModelPoint extends Point3d implements Cloneable
 {
     /** */
     private static final long serialVersionUID = -2994355263756836249L;
@@ -87,4 +87,9 @@ public class ModelPoint extends Point3d
         return true;
     }
 
+    @Override
+    public ModelPoint clone()
+    {
+        return new ModelPoint((Point3d) super.clone(), (Point2d) original.clone());
+    }
 }

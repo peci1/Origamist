@@ -4,26 +4,28 @@
 package cz.cuni.mff.peckam.java.origamist.modelstate.arguments;
 
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
-import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
 import cz.cuni.mff.peckam.java.origamist.model.Line2D;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 
 /**
  * A line argument.
  * 
  * @author Martin Pecka
  */
-public class LineArgument extends OperationArgument
+public class LineArgument extends OperationArgument implements EditorDataReceiver
 {
 
     /** The line. */
-    protected Segment2d line = null;
+    protected ModelSegment line = null;
 
     /**
      * @param required If true, this argument is required.
+     * @param resourceBundleKey The key in "editor" resource bundle describing this operation argument.
      */
-    public LineArgument(boolean required)
+    public LineArgument(boolean required, String resourceBundleKey)
     {
-        super(required);
+        super(required, resourceBundleKey);
     }
 
     @Override
@@ -37,18 +39,28 @@ public class LineArgument extends OperationArgument
      * 
      * @throws IllegalStateException If {@link #isComplete()} is false.
      */
-    public Line2D getLine() throws IllegalStateException
+    public Line2D getLine2D() throws IllegalStateException
+    {
+        return new Line2D(getLine().getOriginal());
+    }
+
+    /**
+     * @return The line.
+     * 
+     * @throws IllegalStateException If {@link #isComplete()} is false.
+     */
+    public ModelSegment getLine() throws IllegalStateException
     {
         if (!isComplete())
             throw new IllegalStateException("Cannot query properties of a non-completed argument.");
 
-        return new Line2D(line);
+        return line;
     }
 
     /**
      * @param line The line to set.
      */
-    public void setLine(Segment2d line)
+    public void setLine(ModelSegment line)
     {
         this.line = line;
     }
@@ -57,5 +69,12 @@ public class LineArgument extends OperationArgument
     public PickMode preferredPickMode()
     {
         return PickMode.POINT;
+    }
+
+    @Override
+    public void readDataFromEditor(StepEditor editor)
+    {
+        if (editor.getChosenLine() != null)
+            this.line = editor.getChosenLine();
     }
 }

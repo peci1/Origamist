@@ -198,7 +198,7 @@ public class Segment3d extends Line3d
     }
 
     @Override
-    protected Segment3d clone()
+    public Segment3d clone()
     {
         return new Segment3d(new Point3d(p), new Point3d(p2));
     }

@@ -119,6 +119,9 @@ public class StepRenderer extends JPanel
     /** The universe we use. */
     protected SimpleUniverse          universe;
 
+    /** The transform computed from the step. */
+    protected Transform3D             baseTransform            = new Transform3D();
+
     /** The main transform used to display the step. */
     protected Transform3D             transform                = new Transform3D();
 
@@ -248,6 +251,10 @@ public class StepRenderer extends JPanel
      */
     public void setStep(final Step step)
     {
+        if (step != null && step.getAttachedTo() == null) {
+            return;
+        }
+
         Runnable run = new Runnable() {
             @Override
             public void run()
@@ -267,14 +274,15 @@ public class StepRenderer extends JPanel
                         Logger.getLogger("application").l7dlog(Level.ERROR, "StepRenderer.InvalidOperationException",
                                 new Object[] { StepRenderer.this.step.getId(), e.getOperation().toString() }, e);
                         // TODO some more clever handling of invalid operations
+                        throw e;
+                    } finally {
+                        topTexture = null;
+                        bottomTexture = null;
+
+                        afterSetStep();
+
+                        repaint();
                     }
-
-                    topTexture = null;
-                    bottomTexture = null;
-
-                    afterSetStep();
-
-                    repaint();
                 }
             }
         };
@@ -518,6 +526,8 @@ public class StepRenderer extends JPanel
         UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
         transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
 
+        baseTransform = new Transform3D(transform);
+
         return transform;
     }
 
@@ -636,6 +646,7 @@ public class StepRenderer extends JPanel
             return tGroup;
         } catch (InvalidOperationException e) {
             tGroup = new TransformGroup();
+            tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             // TODO create an ErrorTransformGroup that would signalize to the user that an operation is invalid
             throw e;
         }
@@ -677,6 +688,7 @@ public class StepRenderer extends JPanel
             return branchGraph;
         } catch (InvalidOperationException e) {
             branchGraph = new BranchGroup();
+            branchGraph.setCapability(BranchGroup.ALLOW_DETACH);
             branchGraph.addChild(tGroup);
             branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
             // (or even reading of them) will produce an error if you don't set the proper capability
@@ -691,18 +703,18 @@ public class StepRenderer extends JPanel
      */
     protected void setupUniverse() throws InvalidOperationException
     {
-        universe.getViewer().setViewingPlatform(null);
-        universe.getViewer().getView().removeAllCanvas3Ds();
-
-        universe = new SimpleUniverse(offscreenCanvas);
+        if (universe == null) {
+            universe = new SimpleUniverse(offscreenCanvas);
+        }
         universe.getViewingPlatform().setNominalViewingTransform();
 
+        BranchGroup oldBranchGraph = branchGraph;
         try {
             createBranchGraph();
+        } finally {
+            if (oldBranchGraph != null)
+                universe.getLocale().removeBranchGraph(oldBranchGraph);
             universe.addBranchGraph(branchGraph);
-        } catch (InvalidOperationException e) {
-            universe.addBranchGraph(branchGraph);
-            throw e;
         }
     }
 

@@ -45,10 +45,10 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         List<OperationArgument> result = new ArrayList<OperationArgument>(4);
 
         LineArgument line;
-        result.add(line = new LineArgument(true));
-        result.add(new LayersArgument(line, true));
-        result.add(new AngleArgument(true));
-        result.add(new PointArgument(false));
+        result.add(line = new LineArgument(true, "operation.argument.select.line"));
+        result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
+        result.add(new AngleArgument(true, "operation.argument.angle"));
+        result.add(new PointArgument(false, "operation.argument.select.reference.point"));
 
         return result;
     }
@@ -57,11 +57,11 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     public void fillFromArguments() throws IllegalStateException
     {
         super.fillFromArguments();
-        this.line = ((LineArgument) arguments.get(0)).getLine();
+        this.line = ((LineArgument) arguments.get(0)).getLine2D();
         this.layer = ((LayersArgument) arguments.get(1)).getLayers();
         this.angle = ((AngleArgument) arguments.get(2)).getAngle();
         if (arguments.get(3).isComplete())
-            this.refPoint = ((PointArgument) arguments.get(3)).getPoint();
+            this.refPoint = ((PointArgument) arguments.get(3)).getPoint2D();
     }
 
     @Override

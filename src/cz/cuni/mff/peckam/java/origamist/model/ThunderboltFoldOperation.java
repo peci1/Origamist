@@ -69,13 +69,13 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         List<OperationArgument> result = new ArrayList<OperationArgument>(4);
 
         LineArgument line;
-        result.add(line = new LineArgument(true));
-        result.add(new LayersArgument(line, true));
-        result.add(new AngleArgument(true));
-        result.add(new PointArgument(false));
-        result.add(line = new LineArgument(true));
-        result.add(new LayersArgument(line, true));
-        result.add(new AngleArgument(false));
+        result.add(line = new LineArgument(true, "operation.argument.select.line"));
+        result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
+        result.add(new AngleArgument(true, "operation.argument.angle"));
+        result.add(new PointArgument(false, "operation.argument.select.reference.point"));
+        result.add(line = new LineArgument(true, "operation.argument.select.second.line"));
+        result.add(new LayersArgument(line, true, "operation.argument.select.second.layers"));
+        result.add(new AngleArgument(false, "operation.argument.second.angle"));
 
         return result;
     }
@@ -84,12 +84,12 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
     public void fillFromArguments() throws IllegalStateException
     {
         super.fillFromArguments();
-        this.line = ((LineArgument) arguments.get(0)).getLine();
+        this.line = ((LineArgument) arguments.get(0)).getLine2D();
         this.layer = ((LayersArgument) arguments.get(1)).getLayers();
         this.angle = ((AngleArgument) arguments.get(2)).getAngle();
         if (arguments.get(3).isComplete())
-            this.refPoint = ((PointArgument) arguments.get(3)).getPoint();
-        this.secondLine = ((LineArgument) arguments.get(4)).getLine();
+            this.refPoint = ((PointArgument) arguments.get(3)).getPoint2D();
+        this.secondLine = ((LineArgument) arguments.get(4)).getLine2D();
         this.secondLayer = ((LayersArgument) arguments.get(5)).getLayers();
         if (arguments.get(6).isComplete())
             this.secondAngle = ((AngleArgument) arguments.get(6)).getAngle();

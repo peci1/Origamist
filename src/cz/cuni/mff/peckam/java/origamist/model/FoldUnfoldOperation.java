@@ -6,15 +6,12 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.vecmath.Point2d;
-
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
-import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
 
 /**
  * Valley or mountain fold and unfold.
@@ -30,9 +27,7 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
         if (this.type == Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD)
             dir = dir.getOpposite();
 
-        Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
-        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint, layer,
-                0);
+        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), null, layer, 0);
 
         return previousState;
     }
@@ -43,9 +38,8 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
         List<OperationArgument> result = new ArrayList<OperationArgument>(3);
 
         LineArgument line;
-        result.add(line = new LineArgument(true));
-        result.add(new LayersArgument(line, true));
-        result.add(new PointArgument(false));
+        result.add(line = new LineArgument(true, "operation.argument.select.line"));
+        result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
 
         return result;
     }
@@ -54,10 +48,8 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
     public void fillFromArguments() throws IllegalStateException
     {
         super.fillFromArguments();
-        this.line = ((LineArgument) arguments.get(0)).getLine();
+        this.line = ((LineArgument) arguments.get(0)).getLine2D();
         this.layer = ((LayersArgument) arguments.get(1)).getLayers();
-        if (arguments.get(2).isComplete())
-            this.refPoint = ((PointArgument) arguments.get(2)).getPoint();
     }
 
     @Override

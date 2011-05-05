@@ -3,28 +3,29 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate.arguments;
 
-import javax.vecmath.Point2d;
-
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
+import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
 import cz.cuni.mff.peckam.java.origamist.model.Point2D;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 
 /**
  * A point argument.
  * 
  * @author Martin Pecka
  */
-public class PointArgument extends OperationArgument
+public class PointArgument extends OperationArgument implements EditorDataReceiver
 {
 
     /** The point. */
-    protected Point2d point = null;
+    protected ModelPoint point = null;
 
     /**
      * @param required If true, this argument is required.
+     * @param resourceBundleKey The key in "editor" resource bundle describing this operation argument.
      */
-    public PointArgument(boolean required)
+    public PointArgument(boolean required, String resourceBundleKey)
     {
-        super(required);
+        super(required, resourceBundleKey);
     }
 
     @Override
@@ -38,18 +39,28 @@ public class PointArgument extends OperationArgument
      * 
      * @throws IllegalStateException If {@link #isComplete()} is false.
      */
-    public Point2D getPoint() throws IllegalStateException
+    public Point2D getPoint2D() throws IllegalStateException
+    {
+        return new Point2D(getPoint().getOriginal());
+    }
+
+    /**
+     * @return The point.
+     * 
+     * @throws IllegalStateException If {@link #isComplete()} is false.
+     */
+    public ModelPoint getPoint() throws IllegalStateException
     {
         if (!isComplete())
             throw new IllegalStateException("Cannot query properties of a non-completed argument.");
 
-        return new Point2D(point);
+        return point;
     }
 
     /**
      * @param point The point to set.
      */
-    public void setPoint(Point2d point)
+    public void setPoint(ModelPoint point)
     {
         this.point = point;
     }
@@ -58,5 +69,12 @@ public class PointArgument extends OperationArgument
     public PickMode preferredPickMode()
     {
         return PickMode.POINT;
+    }
+
+    @Override
+    public void readDataFromEditor(StepEditor editor)
+    {
+        if (editor.getChosenPoint() != null)
+            this.point = editor.getChosenPoint();
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.IntegerArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextArgument;
@@ -31,8 +32,9 @@ public class MarkerOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     {
         List<OperationArgument> result = new ArrayList<OperationArgument>(2);
 
-        result.add(new PointArgument(true));
-        result.add(new TextArgument(true));
+        result.add(new PointArgument(true, "operation.argument.select.point"));
+        result.add(new TextArgument(true, "operation.argument.text"));
+        result.add(new IntegerArgument(true, "operation.argument.stepToHide"));
 
         return result;
     }
@@ -41,7 +43,8 @@ public class MarkerOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     public void fillFromArguments() throws IllegalStateException
     {
         super.fillFromArguments();
-        this.refPoint = ((PointArgument) arguments.get(0)).getPoint();
+        this.refPoint = ((PointArgument) arguments.get(0)).getPoint2D();
         this.text = ((TextArgument) arguments.get(1)).getText();
+        this.stepsToHide = ((IntegerArgument) arguments.get(2)).getInteger();
     }
 }

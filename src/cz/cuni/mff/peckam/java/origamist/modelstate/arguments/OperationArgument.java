@@ -13,14 +13,22 @@ import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 public abstract class OperationArgument
 {
     /** If true, this argument is required. */
-    protected boolean required;
+    protected boolean           required;
+
+    /** The key in "editor" resource bundle describing this operation argument. */
+    protected String            resourceBundleKey;
+
+    /** The next operation argument. */
+    protected OperationArgument next = null;
 
     /**
      * @param required If true, this argument is required.
+     * @param resourceBundleKey The key in "editor" resource bundle describing this operation argument.
      */
-    public OperationArgument(boolean required)
+    public OperationArgument(boolean required, String resourceBundleKey)
     {
         this.required = required;
+        this.resourceBundleKey = resourceBundleKey;
     }
 
     /**
@@ -40,5 +48,29 @@ public abstract class OperationArgument
     public final boolean isRequired()
     {
         return required;
+    }
+
+    /**
+     * @return The key in "editor" resource bundle describing this operation argument.
+     */
+    public final String getResourceBundleKey()
+    {
+        return resourceBundleKey;
+    }
+
+    /**
+     * @return The next operation argument.
+     */
+    public final OperationArgument getNext()
+    {
+        return next;
+    }
+
+    /**
+     * @param next The next operation argument.
+     */
+    public final void setNext(OperationArgument next)
+    {
+        this.next = next;
     }
 }

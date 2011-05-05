@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -30,6 +31,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
@@ -42,7 +44,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
@@ -63,6 +64,7 @@ import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
 import javax.swing.origamist.JDropDownButton;
 import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
+import javax.swing.origamist.JList;
 import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
@@ -84,15 +86,18 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
-import cz.cuni.mff.peckam.java.origamist.gui.common.OperationListCellRenderer;
 import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.OperationsHelper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Steps;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.EditorDataReceiver;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextInputDataReceiver;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -117,34 +122,40 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class OrigamiEditor extends CommonGui
 {
-    private static final long                       serialVersionUID        = -6853141518719373854L;
+    private static final long                       serialVersionUID         = -6853141518719373854L;
 
     /** The resource bundle with editor strings. */
     protected ResourceBundle                        editorMessages;
 
     /** The bootstrapper that has started this applet, or <code>null</code>, if it has not been bootstrapped. */
-    protected JApplet                               bootstrap               = null;
+    protected JApplet                               bootstrap                = null;
 
     /** The currently displayed origami. May be <code>null</code>. */
-    protected Origami                               origami                 = null;
+    protected Origami                               origami                  = null;
 
     /** The currently displayed step. */
-    protected Step                                  step                    = null;
+    protected Step                                  step                     = null;
 
     /** The currently selected operation. */
-    protected Operations                            currentOperation        = null;
+    protected Operation                             currentOperation         = null;
+
+    /** The currently processed argument of operation. */
+    protected OperationArgument                     currentOperationArgument = null;
 
     /** Reflects whether alternative action buttons are shown. */
-    protected boolean                               alternativeActionsShown = false;
+    protected boolean                               alternativeActionsShown  = false;
 
     /** The main application toolbar. */
-    protected JToolBarWithBgImage                   toolbar                 = null;
+    protected JToolBarWithBgImage                   toolbar                  = null;
 
     /** The dropdown button for saving the model. */
-    protected JDropDownButton                       saveButton              = null;
+    protected JDropDownButton                       saveButton               = null;
 
     /** The button for displaying model properties. */
-    protected JButton                               propertiesButton        = null;
+    protected JButton                               propertiesButton         = null;
+
+    /** The button group holding all operation buttons. */
+    protected BoundButtonGroup                      operationGroup           = null;
 
     /** Toolbar buttons for model operations. */
     protected JToggleButton                         operationMountainFold, operationValleyFold,
@@ -157,7 +168,7 @@ public class OrigamiEditor extends CommonGui
     protected JToggleMenuItem                       operationRabbitFold, operationSquashFold;
 
     /** The table of action alternatives. The key is the primary action and the value is its alternative. */
-    protected Hashtable<JComponent, JComponent>     alternativeActions      = new Hashtable<JComponent, JComponent>();
+    protected Hashtable<JComponent, JComponent>     alternativeActions       = new Hashtable<JComponent, JComponent>();
 
     /** The panel with step tools. */
     protected JPanel                                leftPanel;
@@ -166,7 +177,7 @@ public class OrigamiEditor extends CommonGui
     protected StepEditor                            stepEditor;
 
     /** The status bar. */
-    protected JStatusBar                            statusBar               = null;
+    protected JStatusBar                            statusBar                = null;
 
     /** The slider for zoom. */
     protected JEditableSlider                       zoomSlider;
@@ -219,10 +230,15 @@ public class OrigamiEditor extends CommonGui
             @Override
             public void keyPressed(KeyEvent e)
             {
-                super.keyPressed(e);
                 if (e.getKeyCode() == KeyEvent.VK_ALT) {
                     showAlternativeActions(!alternativeActionsShown);
                     e.consume();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    proceedToNextOperationArgument();
+                } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    if (currentOperation != null) {
+                        setCurrentOperation(null);
+                    }
                 }
             }
         });
@@ -258,6 +274,7 @@ public class OrigamiEditor extends CommonGui
                 if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
                     model.addElement(evt.getEvent().getItem());
                 }
+                operationsList.repaint();
             }
 
         };
@@ -454,7 +471,7 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(new JToolBar.Separator());
 
-        BoundButtonGroup operationGroup = new BoundButtonGroup();
+        operationGroup = new BoundButtonGroup();
 
         toolbar.add(operationMountainFold = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.mountain", "folds/mountain-32.png"));
@@ -555,8 +572,8 @@ public class OrigamiEditor extends CommonGui
 
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
                 "folds/mark-32.png"));
-        operationMark.addActionListener(new OperationActionListener(null, "editor", "menu.operation.mark"));
-        // TODO add Mark operation
+        operationMark
+                .addActionListener(new OperationActionListener(Operations.MARKER, "editor", "menu.operation.mark"));
 
         operationGroup.add(operationMountainFold);
         operationGroup.add(operationValleyFold);
@@ -617,8 +634,8 @@ public class OrigamiEditor extends CommonGui
             private static final long serialVersionUID = -3935099215382824545L;
 
             @Override
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
-                    boolean cellHasFocus)
+            public Component getListCellRendererComponent(javax.swing.JList list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus)
             {
                 JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected,
                         cellHasFocus);
@@ -800,6 +817,10 @@ public class OrigamiEditor extends CommonGui
      */
     public void setStep(Step step)
     {
+        if (step != null && step.getAttachedTo() == null) {
+            return;
+        }
+
         if (this.step != null)
             this.origami.removeObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
                     Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
@@ -835,6 +856,11 @@ public class OrigamiEditor extends CommonGui
 
         stepXofY.setParameter(0, index);
         updateOperationsModel();
+
+        boolean operationsEnabled = step != null && step.isEditable();
+        for (Enumeration<AbstractButton> en = operationGroup.getElements(); en.hasMoreElements();) {
+            en.nextElement().setEnabled(operationsEnabled);
+        }
 
         if (index == numSteps && index != 0) {
             addStep.setVisible(true);
@@ -873,6 +899,108 @@ public class OrigamiEditor extends CommonGui
                 model.addElement(o);
         }
         operationsList.setModel(model);
+    }
+
+    /**
+     * Set the current operation. If the active step isn't editable, nothing happens.
+     * 
+     * @param operation The operation to set.
+     */
+    public void setCurrentOperation(Operation operation)
+    {
+        if (step == null || !step.isEditable())
+            return;
+
+        if (currentOperation != null) {
+            ((DefaultListModel) operationsList.getModel()).removeElement(currentOperation);
+            setCurrentOpertaionArgument(null);
+        }
+
+        currentOperation = operation;
+
+        if (operation != null) {
+            if (operation.getArguments().size() > 0)
+                setCurrentOpertaionArgument(operation.getArguments().get(0));
+            ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
+        }
+
+        stepEditor.clearChosenItems();
+    }
+
+    /**
+     * Set the current operation argument. If current operation is null, nothing happens.
+     * 
+     * @param argument The argument to set.
+     */
+    public void setCurrentOpertaionArgument(OperationArgument argument)
+    {
+        this.currentOperationArgument = argument;
+        stepEditor.setCurrentOperationArgument(argument);
+        operationsList.recomputeHeights();
+        operationsList.repaint();
+    }
+
+    /**
+     * If the current operation argument is complete, proceed to next operation argument (or finish the operation if no
+     * more operation arguments are to be finished). If the current argument isn't completed and is required, show a
+     * warning in the statusbar.
+     */
+    protected void proceedToNextOperationArgument()
+    {
+        if (currentOperationArgument != null) {
+
+            if (currentOperationArgument instanceof EditorDataReceiver) {
+                ((EditorDataReceiver) currentOperationArgument).readDataFromEditor(stepEditor);
+                // TODO call makeFold if it is needed
+            } else if (!currentOperationArgument.isComplete()) {
+                if (currentOperationArgument instanceof TextInputDataReceiver) {
+                    ((TextInputDataReceiver) currentOperationArgument).askForData();
+                }
+            }
+
+            if (currentOperationArgument.isComplete() || !currentOperationArgument.isRequired()) {
+                setCurrentOpertaionArgument(currentOperationArgument.getNext());
+                if (currentOperationArgument == null)
+                    tryCompleteOperation();
+            } else {
+                statusBar.showMessage(
+                        "<html><body><span style=\"font-weight: bold; color: red;\">"
+                                + editorMessages.getString("operation.argument.please.complete")
+                                + "</span></body></html>", null);
+            }
+        } else if (currentOperation != null) {
+            // the operation has no arguments
+            tryCompleteOperation();
+        }
+    }
+
+    /**
+     * If the required arguments of the current operation are finished, finish the current operation and set current
+     * operation to <code>null</code>. If the required arguments aren't finished, nothing happens.
+     */
+    protected void tryCompleteOperation()
+    {
+        if (currentOperation.areRequiredAgrumentsComplete()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    currentOperation.fillFromArguments();
+                    try {
+                        step.getOperations().add(currentOperation);
+                        step.getModelState();
+                        setCurrentOperation(null);
+                    } catch (RuntimeException e) {
+                        statusBar.showMessage("<html><span style=\"color:red;font-weight:bold\">"
+                                + editorMessages.getString("OrigamiEditor.invalidOperation").replaceAll("\\<", "&lt;")
+                                        .replaceAll(">", "&gt;") + "</span></html>", null);
+                        step.getOperations().remove(currentOperation);
+                        setCurrentOperation(null);
+                    }
+                    operationsList.repaint();
+                }
+            }).start();
+        }
     }
 
     @Override
@@ -1237,9 +1365,9 @@ public class OrigamiEditor extends CommonGui
          * @param bundleName The name of the resource bundle where we get the strings from.
          * @param key The name of the base key for string getting from resource bundle.
          */
-        public OperationActionListener(Operations mountainFold, String bundleName, String key)
+        public OperationActionListener(Operations operation, String bundleName, String key)
         {
-            this.operation = mountainFold;
+            this.operation = operation;
             this.bundleName = bundleName;
             this.key = key;
         }
@@ -1247,7 +1375,7 @@ public class OrigamiEditor extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            currentOperation = operation;
+            setCurrentOperation(OperationsHelper.getOperation(operation));
 
             MessageBar statusBar = ServiceLocator.get(MessageBar.class);
             if (statusBar != null) {
@@ -1360,16 +1488,13 @@ public class OrigamiEditor extends CommonGui
             if (steps.size() == 0) {
                 return;
             } else if (steps.size() == 1) {
-                setStep(null); // avoid getting the modelState of the new step before being attached to the tree
                 newStep = (Step) new ObjectFactory().createStep();
                 newStep.setId(1);
                 steps.set(0, newStep);
                 setStep(newStep);
             } else {
-                setStep(null); // avoid getting the modelState of the new step before being attached to the tree
-                newStep = steps.get(steps.size() - 2);
                 steps.remove(steps.size() - 1);
-                setStep(newStep);
+                setStep(steps.get(steps.size() - 1));
             }
         }
     }
@@ -1398,5 +1523,61 @@ public class OrigamiEditor extends CommonGui
                 operations.remove(operations.size() - 1);
             }
         }
+    }
+
+    /**
+     * A renderer for operations in a step.
+     * 
+     * @author Martin Pecka
+     */
+    protected class OperationListCellRenderer extends DefaultListCellRenderer
+    {
+
+        /** */
+        private static final long serialVersionUID = -8983928724421088263L;
+
+        @Override
+        public Component getListCellRendererComponent(javax.swing.JList list, Object value, int index,
+                boolean isSelected, boolean cellHasFocus)
+        {
+            Operation operation = (Operation) value;
+            // TODO improve the value of the displayed information
+            JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            String operationName = OperationsHelper.toString(operation.getType());
+
+            if (operation != currentOperation) {
+                result.setText(operationName);
+            } else {
+                StringBuilder text = new StringBuilder("<html><body><span style=\"color:gray;\">")
+                        .append(operationName).append("</span>");
+                if (operation.getArguments().size() > 0) {
+                    text.append("<ol style=\"margin: 0px; margin-left: 18px;\">");
+                    String currentArgStyle = "font-weight: bold; font-size: 120%; background-color: rgb(240,240,255);";
+                    String optionalArgStyle = "font-style: italic;";
+                    String completedArgStyle = "color: black; font-weight: bold;";
+                    for (OperationArgument arg : operation.getArguments()) {
+                        text.append("<li><span style=\"font-size: 90%; color: gray; font-weight: normal;");
+                        if (currentOperationArgument == arg)
+                            text.append(currentArgStyle);
+                        if (!arg.isRequired())
+                            text.append(optionalArgStyle);
+                        if (arg.isComplete())
+                            text.append(completedArgStyle);
+                        text.append("\">");
+                        if (currentOperationArgument == arg)
+                            text.append(" &gt; ");
+                        text.append(editorMessages.getString(arg.getResourceBundleKey())).append(" </span></li>");
+                    }
+                    text.append("</ol>");
+                }
+                text.append("</body></html>");
+                result.setText(text.toString());
+                result.revalidate();
+            }
+
+            return result;
+        }
+
     }
 }

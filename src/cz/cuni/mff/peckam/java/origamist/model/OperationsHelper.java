@@ -31,6 +31,76 @@ public class OperationsHelper
     }
 
     /**
+     * Return the operation corresponding to the given constant.
+     * 
+     * @param operation The constant defining an operation.
+     * @return The operation.
+     */
+    public static Operation getOperation(Operations operation)
+    {
+        Operation result = null;
+        switch (operation) {
+            case MOUNTAIN_FOLD:
+                result = new FoldOperation();
+                break;
+            case VALLEY_FOLD:
+                result = new FoldOperation();
+                break;
+            case MOUNTAIN_VALLEY_FOLD_UNFOLD:
+                result = new FoldUnfoldOperation();
+                break;
+            case VALLEY_MOUNTAIN_FOLD_UNFOLD:
+                result = new FoldUnfoldOperation();
+                break;
+            case THUNDERBOLT_FOLD:
+                result = new ThunderboltFoldOperation();
+                break;
+            case TURN_OVER:
+                result = new TurnOverOperation();
+                break;
+            case ROTATE:
+                result = new RotateOperation();
+                break;
+            case PULL:
+                result = null; // TODO
+                break;
+            case INSIDE_CRIMP_FOLD:
+                result = new CrimpFoldOperation();
+                break;
+            case OUTSIDE_CRIMP_FOLD:
+                result = new CrimpFoldOperation();
+                break;
+            case OPEN:
+                result = null; // TODO
+                break;
+            case INSIDE_REVERSE_FOLD:
+                result = new ReverseFoldOperation();
+                break;
+            case OUTSIDE_REVERSE_FOLD:
+                result = new ReverseFoldOperation();
+                break;
+            case REPEAT_ACTION:
+                result = null; // TODO
+                break;
+            case MARKER:
+                result = new MarkerOperation();
+                break;
+            case RABBIT_FOLD:
+                result = null; // TODO
+                break;
+            case SQUASH_FOLD:
+                result = null; // TODO
+                break;
+        }
+
+        if (result == null)
+            return null;
+
+        result.setType(operation);
+        return result;
+    }
+
+    /**
      * Return a localized text representation of the operation.
      * 
      * @param operation The operation to convert to string.
@@ -81,6 +151,9 @@ public class OperationsHelper
                 break;
             case REPEAT_ACTION:
                 key = "menu.operation.repeat";
+                break;
+            case MARKER:
+                key = "menu.operation.mark";
                 break;
             case RABBIT_FOLD:
                 key = "menu.operation.rabbit";

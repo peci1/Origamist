@@ -46,11 +46,11 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
         List<OperationArgument> result = new ArrayList<OperationArgument>(4);
 
         LineArgument line;
-        result.add(line = new LineArgument(true));
-        result.add(new ExistingLineArgument(true));
-        result.add(new LayersArgument(line, true));
-        result.add(line = new LineArgument(false));
-        result.add(new ExistingLineArgument(false));
+        result.add(line = new LineArgument(true, "operation.argument.select.line"));
+        result.add(new ExistingLineArgument(true, "operation.argument.select.existing.line"));
+        result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
+        result.add(line = new LineArgument(false, "operation.argument.select.opposite.line"));
+        result.add(new LayersArgument(line, false, "operation.argument.select.opposite.layers"));
 
         return result;
     }
@@ -59,11 +59,11 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
     public void fillFromArguments() throws IllegalStateException
     {
         super.fillFromArguments();
-        this.line = ((LineArgument) arguments.get(0)).getLine();
-        this.refLine = ((ExistingLineArgument) arguments.get(1)).getLine();
+        this.line = ((LineArgument) arguments.get(0)).getLine2D();
+        this.refLine = ((ExistingLineArgument) arguments.get(1)).getLine2D();
         this.layer = ((LayersArgument) arguments.get(2)).getLayers();
         if (arguments.get(3).isComplete() && arguments.get(4).isComplete()) {
-            this.oppositeLine = ((LineArgument) arguments.get(3)).getLine();
+            this.oppositeLine = ((LineArgument) arguments.get(3)).getLine2D();
             this.oppositeLayer = ((LayersArgument) arguments.get(4)).getLayers();
         }
     }

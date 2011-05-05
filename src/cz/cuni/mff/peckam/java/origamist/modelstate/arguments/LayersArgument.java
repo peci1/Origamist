@@ -6,14 +6,15 @@ package cz.cuni.mff.peckam.java.origamist.modelstate.arguments;
 import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
-import cz.cuni.mff.peckam.java.origamist.model.Line2D;
+import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 
 /**
  * Argument for selecting layers.
  * 
  * @author Martin Pecka
  */
-public class LayersArgument extends OperationArgument
+public class LayersArgument extends OperationArgument implements EditorDataReceiver
 {
     /** The line defining the layer set. */
     protected LineArgument  defLine = null;
@@ -24,12 +25,13 @@ public class LayersArgument extends OperationArgument
     /**
      * @param defLine The line defining the layer set.
      * @param required If true, this argument is required.
+     * @param resourceBundleKey The key in "editor" resource bundle describing this operation argument.
      * 
      * @throws NullPointerException If defLine is <code>null</code>.
      */
-    public LayersArgument(LineArgument defLine, boolean required) throws NullPointerException
+    public LayersArgument(LineArgument defLine, boolean required, String resourceBundleKey) throws NullPointerException
     {
-        super(required);
+        super(required, resourceBundleKey);
 
         if (defLine == null)
             throw new NullPointerException("defLine cannot be null");
@@ -41,6 +43,14 @@ public class LayersArgument extends OperationArgument
     public boolean isComplete()
     {
         return layers != null && layers.size() > 0;
+    }
+
+    /**
+     * @return True if the line defining the layer set is complete.
+     */
+    public boolean isDefLineComplete()
+    {
+        return defLine.isComplete();
     }
 
     /**
@@ -69,7 +79,7 @@ public class LayersArgument extends OperationArgument
      * 
      * @throws IllegalStateException If the defLine hasn't been completed yet.
      */
-    public Line2D getDefSegment() throws IllegalStateException
+    public ModelSegment getDefSegment() throws IllegalStateException
     {
         return defLine.getLine().clone();
     }
@@ -78,5 +88,12 @@ public class LayersArgument extends OperationArgument
     public PickMode preferredPickMode()
     {
         return PickMode.LAYER;
+    }
+
+    @Override
+    public void readDataFromEditor(StepEditor editor)
+    {
+        if (editor.getChosenLayers() != null && editor.getChosenLayers().size() > 0)
+            this.layers = editor.getChosenLayers();
     }
 }

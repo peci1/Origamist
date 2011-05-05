@@ -15,10 +15,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -39,6 +41,7 @@ import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.origamist.MessageBar;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
@@ -61,6 +64,13 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * A renderer of a step that supports mouse interaction with the step.
@@ -71,58 +81,76 @@ public class StepEditor extends StepRenderer
 {
 
     /** */
-    private static final long        serialVersionUID       = -785240462702127380L;
+    private static final long        serialVersionUID           = -785240462702127380L;
 
     /** The canvas support for picking. Automatically updated when branch graph changes. */
     protected PickCanvas             pickCanvas;
 
     /** The transform for transforming vworld coordinates to image plate coordinates. */
-    protected Transform3D            vWorldToImagePlate     = new Transform3D();
+    protected Transform3D            vWorldToImagePlate         = new Transform3D();
 
     /** The group containing all layers. */
-    protected Group                  layers                 = null;
+    protected Group                  layers                     = null;
 
     /** The group containing all lines. */
-    protected Group                  lines                  = null;
+    protected Group                  lines                      = null;
 
     /** The group that is always drawn after the model is drawn. */
-    protected Group                  overModel              = null;
+    protected Group                  overModel                  = null;
 
     /** The group that holds all displayed points. */
-    protected Group                  pointGroup             = null;
+    protected Group                  pointGroup                 = null;
 
     /** The group that holds the highlighted point to draw it over all other points. */
-    protected Group                  highlightedPointGroup  = null;
+    protected Group                  highlightedPointGroup      = null;
 
     /** The factory that creates groups for given model points. */
-    protected PointFactory           pointFactory           = new PointFactory();
+    protected PointFactory           pointFactory               = new PointFactory();
 
     /** The list of (points/lines/layers - depends on pickMode) available by the last performed pick operation. */
-    protected List<Group>            availableItems         = new LinkedList<Group>();
+    protected List<Group>            availableItems             = new LinkedList<Group>();
 
     /** The currently highlighted (picked) (point/line/layer - depends on pickMode). */
-    protected Group                  highlighted            = null;
+    protected Group                  highlighted                = null;
 
     /** The currently selected points, lines and layers. */
-    protected HashSet<Group>         selected               = new HashSet<Group>();
+    protected HashSet<Group>         selected                   = new HashSet<Group>();
 
     /** The set of currently selected layers. */
-    protected Set<Layer>             selectedLayers         = new HashSet<Layer>();
+    protected Set<Layer>             selectedLayers             = new HashSet<Layer>();
 
     /** The set of currently selected lines. */
-    protected Set<ModelSegment>      selectedLines          = new HashSet<ModelSegment>();
+    protected Set<ModelSegment>      selectedLines              = new HashSet<ModelSegment>();
 
     /** The set of currently selected points. */
-    protected Set<ModelPoint>        selectedPoints         = new HashSet<ModelPoint>();
+    protected Set<ModelPoint>        selectedPoints             = new HashSet<ModelPoint>();
+
+    /** All elements chosen since the last call of {@link #clearChosenItems()}. */
+    protected List<Group>            chosen                     = new LinkedList<Group>();
+
+    /** The elements chosen since the last call of {@link #setCurrentOperationArgument(OperationArgument)}. */
+    protected HashSet<Group>         currentChosen              = new HashSet<Group>();
 
     /** The type of primitves the user can pick. */
-    protected PickMode               pickMode               = PickMode.POINT;
+    protected PickMode               pickMode                   = PickMode.POINT;
 
     /** The manager for changing layer appearances. */
-    protected LayerAppearanceManager layerAppearanceManager = new LayerAppearanceManager();
+    protected LayerAppearanceManager layerAppearanceManager     = new LayerAppearanceManager();
 
     /** The manager for changing point appearances. */
-    protected PointAppearanceManager pointAppearanceManager = new PointAppearanceManager();
+    protected PointAppearanceManager pointAppearanceManager     = new PointAppearanceManager();
+
+    /** The operation argument the editor fetches data for. */
+    protected OperationArgument      currentOperationArgument   = null;
+
+    /** If current argument is a layer argument, this list contains the list of layers to choose from. */
+    protected List<Layer>            layersToChooseFrom         = null;
+
+    /** If current argument is a layer argument, this list contains the list of layers to choose from. */
+    protected List<Group>            layersToChooseFromAsGroups = null;
+
+    /** The transform added by behaviors. */
+    protected Transform3D            additionalTransform        = null;
 
     {
         updatePickCanvas();
@@ -211,6 +239,10 @@ public class StepEditor extends StepRenderer
     @Override
     public void setStep(Step step)
     {
+        if (step != null && step.getAttachedTo() == null) {
+            return;
+        }
+
         final Callable<Void> callback = new Callable<Void>() {
             @Override
             public Void call() throws Exception
@@ -220,11 +252,18 @@ public class StepEditor extends StepRenderer
             }
         };
 
+        additionalTransform = null;
+
         if (this.step != step) {
             if (step != null)
                 step.getModelStateInvalidationCallbacks().add(callback);
             if (this.step != null)
                 this.step.getModelStateInvalidationCallbacks().remove(callback);
+        } else if (this.step != null && this.step.getAttachedTo() != null) {
+            // trans will hold the "additional" transform added by behaviors
+            additionalTransform = new Transform3D(baseTransform);
+            additionalTransform.invert();
+            additionalTransform.mul(transform);
         }
 
         super.setStep(step);
@@ -235,6 +274,10 @@ public class StepEditor extends StepRenderer
         selectedLayers.clear();
         selectedLines.clear();
         selectedPoints.clear();
+        chosen.clear();
+        currentChosen.clear();
+        layersToChooseFrom = null;
+        layersToChooseFromAsGroups = null;
     }
 
     @Override
@@ -243,6 +286,7 @@ public class StepEditor extends StepRenderer
         super.afterSetStep();
         // branchGraph changes, so we have to recreate the pick canvas
         updatePickCanvas();
+        setZoom(step.getZoom());
     }
 
     @Override
@@ -288,6 +332,12 @@ public class StepEditor extends StepRenderer
             tGroup = new TransformGroup();
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+            if (additionalTransform != null) {
+                double scale = transform.getScale();
+                transform.mul(additionalTransform);
+                transform.setScale(scale);
+                additionalTransform = null;
+            }
             tGroup.setTransform(transform);
 
             OrderedGroup og = new OrderedGroup();
@@ -387,6 +437,7 @@ public class StepEditor extends StepRenderer
             return tGroup;
         } catch (InvalidOperationException e) {
             tGroup = new TransformGroup();
+            tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             // TODO create an ErrorTransformGroup that would signalize to the user that an operation is invalid
             throw e;
         }
@@ -447,7 +498,17 @@ public class StepEditor extends StepRenderer
                 if (containsHighlighted)
                     return;
 
-                setHighlightedLayer(availableItems.get(0));
+                if (layersToChooseFrom != null) {
+                    for (Group g : availableItems) {
+                        if (g.getUserData() instanceof Layer && layersToChooseFrom.contains(g.getUserData())) {
+                            setHighlightedLayer(g);
+                            return;
+                        }
+                    }
+                    setHighlightedLayer(null);
+                } else {
+                    setHighlightedLayer(availableItems.get(0));
+                }
             } else if (pickMode == PickMode.LINE) {
                 boolean containsHighlighted = false;
                 List<Group> newAvailableItems = new LinkedList<Group>();
@@ -700,6 +761,51 @@ public class StepEditor extends StepRenderer
     }
 
     /**
+     * Return the selection state of the given item (it is determined on presence of the item in selected, chosen and
+     * other sets).
+     * 
+     * @param group The group to find state of.
+     * @return The state of the item.
+     */
+    protected SelectionState getSelectionState(Group group)
+    {
+        SelectionState state;
+        if (currentChosen.contains(group)) {
+            if (highlighted == group)
+                state = SelectionState.CHOSEN_HIGHLIGHTED;
+            else
+                state = SelectionState.CHOSEN;
+        } else if (chosen.contains(group)) {
+            if (highlighted == group)
+                state = SelectionState.CHOSEN_HIGHLIGHTED;
+            else
+                state = SelectionState.CHOSEN_OLD;
+        } else if (selected.contains(group)) {
+            if (highlighted == group)
+                state = SelectionState.SELECTED_HIGHLIGHTED;
+            else
+                state = SelectionState.SELECTED;
+        } else {
+            if (highlighted == group)
+                state = SelectionState.HIGHLIGHTED;
+            else
+                state = SelectionState.NORMAL;
+        }
+        return state;
+    }
+
+    /**
+     * Return true if the given item should stay visible or marked (selected/chosen) after it loses highlight.
+     * 
+     * @param group The item to test.
+     * @return If the item should stay marked after it loses highlight.
+     */
+    protected boolean isPermanent(Group group)
+    {
+        return selected.contains(group) || currentChosen.contains(group) || chosen.contains(group);
+    }
+
+    /**
      * Performs the changes needed to make a highlighted item unhighlighted.
      */
     protected void clearHighlighted()
@@ -724,16 +830,27 @@ public class StepEditor extends StepRenderer
         if (selected.size() == 0)
             return;
 
-        // temp is needed because direct usage of selected would lead to ConcurrentModificaationException
+        // temp is needed because direct usage of selected would lead to ConcurrentModificationException
         List<Group> temp = new LinkedList<Group>(selected);
         for (Group g : temp) {
-            if (g.getUserData() instanceof Layer)
-                deselectLayer(g);
-            else if (g.getUserData() instanceof ModelSegment)
-                deselectLine(g);
-            else
-                deselectPoint(g);
+            deselect(g);
         }
+    }
+
+    /**
+     * Performs the changes needed to make all chosen items unchosen.
+     */
+    protected void clearChosen()
+    {
+        if (chosen.size() == 0)
+            return;
+
+        Set<Group> temp = new HashSet<Group>(chosen);
+        for (Group g : temp) {
+            deselect(g, true);
+        }
+        // chosen.clear(); //shouldn't be needed
+        // currentChosen.clear(); //shouldn't be needed
     }
 
     /**
@@ -745,7 +862,7 @@ public class StepEditor extends StepRenderer
             return;
 
         for (Group g : availableItems) {
-            if (g.getUserData() instanceof ModelPoint && g != highlighted && !selected.contains(g)) {
+            if (g.getUserData() instanceof ModelPoint && g != highlighted && !isPermanent(g)) {
                 ((BranchGroup) g).detach();
             }
         }
@@ -768,19 +885,14 @@ public class StepEditor extends StepRenderer
             return;
 
         if (highlighted != null) {
-            if (!selected.contains(highlighted))
-                layerAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
-            else
-                layerAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
+            Group old = highlighted;
             highlighted = null;
+            layerAppearanceManager.setAppearance(old);
         }
 
         if (layer != null) {
             highlighted = layer;
-            if (!selected.contains(layer))
-                layerAppearanceManager.setAppearance(layer, SelectionState.HIGHLIGHTED);
-            else
-                layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED_HIGHLIGHTED);
+            layerAppearanceManager.setAppearance(layer);
         }
     }
 
@@ -799,19 +911,14 @@ public class StepEditor extends StepRenderer
             return;
 
         if (highlighted != null) {
-            if (!selected.contains(highlighted))
-                getLineAppearanceManager().setAppearance(highlighted, SelectionState.NORMAL);
-            else
-                getLineAppearanceManager().setAppearance(highlighted, SelectionState.SELECTED);
+            Group old = highlighted;
             highlighted = null;
+            getLineAppearanceManager().setAppearance(old);
         }
 
         if (line != null) {
             highlighted = line;
-            if (!selected.contains(line))
-                getLineAppearanceManager().setAppearance(line, SelectionState.HIGHLIGHTED);
-            else
-                getLineAppearanceManager().setAppearance(line, SelectionState.SELECTED_HIGHLIGHTED);
+            getLineAppearanceManager().setAppearance(line);
         }
     }
 
@@ -830,28 +937,20 @@ public class StepEditor extends StepRenderer
             return;
 
         if (highlighted != null) {
-            if (!selected.contains(highlighted)) {
-                pointAppearanceManager.setAppearance(highlighted, SelectionState.NORMAL);
-                ((BranchGroup) highlighted).detach();
-                if (availableItems.contains(highlighted)) {
-                    pointGroup.addChild(highlighted);
-                }
-            } else {
-                pointAppearanceManager.setAppearance(highlighted, SelectionState.SELECTED);
-                ((BranchGroup) highlighted).detach();
+            ((BranchGroup) highlighted).detach();
+            if (isPermanent(highlighted) || availableItems.contains(highlighted)) {
                 pointGroup.addChild(highlighted);
             }
+            Group old = highlighted;
             highlighted = null;
+            pointAppearanceManager.setAppearance(old);
         }
 
         if (point != null) {
             highlighted = point;
-            if (!selected.contains(point))
-                pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
-            else
-                pointAppearanceManager.setAppearance(point, SelectionState.SELECTED_HIGHLIGHTED);
             ((BranchGroup) highlighted).detach();
             highlightedPointGroup.addChild(highlighted);
+            pointAppearanceManager.setAppearance(point);
         }
     }
 
@@ -864,16 +963,21 @@ public class StepEditor extends StepRenderer
      */
     protected void selectLayer(Group layer)
     {
-        if (selected.contains(layer))
-            return;
+        if (!(currentOperationArgument instanceof LayersArgument)) {
+            if (selected.contains(layer))
+                return;
 
-        if (layer != highlighted)
-            layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED);
-        else
-            layerAppearanceManager.setAppearance(layer, SelectionState.SELECTED_HIGHLIGHTED);
+            selected.add(layer);
+            selectedLayers.add((Layer) layer.getUserData());
+        } else {
+            if (currentChosen.contains(layer))
+                return;
 
-        selected.add(layer);
-        selectedLayers.add((Layer) layer.getUserData());
+            currentChosen.add(layer);
+            chosen.add(layer);
+        }
+
+        layerAppearanceManager.setAppearance(layer);
     }
 
     /**
@@ -885,13 +989,28 @@ public class StepEditor extends StepRenderer
      */
     protected void deselectLayer(Group layer)
     {
-        if (selected.remove(layer)) {
-            if (layer != highlighted)
-                layerAppearanceManager.setAppearance(layer, SelectionState.NORMAL);
-            else
-                layerAppearanceManager.setAppearance(layer, SelectionState.HIGHLIGHTED);
-            selectedLayers.remove(layer.getUserData());
+        deselectLayer(layer, false);
+    }
+
+    /**
+     * Performs the changes needed to make a selected layer not selected.
+     * 
+     * If the given layer hasn't been selected, nothing happens.
+     * 
+     * @param layer The layer to deselect.
+     * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
+     */
+    protected void deselectLayer(Group layer, boolean forceUnchoose)
+    {
+        if (!forceUnchoose && !(currentOperationArgument instanceof LayersArgument)) {
+            if (selected.remove(layer))
+                selectedLayers.remove(layer.getUserData());
+        } else {
+            if (currentChosen.remove(layer) || forceUnchoose) {
+                while (chosen.remove(layer) && forceUnchoose);
+            }
         }
+        layerAppearanceManager.setAppearance(layer);
     }
 
     /**
@@ -903,16 +1022,29 @@ public class StepEditor extends StepRenderer
      */
     protected void selectLine(Group line)
     {
-        if (selected.contains(line))
-            return;
+        if (!(currentOperationArgument instanceof LineArgument)) {
+            if (selected.contains(line))
+                return;
 
-        if (line != highlighted)
-            getLineAppearanceManager().setAppearance(line, SelectionState.SELECTED);
-        else
-            getLineAppearanceManager().setAppearance(line, SelectionState.SELECTED_HIGHLIGHTED);
+            selected.add(line);
+            selectedLines.add((ModelSegment) line.getUserData());
+        } else {
+            if (currentChosen.contains(line))
+                return;
 
-        selected.add(line);
-        selectedLines.add((ModelSegment) line.getUserData());
+            if (currentChosen.size() > 0) {
+                ServiceLocator.get(MessageBar.class).showMessage(
+                        "<html><body><span style=\"font-weight:bold;color:red;\">"
+                                + ResourceBundle.getBundle("editor",
+                                        ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString(
+                                        "StepEditor.tooMuchLines") + "</span></body></html>", null);
+                return;
+            }
+
+            currentChosen.add(line);
+            chosen.add(line);
+        }
+        getLineAppearanceManager().setAppearance(line);
     }
 
     /**
@@ -924,13 +1056,28 @@ public class StepEditor extends StepRenderer
      */
     protected void deselectLine(Group line)
     {
-        if (selected.remove(line)) {
-            if (line != highlighted)
-                getLineAppearanceManager().setAppearance(line, SelectionState.NORMAL);
-            else
-                getLineAppearanceManager().setAppearance(line, SelectionState.HIGHLIGHTED);
-            selectedLines.remove(line.getUserData());
+        deselectLine(line, false);
+    }
+
+    /**
+     * Performs the changes needed to make a selected line not selected.
+     * 
+     * If the given line hasn't been selected, nothing happens.
+     * 
+     * @param line The line to deselect.
+     * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
+     */
+    protected void deselectLine(Group line, boolean forceUnchoose)
+    {
+        if (!forceUnchoose && !(currentOperationArgument instanceof LineArgument)) {
+            if (selected.remove(line))
+                selectedLines.remove(line.getUserData());
+        } else {
+            if (currentChosen.remove(line) || forceUnchoose) {
+                while (chosen.remove(line) && forceUnchoose);
+            }
         }
+        getLineAppearanceManager().setAppearance(line);
     }
 
     /**
@@ -942,16 +1089,56 @@ public class StepEditor extends StepRenderer
      */
     protected void selectPoint(Group point)
     {
-        if (selected.contains(point))
-            return;
+        boolean setAppearance = false;
+        if (currentOperationArgument == null
+                || (currentOperationArgument instanceof ExistingLineArgument || !(currentOperationArgument instanceof LineArgument || currentOperationArgument instanceof PointArgument))) {
+            if (selected.contains(point))
+                return;
 
-        if (point != highlighted)
-            pointAppearanceManager.setAppearance(point, SelectionState.SELECTED);
-        else
-            pointAppearanceManager.setAppearance(point, SelectionState.SELECTED_HIGHLIGHTED);
+            setAppearance = true;
 
-        selected.add(point);
-        selectedPoints.add((ModelPoint) point.getUserData());
+            selected.add(point);
+            selectedPoints.add((ModelPoint) point.getUserData());
+        } else {
+            if (currentChosen.contains(point))
+                return;
+
+            if (currentOperationArgument instanceof PointArgument) {
+                if (currentChosen.size() > 0) {
+                    ServiceLocator.get(MessageBar.class).showMessage(
+                            ResourceBundle.getBundle("editor",
+                                    ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString(
+                                    "StepEditor.tooMuchPoints"), null);
+                    return;
+                }
+            } else if (currentOperationArgument instanceof LineArgument
+                    && !(currentOperationArgument instanceof ExistingLineArgument)) {
+                if (currentChosen.size() > 1) {
+                    ServiceLocator.get(MessageBar.class).showMessage(
+                            "<html><body><span style=\"font-weight:bold;color:red;\">"
+                                    + ResourceBundle.getBundle("editor",
+                                            ServiceLocator.get(ConfigurationManager.class).get().getLocale())
+                                            .getString("StepEditor.tooMuchPoints") + "</span></body></html>", null);
+                    return;
+                } else if (currentChosen.size() == 1
+                        && currentChosen.iterator().next().getUserData() instanceof ModelSegment) {
+                    ServiceLocator.get(MessageBar.class).showMessage(
+                            "<html><body><span style=\"font-weight:bold;color:red;\">"
+                                    + ResourceBundle.getBundle("editor",
+                                            ServiceLocator.get(ConfigurationManager.class).get().getLocale())
+                                            .getString("StepEditor.pointLineMix") + "</span></body></html>", null);
+                    return;
+                }
+            }
+
+            setAppearance = true;
+
+            chosen.add(point);
+            currentChosen.add(point);
+        }
+
+        if (setAppearance)
+            pointAppearanceManager.setAppearance(point);
     }
 
     /**
@@ -963,16 +1150,81 @@ public class StepEditor extends StepRenderer
      */
     protected void deselectPoint(Group point)
     {
-        if (selected.remove(point)) {
-            if (point != highlighted) {
-                pointAppearanceManager.setAppearance(point, SelectionState.NORMAL);
-                if (!availableItems.contains(point)) {
-                    ((BranchGroup) point).detach();
+        deselectPoint(point, false);
+    }
+
+    /**
+     * Performs the changes needed to make a selected point not selected.
+     * 
+     * If the given point hasn't been selected, nothing happens.
+     * 
+     * @param point The point to deselect.
+     * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
+     */
+    protected void deselectPoint(Group point, boolean forceUnchoose)
+    {
+        boolean setAppearance = false;
+        if (!forceUnchoose
+                && (currentOperationArgument == null || (currentOperationArgument instanceof ExistingLineArgument || !(currentOperationArgument instanceof LineArgument || currentOperationArgument instanceof PointArgument)))) {
+            if (selected.remove(point)) {
+                setAppearance = true;
+                selectedPoints.remove(point.getUserData());
+                if (point != highlighted) {
+                    if (!availableItems.contains(point)) {
+                        ((BranchGroup) point).detach();
+                    }
                 }
-            } else
-                pointAppearanceManager.setAppearance(point, SelectionState.HIGHLIGHTED);
-            selectedPoints.remove(point.getUserData());
+            }
+        } else {
+            if (currentChosen.remove(point) || forceUnchoose) {
+                setAppearance = true;
+                while (chosen.remove(point) && forceUnchoose);
+            }
         }
+
+        if (setAppearance)
+            pointAppearanceManager.setAppearance(point);
+    }
+
+    /**
+     * Make the given object selected (call the appropriate select method based on user data class).
+     * 
+     * @param group The group to be made selected.
+     */
+    protected void select(Group group)
+    {
+        if (group.getUserData() instanceof Layer)
+            selectLayer(group);
+        else if (group.getUserData() instanceof ModelSegment)
+            selectLine(group);
+        else if (group.getUserData() instanceof ModelPoint)
+            selectPoint(group);
+    }
+
+    /**
+     * Deselct the given object (call the appropriate deselect method based on user data class).
+     * 
+     * @param group The group to deselect.
+     */
+    protected void deselect(Group group)
+    {
+        deselect(group, false);
+    }
+
+    /**
+     * Deselct the given object (call the appropriate deselect method based on user data class).
+     * 
+     * @param group The group to deselect.
+     * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
+     */
+    protected void deselect(Group group, boolean forceUnchoose)
+    {
+        if (group.getUserData() instanceof Layer)
+            deselectLayer(group, forceUnchoose);
+        else if (group.getUserData() instanceof ModelSegment)
+            deselectLine(group, forceUnchoose);
+        else if (group.getUserData() instanceof ModelPoint)
+            deselectPoint(group, forceUnchoose);
     }
 
     /**
@@ -980,11 +1232,13 @@ public class StepEditor extends StepRenderer
      */
     protected void updateTransforms()
     {
-        ViewInfo viewInfo = new ViewInfo(offscreenCanvas.getView());
+        if (offscreenCanvas.getView().getViewPlatform() != null) {
+            ViewInfo viewInfo = new ViewInfo(offscreenCanvas.getView());
 
-        vWorldToImagePlate = new Transform3D();
-        viewInfo.getImagePlateToVworld(offscreenCanvas, vWorldToImagePlate, null);
-        vWorldToImagePlate.invert();
+            vWorldToImagePlate = new Transform3D();
+            viewInfo.getImagePlateToVworld(offscreenCanvas, vWorldToImagePlate, null);
+            vWorldToImagePlate.invert();
+        }
     }
 
     /**
@@ -1078,6 +1332,155 @@ public class StepEditor extends StepRenderer
         return getLocalPointCanvasPosition(gPoint, localToVworld, true);
     }
 
+    /**
+     * @param currentOperationArgument The operation argument the editor fetches data for.
+     */
+    public void setCurrentOperationArgument(OperationArgument currentOperationArgument)
+    {
+        this.currentOperationArgument = currentOperationArgument;
+
+        Set<Group> currChosen = new HashSet<Group>(currentChosen);
+        this.currentChosen.clear();
+
+        // set the old look to former current items
+        for (Group g : currChosen) {
+            if (g.getUserData() instanceof Layer)
+                layerAppearanceManager.setAppearance(g);
+            else if (g.getUserData() instanceof ModelSegment)
+                getLineAppearanceManager().setAppearance(g);
+            else if (g.getUserData() instanceof ModelPoint)
+                pointAppearanceManager.setAppearance(g);
+        }
+
+        if (currentOperationArgument instanceof LayersArgument) {
+            LayersArgument arg = (LayersArgument) currentOperationArgument;
+            if (arg.isRequired() || arg.isDefLineComplete()) {
+                layersToChooseFrom = new LinkedList<Layer>(step.getModelState()
+                        .getLayers(((LayersArgument) currentOperationArgument).getDefSegment()).keySet());
+
+                // layersToChooseFromAsGroups have to be sorted in the same way as layersToChooseFrom
+                layersToChooseFromAsGroups = new LinkedList<Group>();
+
+                // hash set for quick search
+                Set<Layer> cache = new HashSet<Layer>(layersToChooseFrom);
+                Hashtable<Layer, Group> dictionary = new Hashtable<Layer, Group>(layersToChooseFrom.size());
+
+                for (@SuppressWarnings("unchecked")
+                Enumeration<Group> e = layers.getAllChildren(); e.hasMoreElements();) {
+                    Group g = e.nextElement();
+                    if (cache.contains(g.getUserData()))
+                        dictionary.put((Layer) g.getUserData(), g);
+                }
+
+                for (Layer l : layersToChooseFrom)
+                    layersToChooseFromAsGroups.add(dictionary.get(l));
+
+                // TODO color the available layers
+            }
+        } else {
+            layersToChooseFrom = null;
+            layersToChooseFromAsGroups = null;
+        }
+
+        if (currentOperationArgument != null && currentOperationArgument.preferredPickMode() != null)
+            setPickMode(currentOperationArgument.preferredPickMode());
+    }
+
+    /**
+     * @return If a line is chosen, return it, otherwise return <code>null</code>.
+     */
+    public ModelSegment getChosenLine()
+    {
+        if (currentChosen.size() == 0 || step == null)
+            return null;
+
+        if (currentChosen.size() == 1) {
+            Group chosen = currentChosen.iterator().next();
+            if (chosen.getUserData() instanceof ModelSegment)
+                return (ModelSegment) chosen.getUserData();
+            else
+                return null;
+        }
+
+        Iterator<Group> it = currentChosen.iterator();
+        Group g1 = it.next();
+        Group g2 = it.next();
+        it = null;
+
+        try {
+            ModelPoint p1 = (ModelPoint) g1.getUserData();
+            ModelPoint p2 = (ModelPoint) g2.getUserData();
+
+            return new ModelSegment(p1, p2, null, step.getId());
+        } catch (ClassCastException e) {
+            return null;
+        }
+    }
+
+    /**
+     * @return If an existing line is chosen, return it, otherwise return <code>null</code>.
+     */
+    public ModelSegment getChosenExistingLine()
+    {
+        if (currentChosen.size() == 0)
+            return null;
+
+        Group chosen = currentChosen.iterator().next();
+        if (chosen.getUserData() instanceof ModelSegment)
+            return (ModelSegment) chosen.getUserData();
+
+        return null;
+    }
+
+    /**
+     * @return If a point is chosen, return it, otherwise return <code>null</code>.
+     */
+    public ModelPoint getChosenPoint()
+    {
+        if (currentChosen.size() == 0)
+            return null;
+
+        Group chosen = currentChosen.iterator().next();
+        if (chosen.getUserData() instanceof ModelPoint)
+            return (ModelPoint) chosen.getUserData();
+
+        return null;
+    }
+
+    /**
+     * @return If some layers are chosen, return them, otherwise return <code>null</code>.
+     */
+    public List<Integer> getChosenLayers()
+    {
+        if (currentChosen.size() == 0 || layersToChooseFrom == null)
+            return null;
+
+        Set<Layer> chosenLayers = new HashSet<Layer>();
+        for (Group g : currentChosen) {
+            if (g.getUserData() instanceof Layer)
+                chosenLayers.add((Layer) g.getUserData());
+        }
+
+        List<Integer> result = new LinkedList<Integer>();
+        int i = 1;
+        for (Layer l : layersToChooseFrom) {
+            if (chosenLayers.contains(l))
+                result.add(i);
+            i++;
+        }
+
+        return result;
+    }
+
+    /**
+     * Clear all chosen items.
+     */
+    public void clearChosenItems()
+    {
+        clearChosen();
+
+    }
+
     @Override
     protected ColorManager createColorManager(Color background, Color foreground)
     {
@@ -1112,19 +1515,26 @@ public class StepEditor extends StepRenderer
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int selIndex = availableItems.indexOf(highlighted);
+            List<Group> items;
+            if (layersToChooseFrom == null) {
+                items = availableItems;
+            } else {
+                items = new LinkedList<Group>(availableItems);
+                items.retainAll(layersToChooseFromAsGroups);
+            }
+            int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
-                selIndex = (selIndex + 1) % availableItems.size();
+                selIndex = (selIndex + 1) % items.size();
                 switch (pickMode) {
                     case POINT:
-                        setHighlightedPoint(availableItems.get(selIndex));
+                        setHighlightedPoint(items.get(selIndex));
                         break;
                     case LINE:
-                        setHighlightedLine(availableItems.get(selIndex));
+                        setHighlightedLine(items.get(selIndex));
                         break;
                     case LAYER:
-                        setHighlightedLayer(availableItems.get(selIndex));
+                        setHighlightedLayer(items.get(selIndex));
                         break;
                 }
             }
@@ -1140,21 +1550,29 @@ public class StepEditor extends StepRenderer
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            int selIndex = availableItems.indexOf(highlighted);
+            List<Group> items;
+            if (layersToChooseFrom == null) {
+                items = availableItems;
+            } else {
+                items = new LinkedList<Group>(availableItems);
+                items.retainAll(layersToChooseFromAsGroups);
+            }
+
+            int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
                 selIndex = selIndex - 1;
                 if (selIndex == -1)
-                    selIndex = availableItems.size() - 1;
+                    selIndex = items.size() - 1;
                 switch (pickMode) {
                     case POINT:
-                        setHighlightedPoint(availableItems.get(selIndex));
+                        setHighlightedPoint(items.get(selIndex));
                         break;
                     case LINE:
-                        setHighlightedLine(availableItems.get(selIndex));
+                        setHighlightedLine(items.get(selIndex));
                         break;
                     case LAYER:
-                        setHighlightedLayer(availableItems.get(selIndex));
+                        setHighlightedLayer(items.get(selIndex));
                         break;
                 }
             }
@@ -1170,7 +1588,15 @@ public class StepEditor extends StepRenderer
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            setPickMode(pickMode.getNext());
+            if (currentOperationArgument == null) {
+                setPickMode(pickMode.getNext());
+            } else {
+                PickMode mode = pickMode.getNext();
+                if ((currentOperationArgument instanceof ExistingLineArgument || currentOperationArgument instanceof LayersArgument)
+                        && mode == PickMode.POINT)
+                    mode = mode.getNext();
+                setPickMode(mode);
+            }
         }
 
     }
@@ -1186,23 +1612,25 @@ public class StepEditor extends StepRenderer
             if (highlighted == null)
                 return;
 
+            boolean deselect = (selected.contains(highlighted) && currentOperationArgument == null)
+                    || currentChosen.contains(highlighted);
             switch (pickMode) {
                 case POINT:
-                    if (selected.contains(highlighted)) {
+                    if (deselect) {
                         deselectPoint(highlighted);
                     } else {
                         selectPoint(highlighted);
                     }
                     break;
                 case LINE:
-                    if (selected.contains(highlighted)) {
+                    if (deselect) {
                         deselectLine(highlighted);
                     } else {
                         selectLine(highlighted);
                     }
                     break;
                 case LAYER:
-                    if (selected.contains(highlighted)) {
+                    if (deselect) {
                         deselectLayer(highlighted);
                     } else {
                         selectLayer(highlighted);
@@ -1310,7 +1738,13 @@ public class StepEditor extends StepRenderer
         /** Selected non-highlighted item. */
         SELECTED,
         /** Selected highlighted item. */
-        SELECTED_HIGHLIGHTED
+        SELECTED_HIGHLIGHTED,
+        /** Chosen item. */
+        CHOSEN,
+        /** Chosen highlighted item. */
+        CHOSEN_HIGHLIGHTED,
+        /** Chosen item that isn't in currentChosen. */
+        CHOSEN_OLD
     }
 
     /**
@@ -1321,12 +1755,11 @@ public class StepEditor extends StepRenderer
     protected class LayerAppearanceManager
     {
         /**
-         * Apply the given appearance on the given layer.
+         * Apply the appropriate appearance on the given layer.
          * 
          * @param layer The layer to apply the appearance on.
-         * @param state The state to derive appearance from.
          */
-        protected void setAppearance(Group layer, SelectionState state)
+        protected void setAppearance(Group layer)
         {
             assert layer.numChildren() == 2;
 
@@ -1335,7 +1768,8 @@ public class StepEditor extends StepRenderer
             Shape3D shape = (Shape3D) children.nextElement();
             Appearance app = shape.getAppearance();
 
-            switch (state) {
+            SelectionState state;
+            switch (state = getSelectionState(layer)) {
                 case NORMAL:
                     app.getColoringAttributes().setColor(getColorManager().getForeground3f());
                     app.getPolygonAttributes().setPolygonOffset(0f);
@@ -1356,6 +1790,24 @@ public class StepEditor extends StepRenderer
                     break;
                 case SELECTED_HIGHLIGHTED:
                     app.getColoringAttributes().setColor(getColorManager().getSelectedHighlightFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case CHOSEN_OLD:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenOldFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-15000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-15000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case CHOSEN:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenFg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-11000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-11000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case CHOSEN_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenHighlightFg3f());
                     app.getPolygonAttributes().setPolygonOffset(-20000f);
                     app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
                     app.getTransparencyAttributes().setTransparency(0f);
@@ -1390,6 +1842,24 @@ public class StepEditor extends StepRenderer
                     app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
                     app.getTransparencyAttributes().setTransparency(0f);
                     break;
+                case CHOSEN_OLD:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenOldBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-15000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-15000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case CHOSEN:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-11000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-11000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    break;
+                case CHOSEN_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenHighlightBg3f());
+                    app.getPolygonAttributes().setPolygonOffset(-20000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    break;
             }
         }
     }
@@ -1402,12 +1872,11 @@ public class StepEditor extends StepRenderer
     protected class PointAppearanceManager
     {
         /**
-         * Apply the given appearance on the given point.
+         * Apply the appropriate appearance on the given point.
          * 
          * @param point The point to apply the appearance on.
-         * @param state The state to derive appearance from.
          */
-        protected void setAppearance(Group point, SelectionState state)
+        protected void setAppearance(Group point)
         {
             assert point.numChildren() == 1;
 
@@ -1416,7 +1885,7 @@ public class StepEditor extends StepRenderer
             Shape3D shape = (Shape3D) children.nextElement();
             Appearance app = shape.getAppearance();
 
-            switch (state) {
+            switch (getSelectionState(point)) {
                 case NORMAL:
                     app.getRenderingAttributes().setVisible(false);
                     break;
@@ -1432,6 +1901,21 @@ public class StepEditor extends StepRenderer
                     break;
                 case SELECTED_HIGHLIGHTED:
                     app.getColoringAttributes().setColor(getColorManager().getSelectedHighlightedPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+                case CHOSEN_OLD:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenOldPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+                case CHOSEN:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenPoint3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    break;
+                case CHOSEN_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenHighlightedPoint3f());
                     app.getTransparencyAttributes().setTransparency(0f);
                     app.getRenderingAttributes().setVisible(true);
                     break;
@@ -1520,12 +2004,11 @@ public class StepEditor extends StepRenderer
     protected class LineAppearanceManager extends StepRenderer.LineAppearanceManager
     {
         /**
-         * Apply the given appearance on the given line.
+         * Apply the appropriate appearance on the given line.
          * 
          * @param line The line to apply the appearance on.
-         * @param state The state to derive appearance from.
          */
-        protected void setAppearance(Group line, SelectionState state)
+        protected void setAppearance(Group line)
         {
             assert line.numChildren() == 1;
 
@@ -1537,7 +2020,7 @@ public class StepEditor extends StepRenderer
             Direction dir = seg.getDirection();
             int age = step.getId() - seg.getOriginatingStepId();
 
-            switch (state) {
+            switch (getSelectionState(line)) {
                 case NORMAL:
                     app.getColoringAttributes().setColor(getColorManager().getLine3f());
                     app.getTransparencyAttributes().setTransparency(0f);
@@ -1590,6 +2073,45 @@ public class StepEditor extends StepRenderer
                         overModel.addChild(line);
                     }
                     break;
+                case CHOSEN_OLD:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenOldLine3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
+                case CHOSEN:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenLine3f());
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
+                case CHOSEN_HIGHLIGHTED:
+                    app.getColoringAttributes().setColor(getColorManager().getChosenHighlightedLine3f());
+                    app.getTransparencyAttributes().setTransparency(0f);
+                    app.getRenderingAttributes().setVisible(true);
+                    app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+                    app.getLineAttributes().setLineWidth(2.5f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+
+                    if (line.getParent() == lines) {
+                        lines.removeChild(line);
+                        ((BranchGroup) line).detach();
+                        overModel.addChild(line);
+                    }
+                    break;
             }
         }
     }
@@ -1620,6 +2142,26 @@ public class StepEditor extends StepRenderer
         protected Color selectedPoint            = new Color(50, 125, 50);
         /** Color of a selected highlighted point. */
         protected Color selectedHighlightedPoint = new Color(100, 200, 100);
+
+        /** Chosen layer color for foreground/background. */
+        protected Color chosenBg                 = new Color(100, 255, 100), chosenFg = new Color(150, 255, 150);
+        /** Highlighted chosen layer color for foreground/background. */
+        protected Color chosenHighlightBg        = new Color(150, 255, 150), chosenHighlightFg = new Color(150, 255,
+                                                         150);
+        /** Old chosen layer color for foreground/background. */
+        protected Color chosenOldBg              = new Color(100, 200, 100), chosenOldFg = new Color(100, 200, 100);
+        /** Color of a chosen fold line. */
+        protected Color chosenLine               = new Color(100, 255, 200);
+        /** Color of a highlighted chosen fold line. */
+        protected Color chosenHighlightedLine    = new Color(150, 255, 250);
+        /** Color of an old chosen fold line. */
+        protected Color chosenOldLine            = new Color(100, 200, 150);
+        /** Color of a chosen point. */
+        protected Color chosenPoint              = new Color(200, 255, 100);
+        /** Color of a highlighted chosen point. */
+        protected Color chosenHighlightedPoint   = new Color(250, 255, 150);
+        /** Color of an old chosen point. */
+        protected Color chosenOldPoint           = new Color(150, 200, 100);
 
         /**
          * @param background Paper background color.
@@ -2016,5 +2558,294 @@ public class StepEditor extends StepRenderer
         {
             this.selectedHighlightedPoint = selectedHighlightedPoint;
         }
+
+        /**
+         * @return Chosen layer color for foreground/background.
+         */
+        public Color getChosenBg()
+        {
+            return chosenBg;
+        }
+
+        /**
+         * @return Chosen layer color for foreground/background.
+         */
+        public Color3f getChosenBg3f()
+        {
+            return new Color3f(chosenBg);
+        }
+
+        /**
+         * @param chosenBg Chosen layer color for foreground/background.
+         */
+        public void setChosenBg(Color chosenBg)
+        {
+            this.chosenBg = chosenBg;
+        }
+
+        /**
+         * @return Chosen layer color for foreground/background.
+         */
+        public Color getChosenFg()
+        {
+            return chosenFg;
+        }
+
+        /**
+         * @return Chosen layer color for foreground/background.
+         */
+        public Color3f getChosenFg3f()
+        {
+            return new Color3f(chosenFg);
+        }
+
+        /**
+         * @param chosenFg Chosen layer color for foreground/background.
+         */
+        public void setChosenFg(Color chosenFg)
+        {
+            this.chosenFg = chosenFg;
+        }
+
+        /**
+         * @return Highlighted chosen layer color for foreground/background.
+         */
+        public Color getChosenHighlightBg()
+        {
+            return chosenHighlightBg;
+        }
+
+        /**
+         * @return Highlighted chosen layer color for foreground/background.
+         */
+        public Color3f getChosenHighlightBg3f()
+        {
+            return new Color3f(chosenHighlightBg);
+        }
+
+        /**
+         * @param chosenHighlightBg Highlighted chosen layer color for foreground/background.
+         */
+        public void setChosenHighlightBg(Color chosenHighlightBg)
+        {
+            this.chosenHighlightBg = chosenHighlightBg;
+        }
+
+        /**
+         * @return Highlighted chosen layer color for foreground/background.
+         */
+        public Color getChosenHighlightFg()
+        {
+            return chosenHighlightFg;
+        }
+
+        /**
+         * @return Highlighted chosen layer color for foreground/background.
+         */
+        public Color3f getChosenHighlightFg3f()
+        {
+            return new Color3f(chosenHighlightFg);
+        }
+
+        /**
+         * @param chosenHighlightFg Highlighted chosen layer color for foreground/background.
+         */
+        public void setChosenHighlightFg(Color chosenHighlightFg)
+        {
+            this.chosenHighlightFg = chosenHighlightFg;
+        }
+
+        /**
+         * @return Old chosen layer color for foreground/background.
+         */
+        public Color getChosenOldBg()
+        {
+            return chosenOldBg;
+        }
+
+        /**
+         * @return Old chosen layer color for foreground/background.
+         */
+        public Color3f getChosenOldBg3f()
+        {
+            return new Color3f(chosenOldBg);
+        }
+
+        /**
+         * @param chosenOldBg Old chosen layer color for foreground/background.
+         */
+        public void setChosenOldBg(Color chosenOldBg)
+        {
+            this.chosenOldBg = chosenOldBg;
+        }
+
+        /**
+         * @return Old chosen layer color for foreground/background.
+         */
+        public Color getChosenOldFg()
+        {
+            return chosenOldFg;
+        }
+
+        /**
+         * @return Old chosen layer color for foreground/background.
+         */
+        public Color3f getChosenOldFg3f()
+        {
+            return new Color3f(chosenOldFg);
+        }
+
+        /**
+         * @param chosenOldFg Old chosen layer color for foreground/background.
+         */
+        public void setChosenOldFg(Color chosenOldFg)
+        {
+            this.chosenOldFg = chosenOldFg;
+        }
+
+        /**
+         * @return Color of a chosen fold line.
+         */
+        public Color getChosenLine()
+        {
+            return chosenLine;
+        }
+
+        /**
+         * @return Color of a chosen fold line.
+         */
+        public Color3f getChosenLine3f()
+        {
+            return new Color3f(chosenLine);
+        }
+
+        /**
+         * @param chosenLine Color of a chosen fold line.
+         */
+        public void setChosenLine(Color chosenLine)
+        {
+            this.chosenLine = chosenLine;
+        }
+
+        /**
+         * @return Color of a highlighted chosen fold line.
+         */
+        public Color getChosenHighlightedLine()
+        {
+            return chosenHighlightedLine;
+        }
+
+        /**
+         * @return Color of a highlighted chosen fold line.
+         */
+        public Color3f getChosenHighlightedLine3f()
+        {
+            return new Color3f(chosenHighlightedLine);
+        }
+
+        /**
+         * @param chosenHighlightedLine Color of a highlighted chosen fold line.
+         */
+        public void setChosenHighlightedLine(Color chosenHighlightedLine)
+        {
+            this.chosenHighlightedLine = chosenHighlightedLine;
+        }
+
+        /**
+         * @return Color of an old chosen fold line.
+         */
+        public Color getChosenOldLine()
+        {
+            return chosenOldLine;
+        }
+
+        /**
+         * @return Color of an old chosen fold line.
+         */
+        public Color3f getChosenOldLine3f()
+        {
+            return new Color3f(chosenOldLine);
+        }
+
+        /**
+         * @param chosenOldLine Color of an old chosen fold line.
+         */
+        public void setChosenOldLine(Color chosenOldLine)
+        {
+            this.chosenOldLine = chosenOldLine;
+        }
+
+        /**
+         * @return Color of a chosen point.
+         */
+        public Color getChosenPoint()
+        {
+            return chosenPoint;
+        }
+
+        /**
+         * @return Color of a chosen point.
+         */
+        public Color3f getChosenPoint3f()
+        {
+            return new Color3f(chosenPoint);
+        }
+
+        /**
+         * @param chosenPoint Color of a chosen point.
+         */
+        public void setChosenPoint(Color chosenPoint)
+        {
+            this.chosenPoint = chosenPoint;
+        }
+
+        /**
+         * @return Color of a highlighted chosen point.
+         */
+        public Color getChosenHighlightedPoint()
+        {
+            return chosenHighlightedPoint;
+        }
+
+        /**
+         * @return Color of a highlighted chosen point.
+         */
+        public Color3f getChosenHighlightedPoint3f()
+        {
+            return new Color3f(chosenHighlightedPoint);
+        }
+
+        /**
+         * @param chosenHighlightedPoint Color of a highlighted chosen point.
+         */
+        public void setChosenHighlightedPoint(Color chosenHighlightedPoint)
+        {
+            this.chosenHighlightedPoint = chosenHighlightedPoint;
+        }
+
+        /**
+         * @return Color of an old chosen point.
+         */
+        public Color getChosenOldPoint()
+        {
+            return chosenOldPoint;
+        }
+
+        /**
+         * @return Color of an old chosen point.
+         */
+        public Color3f getChosenOldPoint3f()
+        {
+            return new Color3f(chosenOldPoint);
+        }
+
+        /**
+         * @param chosenOldPoint Color of an old chosen point.
+         */
+        public void setChosenOldPoint(Color chosenOldPoint)
+        {
+            this.chosenOldPoint = chosenOldPoint;
+        }
     }
+
 }

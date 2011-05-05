@@ -12,20 +12,20 @@ import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
- * Angle argument.
+ * Integer argument.
  * 
  * @author Martin Pecka
  */
-public class AngleArgument extends OperationArgument implements TextInputDataReceiver
+public class IntegerArgument extends OperationArgument implements TextInputDataReceiver
 {
-    /** The angle. */
-    protected Double angle = null;
+    /** The integer. */
+    protected Integer integer = null;
 
     /**
      * @param required If true, this argument is required.
      * @param resourceBundleKey The key in "editor" resource bundle describing this operation argument.
      */
-    public AngleArgument(boolean required, String resourceBundleKey)
+    public IntegerArgument(boolean required, String resourceBundleKey)
     {
         super(required, resourceBundleKey);
     }
@@ -33,28 +33,28 @@ public class AngleArgument extends OperationArgument implements TextInputDataRec
     @Override
     public boolean isComplete()
     {
-        return angle != null;
+        return integer != null;
     }
 
     /**
-     * @return The angle.
+     * @return The integer.
      * 
      * @throws IllegalStateException If {@link #isComplete()} is false.
      */
-    public double getAngle() throws IllegalStateException
+    public int getInteger() throws IllegalStateException
     {
         if (!isComplete())
             throw new IllegalStateException("Cannot query properties of a non-completed argument.");
 
-        return angle;
+        return integer;
     }
 
     /**
-     * @param angle The angle to set.
+     * @param integer The integer to set.
      */
-    public void setAngle(double angle)
+    public void setAngle(int integer)
     {
-        this.angle = angle;
+        this.integer = integer;
     }
 
     @Override
@@ -70,17 +70,18 @@ public class AngleArgument extends OperationArgument implements TextInputDataRec
                 .get().getLocale());
         String input = "";
         while (input != null) {
-            // TODO make a better dialog to display
-            input = JOptionPane.showInputDialog(null, messages.getString("operation.argument.angle.message"),
-                    messages.getString("operation.argument.angle.title"), JOptionPane.QUESTION_MESSAGE);
+            input = JOptionPane.showInputDialog(null, messages.getString("operation.argument.integer.message"),
+                    messages.getString("operation.argument.integer.title"), JOptionPane.QUESTION_MESSAGE);
             if (input != null) {
                 try {
-                    angle = Double.parseDouble(input);
+                    integer = Integer.parseInt(input);
                     return;
                 } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null,
-                            messages.getString("operation.argument.angle.badnumber.message"),
-                            messages.getString("operation.argument.angle.badnumber.title"), JOptionPane.ERROR_MESSAGE);
+                    JOptionPane
+                            .showMessageDialog(null,
+                                    messages.getString("operation.argument.integer.badnumber.message"),
+                                    messages.getString("operation.argument.integer.badnumber.title"),
+                                    JOptionPane.ERROR_MESSAGE);
                 }
             }
         }

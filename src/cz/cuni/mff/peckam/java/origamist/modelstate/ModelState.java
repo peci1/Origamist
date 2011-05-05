@@ -9,6 +9,7 @@ import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -782,7 +783,7 @@ public class ModelState implements Cloneable
 
         // further we will need to search in layerInts, but the layers will probably change, so we backup the old
         // removed layers here
-        Hashtable<Layer, Layer> newLayersToOldOnes = new Hashtable<Layer, Layer>();
+        HashMap<Layer, Layer> newLayersToOldOnes = new HashMap<Layer, Layer>();
 
         // fill this queue with triangles from the new layers that need to be bent
         Queue<ModelTriangle> queue = new LinkedList<ModelTriangle>();
@@ -836,6 +837,15 @@ public class ModelState implements Cloneable
             }
         }
 
+        for (ModelTriangle t : triangles) {
+            if (!trianglesToLayers.containsKey(t))
+                System.err.println("1");
+            for (ModelTriangle n : t.getNeighbors()) {
+                if (!trianglesToLayers.containsKey(n))
+                    System.err.println("2");
+            }
+        }
+
         // to find all triangles that have to be rotated, first add all triangles in "affected" layers that lie in the
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
@@ -846,6 +856,9 @@ public class ModelState implements Cloneable
         Set<ModelTriangle> trianglesToRotate = new HashSet<ModelTriangle>();
         ModelTriangle t;
         while ((t = queue.poll()) != null) {
+            if (!trianglesToLayers.containsKey(t))
+                throw new IllegalStateException("Cannot find layer for triangle " + t);
+
             trianglesToRotate.add(t);
 
             // border is the intersection line in the layer of the processed triangle - if the triangle lies in a layer
@@ -861,6 +874,8 @@ public class ModelState implements Cloneable
             n: for (ModelTriangle n : neighbors) {
                 if (inQueue.contains(n))
                     continue;
+                if (!trianglesToLayers.containsKey(n))
+                    System.err.println("asd");
 
                 if (border != null) {
                     Segment3d intWithNeighbor = t.getCommonEdge(n, false);
@@ -893,6 +908,8 @@ public class ModelState implements Cloneable
         for (Layer l : layersToRotate) {
             // remove, rotate, and then add the triangles back to make sure all caches and maps will hold the correct
             // value
+            if (l == null)
+                continue;
             triangles.removeAll(l.getTriangles());
             l.rotate(segment, angle1);
             triangles.addAll(l.getTriangles());
@@ -1174,7 +1191,7 @@ public class ModelState implements Cloneable
      * @param segment The segment we search layers for.
      * @return A list of layers defined by the given line and the intersections with the fold stripe with those layers.
      */
-    protected LinkedHashMap<Layer, Segment3d> getLayers(final Segment3d segment)
+    public LinkedHashMap<Layer, Segment3d> getLayers(final Segment3d segment)
     {
         // finds the top layer
         final Point3d center = new Point3d(segment.getP1());
