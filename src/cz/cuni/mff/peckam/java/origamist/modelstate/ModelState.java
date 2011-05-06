@@ -837,15 +837,6 @@ public class ModelState implements Cloneable
             }
         }
 
-        for (ModelTriangle t : triangles) {
-            if (!trianglesToLayers.containsKey(t))
-                System.err.println("1");
-            for (ModelTriangle n : t.getNeighbors()) {
-                if (!trianglesToLayers.containsKey(n))
-                    System.err.println("2");
-            }
-        }
-
         // to find all triangles that have to be rotated, first add all triangles in "affected" layers that lie in the
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
@@ -874,8 +865,6 @@ public class ModelState implements Cloneable
             n: for (ModelTriangle n : neighbors) {
                 if (inQueue.contains(n))
                     continue;
-                if (!trianglesToLayers.containsKey(n))
-                    System.err.println("asd");
 
                 if (border != null) {
                     Segment3d intWithNeighbor = t.getCommonEdge(n, false);

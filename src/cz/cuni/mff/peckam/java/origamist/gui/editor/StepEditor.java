@@ -243,23 +243,9 @@ public class StepEditor extends StepRenderer
             return;
         }
 
-        final Callable<Void> callback = new Callable<Void>() {
-            @Override
-            public Void call() throws Exception
-            {
-                setStep(StepEditor.this.step); // rebuild the view
-                return null;
-            }
-        };
-
         additionalTransform = null;
 
-        if (this.step != step) {
-            if (step != null)
-                step.getModelStateInvalidationCallbacks().add(callback);
-            if (this.step != null)
-                this.step.getModelStateInvalidationCallbacks().remove(callback);
-        } else if (this.step != null && this.step.getAttachedTo() != null) {
+        if (this.step == step && this.step != null && this.step.getAttachedTo() != null) {
             // trans will hold the "additional" transform added by behaviors
             additionalTransform = new Transform3D(baseTransform);
             additionalTransform.invert();

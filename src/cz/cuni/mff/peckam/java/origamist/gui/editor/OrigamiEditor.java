@@ -986,17 +986,21 @@ public class OrigamiEditor extends CommonGui
                 public void run()
                 {
                     currentOperation.fillFromArguments();
-                    try {
-                        step.getOperations().add(currentOperation);
-                        step.getModelState();
-                        setCurrentOperation(null);
-                    } catch (RuntimeException e) {
-                        statusBar.showMessage("<html><span style=\"color:red;font-weight:bold\">"
-                                + editorMessages.getString("OrigamiEditor.invalidOperation").replaceAll("\\<", "&lt;")
-                                        .replaceAll(">", "&gt;") + "</span></html>", null);
-                        step.getOperations().remove(currentOperation);
-                        setCurrentOperation(null);
+                    step.getOperations().add(currentOperation);
+                    if (!step.isModelStateValid()) {
+                        try {
+                            step.getModelState();
+                        } catch (RuntimeException e) {
+                            statusBar.showMessage(
+                                    "<html><span style=\"color:red;font-weight:bold\">"
+                                            + editorMessages.getString("OrigamiEditor.invalidOperation")
+                                                    .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
+                                            + "</span></html>", null);
+                            step.getOperations().remove(currentOperation);
+                        }
+                        setStep(step);
                     }
+                    setCurrentOperation(null);
                     operationsList.repaint();
                 }
             }).start();
@@ -1342,6 +1346,8 @@ public class OrigamiEditor extends CommonGui
             if (origami == null) {
                 setOrigami(result);
             }
+            if (step != null && !step.isModelStateValid())
+                setStep(step);
         }
 
     }
@@ -1522,6 +1528,9 @@ public class OrigamiEditor extends CommonGui
             } else {
                 operations.remove(operations.size() - 1);
             }
+
+            if (!step.isModelStateValid())
+                setStep(step);
         }
     }
 
