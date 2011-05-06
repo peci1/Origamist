@@ -107,6 +107,9 @@ public class StepEditor extends StepRenderer
     /** The factory that creates groups for given model points. */
     protected PointFactory           pointFactory               = new PointFactory();
 
+    /** The factory that creates groups for given model lines. */
+    protected LineFactory            lineFactory                = new LineFactory();
+
     /** The list of (points/lines/layers - depends on pickMode) available by the last performed pick operation. */
     protected List<Group>            availableItems             = new LinkedList<Group>();
 
@@ -129,7 +132,13 @@ public class StepEditor extends StepRenderer
     protected List<Group>            chosen                     = new LinkedList<Group>();
 
     /** The elements chosen since the last call of {@link #setCurrentOperationArgument(OperationArgument)}. */
-    protected HashSet<Group>         currentChosen              = new HashSet<Group>();
+    protected Set<Group>             currentChosen              = new HashSet<Group>();
+
+    /** The set of lines added when choosing a line by selecting two points. */
+    protected Set<NewLine>           newLines                   = new HashSet<NewLine>();
+
+    /** The currently acite new line. */
+    protected NewLine                currentNewLine             = null;
 
     /** The type of primitves the user can pick. */
     protected PickMode               pickMode                   = PickMode.POINT;
@@ -262,6 +271,8 @@ public class StepEditor extends StepRenderer
         selectedPoints.clear();
         chosen.clear();
         currentChosen.clear();
+        newLines.clear();
+        currentNewLine = null;
         layersToChooseFrom = null;
         layersToChooseFromAsGroups = null;
     }
@@ -368,28 +379,8 @@ public class StepEditor extends StepRenderer
             lines.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             lines.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 
-            Appearance appearance3;
-            Shape3D shape;
             for (LineArray lineArray : lineArrays) {
-                BranchGroup group = new BranchGroup();
-                group.setBoundsAutoCompute(true);
-                group.setUserData(lineArray.getUserData()); // contains the layer
-                group.setPickable(true);
-                group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-                group.setCapability(BranchGroup.ALLOW_DETACH);
-                group.setCapability(BranchGroup.ALLOW_PARENT_READ);
-
-                ModelSegment segment = (ModelSegment) lineArray.getUserData();
-                appearance3 = createBasicLinesAppearance();
-                getLineAppearanceManager().alterBasicAppearance(appearance3, segment.getDirection(),
-                        step.getId() - segment.getOriginatingStepId());
-
-                shape = new Shape3D(lineArray, appearance3);
-
-                group.addChild(shape);
-                group.compile();
-
-                lines.addChild(group);
+                lines.addChild(lineFactory.createLine(lineArray, (ModelSegment) lineArray.getUserData()));
             }
             model.addChild(lines);
 
@@ -565,8 +556,11 @@ public class StepEditor extends StepRenderer
 
                 Point2d evtPos = new Point2d(x, y);
 
-                // if there are some selected points, add the close ones to the new available layers
-                for (Group g : selected) {
+                Set<Group> permanent = new HashSet<Group>(chosen);
+                permanent.addAll(selected);
+
+                // if there are some selected or chosen points, add the close ones to the new available layers
+                for (Group g : permanent) {
                     if (g.getUserData() instanceof ModelPoint) {
                         if (evtPos.distance(getPointCanvasPosition(g)) < tolerance && liesInSelectedLinesOrLayers(g)) {
                             points.add((ModelPoint) g.getUserData());
@@ -672,9 +666,10 @@ public class StepEditor extends StepRenderer
                 newAvailableItems.removeAll(snapPoints);
                 newAvailableItems.addAll(0, snapPoints);
 
+                // detach unused old points
                 availableItems.removeAll(newAvailableItems);
                 for (Group g : availableItems) {
-                    if (!selected.contains(g)) {
+                    if (!isPermanent(g)) {
                         ((BranchGroup) g).detach();
                     }
                 }
@@ -684,9 +679,16 @@ public class StepEditor extends StepRenderer
                 if (availableItems.size() > 0)
                     setHighlightedPoint(availableItems.get(0));
             }
-        } else if (highlighted != null) {
-            clearHighlighted();
-            clearAvailableItems();
+        } else {
+            if (highlighted != null) {
+                clearHighlighted();
+                clearAvailableItems();
+            }
+            if (currentNewLine != null && (!chosen.contains(currentNewLine.p1) || !chosen.contains(currentNewLine.p2))) {
+                currentNewLine.detach();
+                newLines.remove(currentNewLine);
+                currentNewLine = null;
+            }
         }
 
     }
@@ -930,6 +932,11 @@ public class StepEditor extends StepRenderer
             Group old = highlighted;
             highlighted = null;
             pointAppearanceManager.setAppearance(old);
+            if (currentNewLine != null && (!chosen.contains(currentNewLine.p1) || !chosen.contains(currentNewLine.p2))) {
+                currentNewLine.detach();
+                newLines.remove(currentNewLine);
+                currentNewLine = null;
+            }
         }
 
         if (point != null) {
@@ -937,6 +944,43 @@ public class StepEditor extends StepRenderer
             ((BranchGroup) highlighted).detach();
             highlightedPointGroup.addChild(highlighted);
             pointAppearanceManager.setAppearance(point);
+
+            if (currentOperationArgument != null && step != null && pickMode == PickMode.POINT
+                    && currentChosen.size() == 1 && currentOperationArgument.getClass() == LineArgument.class) {
+                Group p1 = currentChosen.iterator().next();
+                if (p1 != point && p1.getUserData() instanceof ModelPoint) {
+                    ModelSegment segment = new ModelSegment((ModelPoint) p1.getUserData(),
+                            (ModelPoint) point.getUserData(), null, step.getId());
+
+                    Point3d coord1 = new Point3d(), coord2 = new Point3d();
+                    ((PointArray) ((Shape3D) p1.getChild(0)).getGeometry()).getCoordinate(0, coord1);
+                    ((PointArray) ((Shape3D) point.getChild(0)).getGeometry()).getCoordinate(0, coord2);
+
+                    LineArray array = new LineArray(2, LineArray.COORDINATES);
+                    array.setCoordinate(0, coord1);
+                    array.setCoordinate(1, coord2);
+                    array.setUserData(segment);
+
+                    NewLine line = new NewLine();
+                    line.p1 = p1;
+                    line.p2 = point;
+
+                    lineFactory.createLine(array, segment, line);
+
+                    // give the line the highlighted appearance
+                    Group backup = highlighted;
+                    highlighted = line;
+                    currentChosen.add(line);
+                    getLineAppearanceManager().setAppearance(line);
+                    currentChosen.remove(line);
+                    highlighted = backup;
+
+                    overModel.addChild(line);
+
+                    currentNewLine = line;
+                    newLines.add(line);
+                }
+            }
         }
     }
 
@@ -1578,9 +1622,13 @@ public class StepEditor extends StepRenderer
                 setPickMode(pickMode.getNext());
             } else {
                 PickMode mode = pickMode.getNext();
-                if ((currentOperationArgument instanceof ExistingLineArgument || currentOperationArgument instanceof LayersArgument)
-                        && mode == PickMode.POINT)
+
+                if ((currentOperationArgument instanceof ExistingLineArgument) && mode == PickMode.POINT)
                     mode = mode.getNext();
+
+                if (currentOperationArgument instanceof LayersArgument)
+                    mode = PickMode.LAYER;
+
                 setPickMode(mode);
             }
         }
@@ -1983,6 +2031,61 @@ public class StepEditor extends StepRenderer
     }
 
     /**
+     * A factory for creating point groups from model lines.
+     * 
+     * @author Martin Pecka
+     */
+    protected class LineFactory
+    {
+        /**
+         * Create the group from the given line.
+         * 
+         * @param array The LineArray defining the line.
+         * @param segment The ModelSegment defining the line.
+         * @return The group.
+         */
+        public BranchGroup createLine(LineArray array, ModelSegment segment)
+        {
+            return createLine(array, segment, null);
+        }
+
+        /**
+         * Create the group from the given line.
+         * 
+         * @param array The LineArray defining the line.
+         * @param segment The ModelSegment defining the line.
+         * @param branchGroup The group to add the point to. If you pass <code>null</code>, a new group is created.
+         * @return The group.
+         */
+        public BranchGroup createLine(LineArray array, ModelSegment segment, BranchGroup branchGroup)
+        {
+            BranchGroup group;
+            if (branchGroup == null)
+                group = new BranchGroup();
+            else
+                group = branchGroup;
+
+            group.setBoundsAutoCompute(true);
+            group.setUserData(segment);
+            group.setPickable(true);
+            group.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+            group.setCapability(BranchGroup.ALLOW_DETACH);
+            group.setCapability(BranchGroup.ALLOW_PARENT_READ);
+
+            Appearance appearance = createBasicLinesAppearance();
+            getLineAppearanceManager().alterBasicAppearance(appearance, segment.getDirection(),
+                    step.getId() - segment.getOriginatingStepId());
+
+            Shape3D shape = new Shape3D(array, appearance);
+
+            group.addChild(shape);
+            group.compile();
+
+            return group;
+        }
+    }
+
+    /**
      * A manager for changing line appearance.
      * 
      * @author Martin Pecka
@@ -2006,7 +2109,11 @@ public class StepEditor extends StepRenderer
             Direction dir = seg.getDirection();
             int age = step.getId() - seg.getOriginatingStepId();
 
-            switch (getSelectionState(line)) {
+            SelectionState state = getSelectionState(line);
+            if (line instanceof NewLine && state == SelectionState.NORMAL)
+                state = SelectionState.CHOSEN;
+
+            switch (state) {
                 case NORMAL:
                     app.getColoringAttributes().setColor(getColorManager().getLine3f());
                     app.getTransparencyAttributes().setTransparency(0f);
@@ -2834,4 +2941,11 @@ public class StepEditor extends StepRenderer
         }
     }
 
+    protected class NewLine extends BranchGroup
+    {
+        /** The first point. */
+        public Group p1;
+        /** The second point. */
+        public Group p2;
+    }
 }
