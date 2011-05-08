@@ -321,7 +321,7 @@ public class Line2d implements Cloneable, Vector<Double>
     @Override
     public String toString()
     {
-        return "Line2d [" + a + "x + " + b + "y + " + c + " >= 0]";
+        return "Line2d [" + a + "x + " + b + "y + " + c + " = 0]";
     }
 
     /**

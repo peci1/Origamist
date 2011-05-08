@@ -137,7 +137,7 @@ public class StepEditor extends StepRenderer
     /** The set of lines added when choosing a line by selecting two points. */
     protected Set<NewLine>           newLines                   = new HashSet<NewLine>();
 
-    /** The currently acite new line. */
+    /** The currently active new line. */
     protected NewLine                currentNewLine             = null;
 
     /** The type of primitves the user can pick. */
@@ -582,6 +582,10 @@ public class StepEditor extends StepRenderer
                         continue main;
                     }
 
+                    // we don't want the currentNewLine to make snap points
+                    if (group == currentNewLine)
+                        continue main;
+
                     // we have picked a fold line
                     ModelSegment userSegment = (ModelSegment) group.getUserData();
 
@@ -676,8 +680,26 @@ public class StepEditor extends StepRenderer
 
                 availableItems = newAvailableItems;
 
-                if (availableItems.size() > 0)
-                    setHighlightedPoint(availableItems.get(0));
+                if (availableItems.size() > 0) {
+                    int index = 0;
+                    if (isChoosingSecondPoint()) {
+                        // if the user chooses a second point of a line, highlight the points that can be chosen
+                        boolean foundChoosable = false;
+                        for (; index < availableItems.size(); index++) {
+                            if (availableItems.get(index).getUserData() instanceof ModelPoint) {
+                                if (step.getModelState().canChooseLine(
+                                        (ModelPoint) currentChosen.iterator().next().getUserData(),
+                                        (ModelPoint) availableItems.get(index).getUserData())) {
+                                    foundChoosable = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!foundChoosable)
+                            index = 0;
+                    }
+                    setHighlightedPoint(availableItems.get(index));
+                }
             }
         } else {
             if (highlighted != null) {
@@ -940,13 +962,19 @@ public class StepEditor extends StepRenderer
         }
 
         if (point != null) {
+            boolean choosingSecondPoint = isChoosingSecondPoint();
+
+            if (choosingSecondPoint
+                    && !step.getModelState().canChooseLine((ModelPoint) currentChosen.iterator().next().getUserData(),
+                            (ModelPoint) point.getUserData()))
+                return;
+
             highlighted = point;
             ((BranchGroup) highlighted).detach();
             highlightedPointGroup.addChild(highlighted);
             pointAppearanceManager.setAppearance(point);
 
-            if (currentOperationArgument != null && step != null && pickMode == PickMode.POINT
-                    && currentChosen.size() == 1 && currentOperationArgument.getClass() == LineArgument.class) {
+            if (choosingSecondPoint) {
                 Group p1 = currentChosen.iterator().next();
                 if (p1 != point && p1.getUserData() instanceof ModelPoint) {
                     ModelSegment segment = new ModelSegment((ModelPoint) p1.getUserData(),
@@ -1508,7 +1536,15 @@ public class StepEditor extends StepRenderer
     public void clearChosenItems()
     {
         clearChosen();
+    }
 
+    /**
+     * @return True if the user is currently choosing the second point of a line.
+     */
+    public boolean isChoosingSecondPoint()
+    {
+        return currentOperationArgument != null && step != null && pickMode == PickMode.POINT
+                && currentChosen.size() == 1 && currentOperationArgument.getClass() == LineArgument.class;
     }
 
     @Override

@@ -24,7 +24,7 @@ public class ModelTriangleEdge implements Cloneable
      * Create a "weak" reference to the given triangle's edge with the given index.
      * 
      * @param triangle The triangle this class works with.
-     * @param edgeIndex The index of the edge - 0 is edge p1-p2, 1 is edge p2-p3, 2 is edge p1-p3.
+     * @param edgeIndex The index of the edge - 0 is edge p1-p2, 1 is edge p2-p3, 2 is edge p3-p1.
      */
     public ModelTriangleEdge(ModelTriangle triangle, int edgeIndex)
     {
@@ -61,6 +61,23 @@ public class ModelTriangleEdge implements Cloneable
                 return triangle.getOriginalPosition().getS2();
             case 2:
                 return triangle.getOriginalPosition().getS3();
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * @return The model segment corresponding to this edge.
+     */
+    public ModelSegment getSegment()
+    {
+        switch (index) {
+            case 0:
+                return new ModelSegment(triangle.getS1(), triangle.getOriginalPosition().getS1(), null, 0);
+            case 1:
+                return new ModelSegment(triangle.getS2(), triangle.getOriginalPosition().getS2(), null, 0);
+            case 2:
+                return new ModelSegment(triangle.getS3(), triangle.getOriginalPosition().getS3(), null, 0);
             default:
                 return null;
         }

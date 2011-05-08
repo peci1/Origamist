@@ -28,6 +28,7 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point2f;
 import javax.vecmath.Point3d;
 import javax.vecmath.TexCoord2f;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
@@ -1298,7 +1299,7 @@ public class ModelState implements Cloneable
      * 
      * @return The intersections of the given segment with the layer.
      */
-    protected List<Segment3d> makeFoldInLayer(Layer layer, Direction direction, Segment3d segment)
+    protected List<? extends Segment3d> makeFoldInLayer(Layer layer, Direction direction, Segment3d segment)
     {
         List<IntersectionWithTriangle<ModelTriangle>> intersections = layer.getIntersectionsWithTriangles(segment);
 
@@ -1662,6 +1663,90 @@ public class ModelState implements Cloneable
         }
 
         return result;
+    }
+
+    /**
+     * Return true if the line composed of the given points goes only through connected parallel layers.
+     * 
+     * @param p1 Start point.
+     * @param p2 End point.
+     * @return true if the line composed of the given points goes only through connected parallel layers.
+     */
+    public boolean canChooseLine(ModelPoint p1, ModelPoint p2)
+    {
+        ModelSegment seg = new ModelSegment(p1, p2, null, 0);
+        List<ModelSegment> ints = new LinkedList<ModelSegment>();
+
+        // get intersections with all layers
+        for (Layer l : layers) {
+            if (abs(l.getNormal().dot(seg.getVector())) <= EPSILON && l.getPlane().contains(seg.getP1())) {
+                ints.addAll(l.getIntersections(seg));
+            }
+        }
+
+        // this condition should never be satisfied, but false is the correct answer anyways
+        if (ints.size() == 0)
+            return false;
+
+        // the directions as lines
+        Line3d dir3d = new Line3d(seg);
+        Line2d dir2d = new Line2d(seg.getOriginal());
+
+        Vector3d zero = new Vector3d();
+        Vector2d zero2d = new Vector2d();
+
+        // discard all intersections not having the right direction
+        for (Iterator<ModelSegment> it = ints.iterator(); it.hasNext();) {
+            ModelSegment s = it.next();
+            if ((!s.getVector().epsilonEquals(zero, EPSILON) && !dir3d.isParallelTo(s)) || !dir3d.contains(s.getP1())) {
+                it.remove();
+                continue;
+            }
+            if ((!s.getOriginal().getVector().epsilonEquals(zero2d, EPSILON) && !dir2d.isParallelTo(s.getOriginal()))
+                    || !dir2d.contains(s.getOriginal().getP1())) {
+                it.remove();
+                continue;
+            }
+        }
+
+        if (ints.size() == 0)
+            return false;
+
+        // now we want to find out if all the found intersections can be merged to a single line
+
+        // so we sort them by 2D coordinates and then try to merge them in the sorted order
+        // if the lines can be merged, this sort always sorts them in the way that the segments being one next to the
+        // other in real, are succeeding in this list; on the other side, if the segments can't be merged into one line,
+        // the order has no meaning
+        Collections.sort(ints, new Comparator<ModelSegment>() {
+            @Override
+            public int compare(ModelSegment o1, ModelSegment o2)
+            {
+                Point2d o1p1 = o1.getOriginal().getP1();
+                Point2d o2p1 = o2.getOriginal().getP1();
+
+                if (o1p1.x < o2p1.x + EPSILON)
+                    return -1;
+
+                if (o1p1.x + EPSILON > o2p1.x)
+                    return 1;
+
+                if (o1p1.y < o2p1.y + EPSILON)
+                    return -1;
+
+                if (o1p1.y + EPSILON > o2p1.y)
+                    return 1;
+
+                return 0;
+            }
+        });
+
+        // try to merge the sorted results into one line
+        while (ints.size() > 1 && ints.get(0).merge(ints.get(1)))
+            ints.remove(1);
+
+        // a line can only by selected if it can be merged into one piece
+        return ints.size() == 1 && ints.get(0).epsilonEquals(seg, true);
     }
 
     /**

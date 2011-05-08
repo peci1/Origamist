@@ -8,6 +8,7 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
+import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 
@@ -68,6 +69,19 @@ public class ModelSegment extends Segment3d
     public ModelSegment(ModelPoint p1, ModelPoint p2, Direction direction, int originatingStepId)
     {
         this(new Segment3d(p1, p2), new Segment2d(p1.getOriginal(), p2.getOriginal()), direction, originatingStepId);
+    }
+
+    /**
+     * @param inter Intersection with model triangle to create this segment from.
+     * @param direction The direction of the segment. MOUNTAIN/VALLEY is related to the front side of the paper,
+     *            <code>null</code> means that this is an older segment that doesn't need to signalize if it is MOUNTAIN
+     *            or VALLEY.
+     * @param originatingStepId Id of the step "this segment was last touched".
+     */
+    public ModelSegment(IntersectionWithTriangle<ModelTriangle> inter, Direction direction, int originatingStepId)
+    {
+        this(inter, new Segment2d(((ModelPoint) inter.getPoint(0)).getOriginal(),
+                ((ModelPoint) inter.getPoint(1)).getOriginal()), direction, originatingStepId);
     }
 
     /**
@@ -231,6 +245,17 @@ public class ModelSegment extends Segment3d
         if (originatingStepId != other.originatingStepId)
             return false;
         return true;
+    }
+
+    /**
+     * @param other The line to compare.
+     * @param allowInverseDirection If true, even two segments with inverted direction will be considered equal.
+     * @return If the segments are epsilon-equal in both 3D and 2D.
+     */
+    public boolean epsilonEquals(ModelSegment other, boolean allowInverseDirection)
+    {
+        return super.epsilonEquals(other, allowInverseDirection)
+                && other.getOriginal().epsilonEquals(original, allowInverseDirection);
     }
 
     @Override

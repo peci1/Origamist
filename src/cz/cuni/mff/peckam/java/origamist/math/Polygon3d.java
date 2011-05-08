@@ -21,6 +21,8 @@ import java.util.Set;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelTriangle;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.Observer;
@@ -517,7 +519,7 @@ public class Polygon3d<T extends Triangle3d>
      * @return the segments that are the intersection of the given line and this polygon. If a part of the intersection
      *         would be a point, then a segment with zero direction vector will appear in the list.
      */
-    public List<Segment3d> getIntersections(Line3d line)
+    public List<? extends Segment3d> getIntersections(Line3d line)
     {
         // connect all segments that can be connected into one new segment
         List<IntersectionWithTriangle<T>> intersections = getIntersectionsWithTriangles(line);
@@ -531,7 +533,7 @@ public class Polygon3d<T extends Triangle3d>
      * @return The intersections of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
      *         this polygon or has its direction vector parallel to this polygon.
      */
-    public List<Segment3d> getIntersections(Stripe3d stripe)
+    public List<? extends Segment3d> getIntersections(Stripe3d stripe)
     {
         Line3d stripePlaneAndPolygonPlaneInt = stripe.getPlane().getIntersection(getPlane());
         if (stripePlaneAndPolygonPlaneInt == null)
@@ -563,7 +565,7 @@ public class Polygon3d<T extends Triangle3d>
      */
     public Segment3d getIntersectionSegment(Stripe3d stripe)
     {
-        List<Segment3d> ints = getIntersections(stripe);
+        List<? extends Segment3d> ints = getIntersections(stripe);
         if (ints == null || ints.size() == 0)
             return null;
         Point3d int1 = ints.get(0).getP1();
@@ -579,7 +581,7 @@ public class Polygon3d<T extends Triangle3d>
      * @param segments The list of segments to join.
      * @return The list of joined segments.
      */
-    public List<Segment3d> joinNeighboringSegments(List<IntersectionWithTriangle<T>> segments)
+    public List<? extends Segment3d> joinNeighboringSegments(List<IntersectionWithTriangle<T>> segments)
     {
         LinkedList<Segment3d> result = new LinkedList<Segment3d>();
 
@@ -622,6 +624,15 @@ public class Polygon3d<T extends Triangle3d>
 
         for (T t : triangles) {
             Segment3d intersection = t.getIntersection(line);
+            // a simplified check if the 2D triangle also intersects with the 2D triangle
+            if (line instanceof ModelSegment && t instanceof ModelTriangle) {
+                Triangle2d t2 = ((ModelTriangle) t).getOriginalPosition();
+                Segment2d s2 = ((ModelSegment) line).getOriginal();
+                if (t2.getS1().getIntersection(s2) == null && t2.getS2().getIntersection(s2) == null
+                        && t2.getS3().getIntersection(s2) == null) {
+                    intersection = null;
+                }
+            }
 
             // this is important to be robust against rounding errors - in most cases we don't handle segments starting
             // or ending inside triangles, and if we encounter such a segment, it is probably due to rounding errors
