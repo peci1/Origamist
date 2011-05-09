@@ -161,6 +161,9 @@ public class StepEditor extends StepRenderer
     /** The transform added by behaviors. */
     protected Transform3D            additionalTransform        = null;
 
+    /** The set of layers the currently highlighted point lies in. */
+    protected Set<Group>             layersForHighlightedPoint  = null;
+
     {
         updatePickCanvas();
         updateTransforms();
@@ -275,6 +278,7 @@ public class StepEditor extends StepRenderer
         currentNewLine = null;
         layersToChooseFrom = null;
         layersToChooseFromAsGroups = null;
+        layersForHighlightedPoint = null;
     }
 
     @Override
@@ -779,6 +783,8 @@ public class StepEditor extends StepRenderer
      */
     protected SelectionState getSelectionState(Group group)
     {
+        boolean isAvailable = (layersForHighlightedPoint != null && layersForHighlightedPoint.contains(group))
+                || (layersToChooseFromAsGroups != null && layersToChooseFromAsGroups.contains(group));
         SelectionState state;
         if (currentChosen.contains(group)) {
             if (highlighted == group)
@@ -788,16 +794,22 @@ public class StepEditor extends StepRenderer
         } else if (chosen.contains(group)) {
             if (highlighted == group)
                 state = SelectionState.CHOSEN_HIGHLIGHTED;
+            else if (isAvailable)
+                state = SelectionState.AVAILABLE;
             else
                 state = SelectionState.CHOSEN_OLD;
         } else if (selected.contains(group)) {
             if (highlighted == group)
                 state = SelectionState.SELECTED_HIGHLIGHTED;
+            else if (isAvailable)
+                state = SelectionState.AVAILABLE;
             else
                 state = SelectionState.SELECTED;
         } else {
             if (highlighted == group)
                 state = SelectionState.HIGHLIGHTED;
+            else if (isAvailable)
+                state = SelectionState.AVAILABLE;
             else
                 state = SelectionState.NORMAL;
         }
@@ -959,11 +971,19 @@ public class StepEditor extends StepRenderer
                 newLines.remove(currentNewLine);
                 currentNewLine = null;
             }
+
+            if (layersForHighlightedPoint != null) {
+                Set<Group> tmp = new HashSet<Group>(layersForHighlightedPoint);
+                layersForHighlightedPoint = null;
+                for (Group g : tmp)
+                    layerAppearanceManager.setAppearance(g);
+            }
         }
 
         if (point != null) {
             boolean choosingSecondPoint = isChoosingSecondPoint();
 
+            // if we select the second point of a line and the line isn't choosable, return
             if (choosingSecondPoint
                     && !step.getModelState().canChooseLine((ModelPoint) currentChosen.iterator().next().getUserData(),
                             (ModelPoint) point.getUserData()))
@@ -973,6 +993,17 @@ public class StepEditor extends StepRenderer
             ((BranchGroup) highlighted).detach();
             highlightedPointGroup.addChild(highlighted);
             pointAppearanceManager.setAppearance(point);
+
+            // suggest the layers the point lies in
+            layersForHighlightedPoint = new HashSet<Group>();
+            for (@SuppressWarnings("unchecked")
+            Enumeration<Group> e = layers.getAllChildren(); e.hasMoreElements();) {
+                Group g = e.nextElement();
+                if (((Layer) g.getUserData()).contains((Point3d) point.getUserData())) {
+                    layersForHighlightedPoint.add(g);
+                    layerAppearanceManager.setAppearance(g);
+                }
+            }
 
             if (choosingSecondPoint) {
                 Group p1 = currentChosen.iterator().next();
@@ -1381,6 +1412,10 @@ public class StepEditor extends StepRenderer
      */
     protected Point2d getPointCanvasPosition(Group point)
     {
+        // only live points have on-screen position
+        if (!point.isLive())
+            return new Point2d(0, 0);
+
         Point3d gPoint = new Point3d();
         ((PointArray) ((Shape3D) point.getChild(0)).getGeometry()).getCoordinate(0, gPoint);
 
@@ -1430,14 +1465,20 @@ public class StepEditor extends StepRenderer
                         dictionary.put((Layer) g.getUserData(), g);
                 }
 
-                for (Layer l : layersToChooseFrom)
-                    layersToChooseFromAsGroups.add(dictionary.get(l));
-
-                // TODO color the available layers
+                for (Layer l : layersToChooseFrom) {
+                    Group g = dictionary.get(l);
+                    layersToChooseFromAsGroups.add(g);
+                    layerAppearanceManager.setAppearance(g);
+                }
             }
         } else {
             layersToChooseFrom = null;
-            layersToChooseFromAsGroups = null;
+            if (layersToChooseFromAsGroups != null) {
+                Set<Group> tmp = new HashSet<Group>(layersToChooseFromAsGroups);
+                layersToChooseFromAsGroups = null;
+                for (Group g : tmp)
+                    layerAppearanceManager.setAppearance(g);
+            }
         }
 
         if (currentOperationArgument != null && currentOperationArgument.preferredPickMode() != null)
@@ -1814,7 +1855,9 @@ public class StepEditor extends StepRenderer
         /** Chosen highlighted item. */
         CHOSEN_HIGHLIGHTED,
         /** Chosen item that isn't in currentChosen. */
-        CHOSEN_OLD
+        CHOSEN_OLD,
+        /** An available (or suggested) item. */
+        AVAILABLE
     }
 
     /**
@@ -1882,6 +1925,12 @@ public class StepEditor extends StepRenderer
                     app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
                     app.getTransparencyAttributes().setTransparency(0f);
                     break;
+                case AVAILABLE:
+                    app.getColoringAttributes().setColor(getColorManager().getAvailableLayer3f());
+                    app.getPolygonAttributes().setPolygonOffset(-16000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-16000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
+                    break;
             }
 
             shape = (Shape3D) children.nextElement();
@@ -1929,6 +1978,12 @@ public class StepEditor extends StepRenderer
                     app.getPolygonAttributes().setPolygonOffset(-20000f);
                     app.getPolygonAttributes().setPolygonOffsetFactor(-20000f);
                     app.getTransparencyAttributes().setTransparency(0f);
+                    break;
+                case AVAILABLE:
+                    app.getColoringAttributes().setColor(getColorManager().getAvailableLayer3f());
+                    app.getPolygonAttributes().setPolygonOffset(-16000f);
+                    app.getPolygonAttributes().setPolygonOffsetFactor(-16000f);
+                    app.getTransparencyAttributes().setTransparency(0.3f);
                     break;
             }
         }
@@ -2291,6 +2346,8 @@ public class StepEditor extends StepRenderer
         protected Color chosenHighlightedPoint   = new Color(250, 255, 150);
         /** Color of an old chosen point. */
         protected Color chosenOldPoint           = new Color(150, 200, 100);
+        /** Color of an available layer. */
+        protected Color availableLayer           = new Color(255, 130, 0);
 
         /**
          * @param background Paper background color.
@@ -2974,6 +3031,30 @@ public class StepEditor extends StepRenderer
         public void setChosenOldPoint(Color chosenOldPoint)
         {
             this.chosenOldPoint = chosenOldPoint;
+        }
+
+        /**
+         * @return Color of an available layer.
+         */
+        public Color getAvailableLayer()
+        {
+            return availableLayer;
+        }
+
+        /**
+         * @return Color of an available layer.
+         */
+        public Color3f getAvailableLayer3f()
+        {
+            return new Color3f(availableLayer);
+        }
+
+        /**
+         * @param availableLayer Color of an available layer.
+         */
+        public void setAvailableLayer(Color availableLayer)
+        {
+            this.availableLayer = availableLayer;
         }
     }
 
