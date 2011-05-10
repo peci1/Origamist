@@ -32,7 +32,7 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
 {
 
     @Override
-    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
+    public ModelState getModelState(ModelState previousState, boolean withDelayed) throws InvalidOperationException
     {
         Direction dir = Direction.MOUNTAIN;
 
@@ -55,10 +55,11 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         }
 
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
-        previousState.makeFold(dir, line.getP1(), line.getP2(), refPoint, layer, angle);
+        previousState.makeFold(dir, line.getP1(), line.getP2(), refPoint, layer, angle, withDelayed);
 
         dir = dir.getOpposite();
-        previousState.makeFold(dir, secondLine.getP1(), secondLine.getP2(), refPoint, secondLayer, secondAngle);
+        previousState.makeFold(dir, secondLine.getP1(), secondLine.getP2(), refPoint, secondLayer, secondAngle,
+                withDelayed);
 
         return previousState;
     }

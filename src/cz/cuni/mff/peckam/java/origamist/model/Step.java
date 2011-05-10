@@ -38,38 +38,43 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
 {
 
     /** The previous property. */
-    public static final String                PREVIOUS_PROPERTY = "previous:cz.cuni.mff.peckam.java.origamist.model.Step";
+    public static final String                PREVIOUS_PROPERTY               = "previous:cz.cuni.mff.peckam.java.origamist.model.Step";
 
     /** The next property. */
-    public static final String                NEXT_PROPERTY     = "next:cz.cuni.mff.peckam.java.origamist.model.Step";
+    public static final String                NEXT_PROPERTY                   = "next:cz.cuni.mff.peckam.java.origamist.model.Step";
 
     /**
      * The hastable for more comfortable search in localized descriptions.
      */
-    protected final Hashtable<Locale, String> descriptions      = new Hashtable<Locale, String>();
+    protected final Hashtable<Locale, String> descriptions                    = new Hashtable<Locale, String>();
 
     /**
-     * The cached model state after performing this step.
+     * The cached model state after performing this step (without delayed operations).
      */
-    protected ModelState                      modelState        = null;
+    protected ModelState                      modelState                      = null;
+
+    /**
+     * The cached model state after performing this step (with delayed operations).
+     */
+    protected ModelState                      modelStateWithDelayedOperations = null;
 
     /**
      * If this is the first step, use this model state as the previous one.
      */
-    protected ModelState                      defaultModelState = null;
+    protected ModelState                      defaultModelState               = null;
 
     /**
      * The step preceeding this one. If this is the first one, previous is null.
      */
-    protected Step                            previous          = null;
+    protected Step                            previous                        = null;
 
     /**
      * The step succeeding this one. If this is the last one, next is null.
      */
-    protected Step                            next              = null;
+    protected Step                            next                            = null;
 
     /** The {@link Steps} object this step is part of. */
-    protected Steps                           steps             = null;
+    protected Steps                           steps                           = null;
 
     /**
      * Create a new step.
@@ -150,41 +155,74 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     /**
      * Perform folding from the previous step's state to a new state by this step.
      * 
+     * @param withDelayed Whether to get the model state with or without delayed operations.
      * @return The state the model would have after performing this step.
      * 
      * @throws InvalidOperationException If an operation cannot be done.
      */
-    public synchronized ModelState getModelState() throws InvalidOperationException
+    public synchronized ModelState getModelState(boolean withDelayed) throws InvalidOperationException
     {
-        if (this.modelState != null)
-            return this.modelState;
+        if (!withDelayed) {
+            if (this.modelState != null)
+                return this.modelState;
 
-        if (previous != null) {
-            this.modelState = previous.getModelState().clone();
+            if (previous != null) {
+                this.modelState = previous.getModelState(true).clone();
+            } else {
+                if (this.defaultModelState == null) {
+                    throw new IllegalStateException("Cannot create the default model state for step " + getId());
+                }
+                this.modelState = this.defaultModelState.clone();
+            }
+
+            this.modelState.proceedToNextStep();
+
+            this.modelState.setStep(this);
+            if (operations == null)
+                return this.modelState;
+
+            for (Operation o : operations) {
+                try {
+                    this.modelState = o.getModelState(this.modelState, false);
+                } catch (InvalidOperationException e) {
+                    if (e.getOperation() == null)
+                        e.setOperation(o);
+                    throw e;
+                }
+            }
+
+            return this.modelState;
         } else {
-            if (this.defaultModelState == null) {
-                throw new IllegalStateException("Cannot create the default model state for step " + getId());
+            if (this.modelStateWithDelayedOperations != null)
+                return this.modelStateWithDelayedOperations;
+
+            if (previous != null) {
+                this.modelStateWithDelayedOperations = previous.getModelState(true).clone();
+            } else {
+                if (this.defaultModelState == null) {
+                    throw new IllegalStateException("Cannot create the default model state for step " + getId());
+                }
+                this.modelStateWithDelayedOperations = this.defaultModelState.clone();
             }
-            this.modelState = this.defaultModelState.clone();
-        }
 
-        this.modelState.proceedToNextStep();
+            this.modelStateWithDelayedOperations.proceedToNextStep();
 
-        this.modelState.setStep(this);
-        if (operations == null)
-            return this.modelState;
+            this.modelStateWithDelayedOperations.setStep(this);
+            if (operations == null)
+                return this.modelStateWithDelayedOperations;
 
-        for (Operation o : operations) {
-            try {
-                this.modelState = o.getModelState(this.modelState);
-            } catch (InvalidOperationException e) {
-                if (e.getOperation() == null)
-                    e.setOperation(o);
-                throw e;
+            for (Operation o : operations) {
+                try {
+                    this.modelStateWithDelayedOperations = o.getModelState(this.modelStateWithDelayedOperations, true);
+                } catch (InvalidOperationException e) {
+                    if (e.getOperation() == null)
+                        e.setOperation(o);
+                    throw e;
+                }
             }
-        }
 
-        return this.modelState;
+            return this.modelStateWithDelayedOperations;
+        }
     }
 
     /**
@@ -259,14 +297,18 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     protected void invalidateThisModelState()
     {
         this.modelState = null;
+        this.modelStateWithDelayedOperations = null;
     }
 
     /**
+     * Check if the model state is valid.
+     * 
+     * @param withDelayed Whether to check the model state with or without delayed operations.
      * @return True if the model state is still valid.
      */
-    public boolean isModelStateValid()
+    public boolean isModelStateValid(boolean withDelayed)
     {
-        return modelState != null;
+        return (!withDelayed && modelState != null) || (withDelayed && modelStateWithDelayedOperations != null);
     }
 
     @Override

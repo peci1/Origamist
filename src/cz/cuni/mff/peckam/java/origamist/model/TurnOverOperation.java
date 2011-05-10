@@ -13,9 +13,9 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 public class TurnOverOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.TurnOverOperation
 {
     @Override
-    public ModelState getModelState(ModelState previousState)
+    public ModelState getModelState(ModelState previousState, boolean withDelayed)
     {
-        previousState.flipViewingAngle();
+        previousState.flipViewingAngle(withDelayed);
         return previousState;
     }
 

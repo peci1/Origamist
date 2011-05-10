@@ -18,10 +18,10 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.RotateOperation
 {
     @Override
-    public ModelState getModelState(ModelState previousState)
+    public ModelState getModelState(ModelState previousState, boolean withDelayed)
     {
         // TODO handle <refPoint>
-        previousState.addRotation(-this.angle);
+        previousState.addRotation(-this.angle, withDelayed);
         return previousState;
     }
 

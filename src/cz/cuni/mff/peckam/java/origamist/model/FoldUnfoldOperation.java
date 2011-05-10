@@ -21,13 +21,14 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldUnfoldOperation
 {
     @Override
-    public ModelState getModelState(ModelState previousState)
+    public ModelState getModelState(ModelState previousState, boolean withDelayed)
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD)
             dir = dir.getOpposite();
 
-        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), null, layer, 0);
+        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), null, layer, 0,
+                withDelayed);
 
         return previousState;
     }

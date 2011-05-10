@@ -21,7 +21,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextArgument;
 public class MarkerOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.MarkerOperation
 {
     @Override
-    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
+    public ModelState getModelState(ModelState previousState, boolean withDelayed) throws InvalidOperationException
     {
         previousState.addMarker(refPoint.toPoint2d(), text, stepsToHide);
         return previousState;

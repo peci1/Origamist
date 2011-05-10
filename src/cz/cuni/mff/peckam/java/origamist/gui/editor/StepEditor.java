@@ -346,7 +346,7 @@ public class StepEditor extends StepRenderer
     protected TransformGroup setupTGroup() throws InvalidOperationException
     {
         try {
-            ModelState state = step.getModelState();
+            ModelState state = getModelState();
 
             tGroup = new TransformGroup();
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
@@ -433,6 +433,12 @@ public class StepEditor extends StepRenderer
             // TODO create an ErrorTransformGroup that would signalize to the user that an operation is invalid
             throw e;
         }
+    }
+
+    @Override
+    protected ModelState getModelState()
+    {
+        return step != null ? step.getModelState(true) : null;
     }
 
     /**
@@ -702,7 +708,7 @@ public class StepEditor extends StepRenderer
                         boolean foundChoosable = false;
                         for (; index < availableItems.size(); index++) {
                             if (availableItems.get(index).getUserData() instanceof ModelPoint) {
-                                if (step.getModelState().canChooseLine(
+                                if (getModelState().canChooseLine(
                                         (ModelPoint) currentChosen.iterator().next().getUserData(),
                                         (ModelPoint) availableItems.get(index).getUserData())) {
                                     foundChoosable = true;
@@ -996,7 +1002,7 @@ public class StepEditor extends StepRenderer
 
             // if we select the second point of a line and the line isn't choosable, return
             if (choosingSecondPoint
-                    && !step.getModelState().canChooseLine((ModelPoint) currentChosen.iterator().next().getUserData(),
+                    && !getModelState().canChooseLine((ModelPoint) currentChosen.iterator().next().getUserData(),
                             (ModelPoint) point.getUserData()))
                 return;
 
@@ -1459,8 +1465,8 @@ public class StepEditor extends StepRenderer
         if (currentOperationArgument instanceof LayersArgument) {
             LayersArgument arg = (LayersArgument) currentOperationArgument;
             if (arg.isRequired() || arg.isDefLineComplete()) {
-                layersToChooseFrom = new LinkedList<Layer>(step.getModelState()
-                        .getLayers(((LayersArgument) currentOperationArgument).getDefSegment()).keySet());
+                layersToChooseFrom = new LinkedList<Layer>(getModelState().getLayers(
+                        ((LayersArgument) currentOperationArgument).getDefSegment()).keySet());
 
                 // layersToChooseFromAsGroups have to be sorted in the same way as layersToChooseFrom
                 layersToChooseFromAsGroups = new LinkedList<Group>();

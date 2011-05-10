@@ -305,6 +305,14 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * @return The model state of the current step.
+     */
+    protected ModelState getModelState()
+    {
+        return step != null ? step.getModelState(false) : null;
+    }
+
+    /**
      * @return The common attributes of polygons to use for rendering.
      */
     protected PolygonAttributes createPolygonAttributes()
@@ -379,7 +387,7 @@ public class StepRenderer extends JPanel
             int w = buffer.getWidth();
             int h = buffer.getHeight();
             ModelSegment segment;
-            for (LineArray array : step.getModelState().getLineArrays()) {
+            for (LineArray array : getModelState().getLineArrays()) {
                 segment = (ModelSegment) array.getUserData();
                 graphics.setStroke(strokeFactory.getForDirection(segment.getDirection(),
                         step.getId() - segment.getOriginatingStepId()));
@@ -406,7 +414,7 @@ public class StepRenderer extends JPanel
             int w = buffer.getWidth();
             int h = buffer.getHeight();
             ModelSegment segment;
-            for (LineArray array : step.getModelState().getLineArrays()) {
+            for (LineArray array : getModelState().getLineArrays()) {
                 segment = (ModelSegment) array.getUserData();
                 graphics.setStroke(strokeFactory.getForDirection(segment.getDirection() == null ? null : segment
                         .getDirection().getOpposite(), step.getId() - segment.getOriginatingStepId()));
@@ -518,7 +526,7 @@ public class StepRenderer extends JPanel
      */
     protected Transform3D setupTransform() throws InvalidOperationException
     {
-        ModelState state = step.getModelState();
+        ModelState state = getModelState();
 
         ViewInfo vi = new ViewInfo(offscreenCanvas.getView());
         Transform3D imagePlateToVworld = new Transform3D();
@@ -579,7 +587,7 @@ public class StepRenderer extends JPanel
      */
     protected TransformGroup getMarkerGroups()
     {
-        ModelState state = step.getModelState();
+        ModelState state = getModelState();
         final TransformGroup result = new TransformGroup();
 
         double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
@@ -634,7 +642,7 @@ public class StepRenderer extends JPanel
     protected TransformGroup setupTGroup() throws InvalidOperationException
     {
         try {
-            ModelState state = step.getModelState();
+            ModelState state = getModelState();
 
             tGroup = new TransformGroup();
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);

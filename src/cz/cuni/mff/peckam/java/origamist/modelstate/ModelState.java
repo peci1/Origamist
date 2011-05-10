@@ -567,11 +567,12 @@ public class ModelState implements Cloneable
      * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
      *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
      *            paper will be moved.
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
     public void makeFold(Direction direction, Point2d startPoint, Point2d endPoint, List<Integer> affectedLayers,
-            double angle)
+            double angle, boolean withDelayed)
     {
-        makeFold(direction, startPoint, endPoint, null, affectedLayers, angle, null);
+        makeFold(direction, startPoint, endPoint, null, affectedLayers, angle, null, withDelayed);
     }
 
     /**
@@ -586,11 +587,12 @@ public class ModelState implements Cloneable
      * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
      *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
      *            paper will be moved.
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
     public void makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            List<Integer> affectedLayers, double angle)
+            List<Integer> affectedLayers, double angle, boolean withDelayed)
     {
-        makeFold(direction, startPoint, endPoint, refPoint, affectedLayers, angle, null);
+        makeFold(direction, startPoint, endPoint, refPoint, affectedLayers, angle, null, withDelayed);
     }
 
     /**
@@ -607,11 +609,12 @@ public class ModelState implements Cloneable
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
     public void makeFold(Direction direction, Point2d startPoint, Point2d endPoint, List<Integer> affectedLayers,
-            double angle, Map<Layer, Segment3d> foundAffectedLayers)
+            double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
     {
-        makeFold(direction, startPoint, endPoint, null, affectedLayers, angle, foundAffectedLayers);
+        makeFold(direction, startPoint, endPoint, null, affectedLayers, angle, foundAffectedLayers, withDelayed);
     }
 
     /**
@@ -630,16 +633,17 @@ public class ModelState implements Cloneable
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
     public void makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            List<Integer> affectedLayers, double angle, Map<Layer, Segment3d> foundAffectedLayers)
+            List<Integer> affectedLayers, double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
     {
         Point3d start = locatePointFromPaperTo3D(startPoint);
         Point3d end = locatePointFromPaperTo3D(endPoint);
         Point3d ref = (refPoint != null ? locatePointFromPaperTo3D(refPoint) : null);
         Segment3d segment = new Segment3d(start, end);
 
-        LinkedHashMap<Layer, Segment3d> layerInts = getLayers(segment);
+        final LinkedHashMap<Layer, Segment3d> layerInts = getLayers(segment);
 
         int i = 1;
         Iterator<Entry<Layer, Segment3d>> it = layerInts.entrySet().iterator();
@@ -656,7 +660,9 @@ public class ModelState implements Cloneable
         if (foundAffectedLayers != null)
             foundAffectedLayers.putAll(layerInts);
 
-        bendPaper(direction, segment, ref, layerInts, angle);
+        if (withDelayed) {
+            bendPaper(direction, segment, ref, layerInts, angle);
+        }
     }
 
     /**
@@ -919,11 +925,13 @@ public class ModelState implements Cloneable
      * @param oppositeAffectedLayers Indices of the layers to fold along <code>oppositeLine</code>. Pass
      *            <code>null</code> to autocompute. If you do so, you must also pass <code>null</code> to
      *            <code>oppositeLine</code>.
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @throws InvalidOperationException If the assumptions for doing this fold aren't satisfied.
      */
     public void makeReverseFold(Direction direction, Segment2d line, Segment2d oppositeLine, Segment2d refLine,
-            List<Integer> affectedLayers, List<Integer> oppositeAffectedLayers) throws InvalidOperationException
+            List<Integer> affectedLayers, List<Integer> oppositeAffectedLayers, boolean withDelayed)
+            throws InvalidOperationException
     {
         Segment3d line3 = new Segment3d(locatePointFromPaperTo3D(line.getP1()), locatePointFromPaperTo3D(line.getP2()));
         Segment3d refLine3 = new Segment3d(locatePointFromPaperTo3D(refLine.getP1()),
@@ -939,7 +947,7 @@ public class ModelState implements Cloneable
 
         LinkedHashMap<Layer, Segment3d> lineAffectedLayers = new LinkedHashMap<Layer, Segment3d>(affectedLayers.size());
         // create the first fold
-        makeFold(direction, line.getP1(), line.getP2(), affectedLayers, 0, lineAffectedLayers);
+        makeFold(direction, line.getP1(), line.getP2(), affectedLayers, 0, lineAffectedLayers, withDelayed);
 
         Segment2d oppositeLine2;
         Segment3d oppositeLine3;
@@ -986,10 +994,12 @@ public class ModelState implements Cloneable
                 oppositeLayers.size());
         // create the opposite fold
         makeFold(direction.getOpposite(), oppositeLine2.getP1(), oppositeLine2.getP2(), oppositeLayers, 0,
-                oppositeAffectedLayers2);
+                oppositeAffectedLayers2, false);
 
-        // bend the paper
-        bendReverseFold(direction, line3, oppositeLine3, refLine3, lineAffectedLayers, oppositeAffectedLayers2);
+        if (withDelayed) {
+            // bend the paper
+            bendReverseFold(direction, line3, oppositeLine3, refLine3, lineAffectedLayers, oppositeAffectedLayers2);
+        }
     }
 
     /**
@@ -1465,10 +1475,13 @@ public class ModelState implements Cloneable
      * Adds the given angle to the current angle of rotation.
      * 
      * @param rotation The angle to add (in radians).
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
-    public void addRotation(double rotation)
+    public void addRotation(double rotation, boolean withDelayed)
     {
-        setRotation(rotationAngle + rotation);
+        if (withDelayed) {
+            setRotation(rotationAngle + rotation);
+        }
     }
 
     /**
@@ -1510,10 +1523,14 @@ public class ModelState implements Cloneable
 
     /**
      * Changes the viewing angle from top to bottom and vice versa.
+     * 
+     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
-    public void flipViewingAngle()
+    public void flipViewingAngle(boolean withDelayed)
     {
-        setViewingAngle(-viewingAngle);
+        if (withDelayed) {
+            setViewingAngle(-viewingAngle);
+        }
     }
 
     /**

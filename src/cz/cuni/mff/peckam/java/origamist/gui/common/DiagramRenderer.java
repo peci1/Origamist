@@ -485,6 +485,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                                         }
                                     }
                                 });
+                                // TODO handle colspan and rowspan
                                 diagramPane.add(r);
                                 stepRenderers.add(r);
                                 r.setZoom(zoom);
