@@ -14,7 +14,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -43,6 +42,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * Provides the following properties:
  * <ul>
  * <li><code>fullscreenModeRequested</code> - fired when the user clicks the "fullscreen" button</li>
+ * <li>repeates all property changes happening in renderer</li>
  * </ul>
  * 
  * @author Martin Pecka
@@ -81,9 +81,6 @@ public class StepRendererWithControls extends JPanelWithOverlay
     /** The listener to update the text. */
     protected PropertyChangeListener diagramLocaleListener;
 
-    /** The property helper. */
-    protected PropertyChangeSupport  properties       = new PropertyChangeSupport(this);
-
     public StepRendererWithControls()
     {
         setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
@@ -93,6 +90,13 @@ public class StepRendererWithControls extends JPanelWithOverlay
 
         renderer = new StepRenderer();
         renderer.addMouseListener(new MouseListener());
+        renderer.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
+            }
+        });
 
         descLabel = new JMultilineLabel("");
         descLabel.setFont(descLabel.getFont().deriveFont(Font.PLAIN));
@@ -297,65 +301,6 @@ public class StepRendererWithControls extends JPanelWithOverlay
     }
 
     /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        properties.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        properties.removePropertyChangeListener(listener);
-    }
-
-    /**
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners()
-    {
-        return properties.getPropertyChangeListeners();
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        properties.addPropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        properties.removePropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
-    {
-        return properties.getPropertyChangeListeners(propertyName);
-    }
-
-    /**
      * Show this step in DIAGRAM mode.
      * 
      * @author Martin Pecka
@@ -368,7 +313,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            properties.firePropertyChange("fullscreenModeRequested", false, true);
+            firePropertyChange("fullscreenModeRequested", false, true);
         }
 
     }

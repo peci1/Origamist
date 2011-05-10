@@ -22,7 +22,6 @@ import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,6 +58,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
@@ -68,15 +68,15 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.sun.j3d.exp.swing.JCanvas3D;
-import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
-import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.MarkerRenderData;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
@@ -131,11 +131,8 @@ public class StepRenderer extends JPanel
     /** The branch graph to be added to the scene. */
     protected BranchGroup             branchGraph              = null;
 
-    /** The zoom of the step. */
+    /** The zoom of the step renderer. */
     protected double                  zoom                     = 100d;
-
-    /** The helper for properties. */
-    protected PropertyChangeSupport   listeners                = new PropertyChangeSupport(this);
 
     /** The font to use for drawing markers. */
     protected Font                    markerFont               = new Font("Arial", Font.BOLD, 12);
@@ -163,6 +160,9 @@ public class StepRenderer extends JPanel
      * list, too, after being called.
      */
     protected List<Callable<Boolean>> removeListenersCallbacks = new LinkedList<Callable<Boolean>>();
+
+    /** The transform used for initial zooming when a new origami is set. */
+    protected Transform3D             initialViewTransform     = null;
 
     /**
      * 
@@ -228,11 +228,13 @@ public class StepRenderer extends JPanel
     public void setOrigami(Origami origami)
     {
         this.origami = origami;
+        initialViewTransform = null;
 
         if (origami != null) {
             setBackground(origami.getPaper().getColor().getBackground());
             createColorManager(origami.getModel().getPaper().getBackgroundColor(), origami.getModel().getPaper()
                     .getForegroundColor());
+            setZoom(100);
         } else {
             setBackground(Color.GRAY); // TODO some more convenient behavior
         }
@@ -518,13 +520,54 @@ public class StepRenderer extends JPanel
     {
         ModelState state = step.getModelState();
 
-        transform.setEuler(new Vector3d(state.getViewingAngle() - Math.PI / 2.0, 0, state.getRotation()));
-        // TODO adjust zoom according to paper size and renderer size - this is placeholder code
-        transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
-        // transform
-        // .setScale(new Vector3d(5 * transform.getScale(), 5 * transform.getScale(), 500 * transform.getScale()));
-        UnitDimension paperSize = origami.getModel().getPaper().getSize().convertTo(Unit.M);
-        transform.setTranslation(new Vector3d(-paperSize.getWidth() / 2.0, -paperSize.getHeight() / 2.0, 0));
+        ViewInfo vi = new ViewInfo(offscreenCanvas.getView());
+        Transform3D imagePlateToVworld = new Transform3D();
+        vi.getImagePlateToVworld(offscreenCanvas, imagePlateToVworld, null);
+
+        Point3d eyePos = new Point3d();
+        offscreenCanvas.getCenterEyeInImagePlate(eyePos);
+        imagePlateToVworld.transform(eyePos);
+
+        Point3d centerPos = new Point3d();
+        offscreenCanvas.getCenterEyeInImagePlate(centerPos);
+        centerPos.z = 0;
+        imagePlateToVworld.transform(centerPos);
+
+        Point3d screenLeftCenter = new Point3d();
+        offscreenCanvas.getCenterEyeInImagePlate(screenLeftCenter);
+        screenLeftCenter.x = 0;
+        screenLeftCenter.z = 0;
+        imagePlateToVworld.transform(screenLeftCenter);
+
+        Vector3d screenDirection = new Vector3d(screenLeftCenter);
+        screenDirection.sub(centerPos);
+
+        Point3d axis = new Point3d(screenDirection);
+        Transform3D viewingAngleRotation = new Transform3D();
+        viewingAngleRotation.set(new AxisAngle4d(new Vector3d(axis), state.getViewingAngle() - Math.PI / 2.0));
+
+        transform.set(viewingAngleRotation);
+
+        Vector3d screenNormal = new Vector3d(centerPos);
+        screenNormal.sub(eyePos);
+        screenNormal.normalize();
+
+        Transform3D rotation = new Transform3D();
+        rotation.set(new AxisAngle4d(screenNormal, state.getRotation()));
+
+        transform.mul(rotation);
+
+        Transform3D scale = new Transform3D();
+        scale.setScale(getCompositeZoom() / 100d);
+        transform.mul(scale);
+
+        Point3d modelCenter = new Point3d();
+        ((BoundingSphere) branchGraph.getBounds()).getCenter(modelCenter);
+        modelCenter.negate();
+
+        Transform3D translation = new Transform3D();
+        translation.setTranslation(new Vector3d(modelCenter));
+        transform.mul(translation);
 
         baseTransform = new Transform3D(transform);
 
@@ -591,14 +634,11 @@ public class StepRenderer extends JPanel
     protected TransformGroup setupTGroup() throws InvalidOperationException
     {
         try {
-            setupTransform();
-
             ModelState state = step.getModelState();
 
             tGroup = new TransformGroup();
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-            tGroup.setTransform(transform);
 
             OrderedGroup og = new OrderedGroup();
 
@@ -670,14 +710,16 @@ public class StepRenderer extends JPanel
 
             branchGraph.addChild(tGroup);
 
-            // TODO now these three lines enable rotating. Either make a whole concept of controlling the
-            // displayed step, or delete them
-            Behavior rotate = new MouseRotate(tGroup) {
+            setupTransform();
+            tGroup.setTransform(transform);
+
+            Behavior rotate = new CenteredMouseRotate(tGroup) {
                 @Override
                 public void transformChanged(Transform3D transform)
                 {
                     StepRenderer.this.transform = transform;
                 }
+
             };
             rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
             branchGraph.addChild(rotate);
@@ -705,8 +747,8 @@ public class StepRenderer extends JPanel
     {
         if (universe == null) {
             universe = new SimpleUniverse(offscreenCanvas);
+            offscreenCanvas.getView().setFrontClipDistance(0);
         }
-        universe.getViewingPlatform().setNominalViewingTransform();
 
         BranchGroup oldBranchGraph = branchGraph;
         try {
@@ -715,7 +757,29 @@ public class StepRenderer extends JPanel
             if (oldBranchGraph != null)
                 universe.getLocale().removeBranchGraph(oldBranchGraph);
             universe.addBranchGraph(branchGraph);
+
+            if (initialViewTransform == null && origami != null) {
+                initialViewTransform = computeInitialViewTransform(origami);
+                universe.getViewingPlatform().getViewPlatformTransform().setTransform(initialViewTransform);
+            }
         }
+    }
+
+    /**
+     * Compute the transform to be set to view platform in order the given origami's paper to be well zoomed.
+     * 
+     * @param origami The origami to compute transform for.
+     * @return The transform for viewing platform.
+     */
+    protected Transform3D computeInitialViewTransform(Origami origami)
+    {
+        Transform3D result = new Transform3D();
+        UnitDimension dimension = origami.getModel().getPaper().getSize().convertTo(Unit.M);
+        double length = Math.sqrt(Math.pow(dimension.getWidth(), 2) + Math.pow(dimension.getHeight(), 2));
+        // inspired in ViewingPlatform#setNominalViewingTransform()
+        // length specifies (in vworld meters) half of the visible part of the origami
+        result.setTranslation(new Vector3d(0, 0, (length /* / 1d */) / Math.tan(Math.PI / 8d)));
+        return result;
     }
 
     /**
@@ -762,6 +826,17 @@ public class StepRenderer extends JPanel
     }
 
     /**
+     * @return The overall zoom of the displayed object (as percentage - 0 to 100).
+     */
+    public double getCompositeZoom()
+    {
+        if (step != null)
+            return step.getZoom() * zoom / 100d;
+        else
+            return zoom;
+    }
+
+    /**
      * @return the zoom
      */
     public double getZoom()
@@ -782,10 +857,10 @@ public class StepRenderer extends JPanel
 
         double oldZoom = this.zoom;
         this.zoom = zoom;
-        listeners.firePropertyChange("zoom", oldZoom, zoom);
+        firePropertyChange("zoom", oldZoom, zoom);
 
         if (step != null) {
-            transform.setScale((step.getZoom() / 100d) * (zoom / 100d));
+            transform.setScale(getCompositeZoom() / 100d);
             tGroup.setTransform(transform);
         }
     }
@@ -833,65 +908,6 @@ public class StepRenderer extends JPanel
                     it.remove();
             } catch (Exception e) {}
         }
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        listeners.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        listeners.removePropertyChangeListener(listener);
-    }
-
-    /**
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners()
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners()
-    {
-        return listeners.getPropertyChangeListeners();
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#addPropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        listeners.addPropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @param listener
-     * @see java.beans.PropertyChangeSupport#removePropertyChangeListener(java.lang.String,
-     *      java.beans.PropertyChangeListener)
-     */
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        listeners.removePropertyChangeListener(propertyName, listener);
-    }
-
-    /**
-     * @param propertyName
-     * @return
-     * @see java.beans.PropertyChangeSupport#getPropertyChangeListeners(java.lang.String)
-     */
-    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName)
-    {
-        return listeners.getPropertyChangeListeners(propertyName);
     }
 
     /**

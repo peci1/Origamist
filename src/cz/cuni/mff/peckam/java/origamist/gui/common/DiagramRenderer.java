@@ -51,78 +51,78 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class DiagramRenderer extends JPanelWithOverlay
 {
-    private static final long             serialVersionUID    = -7158217935566060260L;
+    private static final long                      serialVersionUID    = -7158217935566060260L;
 
     /** The origami which is this diagram from. */
-    protected Origami                     origami;
+    protected Origami                              origami;
 
     /** The first step to be rendered. */
-    protected Step                        firstStep;
+    protected Step                                 firstStep;
 
     /** A display pattern for displaying only a single step. */
-    protected static final Dimension      SINGLE_STEP_PATTERN = new Dimension(1, 1);
+    protected static final Dimension               SINGLE_STEP_PATTERN = new Dimension(1, 1);
 
     /** The number of steps that will be shown at once. */
-    protected Dimension                   displayedStepsPattern;
+    protected Dimension                            displayedStepsPattern;
 
     /** The mode the renderer actually displays the origami in. */
-    protected DisplayMode                 mode;
+    protected DisplayMode                          mode;
 
     /** The listener that will be fired after the locale of the GUI changed. */
-    protected PropertyChangeListener      localeListener;
+    protected PropertyChangeListener               localeListener;
 
     /** The actually displayed step renderers. */
-    protected final List<StepRendererWithControls>    stepRenderers       = new LinkedList<StepRendererWithControls>();
+    protected final List<StepRendererWithControls> stepRenderers       = new LinkedList<StepRendererWithControls>();
 
     /** The basic zoom of all StepRenderers. */
-    protected double                      zoom                = 100d;
+    protected double                               zoom                = 100d;
 
     /** The listener to be attached to {@link StepRendererWithControls} to listen when the fullscreen is requested. */
-    protected PropertyChangeListener      stepFullscreenListener;
+    protected PropertyChangeListener               stepFullscreenListener;
 
     // COMPONENTS
 
     /** The label to be displayed over the renderer while it is loading. */
-    protected final JLabel                overlayLabel;
+    protected final JLabel                         overlayLabel;
 
     /** The panel holding all the StepRenderers. */
-    protected final JPanel                diagramPane;
+    protected final JPanel                         diagramPane;
 
     /** The toolbar for diagram manipulations. */
-    protected final JToolBarWithBgImage   toolbar;
+    protected final JToolBarWithBgImage            toolbar;
 
     /** The toolbar of the currently displayed step if the display mode is DIAGRAM. */
-    protected JToolBar                    stepToolbar;
+    protected JToolBar                             stepToolbar;
 
     /** The panel holding all toolbars this renderer should show. */
-    protected final JPanel                toolbarPane;
+    protected final JPanel                         toolbarPane;
 
     /** Previous button in PAGE mode. */
-    protected final JButton               prevButtonPage;
+    protected final JButton                        prevButtonPage;
     /** Previous button in DIAGRAM mode. */
-    protected final JButton               prevButtonDiagram;
+    protected final JButton                        prevButtonDiagram;
     /** Next button in PAGE mode. */
-    protected final JButton               nextButtonPage;
+    protected final JButton                        nextButtonPage;
     /** Next button in DIAGRAM mode. */
-    protected final JButton               nextButtonDiagram;
+    protected final JButton                        nextButtonDiagram;
     /** First button in PAGE mode. */
-    protected final JButton               firstButtonPage;
+    protected final JButton                        firstButtonPage;
     /** First button in DIAGRAM mode. */
-    protected final JButton               firstButtonDiagram;
+    protected final JButton                        firstButtonDiagram;
     /** Last button in PAGE mode. */
-    protected final JButton               lastButtonPage;
+    protected final JButton                        lastButtonPage;
     /** Last button in DIAGRAM mode. */
-    protected final JButton               lastButtonDiagram;
+    protected final JButton                        lastButtonDiagram;
     /** The quick-jump combobox for navigating through pages. */
-    protected final JComboBox             pageSelect;
+    protected final JComboBox                      pageSelect;
     /** The model of pageSelect for PAGE mode. */
-    protected ComboBoxModel               pageSelectPageModel;
+    protected ComboBoxModel                        pageSelectPageModel;
     /** The model of pageSelect for DIAGRAM mode. */
-    protected ComboBoxModel               pageSelectDiagramModel;
+    protected ComboBoxModel                        pageSelectDiagramModel;
     /** The string saying "Step x of y" to be displayed in <code>pageSelect</code> */
-    protected ParametrizedLocalizedString stepXofY;
+    protected ParametrizedLocalizedString          stepXofY;
     /** The string saying "Page x of y" to be displayed in <code>pageSelect</code> */
-    protected ParametrizedLocalizedString pageXofY;
+    protected ParametrizedLocalizedString          pageXofY;
 
     /**
      * @param o
@@ -472,9 +472,19 @@ public class DiagramRenderer extends JPanelWithOverlay
                         Step step = firstStep;
                         for (int i = 0; i < numSteps; i++) {
                             if (step != null) {
+                                // TODO manage a pool of renderers
                                 StepRendererWithControls r = new StepRendererWithControls(origami, step);
                                 r.setDisplayMode(getDisplayMode());
                                 r.addPropertyChangeListener("fullscreenModeRequested", stepFullscreenListener);
+                                r.addPropertyChangeListener("zoom", new PropertyChangeListener() {
+                                    @Override
+                                    public void propertyChange(PropertyChangeEvent evt)
+                                    {
+                                        if (getDisplayMode() == DisplayMode.DIAGRAM) {
+                                            zoom = (Double) evt.getNewValue();
+                                        }
+                                    }
+                                });
                                 diagramPane.add(r);
                                 stepRenderers.add(r);
                                 r.setZoom(zoom);
@@ -531,15 +541,9 @@ public class DiagramRenderer extends JPanelWithOverlay
         final double zoomDelta = zoom - this.zoom;
         this.zoom = zoom;
 
-        new Thread() {
-            @Override
-            public void run()
-            {
-                for (StepRendererWithControls r : stepRenderers) {
-                    r.setZoom(r.getZoom() + zoomDelta);
-                }
-            }
-        }.start();
+        for (StepRendererWithControls r : stepRenderers) {
+            r.setZoom(r.getZoom() + zoomDelta);
+        }
 
         revalidate();
     }

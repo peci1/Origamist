@@ -248,6 +248,9 @@ public class StepEditor extends StepRenderer
         }
     }
 
+    /** Old zoom before changing step. */
+    private double oldZoom = 100d;
+
     @Override
     public void setStep(Step step)
     {
@@ -258,12 +261,14 @@ public class StepEditor extends StepRenderer
         additionalTransform = null;
 
         if (this.step == step && this.step != null && this.step.getAttachedTo() != null) {
-            // trans will hold the "additional" transform added by behaviors
+            // additionalTransform will hold the "additional" transform added by behaviors
             additionalTransform = new Transform3D(baseTransform);
             additionalTransform.invert();
             additionalTransform.mul(transform);
         }
 
+        if (this.step != null)
+            oldZoom = this.step.getZoom();
         super.setStep(step);
 
         availableItems.clear();
@@ -287,7 +292,9 @@ public class StepEditor extends StepRenderer
         super.afterSetStep();
         // branchGraph changes, so we have to recreate the pick canvas
         updatePickCanvas();
-        setZoom(step.getZoom());
+        // reset the zoom according to the current step
+        if (step != null)
+            firePropertyChange("zoom", oldZoom, (double) step.getZoom());
     }
 
     @Override
@@ -323,23 +330,27 @@ public class StepEditor extends StepRenderer
     }
 
     @Override
+    protected Transform3D setupTransform() throws InvalidOperationException
+    {
+        super.setupTransform();
+        if (additionalTransform != null) {
+            double scale = transform.getScale();
+            transform.mul(additionalTransform);
+            transform.setScale(scale);
+            additionalTransform = null;
+        }
+        return transform;
+    }
+
+    @Override
     protected TransformGroup setupTGroup() throws InvalidOperationException
     {
         try {
-            setupTransform();
-
             ModelState state = step.getModelState();
 
             tGroup = new TransformGroup();
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-            if (additionalTransform != null) {
-                double scale = transform.getScale();
-                transform.mul(additionalTransform);
-                transform.setScale(scale);
-                additionalTransform = null;
-            }
-            tGroup.setTransform(transform);
 
             OrderedGroup og = new OrderedGroup();
             og.setPickable(true);
@@ -771,7 +782,7 @@ public class StepEditor extends StepRenderer
     {
         PickMode oldPickMode = this.pickMode;
         this.pickMode = pickMode;
-        listeners.firePropertyChange("pickMode", oldPickMode, pickMode);
+        firePropertyChange("pickMode", oldPickMode, pickMode);
     }
 
     /**
@@ -1613,6 +1624,33 @@ public class StepEditor extends StepRenderer
         return (LineAppearanceManager) super.getLineAppearanceManager();
     }
 
+    @Override
+    public double getZoom()
+    {
+        if (step != null)
+            return step.getZoom();
+        return zoom;
+    }
+
+    @Override
+    public void setZoom(double zoom)
+    {
+        if (!isEnabled())
+            return;
+
+        if (zoom < 25d)
+            return;
+
+        if (step != null) {
+            double oldZoom = step.getZoom();
+            step.setZoom(zoom);
+            firePropertyChange("zoom", oldZoom, zoom);
+
+            transform.setScale(getCompositeZoom() / 100d);
+            tGroup.setTransform(transform);
+        }
+    }
+
     protected class HighlightNextItemAction extends AbstractAction
     {
 
@@ -2077,7 +2115,7 @@ public class StepEditor extends StepRenderer
 
             app.setPointAttributes(new PointAttributes());
             app.getPointAttributes().setPointAntialiasingEnable(true);
-            app.getPointAttributes().setPointSize(pointSize * (float) getZoom() / 100f);
+            app.getPointAttributes().setPointSize(pointSize * (float) getCompositeZoom() / 100f);
             app.getPointAttributes().setCapability(PointAttributes.ALLOW_SIZE_WRITE);
             app.getPointAttributes().setCapability(PointAttributes.ALLOW_ANTIALIASING_WRITE);
 
@@ -2085,7 +2123,7 @@ public class StepEditor extends StepRenderer
                 @Override
                 public void propertyChange(PropertyChangeEvent evt)
                 {
-                    app.getPointAttributes().setPointSize(pointSize * (float) getZoom() / 100f);
+                    app.getPointAttributes().setPointSize(pointSize * (float) getCompositeZoom() / 100f);
                 }
             };
             addPropertyChangeListener("zoom", listener);
@@ -2095,7 +2133,7 @@ public class StepEditor extends StepRenderer
                 public Boolean call() throws Exception
                 {
                     if (group.getParent() == null) {
-                        listeners.removePropertyChangeListener("zoom", listener);
+                        removePropertyChangeListener("zoom", listener);
                         return true;
                     }
                     return false;
@@ -2210,7 +2248,7 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0f);
                     app.getRenderingAttributes().setVisible(seg.getOriginatingStepId() != step.getId());
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.LESS_OR_EQUAL);
-                    app.getLineAttributes().setLineWidth(getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == overModel) {
                         overModel.removeChild(line);
@@ -2223,7 +2261,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2.5f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2.5f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);
@@ -2236,7 +2275,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0.3f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);
@@ -2249,7 +2289,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);
@@ -2262,7 +2303,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0.3f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);
@@ -2275,7 +2317,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0.3f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);
@@ -2288,7 +2331,8 @@ public class StepEditor extends StepRenderer
                     app.getTransparencyAttributes().setTransparency(0f);
                     app.getRenderingAttributes().setVisible(true);
                     app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
-                    app.getLineAttributes().setLineWidth(2.5f * getLineWidth(dir, age) * (float) getZoom() / 100f);
+                    app.getLineAttributes().setLineWidth(
+                            2.5f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
                         lines.removeChild(line);

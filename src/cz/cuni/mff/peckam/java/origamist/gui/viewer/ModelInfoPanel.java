@@ -140,9 +140,13 @@ public class ModelInfoPanel extends JHideablePanel
 
                 license.setToolTipText(createLicenseTooltip(ModelInfoPanel.this.origami.getLicense()));
 
-                Calendar cal = new GregorianCalendar(locale);
-                cal.set(ModelInfoPanel.this.origami.getYear().getYear(), 1, 1);
-                year.setText(new SimpleDateFormat("yyyy", locale).format(cal.getTime()));
+                if (ModelInfoPanel.this.origami.getYear() != null) {
+                    Calendar cal = new GregorianCalendar(locale);
+                    cal.set(ModelInfoPanel.this.origami.getYear().getYear(), 1, 1);
+                    year.setText(new SimpleDateFormat("yyyy", locale).format(cal.getTime()));
+                } else {
+                    year.setText("");
+                }
 
                 paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString(true));
 

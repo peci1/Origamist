@@ -44,6 +44,11 @@ public class JMultilineLabel extends JEditorPane
     @Override
     public synchronized void setText(String text)
     {
+        if (text == null) {
+            super.setText("");
+            return;
+        }
+
         String t = text;
         if (!text.startsWith("<html>")) {
             t = "<html>" + text + "</html>";

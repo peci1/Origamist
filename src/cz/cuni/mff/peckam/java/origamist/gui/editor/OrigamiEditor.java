@@ -346,7 +346,7 @@ public class OrigamiEditor extends CommonGui
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                zoomSlider.setValue((int) stepEditor.getZoom());
+                zoomSlider.setValue((int) (double) ((Double) evt.getNewValue()));
             }
         });
 
@@ -689,12 +689,12 @@ public class OrigamiEditor extends CommonGui
             @Override
             public void stateChanged(ChangeEvent e)
             {
-                if (step != null && stepEditor != null && !zoomSlider.getSlider().getModel().getValueIsAdjusting()) {
+                if (stepEditor != null && !zoomSlider.getSlider().getModel().getValueIsAdjusting()) {
                     stepEditor.setZoom((double) zoomSlider.getValue());
-                    step.setZoom(stepEditor.getZoom());
                 }
             }
         });
+
         builder.append(zoomSlider);
 
         builder.append(new JLocalizedLabel("editor", "leftPanel.operations.label"));
@@ -840,7 +840,6 @@ public class OrigamiEditor extends CommonGui
             numOperations = step.getOperations().size();
             this.origami.addObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
                     Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
-            zoomSlider.setValue((int) ((double) step.getZoom()));
             description.setStrings(step.getDescription());
             colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
             rowSpan.setValue(step.getRowspan() != null ? step.getRowspan() : 1);
@@ -1465,6 +1464,7 @@ public class OrigamiEditor extends CommonGui
             if (step != null) {
                 step.setNext(newStep);
                 newStep.setId(step.getId() + 1);
+                newStep.setZoom(step.getZoom());
             }
             steps.add(newStep);
 
