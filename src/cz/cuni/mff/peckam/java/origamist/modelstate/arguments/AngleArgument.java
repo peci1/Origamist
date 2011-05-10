@@ -5,7 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate.arguments;
 
 import java.util.ResourceBundle;
 
-import javax.swing.JOptionPane;
+import javax.swing.origamist.AngleSelectionDialog;
 
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -68,21 +68,10 @@ public class AngleArgument extends OperationArgument implements TextInputDataRec
     {
         ResourceBundle messages = ResourceBundle.getBundle("editor", ServiceLocator.get(ConfigurationManager.class)
                 .get().getLocale());
-        String input = "";
-        while (input != null) {
-            // TODO make a better dialog to display
-            input = JOptionPane.showInputDialog(null, messages.getString("operation.argument.angle.message"),
-                    messages.getString("operation.argument.angle.title"), JOptionPane.QUESTION_MESSAGE);
-            if (input != null) {
-                try {
-                    angle = Double.parseDouble(input);
-                    return;
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null,
-                            messages.getString("operation.argument.angle.badnumber.message"),
-                            messages.getString("operation.argument.angle.badnumber.title"), JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
+
+        AngleSelectionDialog dialog = new AngleSelectionDialog(messages.getString("operation.argument.angle.message"),
+                messages.getString("operation.argument.angle.title"));
+
+        angle = dialog.getAngle();
     }
 }
