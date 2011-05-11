@@ -222,7 +222,7 @@ public class AngleSelectionDialog extends JDialog
         super((Frame) null, title, true);
         this.message = message;
         this.defaultValue = defaultValue;
-        this.defaultUnit = defaultUnit;
+        this.defaultUnit = defaultUnit != null ? defaultUnit : AngleUnit.DEGREE;
         init();
     }
 
@@ -239,9 +239,10 @@ public class AngleSelectionDialog extends JDialog
         if (angleUnitGroup.getSelection() != null)
             angleUnitGroup.setSelected(angleUnitGroup.getSelection(), false);
 
-        if (defaultUnit == null || defaultUnit == AngleUnit.DEGREE)
+        AngleUnit preferredUnit = ServiceLocator.get(ConfigurationManager.class).get().getPreferredAngleUnit();
+        if (preferredUnit == null || preferredUnit == AngleUnit.DEGREE)
             degreesBtn.doClick();
-        else if (defaultUnit == AngleUnit.GRAD)
+        else if (preferredUnit == AngleUnit.GRAD)
             gradsBtn.doClick();
         else
             radsBtn.doClick();
@@ -249,9 +250,8 @@ public class AngleSelectionDialog extends JDialog
         if (defaultValue == null) {
             customAngle.setSelected(true);
         } else {
-            Double value = unit.convertTo(defaultValue, AngleUnit.RAD);
+            Double value = defaultUnit.convertTo(defaultValue, AngleUnit.RAD);
             if (suggestedValues.get(value) == null) {
-                System.err.println(defaultValue);
                 customAngle.setSelected(true);
                 inputField.setText(unit.getNiceValue(defaultValue));
             } else {
@@ -542,6 +542,7 @@ public class AngleSelectionDialog extends JDialog
         {
             if (!(valuesGroup.getSelection() == customAngle.getModel() && customValue == null)) {
                 closedByOKButton = true;
+                ServiceLocator.get(ConfigurationManager.class).get().setPreferredAngleUnit(unit);
                 setVisible(false);
             } else {
                 JOptionPane.showMessageDialog(null, messages.getString("badnumber.message"),

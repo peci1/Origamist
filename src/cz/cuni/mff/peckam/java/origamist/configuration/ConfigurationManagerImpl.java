@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.Service;
@@ -51,6 +52,7 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         String defaultAuthorName = null;
         String defaultAuthorHomepage = null;
         List<UnitDimensionWithLabel> papers = new LinkedList<UnitDimensionWithLabel>();
+        AngleUnit preferredAngleUnit = null;
 
         try {
             prefs = Preferences.userNodeForPackage(ConfigurationManager.class);
@@ -67,6 +69,9 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
             }
             try {
                 preferredUnit = Enum.valueOf(Unit.class, prefs.get("preferredUnit", null));
+            } catch (NullPointerException e) {} catch (IllegalArgumentException e) {}
+            try {
+                preferredAngleUnit = Enum.valueOf(AngleUnit.class, prefs.get("preferredAngleUnit", null));
             } catch (NullPointerException e) {} catch (IllegalArgumentException e) {}
 
             defaultAuthorName = prefs.get("defaultAuthorName", System.getProperty("user.name", ""));
@@ -121,6 +126,7 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
         configuration.setLastOpenURL(lastOpenURL);
 
         configuration.setPreferredUnit(preferredUnit);
+        configuration.setPreferredAngleUnit(preferredAngleUnit);
         configuration.setDefaultAuthorName(defaultAuthorName);
         configuration.setDefaultAuthorHomepage(defaultAuthorHomepage);
 
@@ -160,6 +166,12 @@ public class ConfigurationManagerImpl extends Service implements ConfigurationMa
             prefs.remove("preferredUnit");
         } else {
             prefs.put("preferredUnit", configuration.getPreferredUnit().toString());
+        }
+
+        if (configuration.getPreferredAngleUnit() == null) {
+            prefs.remove("preferredAngleUnit");
+        } else {
+            prefs.put("preferredAngleUnit", configuration.getPreferredAngleUnit().toString());
         }
 
         prefs.put("defaultAuthorName", configuration.getDefaultAuthorName());

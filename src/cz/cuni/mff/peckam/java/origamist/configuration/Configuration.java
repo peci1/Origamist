@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
@@ -67,6 +68,9 @@ public class Configuration extends PropertyChangeSource
 
     /** The list of user-defined papers. */
     protected ObservableList<UnitDimensionWithLabel> papers                = new ObservableList<UnitDimensionWithLabel>();
+
+    /** The preferred angle unit. */
+    protected AngleUnit                              preferredAngleUnit    = null;
 
     /**
      * @return the locale
@@ -177,6 +181,24 @@ public class Configuration extends PropertyChangeSource
         Unit oldUnit = this.preferredUnit;
         this.preferredUnit = preferredUnit;
         firePropertyChange("preferredUnit", oldUnit, preferredUnit);
+    }
+
+    /**
+     * @return The preferred angle unit.
+     */
+    public AngleUnit getPreferredAngleUnit()
+    {
+        return preferredAngleUnit;
+    }
+
+    /**
+     * @param preferredAngleUnit The preferred angle unit.
+     */
+    public void setPreferredAngleUnit(AngleUnit preferredAngleUnit)
+    {
+        AngleUnit oldUnit = this.preferredAngleUnit;
+        this.preferredAngleUnit = preferredAngleUnit;
+        firePropertyChange("preferredAngleUnit", oldUnit, preferredAngleUnit);
     }
 
     /**
