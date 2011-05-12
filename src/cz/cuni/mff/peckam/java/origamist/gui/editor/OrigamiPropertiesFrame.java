@@ -239,9 +239,9 @@ public class OrigamiPropertiesFrame extends JDialog
 
         name = new JLangStringListTextField<JTextField>(tempOrigami.getName(), new JTextField(20));
 
-        year = new JSpinner(new SpinnerNumberModel(tempOrigami.getYear() != null ? tempOrigami.getYear().getYear()
-                : new GregorianCalendar().get(Calendar.YEAR), Integer.MIN_VALUE,
-                new GregorianCalendar().get(Calendar.YEAR), 1));
+        // in creating mode, the 0 will be replaced in fillDefaults()
+        year = new JSpinner(new SpinnerNumberModel(tempOrigami.getYear() != null ? tempOrigami.getYear().getYear() : 0,
+                Integer.MIN_VALUE, new GregorianCalendar().get(Calendar.YEAR), 1));
         year.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e)
@@ -868,6 +868,11 @@ public class OrigamiPropertiesFrame extends JDialog
 
         String authorHomepage = conf.getDefaultAuthorHomepage();
         this.authorHomepage.setText(authorHomepage);
+
+        this.diagramPaper.selectFirstNonCustom();
+        this.modelPaper.selectFirstNonCustom();
+
+        pack();
     }
 
     /**
@@ -906,8 +911,6 @@ public class OrigamiPropertiesFrame extends JDialog
             errors.add(messages.getString("OrigamiPropertiesFrame.errors.nameEmpty"));
         if (shortDesc.getStrings().size() == 0)
             errors.add(messages.getString("OrigamiPropertiesFrame.errors.shortDescEmpty"));
-        if (description.getStrings().size() == 0)
-            errors.add(messages.getString("OrigamiPropertiesFrame.errors.descriptionEmpty"));
         if (authorName.getText().length() == 0)
             errors.add(messages.getString("OrigamiPropertiesFrame.errors.authorNameEmpty"));
         if (licenseName.getText().length() == 0)
