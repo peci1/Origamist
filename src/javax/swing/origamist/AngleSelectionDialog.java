@@ -325,6 +325,7 @@ public class AngleSelectionDialog extends JDialog
                 String text = inputField.getText();
                 try {
                     customValue = unit.convertTo(unit.parseValue(text), AngleUnit.RAD);
+                    angle = customValue;
                 } catch (NumberFormatException ex) {
                     customValue = null;
                 }
@@ -540,6 +541,8 @@ public class AngleSelectionDialog extends JDialog
         @Override
         public void actionPerformed(ActionEvent e)
         {
+            okButton.requestFocusInWindow(); // this is important; calling doClick() doesn't request the focus and
+                                             // therefore the changes made to inputField may not have been updated
             if (!(valuesGroup.getSelection() == customAngle.getModel() && customValue == null)) {
                 closedByOKButton = true;
                 ServiceLocator.get(ConfigurationManager.class).get().setPreferredAngleUnit(unit);
