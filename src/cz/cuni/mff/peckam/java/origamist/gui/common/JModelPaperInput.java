@@ -233,6 +233,14 @@ public class JModelPaperInput extends JPanel
     }
 
     /**
+     * Select the first non-custom item.
+     */
+    public void selectFirstNonCustom()
+    {
+        size.paperSizes.setSelectedIndex(size.customSize != null ? 1 : 0);
+    }
+
+    /**
      * A preview of the model paper.
      * 
      * @author Martin Pecka

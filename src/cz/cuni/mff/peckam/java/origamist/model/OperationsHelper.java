@@ -38,6 +38,18 @@ public class OperationsHelper
      */
     public static Operation getOperation(Operations operation)
     {
+        return getOperation(operation, false);
+    }
+
+    /**
+     * Return the operation corresponding to the given constant.
+     * 
+     * @param operation The constant defining an operation.
+     * @param alternative If true, return the alternative version of the operation.
+     * @return The operation.
+     */
+    public static Operation getOperation(Operations operation, boolean alternative)
+    {
         Operation result = null;
         switch (operation) {
             case MOUNTAIN_FOLD:
@@ -54,6 +66,8 @@ public class OperationsHelper
                 break;
             case THUNDERBOLT_FOLD:
                 result = new ThunderboltFoldOperation();
+                if (alternative)
+                    ((ThunderboltFoldOperation) result).setInvert(true);
                 break;
             case TURN_OVER:
                 result = new TurnOverOperation();

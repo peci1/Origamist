@@ -156,6 +156,9 @@ public class Segment3d extends Line3d
      */
     public boolean epsilonEquals(Line3d other, boolean allowInverseDirection)
     {
+        if (this == other)
+            return true;
+
         if (!getClass().equals(other.getClass()))
             return false;
 

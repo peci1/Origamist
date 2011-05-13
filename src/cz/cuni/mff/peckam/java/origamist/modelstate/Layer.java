@@ -10,11 +10,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import javax.vecmath.Point2d;
+import javax.vecmath.Point3d;
+
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.Polygon3d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
+import cz.cuni.mff.peckam.java.origamist.math.Stripe3d;
 
 /**
  * A layer of the paper - a planar part of the paper that is surrouned by paper boundaries and triangles with a
@@ -133,5 +137,62 @@ public class Layer extends Polygon3d<ModelTriangle>
         }
 
         return result;
+    }
+
+    /**
+     * Tell whether this polygon contains the given point both in 3D and 2D.
+     * 
+     * @param point The point to check.
+     * @return <code>true</code> if this polygon contains the given point in both 3D and 2D.
+     */
+    public boolean contains(ModelPoint point)
+    {
+        if (!plane.contains(point))
+            return false;
+
+        for (ModelTriangle t : triangles) {
+            if (t.contains(point) && t.getOriginalPosition().contains(point.getOriginal()))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Tell whether this polygon's 2D triangles contain the given 2D point.
+     * 
+     * @param point The point to check.
+     * @return <code>true</code> if this polygon contains the given point in 2D.
+     */
+    public boolean contains(Point2d point)
+    {
+        for (ModelTriangle t : triangles) {
+            if (t.getOriginalPosition().contains(point))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Return the single segment defining the intersection of the given stripe with this polygon (this segment joins the
+     * first and last segment returned by {@link Polygon3d#getIntersections}).
+     * 
+     * @param stripe The stripe to find the intersection with.
+     * @return The intersection of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
+     *         this polygon (and if it lies in the same plane as the polygon) or if the stripe doesn't intersect with
+     *         it.
+     */
+    public ModelSegment getIntersectionSegment(Stripe3d stripe)
+    {
+        @SuppressWarnings("unchecked")
+        List<? extends ModelSegment> ints = (List<? extends ModelSegment>) getIntersections(stripe);
+        if (ints == null || ints.size() == 0)
+            return null;
+
+        Point3d int1 = ints.get(0).getP1();
+        Point3d int2 = ints.get(ints.size() - 1).getP2();
+        Point2d int1_2 = ints.get(0).getOriginal().getP1();
+        Point2d int2_2 = ints.get(ints.size() - 1).getOriginal().getP2();
+
+        return new ModelSegment(new Segment3d(int1, int2), new Segment2d(int1_2, int2_2), null, -1);
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
+import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
@@ -27,8 +28,8 @@ public class FoldUnfoldOperation extends cz.cuni.mff.peckam.java.origamist.model
         if (this.type == Operations.VALLEY_MOUNTAIN_FOLD_UNFOLD)
             dir = dir.getOpposite();
 
-        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), null, layer, 0,
-                withDelayed);
+        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), null,
+                new LayerFilter(layer), 0, withDelayed);
 
         return previousState;
     }

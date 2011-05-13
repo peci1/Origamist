@@ -995,6 +995,7 @@ public class OrigamiEditor extends CommonGui
                                             + editorMessages.getString("OrigamiEditor.invalidOperation")
                                                     .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
                                             + "</span></html>", null);
+                            Logger.getLogger("application").warn("Invalid operation", e);
                             step.getOperations().remove(currentOperation);
                         }
                         setStep(step);
@@ -1380,7 +1381,7 @@ public class OrigamiEditor extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            setCurrentOperation(OperationsHelper.getOperation(operation));
+            setCurrentOperation(OperationsHelper.getOperation(operation, alternativeActionsShown));
 
             MessageBar statusBar = ServiceLocator.get(MessageBar.class);
             if (statusBar != null) {

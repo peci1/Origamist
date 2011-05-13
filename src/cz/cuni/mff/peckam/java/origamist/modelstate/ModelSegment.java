@@ -254,8 +254,9 @@ public class ModelSegment extends Segment3d
      */
     public boolean epsilonEquals(ModelSegment other, boolean allowInverseDirection)
     {
-        return super.epsilonEquals(other, allowInverseDirection)
-                && other.getOriginal().epsilonEquals(original, allowInverseDirection);
+        return this == other
+                || (super.epsilonEquals(other, allowInverseDirection) && other.getOriginal().epsilonEquals(original,
+                        allowInverseDirection));
     }
 
     @Override

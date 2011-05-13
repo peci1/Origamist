@@ -8,6 +8,7 @@ import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
+import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -29,7 +30,8 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
             dir = dir.getOpposite();
 
         previousState.makeReverseFold(dir, getLine().toSegment2d(), getOppositeLine() != null ? getOppositeLine()
-                .toSegment2d() : null, getRefLine().toSegment2d(), layer, oppositeLayer, withDelayed);
+                .toSegment2d() : null, getRefLine().toSegment2d(), new LayerFilter(layer), new LayerFilter(
+                oppositeLayer), withDelayed);
 
         return previousState;
     }

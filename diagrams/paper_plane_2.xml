@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:origami xmlns:ns2="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
+    <author>
+        <name>Martin P@ci Pecka</name>
+    </author>
+    <name lang="cs-CZ">sdfsdf</name>
+    <year>2011</year>
+    <shortdesc lang="cs-CZ">sdfsd</shortdesc>
+    <description lang="cs-CZ">sdfds</description>
+    <license>
+        <name>sdfsd</name>
+        <content>sdfdsf</content>
+    </license>
+    <thumbnail>
+        <image/>
+    </thumbnail>
+    <paper>
+        <size>
+            <width>210.0</width>
+            <height>297.0</height>
+            <unit>mm</unit>
+            <referenceLength>297.0</referenceLength>
+            <referenceUnit>mm</referenceUnit>
+        </size>
+        <color>
+            <background>#ffffff</background>
+        </color>
+        <cols>1</cols>
+        <rows>1</rows>
+    </paper>
+    <model>
+        <paper>
+            <size>
+                <width>210.0</width>
+                <height>297.0</height>
+                <unit>mm</unit>
+                <referenceLength>297.0</referenceLength>
+                <referenceUnit>mm</referenceUnit>
+            </size>
+            <colors>
+                <background>#ffffff</background>
+                <foreground>#ffffff</foreground>
+            </colors>
+            <weight>80.0</weight>
+        </paper>
+        <steps>
+            <step id="1">
+                <zoom>100.0</zoom>
+                <foldUnfoldOperation type="MOUNTAIN_VALLEY_FOLD_UNFOLD">
+                    <line>
+                        <start>
+                            <x>0.35353535353535354</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.35353535353535354</x>
+                            <y>0.0</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                </foldUnfoldOperation>
+            </step>
+            <step id="2">
+                <zoom>100.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.0</x>
+                            <y>0.662121593952179</y>
+                        </start>
+                        <end>
+                            <x>0.35353535353535354</x>
+                            <y>1.0</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.0</x>
+                        <y>1.0</y>
+                    </refPoint>
+                    <layer>1</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.35353535353535354</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.7070707070707071</x>
+                            <y>0.6661745607852936</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.7070707070707071</x>
+                        <y>1.0</y>
+                    </refPoint>
+                    <layer>1</layer>
+                </foldOperation>
+            </step>
+            <step id="3">
+                <zoom>100.0</zoom>
+                <rotateOperation type="ROTATE">
+                    <angle>1.5707963267948966</angle>
+                </rotateOperation>
+            </step>
+            <step id="4">
+                <zoom>100.0</zoom>
+            </step>
+        </steps>
+    </model>
+</ns2:origami>

@@ -36,7 +36,7 @@
 	<model>
 		<paper>
 			<size>
-				<width>200</width>
+				<width>210</width>
 				<height>297</height>
 				<unit>mm</unit>
 			</size>
@@ -59,11 +59,11 @@
 				<foldUnfoldOperation type="VALLEY_MOUNTAIN_FOLD_UNFOLD">
 					<line>
 						<start>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>1</y>
 						</end>
 					</line>
@@ -78,10 +78,10 @@
 					<line>
 						<start>
 							<x>0</x>
-							<y>0.66666667</y>
+							<y>0.64646464646464646</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>1</y>
 						</end>
 					</line>
@@ -95,16 +95,16 @@
 					<angle>3.141592</angle>
 					<line>
 						<start>
-							<x>0.66666667</x>
-							<y>0.66666667</y>
+							<x>0.70707070707070708</x>
+							<y>0.64646464646464646</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>1</y>
 						</end>
 					</line>
 					<refPoint>
-						<x>0.66666667</x>
+						<x>0.70707070707070708</x>
 						<y>1</y>
 					</refPoint>
 					<layer>1</layer>
@@ -124,11 +124,11 @@
 					<angle>3</angle>
 					<line>
 						<start>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>1</y>
 						</end>
 					</line>
@@ -166,11 +166,11 @@
 					<angle>1.5707963</angle>
 					<line>
 						<start>
-							<x>0.4166667</x>
+							<x>0.4570707070707</x>
 							<y>0</y>
 						</start>
 						<end>
-							<x>0.4166667</x>
+							<x>0.4570707070707</x>
 							<y>0.8824</y>
 						</end>
 					</line>
@@ -303,7 +303,6 @@
 							<y>0</y>
 						</end>
 					</secondLine>
-					<secondLayer>1</secondLayer>
 				</thunderboltFoldOperation>
 				<thunderboltFoldOperation type="THUNDERBOLT_FOLD">
 					<angle>3.14</angle>
@@ -332,7 +331,6 @@
 							<y>0</y>
 						</end>
 					</secondLine>
-					<secondLayer>1</secondLayer>
 				</thunderboltFoldOperation>
 			</step>
 			<step id="11">
@@ -373,10 +371,6 @@
 							<y>1</y>
 						</end>
 					</secondLine>
-					<secondLayer>9</secondLayer>
-					<secondLayer>10</secondLayer>
-					<secondLayer>11</secondLayer>
-					<secondLayer>12</secondLayer>
 				</crimpFoldOperation>
 			</step>
 		</steps>

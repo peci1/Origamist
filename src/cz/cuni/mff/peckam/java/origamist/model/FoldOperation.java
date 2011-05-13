@@ -10,6 +10,7 @@ import javax.vecmath.Point2d;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
+import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -33,8 +34,8 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
             dir = dir.getOpposite();
 
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
-        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint, layer,
-                angle, withDelayed);
+        previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint,
+                new LayerFilter(layer), angle, withDelayed);
 
         return previousState;
     }

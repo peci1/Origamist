@@ -184,8 +184,12 @@ public class Segment2d extends Line2d
      */
     public boolean epsilonEquals(Line2d other, boolean allowInverseDirection)
     {
+        if (this == other)
+            return true;
+
         if (other == null)
             return false;
+
         if (!getClass().equals(other.getClass()))
             return false;
 

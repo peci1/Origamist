@@ -181,7 +181,7 @@
 				<sequence>
 					<element name="colors" type="m:ModelColors" />
 					<element name="weight" type="double" />
-					<element name="note" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
+					<element name="note" type="c:LangString" maxOccurs="unbounded" minOccurs="0">
 						<annotation>
 							<appinfo>
 								<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
@@ -228,7 +228,7 @@
 			</appinfo>
 		</annotation>
 		<sequence>
-			<element name="description" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
+			<element name="description" type="c:LangString" maxOccurs="unbounded" minOccurs="0">
 				<annotation>
 					<appinfo>
 						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
@@ -427,12 +427,11 @@
 				<sequence>
 					<group ref="m:angle" />
 					<group ref="m:line" />
-					<group ref="m:refPoint" minOccurs="0" />
 					<group ref="m:layerList" />
 					<group ref="m:secondAngle" minOccurs="0" />
 					<group ref="m:secondLine" />
-					<group ref="m:secondLayerList" />
 				</sequence>
+				<attribute name="invert" type="boolean" default="false" />
 			</extension>
 		</complexContent>
 	</complexType>
@@ -468,7 +467,6 @@
 						</element>
 					</sequence>
 					<group ref="m:secondLine" />
-					<group ref="m:secondLayerList" />
 					<sequence minOccurs="0">
 						<element type="m:Line2D" name="secondOppositeLine" />
 						<element name="secondOppositeLayer" type="int" maxOccurs="unbounded">
@@ -512,18 +510,6 @@
 	<group name="layerList">
 		<sequence>
 			<element name="layer" type="int" maxOccurs="unbounded">
-				<annotation>
-					<appinfo>
-						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
-					</appinfo>
-				</annotation>
-			</element>
-		</sequence>
-	</group>
-	
-	<group name="secondLayerList">
-		<sequence>
-			<element name="secondLayer" type="int" maxOccurs="unbounded">
 				<annotation>
 					<appinfo>
 						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />

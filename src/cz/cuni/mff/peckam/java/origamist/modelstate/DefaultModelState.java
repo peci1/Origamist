@@ -52,7 +52,7 @@ public class DefaultModelState extends ModelState
 
                                               layers.add(new Layer(triangles));
 
-                                              Fold fold = new Fold();
+                                              Fold fold = new Fold(0);
 
                                               FoldLine line = new FoldLine();
                                               line.direction = null;
