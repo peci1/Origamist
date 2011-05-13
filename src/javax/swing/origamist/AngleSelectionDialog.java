@@ -19,6 +19,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
@@ -83,6 +84,12 @@ public class AngleSelectionDialog extends JDialog
     /** The default value. */
     protected Double                        defaultValue;
 
+    /** The lower/upper bound for the entered angle. If <code>null</code>, no bound is applied. */
+    protected Double                        lowerBound, upperBound;
+
+    /** The label that displays the current bounds. */
+    protected JLabel                        boundsLabel;
+
     /** The text field for inputting custom angles. */
     protected JTextField                    inputField;
 
@@ -125,17 +132,23 @@ public class AngleSelectionDialog extends JDialog
      */
     public AngleSelectionDialog(Window owner, Object message, String title)
     {
-        this(owner, message, title, AngleUnit.DEGREE, 90d);
+        this(owner, message, title, AngleUnit.DEGREE, 90d, null, null);
     }
 
     /**
+     * Create the dialog.
+     * <p>
+     * The <em>normalized</em> (using {@link AngleUnit#normalize(double)}) entered value is tested against the given
+     * bounds.
+     * 
      * @param owner The owner of this dialog.
      * @param message The message to display.
      * @param title Title of the dialog window.
      * @param defaultUnit The default unit. If <code>null</code>, degrees will be selected.
      * @param defaultValue The default value. If <code>null</code>, the custom field will be focused and empty.
      */
-    public AngleSelectionDialog(Window owner, Object message, String title, AngleUnit defaultUnit, Double defaultValue)
+    public AngleSelectionDialog(Window owner, Object message, String title, AngleUnit defaultUnit, Double defaultValue,
+            Double lowerBound, Double upperBound)
     {
         super(owner, title, Dialog.ModalityType.APPLICATION_MODAL);
         this.message = message;
@@ -274,6 +287,39 @@ public class AngleSelectionDialog extends JDialog
     }
 
     /**
+     * Set the bounds of the angles that can be entered.
+     * 
+     * The entered values will be first normalized (using {@link AngleUnit#normalize(double)}) and then compared to the
+     * given bounds.
+     * 
+     * @param lowerBound The lower bound for the entered angle in defaultUnit. If <code>null</code>, no bound is
+     *            applied.
+     * @param upperBound The upper bound for the entered angle in defaultUnit. If <code>null</code>, no bound is
+     *            applied.
+     * @param unit The unit of the bounds.
+     */
+    public void setBounds(Double lowerBound, Double upperBound, AngleUnit unit)
+    {
+        this.lowerBound = lowerBound == null ? null : unit.convertTo(lowerBound, AngleUnit.RAD);
+        this.upperBound = upperBound == null ? null : unit.convertTo(upperBound, AngleUnit.RAD);
+        updateBoundsLabel();
+    }
+
+    /**
+     * Update the text of the bounds label.
+     */
+    protected void updateBoundsLabel()
+    {
+        double min = AngleUnit.RAD.convertTo(lowerBound != null ? lowerBound : 0, unit);
+        double max = upperBound == null ? unit.getMaxValue() : AngleUnit.RAD.convertTo(upperBound, unit);
+        String minText = unit.formatValue(min);
+        String maxText = unit.formatValue(max);
+
+        boundsLabel.setText(MessageFormat.format(messages.getString("boundsLabel"), new Object[] { minText, maxText }));
+        pack();
+    }
+
+    /**
      * Initialize Swing components.
      */
     protected void createComponents()
@@ -289,6 +335,15 @@ public class AngleSelectionDialog extends JDialog
                     cancelButton.doClick();
             }
         };
+
+        boundsLabel = new JLabel();
+        addPropertyChangeListener(UNIT_PROPERTY, new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                updateBoundsLabel();
+            }
+        });
 
         angleUnitGroup = new ButtonGroup();
 
@@ -346,6 +401,13 @@ public class AngleSelectionDialog extends JDialog
                     inputField.requestFocusInWindow();
                 }
             }
+
+            @Override
+            public void focusLost(FocusEvent e)
+            {
+                if (angle != null && Math.abs(AngleUnit.RAD.normalize(angle) - angle) > MathHelper.EPSILON)
+                    inputField.setText(unit.getNiceValue(unit.normalize(AngleUnit.RAD.convertTo(angle, unit))));
+            }
         });
         inputField.addKeyListener(keyListener);
         addPropertyChangeListener(UNIT_PROPERTY, new PropertyChangeListener() {
@@ -383,7 +445,7 @@ public class AngleSelectionDialog extends JDialog
     protected void buildLayout()
     {
         Container content = getContentPane();
-        content.setLayout(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref"));
+        content.setLayout(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref,$lgap,pref"));
 
         CellConstraints cc = new CellConstraints();
 
@@ -412,8 +474,10 @@ public class AngleSelectionDialog extends JDialog
         customValue.add(inputField);
         customValue.add(afterInputLabel);
 
+        content.add(boundsLabel, cc.xy(1, 5));
+
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        content.add(buttonsPanel, cc.xy(1, 5));
+        content.add(buttonsPanel, cc.xy(1, 7));
         buttonsPanel.add(okButton);
         buttonsPanel.add(cancelButton);
     }
@@ -429,7 +493,16 @@ public class AngleSelectionDialog extends JDialog
         setVisible(true);
         dispose();
 
-        return angle;
+        return angle != null ? AngleUnit.RAD.normalize(angle) : null;
+    }
+
+    /**
+     * @return True if the currently selected angle is within the given bounds.
+     */
+    protected boolean isAngleInBounds()
+    {
+        return (lowerBound == null || angle + MathHelper.EPSILON >= lowerBound)
+                && (upperBound == null || angle <= upperBound + MathHelper.EPSILON);
     }
 
     /**
@@ -544,9 +617,14 @@ public class AngleSelectionDialog extends JDialog
             okButton.requestFocusInWindow(); // this is important; calling doClick() doesn't request the focus and
                                              // therefore the changes made to inputField may not have been updated
             if (!(valuesGroup.getSelection() == customAngle.getModel() && customValue == null)) {
-                closedByOKButton = true;
-                ServiceLocator.get(ConfigurationManager.class).get().setPreferredAngleUnit(unit);
-                setVisible(false);
+                if (isAngleInBounds()) {
+                    closedByOKButton = true;
+                    ServiceLocator.get(ConfigurationManager.class).get().setPreferredAngleUnit(unit);
+                    setVisible(false);
+                } else {
+                    JOptionPane.showMessageDialog(null, messages.getString("notInBounds.message"),
+                            messages.getString("notInBounds.title"), JOptionPane.ERROR_MESSAGE);
+                }
             } else {
                 JOptionPane.showMessageDialog(null, messages.getString("badnumber.message"),
                         messages.getString("badnumber.title"), JOptionPane.ERROR_MESSAGE);

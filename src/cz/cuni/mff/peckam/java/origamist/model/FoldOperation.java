@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.vecmath.Point2d;
 
+import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
@@ -48,7 +49,7 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         LineArgument line;
         result.add(line = new LineArgument(true, "operation.argument.select.line"));
         result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
-        result.add(new AngleArgument(true, "operation.argument.angle"));
+        result.add(new AngleArgument(true, "operation.argument.angle", 0d, Math.PI, AngleUnit.RAD));
         result.add(new PointArgument(false, "operation.argument.select.reference.point"));
 
         return result;

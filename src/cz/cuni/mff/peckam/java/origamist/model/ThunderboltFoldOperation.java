@@ -15,6 +15,7 @@ import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
@@ -108,9 +109,9 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         LineArgument line;
         result.add(line = new LineArgument(true, "operation.argument.select.line"));
         result.add(new LayersArgument(line, true, "operation.argument.select.layers"));
-        result.add(new AngleArgument(true, "operation.argument.angle"));
+        result.add(new AngleArgument(true, "operation.argument.angle", 0d, Math.PI, AngleUnit.RAD));
         result.add(line = new LineArgument(true, "operation.argument.select.second.line"));
-        result.add(new AngleArgument(false, "operation.argument.second.angle"));
+        result.add(new AngleArgument(false, "operation.argument.second.angle", 0d, Math.PI, AngleUnit.RAD));
 
         return result;
     }

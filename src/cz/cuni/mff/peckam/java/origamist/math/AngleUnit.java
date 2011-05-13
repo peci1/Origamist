@@ -44,6 +44,12 @@ public enum AngleUnit
         }
 
         @Override
+        public double getMaxValue()
+        {
+            return 360;
+        }
+
+        @Override
         public String toString()
         {
             return messages.getString("deg.name");
@@ -81,6 +87,12 @@ public enum AngleUnit
         public String getUnit()
         {
             return messages.getString("rad.unit");
+        }
+
+        @Override
+        public double getMaxValue()
+        {
+            return 2d * Math.PI;
         }
 
         @Override
@@ -136,6 +148,12 @@ public enum AngleUnit
         }
 
         @Override
+        public double getMaxValue()
+        {
+            return 400;
+        }
+
+        @Override
         public String toString()
         {
             return messages.getString("grad.name");
@@ -176,6 +194,27 @@ public enum AngleUnit
      * @return The converted angle.
      */
     public abstract double convertTo(double value, AngleUnit targetUnit);
+
+    /**
+     * @return The value that represents a whole circle.
+     */
+    public abstract double getMaxValue();
+
+    /**
+     * Return a corresponding base angle (angle in interval 0 to whole circle).
+     * 
+     * @param value The value to be normalized.
+     * @return The normalized value.
+     */
+    public double normalize(double value)
+    {
+        final double max = getMaxValue();
+
+        if (value < 0 || value > max)
+            return value - (Math.floor(value / max) * max);
+        else
+            return value;
+    }
 
     /**
      * @return The full name of this unit.

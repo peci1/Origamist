@@ -880,6 +880,7 @@ public class ModelState implements Cloneable
         if (abs(angle1) < EPSILON || layerInts.size() == 0)
             return new HashMap<Layer, Layer>(0);
 
+        // TODO IDEA porovnat normalu vrstvy se screenNormal a podle toho urcit pozadovany typ skladu
         Direction foldDir; // the direction of the fold as seen from screen
         {
             Layer firstLayer = layerInts.keySet().iterator().next();
