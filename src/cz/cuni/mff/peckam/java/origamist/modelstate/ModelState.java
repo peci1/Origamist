@@ -567,12 +567,14 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, boolean withDelayed)
@@ -587,13 +589,15 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest The test for including neighbors when bending.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest, boolean withDelayed)
@@ -610,12 +614,14 @@ public class ModelState implements Cloneable
      * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
      *            fold direction.
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, boolean withDelayed)
@@ -632,13 +638,15 @@ public class ModelState implements Cloneable
      * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
      *            fold direction.
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest The test for including neighbors when bending.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest, boolean withDelayed)
@@ -653,16 +661,18 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
@@ -680,16 +690,18 @@ public class ModelState implements Cloneable
      * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
      *            fold direction.
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
@@ -705,9 +717,7 @@ public class ModelState implements Cloneable
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
@@ -715,7 +725,11 @@ public class ModelState implements Cloneable
      * @param neighborTest The test for including neighbors when bending.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
@@ -734,9 +748,7 @@ public class ModelState implements Cloneable
      * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
      *            fold direction.
      * @param layerFilter The filter that filters the layers this fold should be made on.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
@@ -744,12 +756,21 @@ public class ModelState implements Cloneable
      * @param neighborTest The test for including neighbors when bending.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer). Only contains entries with values
+     *         accepted by layerFilter (therefore only the "primarily" rotated layers, not those rotated because they
+     *         neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     protected Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
             NeighborInclusionTest neighborTest, boolean withDelayed)
     {
+        if (angle < -EPSILON || angle > Math.PI + EPSILON)
+            throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to makeFold().");
+
         Point3d start = locatePointFromPaperTo3D(startPoint);
         Point3d end = locatePointFromPaperTo3D(endPoint);
         Point3d ref = (refPoint != null ? locatePointFromPaperTo3D(refPoint) : null);
@@ -784,12 +805,14 @@ public class ModelState implements Cloneable
      * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
      *            the paper will be rotated.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foldDirections The real directions in fold lines in layers.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values being keys in layerInts (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Map<Layer, ModelSegment> layerInts, double angle,
             Map<Layer, Direction> foldDirections)
@@ -807,14 +830,16 @@ public class ModelState implements Cloneable
      * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
      *            the paper will be rotated.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest A callback for narrowing the set of neighbor triangles that should be bent. Pass
      *            <code>null</code> if you don't need this callback.
      * @param foldDirections The real directions in fold lines in layers.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values being keys in layerInts (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Map<Layer, ModelSegment> layerInts, double angle,
             NeighborInclusionTest neighborTest, Map<Layer, Direction> foldDirections)
@@ -836,12 +861,14 @@ public class ModelState implements Cloneable
      *            described in {@link ModelState#bendPaper(Direction, Segment3d, Map, double)}. Please ensure
      *            <code>refPoint</code> doesn't lie in the border plane as described above, this will not be checked.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foldDirections The real directions in fold lines in layers.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values being keys in layerInts (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Point3d refPoint, Map<Layer, ModelSegment> layerInts,
             double angle, Map<Layer, Direction> foldDirections)
@@ -864,18 +891,23 @@ public class ModelState implements Cloneable
      *            Please ensure <code>refPoint</code> doesn't lie in the border plane as described above, this will not
      *            be checked.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
-     * @param angle The angle the paper should be bent by (in radians). Value in (0, PI) means that the down right part
-     *            of the paper (with respect to the line) will be moved; value in (-PI,0) means that the other part of
-     *            paper will be moved.
+     * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest A callback for narrowing the set of neighbor triangles that should be bent. Pass
      *            <code>null</code> if you don't need this callback.
      * @param foldDirections The real directions in fold lines in layers.
      * 
-     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values.
+     * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
+     *         contains entries with values being keys in layerInts (therefore only the "primarily" rotated layers, not
+     *         those rotated because they neighbor to a already rotated layer).
+     * 
+     * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Point3d refPoint, Map<Layer, ModelSegment> layerInts,
             double angle, NeighborInclusionTest neighborTest, Map<Layer, Direction> foldDirections)
     {
+        if (angle < -EPSILON || angle > Math.PI + EPSILON)
+            throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to bendPaper().");
+
         double angle1 = angle;
         if (abs(angle1) < EPSILON || layerInts.size() == 0)
             return new HashMap<Layer, Layer>(0);
@@ -1069,7 +1101,9 @@ public class ModelState implements Cloneable
             l.rotate(segment, angle1);
             triangles.addAll(l.getTriangles());
 
-            result.put(l, newLayersToOldOnes.get(l));
+            Layer oldLayer = newLayersToOldOnes.get(l);
+            if (layerInts.keySet().contains(oldLayer))
+                result.put(l, oldLayer);
         }
 
         return result;
@@ -1091,8 +1125,8 @@ public class ModelState implements Cloneable
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated. The first list item containing the first layers, the second
-     *         list item containing the opposite layers. Every entry has the following meaning: The layers of the paper
-     *         that were rotated as keys, the old layers they are part of as values.
+     *         list item containing the opposite layers. Every entry has the same meaning as the return value of
+     *         {@link #makeFold(Direction, Point2d, Point2d, LayerFilter, double, boolean)}.
      * 
      * @throws InvalidOperationException If the assumptions for doing this fold aren't satisfied.
      */
