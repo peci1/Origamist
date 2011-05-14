@@ -67,7 +67,6 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.DiagramRenderer;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTree;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTreeSelectionListener;
-import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
@@ -662,7 +661,6 @@ public class OrigamiViewer extends CommonGui
         l.setResourceBundle(ResourceBundle.getBundle("viewer", ServiceLocator.get(ConfigurationManager.class).get()
                 .getLocale()));
         l.setLevel(Level.ALL);
-        l.addAppender(new GUIAppender(this));
     }
 
     /**

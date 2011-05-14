@@ -86,7 +86,6 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
-import cz.cuni.mff.peckam.java.origamist.logging.GUIAppender;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.OperationsHelper;
@@ -1016,7 +1015,6 @@ public class OrigamiEditor extends CommonGui
         l.setResourceBundle(ResourceBundle.getBundle("editor", ServiceLocator.get(ConfigurationManager.class).get()
                 .getLocale()));
         l.setLevel(Level.ALL);
-        l.addAppender(new GUIAppender(this));
     }
 
     @Override

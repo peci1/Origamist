@@ -28,7 +28,6 @@ import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
@@ -226,11 +225,8 @@ public abstract class CommonGui extends JApplet
      */
     protected void setupLoggers()
     {
-        BasicConfigurator.configure();
-
-        LogManager.getRootLogger().addAppender(new GUIAppender(this));
-
-        Logger.getLogger("application").addAppender(new GUIAppender(this));
+        BasicConfigurator.resetConfiguration();
+        BasicConfigurator.configure(new GUIAppender(this));
     }
 
     /**
