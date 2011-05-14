@@ -37,7 +37,7 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
 {
 
     @Override
-    public ModelState getModelState(ModelState previousState, boolean withDelayed) throws InvalidOperationException
+    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
         Direction dir = Direction.MOUNTAIN;
         if (invert != null && invert == true)
@@ -66,9 +66,7 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         }
 
         Map<Layer, Layer> layersToBend = previousState.makeFold(dir, line.getP1(), line.getP2(), refPoint,
-                new LayerFilter(layer), angle, withDelayed);
-
-        // TODO problems with withDelayed - layersToBend are empty if withDelayed is false
+                new LayerFilter(layer), angle);
 
         {// if we rotated the layers so that they face the screen by their opposite sides, we don't want to change the
          // fold direction because the change will be made simply by the rotation of the layers
@@ -98,7 +96,7 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         }
 
         previousState.makeFold(dir, secondLine.getP1(), secondLine.getP2(), refPoint,
-                new LayerFilter(layersToBend.keySet()), secondAngle, withDelayed);
+                new LayerFilter(layersToBend.keySet()), secondAngle);
 
         return previousState;
     }

@@ -34,7 +34,7 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
 {
 
     @Override
-    public ModelState getModelState(ModelState previousState, boolean withDelayed) throws InvalidOperationException
+    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.OUTSIDE_CRIMP_FOLD)
@@ -42,7 +42,7 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
 
         List<Map<Layer, Layer>> layersToBend = previousState.makeReverseFold(dir, getLine().toSegment2d(),
                 getOppositeLine() != null ? getOppositeLine().toSegment2d() : null, getRefLine().toSegment2d(),
-                new LayerFilter(layer), oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null, withDelayed);
+                new LayerFilter(layer), oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null);
 
         {// if we rotated the layers so that they face the screen by their opposite sides, we don't want to change the
          // fold direction because the change will be made simply by the rotation of the layers
@@ -58,7 +58,7 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         previousState.makeReverseFold(dir, getSecondLine().toSegment2d(),
                 getSecondOppositeLine() != null ? getSecondOppositeLine().toSegment2d() : null, getRefLine()
                         .toSegment2d(), new LayerFilter(layersToBend.get(0).keySet()), new LayerFilter(layersToBend
-                        .get(1).keySet()), withDelayed);
+                        .get(1).keySet()));
 
         return previousState;
     }

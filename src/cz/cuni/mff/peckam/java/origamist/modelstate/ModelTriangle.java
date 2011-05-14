@@ -40,6 +40,9 @@ public class ModelTriangle extends Triangle3d
     /** The fold lines for the third edge of the triangle. */
     protected List<FoldLine> s3FoldLines = null;
 
+    /** The triangle representing this model triangle before any rotation was done in the step this triangle is part of. */
+    protected Triangle3d     beforeRotation;
+
     /**
      * @param p1
      * @param p2
@@ -50,6 +53,7 @@ public class ModelTriangle extends Triangle3d
     {
         super(p1, p2, p3);
         originalPosition = o;
+        resetBeforeRotation();
     }
 
     /**
@@ -261,7 +265,15 @@ public class ModelTriangle extends Triangle3d
         Point2d pp2 = originalPosition.interpolatePointFromBarycentric(bp2);
         Point2d pp3 = originalPosition.interpolatePointFromBarycentric(bp3);
 
-        return new ModelTriangle(p1, p2, p3, new Triangle2d(pp1, pp2, pp3));
+        Point3d p1rot = beforeRotation.interpolatePointFromBarycentric(bp1);
+        Point3d p2rot = beforeRotation.interpolatePointFromBarycentric(bp2);
+        Point3d p3rot = beforeRotation.interpolatePointFromBarycentric(bp3);
+
+        ModelTriangle mt = new ModelTriangle(p1, p2, p3, new Triangle2d(pp1, pp2, pp3));
+
+        mt.beforeRotation = new Triangle3d(p1rot, p2rot, p3rot);
+
+        return mt;
     }
 
     /**
@@ -321,6 +333,24 @@ public class ModelTriangle extends Triangle3d
             lines = getFoldLines(i);
         }
         lines.add(line);
+    }
+
+    /**
+     * @return The triangle representing this model triangle before any rotation was done in the step this triangle is
+     *         part of.
+     */
+    public Triangle3d getBeforeRotation()
+    {
+        return beforeRotation;
+    }
+
+    /**
+     * Sets the beforeRotation triangle to represent the current triangle's position. Should be called eg. after this
+     * triangle is cloned and added to another step.
+     */
+    public void resetBeforeRotation()
+    {
+        this.beforeRotation = new Triangle3d((Point3d) p1.clone(), (Point3d) p2.clone(), (Point3d) p3.clone());
     }
 
     /**
@@ -403,6 +433,7 @@ public class ModelTriangle extends Triangle3d
         }
 
         result.neighbors.addAll(this.neighbors);
+        result.beforeRotation = this.beforeRotation.clone();
 
         return result;
     }

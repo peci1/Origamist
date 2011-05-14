@@ -568,7 +568,6 @@ public class ModelState implements Cloneable
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -577,9 +576,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
-            LayerFilter layerFilter, double angle, boolean withDelayed)
+            LayerFilter layerFilter, double angle)
     {
-        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, null, withDelayed);
+        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, null);
     }
 
     /**
@@ -591,7 +590,6 @@ public class ModelState implements Cloneable
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest The test for including neighbors when bending.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -600,9 +598,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
-            LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest, boolean withDelayed)
+            LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest)
     {
-        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, neighborTest, withDelayed);
+        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, neighborTest);
     }
 
     /**
@@ -615,7 +613,6 @@ public class ModelState implements Cloneable
      *            that the part with less triangles will be rotated.
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -624,9 +621,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            LayerFilter layerFilter, double angle, boolean withDelayed)
+            LayerFilter layerFilter, double angle)
     {
-        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, null, withDelayed);
+        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, null);
     }
 
     /**
@@ -640,7 +637,6 @@ public class ModelState implements Cloneable
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest The test for including neighbors when bending.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -649,9 +645,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest, boolean withDelayed)
+            LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest)
     {
-        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, neighborTest, withDelayed);
+        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, neighborTest);
     }
 
     /**
@@ -666,7 +662,6 @@ public class ModelState implements Cloneable
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -675,10 +670,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
-            LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
+            LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers)
     {
-        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, null,
-                withDelayed);
+        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, null);
     }
 
     /**
@@ -695,7 +689,6 @@ public class ModelState implements Cloneable
      *            intersection segments. Pass <code>null</code> if you aren't interested in this information. Note that
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -704,10 +697,9 @@ public class ModelState implements Cloneable
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers, boolean withDelayed)
+            LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers)
     {
-        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, foundAffectedLayers, null,
-                withDelayed);
+        return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, foundAffectedLayers, null);
     }
 
     /**
@@ -723,7 +715,6 @@ public class ModelState implements Cloneable
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
      * @param neighborTest The test for including neighbors when bending.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -733,10 +724,9 @@ public class ModelState implements Cloneable
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
-            NeighborInclusionTest neighborTest, boolean withDelayed)
+            NeighborInclusionTest neighborTest)
     {
-        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, neighborTest,
-                withDelayed);
+        return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, neighborTest);
     }
 
     /**
@@ -754,7 +744,6 @@ public class ModelState implements Cloneable
      *            the list corresponds to layers before bending, so it is practically useful only if
      *            <code>angle == 0</code>.
      * @param neighborTest The test for including neighbors when bending.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated as keys, the old layers they are part of as values. Only
      *         contains entries with values accepted by layerFilter (therefore only the "primarily" rotated layers, not
@@ -766,7 +755,7 @@ public class ModelState implements Cloneable
      */
     protected Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
-            NeighborInclusionTest neighborTest, boolean withDelayed)
+            NeighborInclusionTest neighborTest)
     {
         if (angle < -EPSILON || angle > Math.PI + EPSILON)
             throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to makeFold().");
@@ -790,12 +779,8 @@ public class ModelState implements Cloneable
         if (foundAffectedLayers != null)
             foundAffectedLayers.putAll(layerInts);
 
-        if (withDelayed) {
-            // bend the paper
-            return bendPaper(segment, ref, layerInts, angle, neighborTest, foldDirections);
-        } else {
-            return new HashMap<Layer, Layer>(0);
-        }
+        // bend the paper
+        return bendPaper(segment, ref, layerInts, angle, neighborTest, foldDirections);
     }
 
     /**
@@ -1125,7 +1110,6 @@ public class ModelState implements Cloneable
      * @param oppositeLayerFilter The filter that filters the layers the fold along <code>oppositeLine</code> should be
      *            made on. Pass <code>null</code> to autocompute. If you do so, you must also pass <code>null</code> to
      *            <code>oppositeLine</code>.
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      * 
      * @return The layers of the paper that were rotated. The first list item containing the first layers, the second
      *         list item containing the opposite layers. Every entry has the same meaning as the return value of
@@ -1133,9 +1117,8 @@ public class ModelState implements Cloneable
      * 
      * @throws InvalidOperationException If the assumptions for doing this fold aren't satisfied.
      */
-    @SuppressWarnings("serial")
     public List<Map<Layer, Layer>> makeReverseFold(Direction direction, Segment2d line, Segment2d oppositeLine,
-            Segment2d refLine, LayerFilter layerFilter, LayerFilter oppositeLayerFilter, boolean withDelayed)
+            Segment2d refLine, LayerFilter layerFilter, LayerFilter oppositeLayerFilter)
             throws InvalidOperationException
     {
         Segment3d line3 = new Segment3d(locatePointFromPaperTo3D(line.getP1()), locatePointFromPaperTo3D(line.getP2()));
@@ -1290,25 +1273,6 @@ public class ModelState implements Cloneable
             }
         }
 
-        if (!withDelayed) {
-            // if bending is not to be performed, just make fold lines and return
-
-            // create the first fold
-            makeFold(dir, line.getP1(), line.getP2(), refLineEnd2, layerFilter, 0, (Map<Layer, Segment3d>) null,
-                    withDelayed);
-
-            // create the opposite fold
-            makeFold(oppositeDir, oppositeLine2.getP1(), oppositeLine2.getP2(), refLineEnd2, oppositeLayerFilter2, 0,
-                    (Map<Layer, Segment3d>) null, withDelayed);
-
-            return new LinkedList<Map<Layer, Layer>>() {
-                {
-                    add(new HashMap<Layer, Layer>());
-                    add(new HashMap<Layer, Layer>());
-                }
-            };
-        }
-
         // dividing plane goes along refLine and halves the space between lineP and oppositeP
         Plane3d dividingPlane = new Plane3d(lineP_oppositeP, refLine3.getP1());
 
@@ -1367,14 +1331,37 @@ public class ModelState implements Cloneable
 
         List<Map<Layer, Layer>> result = new LinkedList<Map<Layer, Layer>>();
 
-        result.add(makeFold(dir, line.getP1(), line.getP2(), refLineEnd2, layerFilter, angle, null, neighborTest,
-                withDelayed));
+        result.add(makeFold(dir, line.getP1(), line.getP2(), refLineEnd2, layerFilter, angle, null, neighborTest));
 
         // create the opposite fold
         result.add(makeFold(oppositeDir, oppositeLine2.getP1(), oppositeLine2.getP2(), refLineEnd2,
-                oppositeLayerFilter2, angle, null, neighborTest, withDelayed));
+                oppositeLayerFilter2, angle, null, neighborTest));
 
         return result;
+    }
+
+    /**
+     * A call to this method will revert all triangle rotations made by paper bending in this step. This can be used to
+     * retrieve a model state without delayed operations from a model state with delayed operations. Note that you
+     * shouldn't base any other computations on this model state after a call to this method because it is globally
+     * invalid.
+     */
+    public void revertDelayedOperations()
+    {
+        this.triangles.clear();
+
+        for (Layer l : layers) {
+            List<ModelTriangle> triangles = new LinkedList<ModelTriangle>(l.getTriangles());
+            // we need to construct the hash set because removeTriangles can alter the given argument
+            l.removeTriangles(new HashSet<ModelTriangle>(triangles));
+            for (ModelTriangle t : triangles) {
+                t.setPoints((Point3d) t.beforeRotation.getP1().clone(), (Point3d) t.beforeRotation.getP2().clone(),
+                        (Point3d) t.beforeRotation.getP3().clone());
+            }
+            l.addTriangles(triangles);
+
+            this.triangles.addAll(triangles);
+        }
     }
 
     /**
@@ -1722,13 +1709,10 @@ public class ModelState implements Cloneable
      * Adds the given angle to the current angle of rotation.
      * 
      * @param rotation The angle to add (in radians).
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
-    public void addRotation(double rotation, boolean withDelayed)
+    public void addRotation(double rotation)
     {
-        if (withDelayed) {
-            setRotation(rotationAngle + rotation);
-        }
+        setRotation(rotationAngle + rotation);
     }
 
     /**
@@ -1772,14 +1756,10 @@ public class ModelState implements Cloneable
 
     /**
      * Changes the viewing angle from top to bottom and vice versa.
-     * 
-     * @param withDelayed Whether to perform the delayed operations or add them as a callback.
      */
-    public void flipViewingAngle(boolean withDelayed)
+    public void flipViewingAngle()
     {
-        if (withDelayed) {
-            setViewingAngle(-viewingAngle);
-        }
+        setViewingAngle(-viewingAngle);
     }
 
     /**
@@ -1839,6 +1819,9 @@ public class ModelState implements Cloneable
             else
                 it.remove();
         }
+
+        for (ModelTriangle t : triangles)
+            t.resetBeforeRotation();
     }
 
     @Override

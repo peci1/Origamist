@@ -688,11 +688,23 @@ public class Triangle3d implements Cloneable
      * {@inheritDoc}
      */
     @Override
-    public Triangle3d clone() throws CloneNotSupportedException
+    public Triangle3d clone()
     {
-        Triangle3d result = new Triangle3d(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
-        result.neighbors.addAll(this.neighbors);
-        return result;
+        try {
+            Triangle3d result = (Triangle3d) super.clone();
+
+            result.p1 = (Point3d) this.p1.clone();
+            result.p2 = (Point3d) this.p2.clone();
+            result.p3 = (Point3d) this.p3.clone();
+
+            result.recomputeDerivedItems();
+
+            result.neighbors.addAll(this.neighbors);
+
+            return result;
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
     }
 
     @Override

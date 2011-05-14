@@ -182,14 +182,18 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
                 return this.modelState;
 
             for (Operation o : operations) {
-                try {
-                    this.modelState = o.getModelState(this.modelState, false);
-                } catch (InvalidOperationException e) {
-                    if (e.getOperation() == null)
-                        e.setOperation(o);
-                    throw e;
+                if (!o.isCompletelyDelayedToNextStep()) {
+                    try {
+                        this.modelState = o.getModelState(this.modelState);
+                    } catch (InvalidOperationException e) {
+                        if (e.getOperation() == null)
+                            e.setOperation(o);
+                        throw e;
+                    }
                 }
             }
+
+            this.modelState.revertDelayedOperations();
 
             return this.modelState;
         } else {
@@ -213,7 +217,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
 
             for (Operation o : operations) {
                 try {
-                    this.modelStateWithDelayedOperations = o.getModelState(this.modelStateWithDelayedOperations, true);
+                    this.modelStateWithDelayedOperations = o.getModelState(this.modelStateWithDelayedOperations);
                 } catch (InvalidOperationException e) {
                     if (e.getOperation() == null)
                         e.setOperation(o);

@@ -28,7 +28,7 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
 {
 
     @Override
-    public ModelState getModelState(ModelState previousState, boolean withDelayed)
+    public ModelState getModelState(ModelState previousState)
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.VALLEY_FOLD)
@@ -36,7 +36,7 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
 
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
         previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint,
-                new LayerFilter(layer), angle, withDelayed);
+                new LayerFilter(layer), angle);
 
         return previousState;
     }

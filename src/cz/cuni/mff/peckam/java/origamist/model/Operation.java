@@ -95,15 +95,23 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
      * <code>super.getModelState(previousState)</code>.
      * 
      * @param previousState The state the model has now.
-     * @param withDelayed Whether to perform delayed operations or add them as a callback.
      * @return The passed-in state of the model altered by performing this operation.
      * 
      * @throws InvalidOperationException If the operation cannot be completed.
      */
-    public ModelState getModelState(ModelState previousState, boolean withDelayed) throws InvalidOperationException
+    public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
         throw new UnsupportedOperationException("Class " + getClass() + " is a subclass of " + Operation.class
                 + " and therefore must overwrite the getModelState() method.");
+    }
+
+    /**
+     * @return True if this operation should be skipped for its originating step in delayed operations mode. Only the
+     *         operations sign will be added to the originating step.
+     */
+    public boolean isCompletelyDelayedToNextStep()
+    {
+        return false;
     }
 
     /**

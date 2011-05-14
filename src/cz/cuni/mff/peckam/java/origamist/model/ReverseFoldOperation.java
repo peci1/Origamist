@@ -23,7 +23,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation
 {
     @Override
-    public ModelState getModelState(ModelState previousState, boolean withDelayed)
+    public ModelState getModelState(ModelState previousState)
     {
         Direction dir = Direction.MOUNTAIN;
         if (this.type == Operations.OUTSIDE_REVERSE_FOLD)
@@ -31,7 +31,7 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
 
         previousState.makeReverseFold(dir, getLine().toSegment2d(), getOppositeLine() != null ? getOppositeLine()
                 .toSegment2d() : null, getRefLine().toSegment2d(), new LayerFilter(layer),
-                oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null, withDelayed);
+                oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null);
 
         return previousState;
     }
