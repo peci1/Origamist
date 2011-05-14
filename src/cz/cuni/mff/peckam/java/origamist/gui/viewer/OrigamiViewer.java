@@ -715,7 +715,11 @@ public class OrigamiViewer extends CommonGui
         Origami oldVal = this.displayedOrigami;
         this.displayedOrigami = displayedOrigami;
         this.firePropertyChangeEvenIfNewValIsEqual("displayedOrigami", oldVal, displayedOrigami);
+
         renderer.setOrigami(displayedOrigami);
+
+        if (oldVal != null)
+            oldVal.unloadModelStates();
     }
 
     /**

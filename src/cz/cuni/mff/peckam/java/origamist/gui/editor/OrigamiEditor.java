@@ -780,6 +780,7 @@ public class OrigamiEditor extends CommonGui
                     Steps.STEP_PROPERTY);
         }
 
+        Origami old = this.origami;
         this.origami = origami;
 
         saveButton.setEnabled(origami != null);
@@ -801,6 +802,9 @@ public class OrigamiEditor extends CommonGui
         }
 
         getContentPane().repaint();
+
+        if (old != null)
+            old.unloadModelStates();
     }
 
     /**

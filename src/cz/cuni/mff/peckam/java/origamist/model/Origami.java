@@ -232,6 +232,15 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     }
 
     /**
+     * Free all the memory held by model state information.
+     */
+    public void unloadModelStates()
+    {
+        for (Step s : getModel().getSteps().getStep())
+            s.unloadModelState();
+    }
+
+    /**
      * @param value the new src
      */
     public void setSrc(URL value)

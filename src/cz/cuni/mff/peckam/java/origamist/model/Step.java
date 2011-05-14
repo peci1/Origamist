@@ -305,6 +305,14 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     }
 
     /**
+     * Free all the memory held by model state information.
+     */
+    public void unloadModelState()
+    {
+        invalidateThisModelState();
+    }
+
+    /**
      * Check if the model state is valid.
      * 
      * @param withDelayed Whether to check the model state with or without delayed operations.

@@ -49,7 +49,6 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
      */
     public Operation()
     {
-        initArguments();
     }
 
     /**
