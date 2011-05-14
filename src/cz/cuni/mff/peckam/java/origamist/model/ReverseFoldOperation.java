@@ -30,8 +30,8 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
             dir = dir.getOpposite();
 
         previousState.makeReverseFold(dir, getLine().toSegment2d(), getOppositeLine() != null ? getOppositeLine()
-                .toSegment2d() : null, getRefLine().toSegment2d(), new LayerFilter(layer), new LayerFilter(
-                oppositeLayer), withDelayed);
+                .toSegment2d() : null, getRefLine().toSegment2d(), new LayerFilter(layer),
+                oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null, withDelayed);
 
         return previousState;
     }

@@ -54,7 +54,7 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
             refPoint = secondLine.getP2();
 
         Segment2d intPoint = line.getIntersection(secondLine);
-        // check if line and secondLine have no common point "inside" common point
+        // check if line and secondLine have no "inside" common point
         if (intPoint != null) {
             Point2d point = intPoint.getPoint();
             if (!intPoint.getVector().epsilonEquals(new Vector2d(), EPSILON) || !line.isBorderPoint(point)
@@ -67,6 +67,8 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
 
         Map<Layer, Layer> layersToBend = previousState.makeFold(dir, line.getP1(), line.getP2(), refPoint,
                 new LayerFilter(layer), angle, withDelayed);
+
+        // TODO problems with withDelayed - layersToBend are empty if withDelayed is false
 
         {// if we rotated the layers so that they face the screen by their opposite sides, we don't want to change the
          // fold direction because the change will be made simply by the rotation of the layers

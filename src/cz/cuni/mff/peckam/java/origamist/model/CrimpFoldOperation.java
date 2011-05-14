@@ -42,7 +42,7 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
 
         List<Map<Layer, Layer>> layersToBend = previousState.makeReverseFold(dir, getLine().toSegment2d(),
                 getOppositeLine() != null ? getOppositeLine().toSegment2d() : null, getRefLine().toSegment2d(),
-                new LayerFilter(layer), new LayerFilter(oppositeLayer), withDelayed);
+                new LayerFilter(layer), oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null, withDelayed);
 
         {// if we rotated the layers so that they face the screen by their opposite sides, we don't want to change the
          // fold direction because the change will be made simply by the rotation of the layers

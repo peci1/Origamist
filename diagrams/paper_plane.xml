@@ -143,7 +143,7 @@
 			<step id="7">
 				<description>Fold the wings.</description>
 				<description lang="cs-CZ">Ohněte křídla</description>
-				<foldOperation type="MOUNTAIN_FOLD">
+				<foldOperation type="VALLEY_FOLD">
 					<angle>1.5707963</angle>
 					<line>
 						<start>
@@ -162,7 +162,7 @@
 					<layer>1</layer>
 					<layer>2</layer>
 				</foldOperation>
-				<foldOperation type="VALLEY_FOLD">
+				<foldOperation type="MOUNTAIN_FOLD">
 					<angle>1.5707963</angle>
 					<line>
 						<start>
@@ -175,15 +175,12 @@
 						</end>
 					</line>
 					<refPoint>
-						<x>0.66666667</x>
+						<x>0.70707070707070708</x>
 						<y>0</y>
 					</refPoint>
 					<layer>1</layer>
 					<layer>2</layer>
 				</foldOperation>
-				<rotateOperation>
-					<angle>3.141592</angle>
-				</rotateOperation>
 			</step>		
 			<step id="8">
 				<description>Do inside reverse fold on the back and outside reverse fold on the front of the plane.</description>
@@ -195,17 +192,17 @@
 							<y>0</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0.08333333</y>
 						</end>
 					</line>
 					<refLine>
 						<start>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0.08333333</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0</y>
 						</end>
 					</refLine>
@@ -215,25 +212,25 @@
 					<line>
 						<start>
 							<x>0.25</x>
-							<y>0.916667</y>
+							<y>0.8964646464646464</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
-							<y>0.916667</y>
+							<x>0.35353535353535354</x>
+							<y>0.8964646464646464</y>
 						</end>
 					</line>
 					<refLine>
 						<start>
-							<x>0.33333333</x>
-							<y>0.916667</y>
+							<x>0.35353535353535354</x>
+							<y>1</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
-							<y>1</y>
+							<x>0.35353535353535354</x>
+							<y>0.8964646464646464</y>
 						</end>
 					</refLine>
-					<layer>3</layer>
-					<layer>4</layer>
+					<layer>1</layer>
+					<layer>2</layer>
 				</reverseFoldOperation>
 			</step>	
 			<step id="9">
@@ -258,7 +255,7 @@
 				<markerOpertaion>
 					<text>C</text>
 					<refPoint>
-						<x>0.66666666</x>
+						<x>0.70707070707070708</x>
 						<y>0</y>
 					</refPoint>
 					<stepsToHide>1</stepsToHide>
@@ -266,7 +263,7 @@
 				<markerOpertaion>
 					<text>D</text>
 					<refPoint>
-						<x>0.66666666</x>
+						<x>0.70707070707070708</x>
 						<y>1</y>
 					</refPoint>
 					<stepsToHide>1</stepsToHide>
@@ -280,26 +277,22 @@
 					<line>
 						<start>
 							<x>0</x>
-							<y>0.05</y>
+							<y>0.065</y>
 						</start>
 						<end>
-							<x>0.05</x>
+							<x>0.065</x>
 							<y>0</y>
 						</end>
 					</line>
-					<refPoint>
-						<x>0</x>
-						<y>0</y>
-					</refPoint>
 					<layer>1</layer>
 					<secondAngle>3.14</secondAngle>
 					<secondLine>
 						<start>
 							<x>0</x>
-							<y>0.065</y>
+							<y>0.05</y>
 						</start>
 						<end>
-							<x>0.065</x>
+							<x>0.05</x>
 							<y>0</y>
 						</end>
 					</secondLine>
@@ -308,26 +301,22 @@
 					<angle>3.14</angle>
 					<line>
 						<start>
-							<x>0.66666667</x>
-							<y>0.05</y>
-						</start>
-						<end>
-							<x>0.61666667</x>
-							<y>0</y>
-						</end>
-					</line>
-					<refPoint>
-						<x>0.66666667</x>
-						<y>0</y>
-					</refPoint>
-					<layer>1</layer>
-					<secondLine>
-						<start>
-							<x>0.66666667</x>
+							<x>0.70707070707070708</x>
 							<y>0.065</y>
 						</start>
 						<end>
-							<x>0.60166667</x>
+							<x>0.64207070707070708</x>
+							<y>0</y>
+						</end>
+					</line>
+					<layer>1</layer>
+					<secondLine>
+						<start>
+							<x>0.70707070707070708</x>
+							<y>0.05</y>
+						</start>
+						<end>
+							<x>0.65707070707070708</x>
 							<y>0</y>
 						</end>
 					</secondLine>
@@ -349,11 +338,11 @@
 					</line>
 					<refLine>
 						<start>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0.91666667</y>
 						</start>
 						<end>
-							<x>0.33333333</x>
+							<x>0.35353535353535354</x>
 							<y>0.875</y>
 						</end>
 					</refLine>

@@ -611,8 +611,8 @@ public class ModelState implements Cloneable
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
-     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
-     *            fold direction.
+     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute so
+     *            that the part with less triangles will be rotated.
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param withDelayed Whether to perform the delayed operations or add them as a callback.
@@ -635,8 +635,8 @@ public class ModelState implements Cloneable
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
-     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
-     *            fold direction.
+     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute so
+     *            that the part with less triangles will be rotated.
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest The test for including neighbors when bending.
@@ -687,8 +687,8 @@ public class ModelState implements Cloneable
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
-     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
-     *            fold direction.
+     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute so
+     *            that the part with less triangles will be rotated.
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
@@ -745,8 +745,8 @@ public class ModelState implements Cloneable
      * @param direction The direction of the fold - VALLEY/MOUNTAIN.
      * @param startPoint Starting point of the fold (in 2D paper relative coordinates).
      * @param endPoint Ending point of the fold (in 2D paper relative coordinates).
-     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute from
-     *            fold direction.
+     * @param refPoint A general point in the part of the paper to be bent. Pass <code>null</code> to autocompute so
+     *            that the part with less triangles will be rotated.
      * @param layerFilter The filter that filters the layers this fold should be made on.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param foundAffectedLayers Output parameter. The map of found layers affected by this fold and corresponding
@@ -780,8 +780,10 @@ public class ModelState implements Cloneable
         final LinkedHashMap<Layer, ModelSegment> layerInts = getLayers(segment);
         final Map<Layer, Direction> foldDirections = new HashMap<Layer, Direction>(layerInts.size());
 
+        // filter out the layers we aren't interested in
         layerFilter.filter(layerInts);
 
+        // cut triangles along the segment and make the appropriate fold lines
         for (Entry<Layer, ModelSegment> entry : layerInts.entrySet())
             makeFoldInLayer(entry.getKey(), direction, entry.getValue(), foldDirections);
 
@@ -789,6 +791,7 @@ public class ModelState implements Cloneable
             foundAffectedLayers.putAll(layerInts);
 
         if (withDelayed) {
+            // bend the paper
             return bendPaper(segment, ref, layerInts, angle, neighborTest, foldDirections);
         } else {
             return new HashMap<Layer, Layer>(0);
@@ -857,8 +860,7 @@ public class ModelState implements Cloneable
      * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
      *            the paper will be rotated.
      * @param refPoint A reference point lying in the halfspace containing the parts of the paper that are to be bent.
-     *            Pass <code>null</code> to autodetermine the part from <code>segment</code>'s direction vector as
-     *            described in {@link ModelState#bendPaper(Direction, Segment3d, Map, double)}. Please ensure
+     *            Pass <code>null</code> to autodetermine the part as the one with less triangles. Please ensure
      *            <code>refPoint</code> doesn't lie in the border plane as described above, this will not be checked.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
@@ -886,10 +888,8 @@ public class ModelState implements Cloneable
      * @param segment The segment to bend around. Note that the direction vector of the segment specifies which part of
      *            the paper will be rotated.
      * @param refPoint A reference point lying in the halfspace containing the parts of the paper that are to be bent.
-     *            Pass <code>null</code> to autodetermine the part from <code>segment</code>'s direction vector as
-     *            described in {@link ModelState#bendPaper(Direction, Segment3d, Map, double, NeighborInclusionTest)}.
-     *            Please ensure <code>refPoint</code> doesn't lie in the border plane as described above, this will not
-     *            be checked.
+     *            Pass <code>null</code> to autodetermine the part as the one with less triangles. Please ensure
+     *            <code>refPoint</code> doesn't lie in the border plane as described above, this will not be checked.
      * @param layerInts A map of affected layers and intersections of the fold stripe with them.
      * @param angle The angle the paper should be bent by (in radians). The value must be in &lt;0, &pi;&gt; interval.
      * @param neighborTest A callback for narrowing the set of neighbor triangles that should be bent. Pass
@@ -908,23 +908,8 @@ public class ModelState implements Cloneable
         if (angle < -EPSILON || angle > Math.PI + EPSILON)
             throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to bendPaper().");
 
-        double angle1 = angle;
-        if (abs(angle1) < EPSILON || layerInts.size() == 0)
+        if (angle < EPSILON || layerInts.size() == 0)
             return new HashMap<Layer, Layer>(0);
-
-        // TODO IDEA porovnat normalu vrstvy se screenNormal a podle toho urcit pozadovany typ skladu
-        Direction foldDir; // the direction of the fold as seen from screen
-        {
-            Layer firstLayer = layerInts.keySet().iterator().next();
-
-            foldDir = foldDirections.get(firstLayer);
-
-            if (firstLayer.getNormal().angle(getScreenNormal()) > Math.PI / 2d + EPSILON)
-                foldDir = foldDir.getOpposite();
-
-            if (foldDir == Direction.MOUNTAIN)
-                angle1 = -angle1;
-        }
 
         Layer segLayer = null;
         {// find the layer the given segment lies in
@@ -939,39 +924,37 @@ public class ModelState implements Cloneable
             }
         }
 
-        Point3d layerPoint;
-        {// find a reference point by taking the cross product of the normal of the layer the segment lies in, and
-         // the direction vector of the segment; add this vector to a point on the segment to get a general point in
-         // the halfspace that contains the layer to be bent
+        Point3d r = refPoint;
+        if (r == null) {
+            // find a reference point by taking the cross product of the normal of the layer the segment lies in, and
+            // the direction vector of the segment; add this vector to a point on the segment to get a general point in
+            // the halfspace that contains the layer to be bent
+
             Vector3d layerNormalSegmentDirCross = new Vector3d();
             layerNormalSegmentDirCross.cross(segLayer.getNormal(), segment.getVector());
             Vector3d v = new Vector3d(layerNormalSegmentDirCross);
             v.normalize();
-            layerPoint = new Point3d(v);
-            layerPoint.add(segment.getPoint());
+            r = new Point3d(v);
+            r.add(segment.getPoint());
         }
 
-        Point3d r = refPoint;
-        if (r == null)
-            r = layerPoint;
+        double angle1 = angle;
+        {// invert the rotation angle if it doesn't correspond to the real fold direction
+            Direction foldDir = foldDirections.get(segLayer);
 
-        {
-            Point3d segPoint = segment.getNearestPoint(layerPoint);
-            Segment3d trialSegment = new Segment3d(segPoint, layerPoint);
+            // the halfspace having the layer's plane as its border and defining the half of the space where the layer's
+            // normal points
+            HalfSpace3d halfspace = new HalfSpace3d(segLayer.getPlane());
 
-            assert Math.abs(trialSegment.getVector().dot(segment.getVector())) < EPSILON
-                    && Math.abs(trialSegment.getVector().dot(segLayer.getNormal())) < EPSILON;
+            Point3d rotated = MathHelper.rotate(r, segment, angle);
 
-            Point3d rotated = MathHelper.rotate(trialSegment.getP2(), segment, Math.PI / 2d);
-            Segment3d rotatedSegment = new Segment3d(segPoint, rotated);
+            boolean isInHalfspace = halfspace.contains(rotated);
 
-            Vector3d segLayerNormal = new Vector3d(segLayer.getNormal());
-            segLayerNormal.normalize();
-
-            Vector3d rotatedSegmentNormalized = new Vector3d(rotatedSegment.getVector());
-            rotatedSegmentNormalized.normalize();
-
-            if (!segLayerNormal.epsilonEquals(rotatedSegmentNormalized, EPSILON))
+            // mountain fold should bend the paper "under" the top plane, whereas valley fold should bend it "over" the
+            // top plane
+            if (foldDir == Direction.MOUNTAIN && isInHalfspace)
+                angle1 = -angle1;
+            else if (foldDir == Direction.VALLEY && !isInHalfspace)
                 angle1 = -angle1;
         }
 
@@ -1076,6 +1059,9 @@ public class ModelState implements Cloneable
                             // or neighborTest can also discard some triangles from being added to trianglesToRotate
                             continue n;
                         }
+                    } else if (neighborTest != null && !neighborTest.includeNeighbor(t, n)) {
+                        // or neighborTest can also discard some triangles from being added to trianglesToRotate
+                        continue n;
                     }
                 }
                 // else - if no border line lies in t's layer, we automatically want to add all of its neighbors
@@ -1089,6 +1075,20 @@ public class ModelState implements Cloneable
         // find a set of layers that contain all the triangles to be rotated
         for (ModelTriangle tr : trianglesToRotate) {
             layersToRotate.add(trianglesToLayers.get(tr));
+        }
+
+        // HEURISTIC: If we have guessed refPoint, and we find out that more than a half of all triangles should be
+        // rotated, we rotate the rest of the layers (so that the bigger part of paper will always stay unrotated).
+        // However, we cannot use this heuristic if a neighbor inclusion test is specified!
+        if (refPoint == null && neighborTest == null) {
+            if (trianglesToRotate.size() > triangles.size() / 2) {
+                Set<Layer> newLayersToRotate = new HashSet<Layer>(layers.size() - layersToRotate.size());
+                for (Layer l : layers)
+                    if (!layersToRotate.contains(l))
+                        newLayersToRotate.add(l);
+                layersToRotate = newLayersToRotate;
+                angle1 = -angle1;
+            }
         }
 
         Map<Layer, Layer> result = new HashMap<Layer, Layer>(layersToRotate.size());
@@ -1111,11 +1111,14 @@ public class ModelState implements Cloneable
 
     /**
      * Make a reverse fold and bend the paper correspondingly.
+     * <p>
+     * If <code>line</code> and <code>refLine</code> are perpendicular AND <code>refLine</code> doesn't start or end on
+     * <code>line</code>, then the part to be rotated is determined by the start point of <code>refLine</code>.
      * 
-     * @param direction The direction of the fold along <code>line</code>.
+     * @param direction Mountain means inside fold, valley means outside fold.
      * @param line The line to bend along.
      * @param oppositeLine The second line to fold along. Pass <code>null</code> to autocompute. If you do so, you must
-     *            also pass <code>null</code> to <code>oppositeAffectedLayer</code>.
+     *            also pass <code>null</code> to <code>oppositeLayerFilter</code>.
      * @param refLine The line around which the paper will twist (you'd press on this line with your finger when doing
      *            the fold manually).
      * @param layerFilter The filter that filters the layers the fold along <code>line</code> should be made on.
@@ -1169,9 +1172,8 @@ public class ModelState implements Cloneable
             final LinkedHashMap<Layer, ModelSegment> layerInts = getLayers(new ModelSegment(line3, line, null, 0));
             layerFilter.filter(layerInts);
 
-            oppositeLayerFilter2 = new LayerFilter(getOppositeLineAffectedLayers(
-                    new ModelSegment(line3, line, null, 0), new ModelSegment(oppositeLine3, oppositeLine2, null, 0),
-                    layerInts.keySet()));
+            oppositeLayerFilter2 = getOppositeLineLayerFilter(new ModelSegment(line3, line, null, 0), new ModelSegment(
+                    oppositeLine3, oppositeLine2, null, 0), layerInts.keySet());
 
         } else {
             oppositeLine2 = oppositeLine;
@@ -1191,24 +1193,6 @@ public class ModelState implements Cloneable
                     throw new InvalidOperationException("line and oppositeLine can't be parallel to refLine.");
                 }
             }
-        }
-
-        if (!withDelayed) {
-            // if bending is not to be performed, just make fold lines and return
-
-            // create the first fold
-            makeFold(direction, line.getP1(), line.getP2(), layerFilter, 0, (Map<Layer, Segment3d>) null, withDelayed);
-
-            // create the opposite fold
-            makeFold(direction.getOpposite(), oppositeLine2.getP1(), oppositeLine2.getP2(), oppositeLayerFilter2, 0,
-                    (Map<Layer, Segment3d>) null, withDelayed);
-
-            return new LinkedList<Map<Layer, Layer>>() {
-                {
-                    add(new HashMap<Layer, Layer>());
-                    add(new HashMap<Layer, Layer>());
-                }
-            };
         }
 
         // ________________lineP...oppositeP_____________.................
@@ -1231,17 +1215,99 @@ public class ModelState implements Cloneable
         if (oppositeP.epsilonEquals(common, EPSILON))
             oppositeP = oppositeLine3.getP2();
 
-        // refLineEnd is the border point of refLine that doesn't meet with line and opposite
-        Point3d refLineEnd = refLine3.getP1();
-        if (refLine3.getP1().epsilonEquals(common, EPSILON))
-            refLineEnd = refLine3.getP2();
-
         Vector3d lineP_oppositeP = new Vector3d(oppositeP);
         lineP_oppositeP.sub(lineP);
         if (lineP_oppositeP.epsilonEquals(new Vector3d(), EPSILON))
             // line and opposite are equal, so we need another way to determine the dividing plane's normal
             // TODO this may not be sufficient handling of this corner case
             lineP_oppositeP.cross(line3.getVector(), refLine3.getVector());
+
+        Direction dir = direction, oppositeDir = direction;
+        {// determine the real from-screen direction of the folds
+         // lineLayerNormal and its opposite should point "outside" the triangle defined by common, lineP and oppositeP
+            double[] trialPoints = new double[] { 0.5d, 0, 75d, 0.25d, 0.1d, 0.9d, 0.01d, 0.99d };
+
+            Layer lineLayer = null;
+            for (double d : trialPoints) {
+                lineLayer = getLayerForPoint(new ModelPoint(line3.getPointForParameter(d), line.getPointForParameter(d)));
+                if (lineLayer != null)
+                    break;
+            }
+
+            Layer oppositeLineLayer = null;
+            for (double d : trialPoints) {
+                oppositeLineLayer = getLayerForPoint(new ModelPoint(oppositeLine3.getPointForParameter(d),
+                        oppositeLine2.getPointForParameter(d)));
+                if (oppositeLineLayer != null)
+                    break;
+            }
+
+            if (lineLayer == null || oppositeLineLayer == null) {
+                throw new InvalidOperationException(
+                        "Cannot find layer for line or oppositeLine, which is essential for reverse fold.");
+            }
+
+            Vector3d lineLayerNormal = new Vector3d(lineLayer.getNormal());
+            Vector3d oppositeLineLayerNormal = new Vector3d(oppositeLineLayer.getNormal());
+
+            if (lineLayerNormal.angle(lineP_oppositeP) < Math.PI / 2d - EPSILON)
+                lineLayerNormal.negate();
+            if (oppositeLineLayerNormal.angle(lineP_oppositeP) > Math.PI / 2d + EPSILON)
+                oppositeLineLayerNormal.negate();
+
+            if (lineLayerNormal.angle(getScreenNormal()) > Math.PI / 2d + EPSILON)
+                dir = dir.getOpposite();
+            if (oppositeLineLayerNormal.angle(getScreenNormal()) > Math.PI / 2d + EPSILON)
+                oppositeDir = oppositeDir.getOpposite();
+        }
+
+        // refLineEnd is the border point of refLine that will be rotated
+        Point3d refLineEnd;
+        Point2d refLineEnd2;
+        if (refLine3.getP1().epsilonEquals(common, EPSILON) || refLine3.getP2().epsilonEquals(common, EPSILON)) {
+            if (refLine3.getP1().epsilonEquals(common, EPSILON)) {
+                refLineEnd = refLine3.getP2();
+                refLineEnd2 = refLine.getP2();
+            } else {
+                refLineEnd = refLine3.getP1();
+                refLineEnd2 = refLine.getP1();
+            }
+        } else {
+            double angle = new Segment3d(common, lineP).getVector().angle(refLine3.getVector());
+            double halfPI = Math.PI / 2d;
+            if (abs(angle - halfPI) > EPSILON) {
+                if ((direction == Direction.MOUNTAIN && angle > halfPI + EPSILON)
+                        || (direction == Direction.VALLEY && angle < halfPI - EPSILON)) {
+                    refLineEnd = refLine3.getP1();
+                    refLineEnd2 = refLine.getP1();
+                } else {
+                    refLineEnd = refLine3.getP2();
+                    refLineEnd2 = refLine.getP2();
+                }
+            } else {
+                refLineEnd = refLine3.getP1();
+                refLineEnd2 = refLine.getP1();
+            }
+        }
+
+        if (!withDelayed) {
+            // if bending is not to be performed, just make fold lines and return
+
+            // create the first fold
+            makeFold(dir, line.getP1(), line.getP2(), refLineEnd2, layerFilter, 0, (Map<Layer, Segment3d>) null,
+                    withDelayed);
+
+            // create the opposite fold
+            makeFold(oppositeDir, oppositeLine2.getP1(), oppositeLine2.getP2(), refLineEnd2, oppositeLayerFilter2, 0,
+                    (Map<Layer, Segment3d>) null, withDelayed);
+
+            return new LinkedList<Map<Layer, Layer>>() {
+                {
+                    add(new HashMap<Layer, Layer>());
+                    add(new HashMap<Layer, Layer>());
+                }
+            };
+        }
 
         // dividing plane goes along refLine and halves the space between lineP and oppositeP
         Plane3d dividingPlane = new Plane3d(lineP_oppositeP, refLine3.getP1());
@@ -1296,21 +1362,17 @@ public class ModelState implements Cloneable
         Vector3d v2 = new Vector3d(mirroredRefLineEnd);
         v2.sub(nearestLinePoint);
 
-        // and here we are the angle
+        // and here we have the angle
         double angle = v1.angle(v2);
-
-        // angle is in [0,PI], but it may be needed to be in [PI,2PI] to do the right rotation; so we try to rotate the
-        // refLineEnd, and if it doesn't correspond to mirroredRefLineEnd, we know we need the complementary angle
-        if (!MathHelper.rotate(refLineEnd, line3, angle).epsilonEquals(mirroredRefLineEnd, EPSILON))
-            angle = -angle;
 
         List<Map<Layer, Layer>> result = new LinkedList<Map<Layer, Layer>>();
 
-        result.add(makeFold(direction, line.getP1(), line.getP2(), layerFilter, 0, null, neighborTest, withDelayed));
+        result.add(makeFold(dir, line.getP1(), line.getP2(), refLineEnd2, layerFilter, angle, null, neighborTest,
+                withDelayed));
 
         // create the opposite fold
-        result.add(makeFold(direction.getOpposite(), oppositeLine2.getP1(), oppositeLine2.getP2(),
-                oppositeLayerFilter2, 0, null, neighborTest, withDelayed));
+        result.add(makeFold(oppositeDir, oppositeLine2.getP1(), oppositeLine2.getP2(), refLineEnd2,
+                oppositeLayerFilter2, angle, null, neighborTest, withDelayed));
 
         return result;
     }
@@ -1389,6 +1451,8 @@ public class ModelState implements Cloneable
                 .getOriginal().getPointForParameter(0.5d)));
         if (firstLayer == null)
             return new LinkedHashMap<Layer, ModelSegment>();
+
+        // TODO if the segment is border between more layers, then the average of all normals should be taken
 
         // find another layers: is done by creating a stripe perpendicular to the first layer and finding intersections
         // of the stripe with triangles
@@ -1554,10 +1618,11 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Return indices of layers to be used in {@link this#makeFold(Direction, Point2d, Point2d, List, double)} for
-     * <code>opposite</code>. That means, construct a triangle from <code>line</code> and <code>opposite</code> (they
-     * are required to have a common point) and return all layers intersecting that triangle that aren't in the affected
-     * layers of <code>line</code>.
+     * Return the layer filter that selects the layers corresponding to <code>opposite</code> line.
+     * <p>
+     * That means, construct a triangle from <code>line</code> and <code>opposite</code> (they are required to have a
+     * common point) and return all layers intersecting that triangle that aren't in the affected layers of
+     * <code>line</code>.
      * 
      * TODO a lot of getLayers() usage can be cached
      * 
@@ -1565,11 +1630,11 @@ public class ModelState implements Cloneable
      * @param opposite The <code>line</code>'s opposite line (it's image in 2D axis symmetry around an axis that has a
      *            common point with <code>line</code>).
      * @param lineAffectedLayers The set of affected layers for <code>line</code>.
-     * @return The corresponding list of affected layers for <code>opposite</code>. <code>null</code> if for
-     *         the given <code>line</code> and <code>opposite</code> no solution is available (eg. one of them has zero
-     *         direction vector or they together form a line).
+     * @return The corresponding layer filter for <code>opposite</code>. <code>null</code> if for the given
+     *         <code>line</code> and <code>opposite</code> no solution is available (eg. one of them has zero direction
+     *         vector or they together form a line).
      */
-    protected Set<Layer> getOppositeLineAffectedLayers(ModelSegment line, ModelSegment opposite,
+    protected LayerFilter getOppositeLineLayerFilter(ModelSegment line, ModelSegment opposite,
             Set<Layer> lineAffectedLayers)
     {
         Point3d lineP = line.getP1();
@@ -1635,8 +1700,7 @@ public class ModelState implements Cloneable
             // intersections with layers as defined by opposite
             Set<Layer> oppositeLineLayers = getLayers(opposite).keySet();
             oppositeLineLayers.retainAll(oppositeLayers);
-
-            return oppositeLineLayers;
+            return new LayerFilter(oppositeLineLayers);
         } else {
             // if the triangle couldn't be constructed, there are several possibilities
             Segment3d intersection = line.getIntersection(opposite);
@@ -1650,7 +1714,7 @@ public class ModelState implements Cloneable
             // through that line and aren't "used" by line)
             LinkedHashMap<Layer, ModelSegment> oppositeLayerInts = getLayers(opposite);
             oppositeLayerInts.keySet().removeAll(lineAffectedLayers);
-            return oppositeLayerInts.keySet();
+            return new LayerFilter(oppositeLayerInts.keySet());
         }
     }
 
