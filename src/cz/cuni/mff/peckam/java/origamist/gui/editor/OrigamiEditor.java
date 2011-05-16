@@ -924,14 +924,14 @@ public class OrigamiEditor extends CommonGui
 
         if (currentOperation != null) {
             ((DefaultListModel) operationsList.getModel()).removeElement(currentOperation);
-            setCurrentOpertaionArgument(null);
+            setCurrentOperationArgument(null);
         }
 
         currentOperation = operation;
 
         if (operation != null) {
             if (operation.getArguments().size() > 0)
-                setCurrentOpertaionArgument(operation.getArguments().get(0));
+                setCurrentOperationArgument(operation.getArguments().get(0));
             ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
             operationsList.repaint();
         }
@@ -944,7 +944,7 @@ public class OrigamiEditor extends CommonGui
      * 
      * @param argument The argument to set.
      */
-    public void setCurrentOpertaionArgument(OperationArgument argument)
+    public void setCurrentOperationArgument(OperationArgument argument)
     {
         this.currentOperationArgument = argument;
         stepEditor.setCurrentOperationArgument(argument);
@@ -976,7 +976,7 @@ public class OrigamiEditor extends CommonGui
             }
 
             if (currentOperationArgument.isComplete() || !currentOperationArgument.isRequired()) {
-                setCurrentOpertaionArgument(currentOperationArgument.getNext());
+                setCurrentOperationArgument(currentOperationArgument.getNext());
                 if (currentOperationArgument == null)
                     tryCompleteOperation();
             } else {
