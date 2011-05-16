@@ -87,6 +87,9 @@ public abstract class CommonGui extends JApplet
 
         super.init();
 
+        // to allow transparent JCanvas3D background
+        System.setProperty("j3d.transparentOffScreen", "true");
+
         setupLoggersBeforeServices();
 
         registerServices();
@@ -115,9 +118,6 @@ public abstract class CommonGui extends JApplet
             }
         });
         UIManager.getDefaults().addResourceBundle("application");
-
-        // to allow transparent JCanvas3D background
-        System.setProperty("j3d.transparentOffScreen", "true");
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {

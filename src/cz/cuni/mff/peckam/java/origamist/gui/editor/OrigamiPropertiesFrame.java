@@ -3,10 +3,12 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -16,6 +18,8 @@ import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -49,6 +53,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -58,6 +63,7 @@ import javax.swing.origamist.JFileInput;
 import javax.swing.origamist.JImage;
 import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
+import javax.swing.origamist.JMultilineLabel;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
@@ -73,6 +79,7 @@ import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.UnitDimension;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.StepThumbnailGenerator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.utils.PermissionConverter;
@@ -151,7 +158,7 @@ public class OrigamiPropertiesFrame extends JDialog
     /** Input for selecting the thumbnail. */
     protected JFileInput                           thumbnailFileInput;
     /** Component that shows a preview of the thumbnail. */
-    protected JImage                               thumbnailPreview;
+    protected JThumbnail                           thumbnailPreview;
     /** Input for configuring diagram paper. */
     protected JDiagramPaperInput                   diagramPaper;
     /** Input for configuring model paper. */
@@ -164,6 +171,9 @@ public class OrigamiPropertiesFrame extends JDialog
     protected JLabel                               dialogTitle, nameLabel, yearLabel, shortDescLabel, authorNameLabel,
             authorHomepageLabel, licenseNameLabel, licenseHomepageLabel, licenseContentLabel, originalLabel,
             thumbnailFileInputLabel, thumbnailPreviewLabel;
+
+    protected String                               imageFileType    = null;
+    protected Image                                generatedThumbnail = null, fromFileThumbnail = null;
 
     /**
      * @param tempOrigami If <code>null</code>, indicates that the dialog should display texts for creating a model
@@ -530,13 +540,18 @@ public class OrigamiPropertiesFrame extends JDialog
             {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     thumbnailFileInput.setEnabled(false);
-                    // thumbnailPreview.setVisible(false); // TODO maybe some better behavior
-                    // tempOrigami.getThumbnail().getImage().setImageIcon(null);
+                    thumbnailPreview.setGenerated(true);
+                    imageFileType = tempOrigami.getThumbnail().getImage().getType();
+                    tempOrigami.getThumbnail().getImage().setType("jpg");
+                    tempOrigami.getThumbnail().setGenerated(true);
+                    if (generatedThumbnail != null)
+                        tempOrigami.getThumbnail().getImage().setImageIcon(new ImageIcon(generatedThumbnail));
                 }
             }
         });
         thumbnailChooseGroup.add(thumbnailLoadFromModel);
 
+        imageFileType = tempOrigami.getThumbnail().getImage().getType();
         thumbnailLoadFromFile = new JRadioButton();
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
                 "OrigamiPropertiesFrame.thumbnailLoadFromFileLabel") {
@@ -552,7 +567,11 @@ public class OrigamiPropertiesFrame extends JDialog
             {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     thumbnailFileInput.setEnabled(true);
-                    thumbnailPreview.setVisible(true);
+                    thumbnailPreview.setGenerated(false);
+                    tempOrigami.getThumbnail().getImage().setType(imageFileType);
+                    tempOrigami.getThumbnail().setGenerated(false);
+                    if (fromFileThumbnail != null)
+                        tempOrigami.getThumbnail().getImage().setImageIcon(new ImageIcon(fromFileThumbnail));
                 }
             }
         });
@@ -595,7 +614,10 @@ public class OrigamiPropertiesFrame extends JDialog
 
                 tempOrigami.getThumbnail().getImage()
                         .setType(selected.toString().substring(selected.toString().lastIndexOf('.') + 1));
+                imageFileType = tempOrigami.getThumbnail().getImage().getType();
                 tempOrigami.getThumbnail().getImage().setImageIcon(new ImageIcon(selected.toString()));
+                tempOrigami.getThumbnail().setGenerated(false);
+                fromFileThumbnail = tempOrigami.getThumbnail().getImage().getImageIcon().getImage();
 
                 if (tempOrigami.getThumbnail().getImage().getImageIcon() != null)
                     thumbnailPreview.setImage(tempOrigami.getThumbnail().getImage().getImageIcon().getImage());
@@ -604,10 +626,18 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
-        thumbnailPreview = new JImage(tempOrigami.getThumbnail().getImage().getValue() != null ? tempOrigami
-                .getThumbnail().getImage().getImageIcon().getImage() : null);
+        thumbnailPreview = new JThumbnail(tempOrigami.getThumbnail().getImage().getValue() != null
+                && tempOrigami.getThumbnail().getImage().getValue().length > 0 ? tempOrigami.getThumbnail().getImage()
+                .getImageIcon().getImage() : null);
 
-        thumbnailLoadFromModel.setSelected(true);
+        if (tempOrigami.getThumbnail().isGenerated()) {
+            if (tempOrigami.getThumbnail().getImage().isImageNonEmpty())
+                generatedThumbnail = tempOrigami.getThumbnail().getImage().getImageIcon().getImage();
+            thumbnailLoadFromModel.doClick();
+        } else {
+            fromFileThumbnail = tempOrigami.getThumbnail().getImage().getImageIcon().getImage();
+            thumbnailLoadFromFile.doClick();
+        }
 
         diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
         final TitledBorder diagramPaperBorder = BorderFactory.createTitledBorder(diagramPaper.getBorder(), "");
@@ -855,7 +885,7 @@ public class OrigamiPropertiesFrame extends JDialog
     }
 
     /**
-     * Where applicable, fills a default value. Empty default values are not filled.
+     * Where applicable, fills or selects a default value. Empty default values are not filled.
      */
     protected void fillDefaults()
     {
@@ -865,6 +895,8 @@ public class OrigamiPropertiesFrame extends JDialog
 
         String authorName = conf.getDefaultAuthorName();
         this.authorName.setText(authorName);
+
+        thumbnailLoadFromModel.doClick();
 
         String authorHomepage = conf.getDefaultAuthorHomepage();
         this.authorHomepage.setText(authorHomepage);
@@ -971,4 +1003,124 @@ public class OrigamiPropertiesFrame extends JDialog
         }
     }
 
+    /**
+     * A thumbnail that allows its generation from model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class JThumbnail extends JImage
+    {
+
+        /** */
+        private static final long serialVersionUID = 5195157249274834168L;
+
+        protected boolean         generated        = false;
+        protected JMultilineLabel label            = new JMultilineLabel("");
+
+        /**
+         * @param image
+         */
+        public JThumbnail(Image image)
+        {
+            super(image);
+
+            final ResourceBundle messages = ResourceBundle.getBundle("application",
+                    ServiceLocator.get(ConfigurationManager.class).get().getLocale());
+
+            setLayout(new GridLayout());
+
+            label.setText("<html><body><center>" + messages.getString("OrigamiPropertiesFrame.pendingThumbnail")
+                    + "</center></body></html>");
+            label.setVisible(false);
+            label.setBackground(Color.WHITE);
+            add(label);
+
+            setToolTipText(messages.getString("OrigamiPropertiesFrame.doubleClickToReloadThumbnail"));
+
+            java.awt.event.MouseListener listener = new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e)
+                {
+                    if (generated && origami != null && (e.getClickCount() > 1 || e.getSource() == label)) {
+                        setImage(null);
+                        label.setVisible(true);
+                        label.setText("<html><body><center>"
+                                + messages.getString("OrigamiPropertiesFrame.generatingThumbnail")
+                                + "</center></body></html>");
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run()
+                            {
+                                generatedThumbnail = ServiceLocator.get(StepThumbnailGenerator.class).getThumbnail(
+                                        origami, 150, 150);
+
+                                if (generatedThumbnail != null)
+                                    tempOrigami.getThumbnail().getImage()
+                                            .setImageIcon(new ImageIcon(generatedThumbnail));
+                                else
+                                    tempOrigami.getThumbnail().getImage().setImageIcon(null);
+
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run()
+                                    {
+                                        setImage(generatedThumbnail);
+                                        label.setVisible(false);
+                                        label.setText("<html><body><center>"
+                                                + messages.getString("OrigamiPropertiesFrame.pendingThumbnail")
+                                                + "</center></body></html>");
+                                        repaint();
+                                    }
+                                });
+                            }
+                        }).start();
+                    }
+                }
+            };
+
+            label.addMouseListener(listener);
+            addMouseListener(listener);
+        }
+
+        /**
+         * If you change this property to true, then a message will be displayed that the user should click the
+         * thumbnail to generate it from model. If you set it to false, the loaded image will be displayed.
+         * 
+         * @param generated
+         */
+        public void setGenerated(boolean generated)
+        {
+            this.generated = generated;
+
+            if (origami == null)
+                return;
+
+            if (generated) {
+                if (generatedThumbnail != null) {
+                    setImage(generatedThumbnail);
+                    label.setVisible(false);
+                } else {
+                    setImage(null);
+                    label.setVisible(true);
+                }
+            } else {
+                setImage(fromFileThumbnail);
+                label.setVisible(false);
+            }
+            repaint();
+        }
+
+        @Override
+        public Dimension getMinimumSize()
+        {
+            return new Dimension(60, 60);
+        }
+
+        @Override
+        public Dimension getPreferredSize()
+        {
+            return new Dimension(60, 60);
+        }
+
+    }
 }

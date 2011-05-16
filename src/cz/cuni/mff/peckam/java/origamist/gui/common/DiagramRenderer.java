@@ -17,8 +17,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -56,7 +58,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class DiagramRenderer extends JPanelWithOverlay
 {
-    private static final long                                               serialVersionUID      = -7158217935566060260L;
+    private static final long                                               serialVersionUID       = -7158217935566060260L;
 
     /** The origami which is this diagram from. */
     protected Origami                                                       origami;
@@ -71,15 +73,16 @@ public class DiagramRenderer extends JPanelWithOverlay
     protected PropertyChangeListener                                        localeListener;
 
     /** The actually displayed step renderers. */
-    protected final List<StepRendererWithControls>                          stepRenderers         = new LinkedList<StepRendererWithControls>();
+    protected final List<StepRendererWithControls>                          stepRenderers          = new LinkedList<StepRendererWithControls>();
 
     /** The pool of step renderers that can be reused. */
-    protected final List<StepRendererWithControls>                          stepRendererPool      = new ArrayList<StepRendererWithControls>();
+    protected final List<StepRendererWithControls>                          stepRendererPool       = new ArrayList<StepRendererWithControls>();
     /** The pool of renderers for empty cells. */
-    protected final ListWithAdditionalBounds<JComponent, EmptyCellRenderer> emptyCellRendererPool = new LinkedListWithAdditionalBounds<JComponent, EmptyCellRenderer>();
+    protected final ListWithAdditionalBounds<JComponent, EmptyCellRenderer> emptyCellRendererPool  = new LinkedListWithAdditionalBounds<JComponent, EmptyCellRenderer>();
+    protected final Set<JComponent>                                         usedEmptyCellRenderers = new HashSet<JComponent>();
 
     /** The basic zoom of all StepRenderers. */
-    protected double                                                        zoom                  = 100d;
+    protected double                                                        zoom                   = 100d;
 
     /** The listener to be attached to {@link StepRendererWithControls} to listen when the fullscreen is requested. */
     protected PropertyChangeListener                                        stepFullscreenListener;
@@ -102,9 +105,9 @@ public class DiagramRenderer extends JPanelWithOverlay
     protected final JPanel                                                  toolbarPane;
 
     /** The layout for diagramPane in page mode. */
-    protected LayoutManager                                                 pageModeLayout        = null;
+    protected LayoutManager                                                 pageModeLayout         = null;
     /** The layout for diagramPane in diagram mode. */
-    protected LayoutManager                                                 diagramModeLayout     = null;
+    protected LayoutManager                                                 diagramModeLayout      = null;
 
     /** Previous button in PAGE mode. */
     protected final JButton                                                 prevButtonPage;
@@ -398,6 +401,7 @@ public class DiagramRenderer extends JPanelWithOverlay
         if (emptyCellRendererPool.size() > poolSize) {
             emptyCellRendererPool.subList(poolSize, emptyCellRendererPool.size()).clear();
         } // if the pool should get larger, we don't care here as the new pool entries will be created lazily
+        usedEmptyCellRenderers.clear();
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -521,6 +525,7 @@ public class DiagramRenderer extends JPanelWithOverlay
 
                 diagramPane.removeAll();
                 stepRenderers.clear();
+                usedEmptyCellRenderers.clear();
 
                 new Thread() {
                     @Override
@@ -690,8 +695,10 @@ public class DiagramRenderer extends JPanelWithOverlay
     protected JComponent getFreeEmptyCellRenderer()
     {
         for (JComponent comp : emptyCellRendererPool) {
-            if (comp.getParent() == null)
+            if (comp.getParent() == null && !usedEmptyCellRenderers.contains(comp)) {
+                usedEmptyCellRenderers.add(comp);
                 return comp;
+            }
         }
 
         JComponent newRenderer = createEmptyCellRenderer();
@@ -700,6 +707,7 @@ public class DiagramRenderer extends JPanelWithOverlay
             throw new ClassCastException("Empty cell renderer must implement EmptyCellRenderer interface.");
 
         emptyCellRendererPool.add(newRenderer);
+        usedEmptyCellRenderers.add(newRenderer);
         return newRenderer;
     }
 

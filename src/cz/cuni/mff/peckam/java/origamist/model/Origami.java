@@ -461,7 +461,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         if (!preserveExisting || getLicense() == null)
             this.setLicense((License) cof.createLicense());
         if (!preserveExisting || getThumbnail() == null)
-            this.setThumbnail(cof.createImage());
+            this.setThumbnail(of.createOrigamiThumbnail());
         if (!preserveExisting || getThumbnail().getImage() == null)
             this.getThumbnail().setImage((BinaryImage) cof.createBinaryImage());
         if (!preserveExisting || getModel() == null)
@@ -531,6 +531,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         byte[] newImage = Arrays.copyOf(from.getThumbnail().getImage().getValue(), from.getThumbnail().getImage()
                 .getValue().length);
         getThumbnail().getImage().setType(from.getThumbnail().getImage().getType());
+        getThumbnail().setGenerated(from.getThumbnail().isGenerated());
         getThumbnail().getImage().setValue(newImage);
 
         getModel().getPaper().setWeight(from.getModel().getPaper().getWeight());

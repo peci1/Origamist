@@ -239,38 +239,38 @@
 			<step id="9">
 				<description>Now watch where will points A-D move.</description>
 				<description lang="cs-CZ">Sledujte, kam se hýbou body A-D.</description>
-				<markerOpertaion>
+				<markerOperation>
 					<text>A</text>
 					<refPoint>
 						<x>0</x>
 						<y>0</y>
 					</refPoint>
 					<stepsToHide>3</stepsToHide>
-				</markerOpertaion>
-				<markerOpertaion>
+				</markerOperation>
+				<markerOperation>
 					<text>B</text>
 					<refPoint>
 						<x>0</x>
 						<y>1</y>
 					</refPoint>
 					<stepsToHide>3</stepsToHide>
-				</markerOpertaion>
-				<markerOpertaion>
+				</markerOperation>
+				<markerOperation>
 					<text>C</text>
 					<refPoint>
 						<x>0.70707070707070708</x>
 						<y>0</y>
 					</refPoint>
 					<stepsToHide>1</stepsToHide>
-				</markerOpertaion>
-				<markerOpertaion>
+				</markerOperation>
+				<markerOperation>
 					<text>D</text>
 					<refPoint>
 						<x>0.70707070707070708</x>
 						<y>1</y>
 					</refPoint>
 					<stepsToHide>1</stepsToHide>
-				</markerOpertaion>
+				</markerOperation>
 			</step>
 			<step id="10">
 				<description>Fine-tune wings with thunderbolt folds.</description>

@@ -48,6 +48,11 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
         return icon;
     }
 
+    public boolean isImageNonEmpty()
+    {
+        return value != null && value.length > 0 && getImageIcon().getIconWidth() > 0;
+    }
+
     @Override
     public void setValue(byte[] value)
     {
@@ -83,7 +88,7 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
     {
         if (icon == null) {
             if (setValue)
-                setValue(null, false);
+                setValue(new byte[0], false);
             ImageIcon oldIcon = this.icon;
             this.icon = null;
             support.firePropertyChange(ICON_PROPERTY, oldIcon, null);
@@ -99,7 +104,7 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
 
         if (image == null) {
             if (setValue)
-                setValue(null, false);
+                setValue(new byte[0], false);
             ImageIcon oldIcon = this.icon;
             this.icon = null;
             support.firePropertyChange(ICON_PROPERTY, oldIcon, null);

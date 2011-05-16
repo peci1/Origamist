@@ -12,8 +12,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.RepeatOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for FoldUnfoldOperationBase complex type.
+ * <p>Java class for RepeatOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldUnfoldOperationBase">
+ * &lt;complexType name="RepeatOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldUnfoldOperations" />
+ *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}RepeatOperations" fixed="REPEAT_ACTION" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -40,25 +40,25 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  * 
  */
-@XmlType(name = "FoldUnfoldOperationBase")
+@XmlType(name = "RepeatOperationBase")
 @XmlSeeAlso({
-    FoldUnfoldOperation.class
+    RepeatOperation.class
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public abstract class FoldUnfoldOperationBase
+public abstract class RepeatOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
-    public FoldUnfoldOperationBase() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldUnfoldOperationBase")) {
+    public RepeatOperationBase() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperationBase")) {
             init();
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldUnfoldOperationBase)) {
+        if (!(object instanceof RepeatOperationBase)) {
             return false;
         }
         if (this == object) {

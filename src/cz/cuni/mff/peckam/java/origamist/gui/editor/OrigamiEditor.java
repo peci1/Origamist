@@ -98,6 +98,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.EditorDataReceiver
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextInputDataReceiver;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.StepThumbnailGenerator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
@@ -1044,6 +1045,7 @@ public class OrigamiEditor extends CommonGui
     {
         super.registerServices();
         ServiceLocator.add(OrigamiEditor.class, this);
+        ServiceLocator.add(StepThumbnailGenerator.class, new StepThumbnailGenerator());
     }
 
     @Override

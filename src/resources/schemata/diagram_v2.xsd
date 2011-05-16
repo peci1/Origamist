@@ -50,7 +50,15 @@
 			</element>
 			<element name="license" type="c:License" />
 			<element name="original" type="anyURI" maxOccurs="1" minOccurs="0" />
-			<element name="thumbnail" type="c:Image" />
+			<element name="thumbnail">
+				<complexType>
+					<complexContent>
+						<extension base="c:Image">
+							<attribute name="generated" default="true" type="boolean" />
+						</extension>
+					</complexContent>
+				</complexType>
+			</element>
 
 			<element name="paper" type="m:DiagramPaper" />
 			<element name="model" type="m:Model" />
@@ -240,28 +248,35 @@
 			<element name="zoom" type="m:Percent" maxOccurs="1" minOccurs="0" default="100" />
 			<choice> 
 				<element name="image" type="c:BinaryImage" />
-				<sequence minOccurs="0" maxOccurs="unbounded">
-					<annotation>
-						<appinfo>
-							<jxb:property name="operations"
-								collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
-						</appinfo>
-					</annotation>
-					<choice>
-						<element name="foldOperation" type="m:FoldOperation" />
-						<element name="foldUnfoldOperation" type="m:FoldUnfoldOperation" />
-						<element name="rotateOperation" type="m:RotateOperation" />
-						<element name="turnOverOperation" type="m:TurnOverOperation" />
-						<element name="reverseFoldOperation" type="m:ReverseFoldOperation" />
-						<element name="thunderboltFoldOperation" type="m:ThunderboltFoldOperation" />
-						<element name="crimpFoldOperation" type="m:CrimpFoldOperation" />
-						<element name="markerOpertaion" type="m:MarkerOperation" />
-					</choice>
-				</sequence>
+				<group ref="m:operations" />
 			</choice>
 		</sequence>
 		<attribute name="id" type="int" use="required" />
 	</complexType>
+
+	<group name="operations">
+		<sequence>
+			<sequence minOccurs="0" maxOccurs="unbounded" >
+				<annotation>
+					<appinfo>
+						<jxb:property name="operations"
+							collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+					</appinfo>
+				</annotation>
+				<choice>
+					<element name="foldOperation" type="m:FoldOperation" />
+					<element name="foldUnfoldOperation" type="m:FoldUnfoldOperation" />
+					<element name="rotateOperation" type="m:RotateOperation" />
+					<element name="turnOverOperation" type="m:TurnOverOperation" />
+					<element name="reverseFoldOperation" type="m:ReverseFoldOperation" />
+					<element name="thunderboltFoldOperation" type="m:ThunderboltFoldOperation" />
+					<element name="crimpFoldOperation" type="m:CrimpFoldOperation" />
+					<element name="markerOperation" type="m:MarkerOperation" />
+					<element name="repeatOperation" type="m:RepeatOperation" />
+				</choice>
+			</sequence>
+		</sequence>
+	</group>
 
 	<simpleType name="Percent">
 		<restriction base="double">
@@ -506,6 +521,28 @@
 			</extension>
 		</complexContent>
 	</complexType>
+	
+	<complexType name="RepeatOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:RepeatOperations" fixed="REPEAT_ACTION" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="RepeatOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.RepeatOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:RepeatOperationBase">
+				<group ref="m:operations" />
+				<attribute name="display" type="boolean" default="false" />
+			</extension>
+		</complexContent>
+	</complexType>
 
 	<group name="layerList">
 		<sequence>
@@ -633,6 +670,12 @@
 	<simpleType name="MarkerOperations">
 		<restriction base="m:Operations">
 			<enumeration value="MARKER" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="RepeatOperations">
+		<restriction base="m:Operations">
+			<enumeration value="REPEAT_ACTION" />
 		</restriction>
 	</simpleType>
 

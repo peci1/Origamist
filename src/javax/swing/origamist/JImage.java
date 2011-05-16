@@ -200,7 +200,7 @@ public class JImage extends JPanel
         super.paint(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        if (currentImage != null) {
+        if (image != null && currentImage != null) {
             int w = getWidth();
             int h = getHeight();
 
