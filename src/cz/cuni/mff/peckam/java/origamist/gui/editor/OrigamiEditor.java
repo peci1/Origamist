@@ -232,11 +232,15 @@ public class OrigamiEditor extends CommonGui
                 if (e.getKeyCode() == KeyEvent.VK_ALT) {
                     showAlternativeActions(!alternativeActionsShown);
                     e.consume();
-                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    proceedToNextOperationArgument();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    if (currentOperationArgument != null) {
+                        proceedToNextOperationArgument();
+                        e.consume();
+                    }
                 } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     if (currentOperation != null) {
                         setCurrentOperation(null);
+                        e.consume();
                     }
                 }
             }
@@ -327,7 +331,11 @@ public class OrigamiEditor extends CommonGui
                     }
                 }
             });
-        } catch (InterruptedException e) {} catch (InvocationTargetException e) {}
+        } catch (InterruptedException e) {
+            Logger.getLogger("application").error(e);
+        } catch (InvocationTargetException e) {
+            Logger.getLogger("application").error(e);
+        }
     }
 
     /**
@@ -924,6 +932,7 @@ public class OrigamiEditor extends CommonGui
             if (operation.getArguments().size() > 0)
                 setCurrentOpertaionArgument(operation.getArguments().get(0));
             ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
+            operationsList.repaint();
         }
 
         stepEditor.clearChosenItems();
@@ -940,6 +949,12 @@ public class OrigamiEditor extends CommonGui
         stepEditor.setCurrentOperationArgument(argument);
         operationsList.recomputeHeights();
         operationsList.repaint();
+
+        // arguments that just fetch text input from the user can ask for the input right now
+        // trying to proceed to next argument will cause the text input to be shown, and when it is completed, next
+        // argument is automatically selected
+        if (argument != null && argument instanceof TextInputDataReceiver)
+            proceedToNextOperationArgument();
     }
 
     /**
@@ -953,7 +968,6 @@ public class OrigamiEditor extends CommonGui
 
             if (currentOperationArgument instanceof EditorDataReceiver) {
                 ((EditorDataReceiver) currentOperationArgument).readDataFromEditor(stepEditor);
-                // TODO call makeFold if it is needed
             } else if (!currentOperationArgument.isComplete()) {
                 if (currentOperationArgument instanceof TextInputDataReceiver) {
                     ((TextInputDataReceiver) currentOperationArgument).askForData();
@@ -987,23 +1001,27 @@ public class OrigamiEditor extends CommonGui
                 @Override
                 public void run()
                 {
-                    currentOperation.fillFromArguments();
-                    step.getOperations().add(currentOperation);
+                    Operation operation = currentOperation;
+                    setCurrentOperation(null);
+
+                    operation.fillFromArguments();
+                    step.getOperations().add(operation);
+
                     if (!step.isModelStateValid(true)) {
                         try {
                             step.getModelState(true);
                         } catch (RuntimeException e) {
+                            step.getOperations().remove(operation);
+
                             statusBar.showMessage(
                                     "<html><span style=\"color:red;font-weight:bold\">"
                                             + editorMessages.getString("OrigamiEditor.invalidOperation")
                                                     .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
-                                            + "</span></html>", null);
+                                            + "</span></html>", 7000);
                             Logger.getLogger("application").warn("Invalid operation", e);
-                            step.getOperations().remove(currentOperation);
                         }
                         setStep(step);
                     }
-                    setCurrentOperation(null);
                     operationsList.repaint();
                 }
             }).start();

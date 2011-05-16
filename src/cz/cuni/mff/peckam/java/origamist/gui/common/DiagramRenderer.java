@@ -5,10 +5,9 @@ package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -16,6 +15,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
@@ -37,11 +39,14 @@ import javax.swing.origamist.JToolBarWithBgImage;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
+import com.sun.j3d.exp.swing.JCanvas3D;
 
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.DisplayMode;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.StepRendererWithControls;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
+import cz.cuni.mff.peckam.java.origamist.utils.LinkedListWithAdditionalBounds;
+import cz.cuni.mff.peckam.java.origamist.utils.ListWithAdditionalBounds;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
@@ -51,78 +56,82 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
  */
 public class DiagramRenderer extends JPanelWithOverlay
 {
-    private static final long                      serialVersionUID    = -7158217935566060260L;
+    private static final long                                               serialVersionUID      = -7158217935566060260L;
 
     /** The origami which is this diagram from. */
-    protected Origami                              origami;
+    protected Origami                                                       origami;
 
     /** The first step to be rendered. */
-    protected Step                                 firstStep;
-
-    /** A display pattern for displaying only a single step. */
-    protected static final Dimension               SINGLE_STEP_PATTERN = new Dimension(1, 1);
-
-    /** The number of steps that will be shown at once. */
-    protected Dimension                            displayedStepsPattern;
+    protected Step                                                          firstStep;
 
     /** The mode the renderer actually displays the origami in. */
-    protected DisplayMode                          mode;
+    protected DisplayMode                                                   mode;
 
     /** The listener that will be fired after the locale of the GUI changed. */
-    protected PropertyChangeListener               localeListener;
+    protected PropertyChangeListener                                        localeListener;
 
     /** The actually displayed step renderers. */
-    protected final List<StepRendererWithControls> stepRenderers       = new LinkedList<StepRendererWithControls>();
+    protected final List<StepRendererWithControls>                          stepRenderers         = new LinkedList<StepRendererWithControls>();
+
+    /** The pool of step renderers that can be reused. */
+    protected final List<StepRendererWithControls>                          stepRendererPool      = new ArrayList<StepRendererWithControls>();
+    /** The pool of renderers for empty cells. */
+    protected final ListWithAdditionalBounds<JComponent, EmptyCellRenderer> emptyCellRendererPool = new LinkedListWithAdditionalBounds<JComponent, EmptyCellRenderer>();
 
     /** The basic zoom of all StepRenderers. */
-    protected double                               zoom                = 100d;
+    protected double                                                        zoom                  = 100d;
 
     /** The listener to be attached to {@link StepRendererWithControls} to listen when the fullscreen is requested. */
-    protected PropertyChangeListener               stepFullscreenListener;
+    protected PropertyChangeListener                                        stepFullscreenListener;
 
     // COMPONENTS
 
     /** The label to be displayed over the renderer while it is loading. */
-    protected final JLabel                         overlayLabel;
+    protected final JLabel                                                  overlayLabel;
 
     /** The panel holding all the StepRenderers. */
-    protected final JPanel                         diagramPane;
+    protected final JPanel                                                  diagramPane;
 
     /** The toolbar for diagram manipulations. */
-    protected final JToolBarWithBgImage            toolbar;
+    protected final JToolBarWithBgImage                                     toolbar;
 
     /** The toolbar of the currently displayed step if the display mode is DIAGRAM. */
-    protected JToolBar                             stepToolbar;
+    protected JToolBar                                                      stepToolbar;
 
     /** The panel holding all toolbars this renderer should show. */
-    protected final JPanel                         toolbarPane;
+    protected final JPanel                                                  toolbarPane;
+
+    /** The layout for diagramPane in page mode. */
+    protected LayoutManager                                                 pageModeLayout        = null;
+    /** The layout for diagramPane in diagram mode. */
+    protected LayoutManager                                                 diagramModeLayout     = null;
 
     /** Previous button in PAGE mode. */
-    protected final JButton                        prevButtonPage;
+    protected final JButton                                                 prevButtonPage;
     /** Previous button in DIAGRAM mode. */
-    protected final JButton                        prevButtonDiagram;
+    protected final JButton                                                 prevButtonDiagram;
     /** Next button in PAGE mode. */
-    protected final JButton                        nextButtonPage;
+    protected final JButton                                                 nextButtonPage;
     /** Next button in DIAGRAM mode. */
-    protected final JButton                        nextButtonDiagram;
+    protected final JButton                                                 nextButtonDiagram;
     /** First button in PAGE mode. */
-    protected final JButton                        firstButtonPage;
+    protected final JButton                                                 firstButtonPage;
     /** First button in DIAGRAM mode. */
-    protected final JButton                        firstButtonDiagram;
+    protected final JButton                                                 firstButtonDiagram;
     /** Last button in PAGE mode. */
-    protected final JButton                        lastButtonPage;
+    protected final JButton                                                 lastButtonPage;
     /** Last button in DIAGRAM mode. */
-    protected final JButton                        lastButtonDiagram;
+    protected final JButton                                                 lastButtonDiagram;
     /** The quick-jump combobox for navigating through pages. */
-    protected final JComboBox                      pageSelect;
+    protected final JComboBox                                               pageSelect;
     /** The model of pageSelect for PAGE mode. */
-    protected ComboBoxModel                        pageSelectPageModel;
+    protected ComboBoxModel                                                 pageSelectPageModel;
     /** The model of pageSelect for DIAGRAM mode. */
-    protected ComboBoxModel                        pageSelectDiagramModel;
+    protected ComboBoxModel                                                 pageSelectDiagramModel;
     /** The string saying "Step x of y" to be displayed in <code>pageSelect</code> */
-    protected ParametrizedLocalizedString          stepXofY;
+    protected ParametrizedLocalizedString                                   stepXofY;
     /** The string saying "Page x of y" to be displayed in <code>pageSelect</code> */
-    protected ParametrizedLocalizedString          pageXofY;
+    protected ParametrizedLocalizedString                                   pageXofY;
 
     /**
      * @param o
@@ -130,7 +139,7 @@ public class DiagramRenderer extends JPanelWithOverlay
      */
     public DiagramRenderer(Origami o, Step firstStep)
     {
-        overlayLabel = new JLocalizedLabel("application", "DiagramRenderer.loading");
+        overlayLabel = new JLocalizedLabel("viewer", "DiagramRenderer.loading");
         overlayLabel.setFont(overlayLabel.getFont().deriveFont(Font.BOLD, 40));
         overlayLabel.setOpaque(false);
 
@@ -183,6 +192,7 @@ public class DiagramRenderer extends JPanelWithOverlay
         });
 
         diagramPane = new JPanel();
+        diagramModeLayout = new FormLayout("fill:default:grow", "fill:default:grow");
 
         toolbar = new JToolBarWithBgImage("viewer");
         toolbar.setFloatable(false);
@@ -255,7 +265,10 @@ public class DiagramRenderer extends JPanelWithOverlay
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (evt.getSource() instanceof StepRendererWithControls) {
+                if (evt.getSource() instanceof StepRenderer) {
+                    setDisplayMode(DisplayMode.DIAGRAM);
+                    setStep(((StepRenderer) evt.getSource()).getStep());
+                } else if (evt.getSource() instanceof StepRendererWithControls) {
                     setDisplayMode(DisplayMode.DIAGRAM);
                     setStep(((StepRendererWithControls) evt.getSource()).getStep());
                 }
@@ -294,7 +307,6 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         toolbarPane.setLayout(new FlowLayout(FlowLayout.LEADING, 5, 0));
         toolbarPane.add(toolbar);
-
     }
 
     /**
@@ -327,17 +339,16 @@ public class DiagramRenderer extends JPanelWithOverlay
      * @param firstStep The step to be displayed as the first one.
      * @param updateSteps Whether to update the displayed steps, or delay it for later.
      */
-    protected synchronized void setOrigami(Origami o, Step firstStep, boolean updateSteps)
+    protected synchronized void setOrigami(Origami o, Step firstStep, final boolean updateSteps)
     {
         this.origami = o;
         setStep(firstStep);
 
         int numSteps = o.getModel().getSteps().getStep().size();
-        int stepsPerPage = o.getPaper().getCols() * o.getPaper().getRows();
-        int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
+        int numPages = o.getNumberOfPages();
 
         int stepIndex = o.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-        int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
+        int pageIndex = o.getPage(firstStep);
 
         Object[] steps = new Object[numSteps + 1];
         stepXofY = new ParametrizedLocalizedString("viewer", "DiagramRenderer.stepXofY", stepIndex, numSteps);
@@ -354,10 +365,61 @@ public class DiagramRenderer extends JPanelWithOverlay
         pageSelectDiagramModel = new DefaultComboBoxModel(steps);
         pageSelectPageModel = new DefaultComboBoxModel(pages);
 
-        if (updateSteps)
-            updateDisplayedSteps();
+        int gridWidth = o.getPaper().getCols();
+        StringBuilder colsBuilder = new StringBuilder();
+        int[][] colGroups = new int[1][gridWidth];
+        for (int i = 0; i < gridWidth; i++) {
+            if (i > 0)
+                colsBuilder.append(",");
+            colsBuilder.append("fill:default:grow");
+            colGroups[0][i] = i + 1;
+        }
 
-        setBackground(origami.getPaper().getColor().getBackground());
+        int gridHeight = o.getPaper().getRows();
+        StringBuilder rowsBuilder = new StringBuilder();
+        int[][] rowGroups = new int[1][gridHeight];
+        for (int i = 0; i < gridHeight; i++) {
+            if (i > 0)
+                rowsBuilder.append(",");
+            rowsBuilder.append("fill:default:grow");
+            rowGroups[0][i] = i + 1;
+        }
+
+        FormLayout layout = new FormLayout(colsBuilder.toString(), rowsBuilder.toString());
+        layout.setColumnGroups(colGroups);
+        layout.setRowGroups(rowGroups);
+        pageModeLayout = layout;
+
+        int poolSize = o.getPaper().getCols() * o.getPaper().getRows();
+        if (stepRendererPool.size() > poolSize) {
+            stepRendererPool.subList(poolSize, stepRendererPool.size()).clear();
+        } // if the pool should get larger, we don't care here as the new pool entries will be created lazily
+
+        if (emptyCellRendererPool.size() > poolSize) {
+            emptyCellRendererPool.subList(poolSize, emptyCellRendererPool.size()).clear();
+        } // if the pool should get larger, we don't care here as the new pool entries will be created lazily
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                if (mode == DisplayMode.DIAGRAM)
+                    pageSelect.setModel(pageSelectDiagramModel);
+                else
+                    pageSelect.setModel(pageSelectPageModel);
+
+                setBackground(origami.getPaper().getColor().getBackground());
+
+                for (StepRendererWithControls r : stepRendererPool)
+                    r.setOrigami(origami);
+
+                for (EmptyCellRenderer comp : emptyCellRendererPool.getAltView())
+                    comp.setOrigami(origami);
+
+                if (updateSteps)
+                    updateDisplayedSteps();
+            }
+        });
     }
 
     /**
@@ -391,7 +453,7 @@ public class DiagramRenderer extends JPanelWithOverlay
      */
     public synchronized void setDisplayMode(DisplayMode mode)
     {
-        if (mode.equals(this.mode) && displayedStepsPattern != null)
+        if (mode.equals(this.mode))
             return;
 
         DisplayMode oldMode = this.mode;
@@ -400,7 +462,6 @@ public class DiagramRenderer extends JPanelWithOverlay
 
         switch (mode) {
             case DIAGRAM:
-                displayedStepsPattern = SINGLE_STEP_PATTERN;
                 pageSelect.setModel(pageSelectDiagramModel);
 
                 prevButtonDiagram.setVisible(true);
@@ -413,7 +474,6 @@ public class DiagramRenderer extends JPanelWithOverlay
                 lastButtonPage.setVisible(false);
                 break;
             case PAGE:
-                displayedStepsPattern = new Dimension(origami.getPaper().getCols(), origami.getPaper().getRows());
                 pageSelect.setModel(pageSelectPageModel);
 
                 // when switching back to PAGE mode, don't automatically display the previously displayed step as the
@@ -462,59 +522,116 @@ public class DiagramRenderer extends JPanelWithOverlay
                 diagramPane.removeAll();
                 stepRenderers.clear();
 
-                diagramPane.setLayout(new GridLayout(displayedStepsPattern.height, displayedStepsPattern.width));
-
                 new Thread() {
                     @Override
                     public void run()
                     {
-                        int numSteps = displayedStepsPattern.width * displayedStepsPattern.height;
-                        Step step = firstStep;
-                        for (int i = 0; i < numSteps; i++) {
-                            if (step != null) {
-                                // TODO manage a pool of renderers
-                                StepRendererWithControls r = new StepRendererWithControls(origami, step);
+                        if (mode == DisplayMode.DIAGRAM) {
+                            final StepRendererWithControls r = getStepRenderer(0);
+                            r.setDisplayMode(mode);
+                            r.setStep(firstStep);
+                            r.setZoom(zoom);
+                            stepRenderers.add(r);
+
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    if (diagramPane.getLayout() != diagramModeLayout)
+                                        diagramPane.setLayout(diagramModeLayout);
+                                    diagramPane.add(r, new CellConstraints(1, 1));
+                                }
+                            });
+                        } else {
+                            int page = origami.getPage(firstStep);
+                            final Integer[] stepsPlacement = origami.getStepsPlacement(page);
+                            final int numSteps = stepsPlacement.length;
+                            int gridSize = origami.getPaper().getCols() * origami.getPaper().getRows();
+
+                            final JComponent[] panels = new JComponent[gridSize];
+                            Arrays.fill(panels, null);
+                            // this component will signalize that the cell it lies in is covered by a renderer, but it
+                            // isn't its upper left corner
+                            final JComponent nonEmptyCell = new JPanel();
+
+                            final int gridWidth = origami.getPaper().getCols();
+                            final int gridHeight = origami.getPaper().getRows();
+
+                            Step step = firstStep;
+                            for (int i = 0; i < numSteps; i++) {
+                                StepRendererWithControls r = getStepRenderer(i);
                                 r.setDisplayMode(getDisplayMode());
-                                r.addPropertyChangeListener("fullscreenModeRequested", stepFullscreenListener);
-                                r.addPropertyChangeListener("zoom", new PropertyChangeListener() {
-                                    @Override
-                                    public void propertyChange(PropertyChangeEvent evt)
-                                    {
-                                        if (getDisplayMode() == DisplayMode.DIAGRAM) {
-                                            zoom = (Double) evt.getNewValue();
+                                r.setStep(step);
+                                r.setZoom(zoom);
+
+                                int gridOrigin = stepsPlacement[i];
+
+                                int gridX = gridOrigin % gridWidth;
+                                int gridY = gridOrigin / gridWidth;
+                                int width = step.getColspan() != null ? step.getColspan() : 1;
+                                int height = step.getRowspan() != null ? step.getRowspan() : 1;
+                                for (int j = gridX; j < gridX + width; j++) {
+                                    for (int k = gridY; k < gridY + height; k++) {
+                                        panels[j + gridWidth * k] = nonEmptyCell;
+                                    }
+                                }
+                                panels[gridOrigin] = r;
+                                stepRenderers.add(r);
+
+                                step = step.getNext();
+                            }
+                            for (int i = 0; i < panels.length; i++) {
+                                if (panels[i] == null) {
+                                    panels[i] = getFreeEmptyCellRenderer();
+                                }
+                            }
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    if (diagramPane.getLayout() != pageModeLayout)
+                                        diagramPane.setLayout(pageModeLayout);
+
+                                    Step step = firstStep;
+                                    for (int i = 0; i < numSteps; i++) {
+                                        int gridOrigin = stepsPlacement[i];
+
+                                        int x = gridOrigin % gridWidth;
+                                        int y = gridOrigin / gridWidth;
+                                        int width = step.getColspan() != null ? step.getColspan() : 1;
+                                        int height = step.getRowspan() != null ? step.getRowspan() : 1;
+
+                                        diagramPane.add(panels[gridOrigin], new CellConstraints(x + 1, y + 1, width,
+                                                height));
+
+                                        step = step.getNext();
+                                    }
+
+                                    for (int i = 0; i < panels.length; i++) {
+                                        if (panels[i] instanceof EmptyCellRenderer) {
+                                            int x = i % gridWidth;
+                                            int y = i / gridHeight;
+                                            diagramPane.add(panels[i], new CellConstraints(x + 1, y + 1));
                                         }
                                     }
-                                });
-                                // TODO handle colspan and rowspan
-                                diagramPane.add(r);
-                                stepRenderers.add(r);
-                                r.setZoom(zoom);
-                                r = null;
-                            } else {
-                                JPanel panel = new JPanel();
-                                panel.setBackground(origami.getPaper().getColor().getBackground());
-                                diagramPane.add(panel);
-                            }
-                            if (step != null)
-                                step = step.getNext();
+                                }
+                            });
                         }
 
-                        if (stepRenderers.size() == 0)
-                            return; // TODO maybe tell the user that nothing is to be displayed
-
-                        if (stepToolbar != null)
-                            toolbarPane.remove(stepToolbar);
-                        if (mode.equals(DisplayMode.DIAGRAM)) {
-                            // in DIAGRAM view we want to add the step's toolbar to the toolbar of this renderer
-                            stepToolbar = stepRenderers.get(0).getToolbar();
-                            // also detaches the toolbar from the StepRendererWithControls
-                            toolbarPane.add(stepToolbar);
-                            stepToolbar.setVisible(true);
-                        }
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
                             public void run()
                             {
+                                if (stepToolbar != null)
+                                    toolbarPane.remove(stepToolbar);
+                                if (mode.equals(DisplayMode.DIAGRAM) && stepRenderers.size() > 0) {
+                                    // in DIAGRAM view we want to add the step's toolbar to the toolbar of this renderer
+                                    stepToolbar = stepRenderers.get(0).getToolbar();
+                                    // also detaches the toolbar from the StepRendererWithControls
+                                    toolbarPane.add(stepToolbar);
+                                    stepToolbar.setVisible(true);
+                                }
+
                                 // this is important!
                                 getContent().revalidate();
                                 hideOverlay();
@@ -524,6 +641,76 @@ public class DiagramRenderer extends JPanelWithOverlay
                 }.start();
             }
         });
+    }
+
+    /**
+     * Return the step renderer that will draw the step that will be displayed at the given index in this renderer's
+     * grid. The returned renderer will have correct origami already set.
+     * 
+     * @param index The index in this renderer's grid.
+     * @return The step renderer.
+     */
+    protected StepRendererWithControls getStepRenderer(int index)
+    {
+        // ensure the pool is accordingly large
+        while (index + 1 > stepRendererPool.size()) {
+            stepRendererPool.add(null);
+        }
+
+        if (stepRendererPool.get(index) == null) {
+            stepRendererPool.set(index, createStepRenderer());
+        }
+        return stepRendererPool.get(index);
+    }
+
+    /**
+     * @return A newly created and setup step renderer.
+     */
+    protected StepRendererWithControls createStepRenderer()
+    {
+        final StepRendererWithControls r = new StepRendererWithControls();
+        r.setOrigami(origami);
+        r.addPropertyChangeListener("fullscreenModeRequested", stepFullscreenListener);
+        r.addPropertyChangeListener("zoom", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (getDisplayMode() == DisplayMode.DIAGRAM) {
+                    zoom = (Double) evt.getNewValue();
+                }
+            }
+        });
+        r.getRenderer().getCanvas().setResizeMode(JCanvas3D.RESIZE_DELAYED);
+        return r;
+    }
+
+    /**
+     * @return A renderer for empty cells, that isn't a child of a Swing container, so it can be added to a container.
+     */
+    protected JComponent getFreeEmptyCellRenderer()
+    {
+        for (JComponent comp : emptyCellRendererPool) {
+            if (comp.getParent() == null)
+                return comp;
+        }
+
+        JComponent newRenderer = createEmptyCellRenderer();
+
+        if (!(newRenderer instanceof EmptyCellRenderer))
+            throw new ClassCastException("Empty cell renderer must implement EmptyCellRenderer interface.");
+
+        emptyCellRendererPool.add(newRenderer);
+        return newRenderer;
+    }
+
+    /**
+     * @return Create a new renderer for empty cells.
+     */
+    protected JComponent createEmptyCellRenderer()
+    {
+        DefaultEmptyCellRenderer result = new DefaultEmptyCellRenderer();
+        result.setOrigami(origami);
+        return result;
     }
 
     /**
@@ -733,4 +920,37 @@ public class DiagramRenderer extends JPanelWithOverlay
         }
     }
 
+    /**
+     * A renderer of empty cells.
+     * 
+     * @author Martin Pecka
+     */
+    public interface EmptyCellRenderer
+    {
+        /**
+         * Set the origami this renderer should render empty cell for.
+         * 
+         * @param o
+         */
+        void setOrigami(Origami o);
+    }
+
+    /**
+     * Empty cell renderer implemented by a JPanel.
+     * 
+     * @author Martin Pecka
+     */
+    protected class DefaultEmptyCellRenderer extends JPanel implements EmptyCellRenderer
+    {
+        /** */
+        private static final long serialVersionUID = -7852465401961605356L;
+
+        @Override
+        public void setOrigami(Origami o)
+        {
+            if (o != null)
+                setBackground(o.getPaper().getBackgroundColor());
+        }
+
+    }
 }

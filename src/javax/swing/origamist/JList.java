@@ -4,6 +4,7 @@
 package javax.swing.origamist;
 
 import javax.swing.DefaultListModel;
+import javax.swing.ListModel;
 
 /**
  * A {@link javax.swing.JList} implementation that allows explicit requests to recompute row heights.
@@ -21,8 +22,14 @@ public class JList extends javax.swing.JList
      */
     public void recomputeHeights()
     {
-        // the cache is located in BasicListUI and is cleared in this property change
-        firePropertyChange("model", new DefaultListModel(), new DefaultListModel());
+        // changing the model is one of the easiest ways to recompute the cell heights
+        ListModel model = getModel();
+        int[] selected = getSelectedIndices();
+
+        setModel(new DefaultListModel());
+        setModel(model);
+
+        setSelectedIndices(selected);
     }
 
 }

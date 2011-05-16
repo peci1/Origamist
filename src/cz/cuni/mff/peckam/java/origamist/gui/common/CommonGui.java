@@ -315,7 +315,9 @@ public abstract class CommonGui extends JApplet
     {
         try {
             ServiceLocator.get(ConfigurationManager.class).persist();
-        } catch (BackingStoreException e) {}
+        } catch (BackingStoreException e) {
+            Logger.getLogger("application").l7dlog(Level.ERROR, "ConfigurationManager.persist.failed", e);
+        }
         super.stop();
     }
 
@@ -324,7 +326,9 @@ public abstract class CommonGui extends JApplet
     {
         try {
             ServiceLocator.get(ConfigurationManager.class).persist();
-        } catch (BackingStoreException e) {}
+        } catch (BackingStoreException e) {
+            Logger.getLogger("application").l7dlog(Level.ERROR, "ConfigurationManager.persist.failed", e);
+        }
         super.destroy();
     }
 

@@ -22,6 +22,9 @@ public class JMultilineLabel extends JEditorPane
     /** If true, don't add a blank line at the end of the content. */
     protected boolean         disableLastLineHack = false;
 
+    /** Exactly the text set by setText(). */
+    protected String          rawText             = "";
+
     public JMultilineLabel(String text)
     {
         this.setEditable(false);
@@ -35,23 +38,26 @@ public class JMultilineLabel extends JEditorPane
         setText(text);
     }
 
-    @Override
-    public String getText()
+    /**
+     * @return The text that was last set by setText().
+     */
+    public String getRawText()
     {
-        return super.getText().replaceAll("<br/>&nbsp;</html>", "</html>");
+        return this.rawText;
     }
 
     @Override
     public synchronized void setText(String text)
     {
-        if (text == null) {
-            super.setText("");
+        this.rawText = text;
+        if (text == null || "".equals(text)) {
+            super.setText("<html><body>&nbsp;</body></html>");
             return;
         }
 
         String t = text;
         if (!text.startsWith("<html>")) {
-            t = "<html>" + text + "</html>";
+            t = "<html><body>" + text.replaceAll("<", "&lt;") + "</body></html>";
             wasSetHtml = false;
         } else {
             wasSetHtml = true;

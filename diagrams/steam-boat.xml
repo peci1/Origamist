@@ -3,7 +3,7 @@
     <author>
         <name>Martin P@ci Pecka</name>
     </author>
-    <name lang="cs-CZ">xcvcx</name>
+    <name lang="cs-CZ">Steam boat</name>
     <year>2011</year>
     <shortdesc lang="cs-CZ">xcvxc</shortdesc>
     <description lang="cs-CZ">xcvxc</description>
@@ -26,7 +26,7 @@
             <background>#ffffff</background>
         </color>
         <cols>1</cols>
-        <rows>1</rows>
+        <rows>2</rows>
     </paper>
     <model>
         <paper>

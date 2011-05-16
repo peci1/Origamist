@@ -12,6 +12,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.InputMethodListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -172,12 +174,12 @@ public class StepRenderer extends JPanel
         setLayout(new BorderLayout());
 
         // Subclassing JCanvas3D is needed to call the protected method.
-        // The call is needed because it is a workaround for the offscreen canvas not being notified of AWT events
-        // with no registered listeners.
         canvas = new JCanvas3D(new GraphicsConfigTemplate3D()) {
             /** */
             private static final long serialVersionUID = 1159847610761430144L;
             {
+                // This call is needed because it is a workaround for the offscreen canvas not being notified of AWT
+                // events with no registered listeners.
                 enableEvents(AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK
                         | AWTEvent.MOUSE_WHEEL_EVENT_MASK);
             }
@@ -187,7 +189,21 @@ public class StepRenderer extends JPanel
         canvas.setResizeMode(JCanvas3D.RESIZE_DELAYED);
         add(canvas, BorderLayout.CENTER);
         canvas.setSize(new Dimension(20, 20));
-        canvas.setResizeMode(JCanvas3D.RESIZE_IMMEDIATELY);
+
+        // The following resize listener performs scaling of the view as if the offscreen canvas were a square if its
+        // width is longer than its height.
+
+        // Why is this needed? The canvas adjusts the scale of view according to the canvas' width, but doesn't handle
+        // the canvas' height, so the scale of the rendered image is totally dependent on the canvas' width. This
+        // listener makes it depend on both width and height.
+        canvas.getOffscreenCanvas3D().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e)
+            {
+                adjustSize();
+            }
+        });
+
         if (getWidth() > 0 && getHeight() > 0)
             canvas.setSize(getWidth(), getHeight());
 
@@ -249,10 +265,21 @@ public class StepRenderer extends JPanel
     }
 
     /**
-     * @param stepId the step to set
+     * @param step the step to set
      */
     public void setStep(final Step step)
     {
+        this.setStep(step, null);
+    }
+
+    /**
+     * @param step the step to set
+     * @param afterSetCallback The callback to call after the step is changed. Will be run outside EDT.
+     */
+    public void setStep(final Step step, final Runnable afterSetCallback)
+    {
+        this.step = step;
+
         if (step != null && step.getAttachedTo() == null) {
             return;
         }
@@ -262,16 +289,13 @@ public class StepRenderer extends JPanel
             public void run()
             {
                 synchronized (StepRenderer.this) {
-                    StepRenderer.this.step = step;
-
-                    if (step == null)
-                        return;
 
                     if (getWidth() > 0 && getHeight() > 0)
                         canvas.setSize(getWidth(), getHeight());
 
                     try {
-                        setupUniverse();
+                        if (step != null)
+                            setupUniverse();
                     } catch (InvalidOperationException e) {
                         Logger.getLogger("application").l7dlog(Level.ERROR, "StepRenderer.InvalidOperationException",
                                 new Object[] { StepRenderer.this.step.getId(), e.getOperation().toString() }, e);
@@ -282,8 +306,16 @@ public class StepRenderer extends JPanel
                         bottomTexture = null;
 
                         afterSetStep();
+                        if (afterSetCallback != null)
+                            afterSetCallback.run();
 
-                        repaint();
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run()
+                            {
+                                repaint();
+                            }
+                        });
                     }
                 }
             }
@@ -301,7 +333,22 @@ public class StepRenderer extends JPanel
      */
     protected void afterSetStep()
     {
+        adjustSize();
+    }
 
+    /**
+     * This method makes sure the scale of the rendered image is appropriate with respect to the renderer's size.
+     */
+    public void adjustSize()
+    {
+        Dimension size = getSize();
+        if (size.width > size.height) {
+            Transform3D trans = computeInitialViewTransform(origami);
+            Transform3D scale = new Transform3D();
+            scale.set((double) size.width / size.height);
+            trans.mul(scale, trans);
+            universe.getViewingPlatform().getViewPlatformTransform().setTransform(trans);
+        }
     }
 
     /**
@@ -914,8 +961,18 @@ public class StepRenderer extends JPanel
             try {
                 if (it.next().call())
                     it.remove();
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                Logger.getLogger(getClass()).error("Listener removal callback threw exception.", e);
+            }
         }
+    }
+
+    /**
+     * @return The canvas.
+     */
+    public JCanvas3D getCanvas()
+    {
+        return canvas;
     }
 
     /**

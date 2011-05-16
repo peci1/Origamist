@@ -9,8 +9,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
@@ -67,6 +72,15 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
      */
     protected URL                             src               = null;
 
+    /** The cached number of pages required for this origami. */
+    protected Integer                         pages             = null;
+
+    /** The placement of steps in the page from key. */
+    protected final Map<Integer, Integer[]>   stepsOnPages      = new HashMap<Integer, Integer[]>();
+
+    /** The first step displayed on the page from key. */
+    protected final Map<Integer, Step>        firstStepOnPages  = new HashMap<Integer, Step>();
+
     /**
      * Create a new origami diagram.
      */
@@ -75,6 +89,30 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         ((ObservableList<LangString>) getName()).addObserver(new LangStringHashtableObserver(names));
         ((ObservableList<LangString>) getShortdesc()).addObserver(new LangStringHashtableObserver(shortDescs));
         ((ObservableList<LangString>) getDescription()).addObserver(new LangStringHashtableObserver(descriptions));
+        addObservablePropertyListener(new ObservablePropertyListener<Step>() {
+            @Override
+            public void changePerformed(ObservablePropertyEvent<? extends Step> evt)
+            {
+                pages = null;
+                stepsOnPages.clear();
+                firstStepOnPages.clear();
+            }
+        }, MODEL_PROPERTY, Model.STEPS_PROPERTY, Steps.STEP_PROPERTY);
+        PropertyChangeListener pagesCacheListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                pages = null;
+                stepsOnPages.clear();
+                firstStepOnPages.clear();
+            }
+        };
+        addPropertyChangeListener(pagesCacheListener, PAPER_PROPERTY, DiagramPaper.COLS_PROPERTY);
+        addPropertyChangeListener(pagesCacheListener, PAPER_PROPERTY, DiagramPaper.ROWS_PROPERTY);
+        addPropertyChangeListener(pagesCacheListener, MODEL_PROPERTY, Model.STEPS_PROPERTY, Steps.STEP_PROPERTY,
+                Step.COLSPAN_PROPERTY);
+        addPropertyChangeListener(pagesCacheListener, MODEL_PROPERTY, Model.STEPS_PROPERTY, Steps.STEP_PROPERTY,
+                Step.ROWSPAN_PROPERTY);
     }
 
     /**
@@ -205,6 +243,164 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     public void setLoadModelCallable(Callable<Model> loadModelCallable)
     {
         this.loadModelCallable = loadModelCallable;
+    }
+
+    /**
+     * Return the number of pages needed for this origami.
+     * <p>
+     * This method requires the model to be completely loaded.
+     * 
+     * @return The number of pages needed for this origami.
+     */
+    public int getNumberOfPages()
+    {
+        if (pages == null)
+            updatePagesCache();
+
+        return pages;
+    }
+
+    /**
+     * Return the placement of steps on the page as a list of linearized grid positions (sorted by the ordering of steps
+     * on the page).
+     * <p>
+     * This method requires the model to be completely loaded.
+     * 
+     * @param page The number of the page (starting from 1).
+     * @return The map of steps placement on the given page.
+     */
+    public Integer[] getStepsPlacement(int page)
+    {
+        if (stepsOnPages.get(page) == null)
+            updatePagesCache();
+
+        return stepsOnPages.get(page);
+    }
+
+    /**
+     * Return the first step displayed on the given page.
+     * 
+     * @param page The page.
+     * @return The step that is first on that page.
+     */
+    public Step getFirstStep(int page)
+    {
+        if (firstStepOnPages.get(page) == null)
+            updatePagesCache();
+
+        return firstStepOnPages.get(page);
+    }
+
+    /**
+     * Return the number of the page the given step is displayed on.
+     * 
+     * @param step The step to search page for.
+     * @return The page number (starting from 1).
+     */
+    public int getPage(Step step)
+    {
+        if (!getModel().getSteps().getStep().contains(step))
+            return -1;
+        Entry<Integer, Step> prev = null;
+        for (Entry<Integer, Step> e : firstStepOnPages.entrySet()) {
+            if (step == e.getValue())
+                return e.getKey();
+
+            if (prev != null && prev.getValue().getId() < step.getId() && e.getValue().getId() > step.getId())
+                return prev.getKey();
+
+            prev = e;
+        }
+        return getNumberOfPages();
+    }
+
+    /**
+     * Recompute the number of pages and the number of steps to be placed on every page.
+     */
+    protected void updatePagesCache()
+    {
+        stepsOnPages.clear();
+        firstStepOnPages.clear();
+
+        if (getModel().getSteps().getStep().size() == 0) {
+            pages = 0;
+            return;
+        }
+
+        // a simple layout algoritm is implemented - try to place the step at cursor, and if it cannot be done, search
+        // first free space - first looking to the right, then maybe going to another line, and finally mabye going to a
+        // brand new page; the fitting is determined using a bitmap
+
+        final int maxX = getPaper().getCols(), maxY = getPaper().getRows();
+        int cursorX = 0, cursorY = 0;
+        int pageNr = 1;
+        final List<Integer> stepsPlacement = new LinkedList<Integer>();
+
+        final boolean[] map = new boolean[maxX * maxY];
+        Arrays.fill(map, false);
+
+        for (Step step : getModel().getSteps().getStep()) {
+            int width = step.getColspan() != null ? step.getColspan() - 1 : 0, height = step.getRowspan() != null ? step
+                    .getRowspan() - 1 : 0;
+            boolean fits;
+            do {
+                fits = true;
+                if (cursorX + width > maxX) {
+                    fits = false;
+                } else if (cursorY + height > maxY) {
+                    fits = false;
+                } else {
+                    fit: for (int i = cursorX; i <= cursorX + width; i++) {
+                        for (int j = cursorY; j <= cursorY + height; j++) {
+                            if (map[i + j * maxX]) {
+                                fits = false;
+                                break fit;
+                            }
+                        }
+                    }
+                }
+
+                if (!fits) {
+                    if (cursorX + width < maxX - 1) {
+                        cursorX++;
+                    } else if (cursorY + height < maxY - 1) {
+                        cursorY++;
+                        cursorX = 0;
+                    } else {
+                        cursorX = 0;
+                        cursorY = 0;
+                        stepsOnPages.put(pageNr, stepsPlacement.toArray(new Integer[] {}));
+                        stepsPlacement.clear();
+                        stepsPlacement.add(0);
+                        pageNr++;
+                        Arrays.fill(map, false);
+                        for (int i = 0; i <= width; i++) {
+                            for (int j = 0; j <= height; j++) {
+                                map[i + j * maxX] = true;
+                            }
+                        }
+                        firstStepOnPages.put(pageNr, step);
+                        break;
+                    }
+                    continue;
+                }
+
+                stepsPlacement.add(cursorX + cursorY * maxX);
+                for (int i = cursorX; i <= cursorX + width; i++) {
+                    for (int j = cursorY; j <= cursorY + height; j++) {
+                        map[i + j * maxX] = true;
+                    }
+                }
+                if (firstStepOnPages.get(pageNr) == null)
+                    firstStepOnPages.put(pageNr, step);
+                break;
+            } while (!fits);
+        }
+
+        if (stepsOnPages.get(pageNr) == null)
+            stepsOnPages.put(pageNr, stepsPlacement.toArray(new Integer[] {}));
+
+        pages = stepsOnPages.size();
     }
 
     /**

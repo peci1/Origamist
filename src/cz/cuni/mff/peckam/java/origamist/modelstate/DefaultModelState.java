@@ -8,6 +8,8 @@ import java.util.concurrent.Callable;
 
 import javax.vecmath.Point2d;
 
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -106,7 +108,9 @@ public class DefaultModelState extends ModelState
             // load the data from origami
             try {
                 loadData.call();
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                Logger.getLogger(getClass()).error("Default model state failed to load origami data.", e);
+            }
             loadData = null;
         }
         return super.clone();

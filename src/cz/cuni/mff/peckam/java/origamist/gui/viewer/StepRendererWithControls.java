@@ -11,7 +11,6 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -42,7 +41,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * Provides the following properties:
  * <ul>
  * <li><code>fullscreenModeRequested</code> - fired when the user clicks the "fullscreen" button</li>
- * <li>repeates all property changes happening in renderer</li>
+ * <li>repeats all property changes happening in renderer</li>
  * </ul>
  * 
  * @author Martin Pecka
@@ -127,12 +126,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (getStep() != null) {
-                    descLabel.setText(getStep().getDescription(
-                            ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale()));
-                } else {
-                    descLabel.setText("");
-                }
+                updateText();
             }
         };
         ServiceLocator.get(ConfigurationManager.class).get()
@@ -189,7 +183,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
     {
         renderer.setOrigami(origami);
         if (origami != null)
-            setBackground(origami.getPaper().getColor().getBackground());
+            setBackground(origami.getPaper().getBackgroundColor());
         else
             setBackground(Color.GRAY);
     }
@@ -217,8 +211,12 @@ public class StepRendererWithControls extends JPanelWithOverlay
      */
     protected void updateText()
     {
-        diagramLocaleListener.propertyChange(new PropertyChangeEvent(this, "diagramLocale", null, ServiceLocator
-                .get(ConfigurationManager.class).get().getDiagramLocale()));
+        if (getStep() != null) {
+            descLabel.setText(getStep().getDescription(
+                    ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale()));
+        } else {
+            descLabel.setText("");
+        }
     }
 
     /**
@@ -301,6 +299,14 @@ public class StepRendererWithControls extends JPanelWithOverlay
     }
 
     /**
+     * @return The renderer.
+     */
+    public StepRenderer getRenderer()
+    {
+        return renderer;
+    }
+
+    /**
      * Show this step in DIAGRAM mode.
      * 
      * @author Martin Pecka
@@ -313,7 +319,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            firePropertyChange("fullscreenModeRequested", false, true);
+            StepRendererWithControls.this.firePropertyChange("fullscreenModeRequested", false, true);
         }
 
     }
@@ -369,19 +375,6 @@ public class StepRendererWithControls extends JPanelWithOverlay
             if (displayMode.equals(DisplayMode.PAGE) && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() > 1) {
                 new FullscreenAction().actionPerformed(new ActionEvent(StepRendererWithControls.this,
                         ActionEvent.ACTION_LAST, "fullscreen"));
-            }
-        }
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent e)
-        {
-            int steps = e.getWheelRotation();
-            if (steps > 0) {
-                for (int i = 0; i < steps; i++)
-                    incZoom();
-            } else {
-                for (int i = steps; i < 0; i++)
-                    decZoom();
             }
         }
     }

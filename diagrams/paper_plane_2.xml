@@ -25,8 +25,8 @@
         <color>
             <background>#ffffff</background>
         </color>
-        <cols>1</cols>
-        <rows>1</rows>
+        <cols>2</cols>
+        <rows>2</rows>
     </paper>
     <model>
         <paper>
