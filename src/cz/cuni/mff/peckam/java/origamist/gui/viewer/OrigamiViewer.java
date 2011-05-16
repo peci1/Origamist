@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JApplet;
 import javax.swing.JButton;
@@ -50,6 +51,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.JDropDownButton;
+import javax.swing.origamist.JHideablePanel;
 import javax.swing.origamist.JToolBarWithBgImage;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -177,6 +179,9 @@ public class OrigamiViewer extends CommonGui
     /** The panel that shows info about the model. */
     protected ModelInfoPanel  modelInfo                   = null;
 
+    /** The (hideable) panel that holds listing and model info. */
+    protected JHideablePanel  listingPanel                = null;
+
     /** The main menu component. */
     protected JComponent      mainToolbar                 = null;
 
@@ -280,6 +285,10 @@ public class OrigamiViewer extends CommonGui
                 }
             });
 
+            listingPanel = new JHideablePanel(BorderLayout.EAST);
+            listingPanel.getHideButton().setBackground(new Color(231, 231, 189));
+            listingPanel.getHideButton().setBorder(BorderFactory.createEmptyBorder());
+
             renderer = new DiagramRenderer(displayedOrigami, displayedOrigami.getModel().getSteps().getStep().get(0));
             renderer.setPreferredSize(new Dimension(500, 500));
             addPropertyChangeListener("displayMode", new PropertyChangeListener() {
@@ -333,20 +342,19 @@ public class OrigamiViewer extends CommonGui
         Container pane = getContentPane();
         // the "0:grow" items in the layout specification says that the preferred size of the component is the maximum
         // available space and no minimum constraints are applied
+        pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow"));
+        CellConstraints cc = new CellConstraints();
+
+        pane.add(mainToolbar, cc.xyw(1, 1, 2));
         if (isShowFileListing()) {
-            pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow,pref"));
-            CellConstraints cc = new CellConstraints();
-            pane.add(mainToolbar, cc.xyw(1, 1, 2));
-            pane.add(fileListingScrollPane, cc.xy(1, 2));
-            pane.add(modelInfo, cc.xy(1, 3));
-            pane.add(renderer, cc.xywh(2, 2, 1, 2));
+            listingPanel.getContent().setLayout(new BorderLayout());
+            listingPanel.getContent().add(fileListingScrollPane, BorderLayout.CENTER);
+            listingPanel.getContent().add(modelInfo, BorderLayout.PAGE_END);
+            pane.add(listingPanel, cc.xy(1, 2));
         } else {
-            pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow"));
-            CellConstraints cc = new CellConstraints();
-            pane.add(mainToolbar, cc.xyw(1, 1, 2));
             pane.add(modelInfo, cc.xy(1, 2));
-            pane.add(renderer, cc.xy(2, 2));
         }
+        pane.add(renderer, cc.xy(2, 2));
     }
 
     /**

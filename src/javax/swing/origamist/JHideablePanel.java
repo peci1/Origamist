@@ -171,6 +171,14 @@ public class JHideablePanel extends JPanel
     }
 
     /**
+     * @return The hideButton.
+     */
+    public JButton getHideButton()
+    {
+        return hideButton;
+    }
+
+    /**
      * @return The default button to be used as the arrow button.
      */
     protected static JButton getDefaultArrowButton()
