@@ -455,7 +455,7 @@ public class DiagramRenderer extends JPanelWithOverlay
      * 
      * @param mode The new mode to switch the renderer to.
      */
-    public synchronized void setDisplayMode(DisplayMode mode)
+    public synchronized void setDisplayMode(final DisplayMode mode)
     {
         if (mode.equals(this.mode))
             return;
@@ -480,8 +480,10 @@ public class DiagramRenderer extends JPanelWithOverlay
             case PAGE:
                 pageSelect.setModel(pageSelectPageModel);
 
-                // when switching back to PAGE mode, don't automatically display the previously displayed step as the
-                // first step in the page, but make the page begin with a step that corresponds to the first step of
+                // when switching back to PAGE mode, don't automatically display the previously displayed step
+                // as the
+                // first step in the page, but make the page begin with a step that corresponds to the first
+                // step of
                 // this page
                 int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
                 int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;

@@ -10,14 +10,19 @@ import java.awt.event.ActionListener;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.Border;
+
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * A simple statusbar with customizable regions.
@@ -172,7 +177,14 @@ public class JStatusBar extends JPanel implements MessageBar
     }
 
     @Override
-    public synchronized void showMessage(String message)
+    public void showL7dMessage(String bundle, String messageKey)
+    {
+        showMessage(ResourceBundle.getBundle(bundle, ServiceLocator.get(ConfigurationManager.class).get().getLocale())
+                .getString(messageKey));
+    }
+
+    @Override
+    public synchronized void showMessage(final String message)
     {
         if (message == null)
             return;
@@ -180,13 +192,26 @@ public class JStatusBar extends JPanel implements MessageBar
         if (getDefaultArea().isAncestorOf(defaultLabel)) {
             fixedDefaultText = message;
             if (!timer.isRunning()) {
-                defaultLabel.setText(message);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        defaultLabel.setText(message);
+                    }
+                });
             }
         }
     }
 
     @Override
-    public synchronized void showMessage(String message, Integer milis)
+    public void showL7dMessage(String bundle, String messageKey, Integer milis)
+    {
+        showMessage(ResourceBundle.getBundle(bundle, ServiceLocator.get(ConfigurationManager.class).get().getLocale())
+                .getString(messageKey), milis);
+    }
+
+    @Override
+    public synchronized void showMessage(final String message, Integer milis)
     {
         if (message == null)
             return;
@@ -199,8 +224,14 @@ public class JStatusBar extends JPanel implements MessageBar
 
         if (!timer.isRunning()) {
             timer.setInitialDelay(timeout);
-            defaultLabel.setText(message);
             timer.start();
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run()
+                {
+                    defaultLabel.setText(message);
+                }
+            });
         } else {
             timedOutMessages.add(new TimedOutMessage(message, timeout));
         }

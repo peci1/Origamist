@@ -92,7 +92,12 @@ public class ModelInfoPanel extends JHideablePanel
 
     public ModelInfoPanel(Origami origami)
     {
-        super(BorderLayout.NORTH);
+        this(origami, BorderLayout.NORTH);
+    }
+
+    public ModelInfoPanel(Origami origami, String orientation)
+    {
+        super(orientation);
 
         setOpaque(true);
         getContent().setOpaque(true);

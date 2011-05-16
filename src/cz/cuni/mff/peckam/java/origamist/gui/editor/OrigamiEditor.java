@@ -7,6 +7,7 @@ import java.applet.AppletContext;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,7 +17,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -263,22 +263,28 @@ public class OrigamiEditor extends CommonGui
 
         operationsObserver = new ObservablePropertyListener<Operation>() {
             @Override
-            public void changePerformed(ObservablePropertyEvent<? extends Operation> evt)
+            public void changePerformed(final ObservablePropertyEvent<? extends Operation> evt)
             {
                 if (step == null || origami == null)
                     return;
 
-                addStep.setEnabled(step.getOperations().size() > 0);
-                cancelLastOperation.setEnabled(step.getOperations().size() > 0);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        addStep.setEnabled(step.getOperations().size() > 0);
+                        cancelLastOperation.setEnabled(step.getOperations().size() > 0);
 
-                DefaultListModel model = ((DefaultListModel) operationsList.getModel());
-                if (evt.getEvent().getChangeType() != ChangeTypes.ADD) {
-                    model.removeElement(evt.getEvent().getItem());
-                }
-                if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
-                    model.addElement(evt.getEvent().getItem());
-                }
-                operationsList.repaint();
+                        DefaultListModel model = ((DefaultListModel) operationsList.getModel());
+                        if (evt.getEvent().getChangeType() != ChangeTypes.ADD) {
+                            model.removeElement(evt.getEvent().getItem());
+                        }
+                        if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
+                            model.addElement(evt.getEvent().getItem());
+                        }
+                        operationsList.repaint();
+                    }
+                });
             }
 
         };
@@ -297,45 +303,32 @@ public class OrigamiEditor extends CommonGui
         processParams();
     }
 
+    /**
+     * Process the application parameters.
+     */
     protected void processParams()
     {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run()
-                {
-                    setOrigami(null);
-                    if (getParameter("file") != null) {
-                        try {
-                            Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(
-                                    new URL(getCodeBase(), getParameter("file")).toURI(), false);
-                            setOrigami(o);
-                        } catch (UnsupportedDataFormatException e1) {
-                            JOptionPane.showMessageDialog(rootPane,
-                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
-                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-                            Logger.getLogger("application").error(e1);
-                        } catch (IOException e1) {
-                            JOptionPane.showMessageDialog(rootPane,
-                                    appMessages.getString("exception.IOException.loadModel"),
-                                    appMessages.getString("exception.IOException.loadModel.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-                            Logger.getLogger("application").error(e1);
-                        } catch (URISyntaxException e1) {
-                            JOptionPane.showMessageDialog(rootPane,
-                                    appMessages.getString("exception.IOException.loadModel"),
-                                    appMessages.getString("exception.IOException.loadModel.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-                            Logger.getLogger("application").error(e1);
-                        }
-                    }
-                }
-            });
-        } catch (InterruptedException e) {
-            Logger.getLogger("application").error(e);
-        } catch (InvocationTargetException e) {
-            Logger.getLogger("application").error(e);
+        setOrigami(null);
+        if (getParameter("file") != null) {
+            try {
+                Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(
+                        new URL(getCodeBase(), getParameter("file")).toURI(), false);
+                setOrigami(o);
+            } catch (UnsupportedDataFormatException e1) {
+                JOptionPane.showMessageDialog(rootPane,
+                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger("application").error(e1);
+            } catch (IOException e1) {
+                JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
+                        appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger("application").error(e1);
+            } catch (URISyntaxException e1) {
+                JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
+                        appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger("application").error(e1);
+            }
         }
     }
 
@@ -413,22 +406,28 @@ public class OrigamiEditor extends CommonGui
      * 
      * @param show If <code>true</code>, show alternatives, otherwise show the default buttons.
      */
-    protected void showAlternativeActions(boolean show)
+    protected void showAlternativeActions(final boolean show)
     {
-        alternativeActionsShown = show;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                alternativeActionsShown = show;
 
-        Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
+                Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
 
-        for (Entry<JComponent, JComponent> e : alternativeActions.entrySet()) {
-            e.getKey().setVisible(!show);
-            e.getValue().setVisible(show);
+                for (Entry<JComponent, JComponent> e : alternativeActions.entrySet()) {
+                    e.getKey().setVisible(!show);
+                    e.getValue().setVisible(show);
 
-            if (e.getKey().equals(focusOwner))
-                e.getValue().requestFocusInWindow();
+                    if (e.getKey().equals(focusOwner))
+                        e.getValue().requestFocusInWindow();
 
-            if (e.getValue().equals(focusOwner))
-                e.getKey().requestFocusInWindow();
-        }
+                    if (e.getValue().equals(focusOwner))
+                        e.getKey().requestFocusInWindow();
+                }
+            }
+        });
     }
 
     /**
@@ -782,7 +781,7 @@ public class OrigamiEditor extends CommonGui
     /**
      * @param origami the origami to set
      */
-    public void setOrigami(Origami origami)
+    public void setOrigami(final Origami origami)
     {
         if (this.origami != null) {
             this.origami.removeObservablePropertyListener(stepsObserver, Origami.MODEL_PROPERTY, Model.STEPS_PROPERTY,
@@ -792,8 +791,14 @@ public class OrigamiEditor extends CommonGui
         Origami old = this.origami;
         this.origami = origami;
 
-        saveButton.setEnabled(origami != null);
-        propertiesButton.setEnabled(origami != null);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                saveButton.setEnabled(origami != null);
+                propertiesButton.setEnabled(origami != null);
+            }
+        });
 
         stepEditor.setOrigami(origami);
 
@@ -827,7 +832,7 @@ public class OrigamiEditor extends CommonGui
     /**
      * @param step the step to set
      */
-    public void setStep(Step step)
+    public void setStep(final Step step)
     {
         if (step != null && step.getAttachedTo() == null) {
             return;
@@ -840,63 +845,69 @@ public class OrigamiEditor extends CommonGui
         this.step = step;
         stepEditor.setStep(step);
 
-        int index = 0, numSteps = 0, numOperations = 0;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                int index = 0, numSteps = 0, numOperations = 0;
 
-        if (origami != null) {
-            index = origami.getModel().getSteps().getStep().indexOf(step);
-            index++;
-            numSteps = origami.getModel().getSteps().getStep().size();
-        }
+                if (origami != null) {
+                    index = origami.getModel().getSteps().getStep().indexOf(step);
+                    index++;
+                    numSteps = origami.getModel().getSteps().getStep().size();
+                }
 
-        if (step != null) {
-            numOperations = step.getOperations().size();
-            this.origami.addObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
-                    Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
-            description.setStrings(step.getDescription());
-            colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
-            rowSpan.setValue(step.getRowspan() != null ? step.getRowspan() : 1);
+                if (step != null) {
+                    numOperations = step.getOperations().size();
+                    origami.addObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
+                            Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
+                    description.setStrings(step.getDescription());
+                    colSpan.setValue(step.getColspan() != null ? step.getColspan() : 1);
+                    rowSpan.setValue(step.getRowspan() != null ? step.getRowspan() : 1);
 
-            steps.setEnabled(true);
-            steps.setModel(new DefaultComboBoxModel(origami.getModel().getSteps().getStep().toArray()));
-        } else {
-            description.setStrings(new LinkedList<LangString>());
-            colSpan.setValue(1);
-            rowSpan.setValue(1);
-            steps.setEnabled(false);
-        }
+                    steps.setEnabled(true);
+                    steps.setModel(new DefaultComboBoxModel(origami.getModel().getSteps().getStep().toArray()));
+                } else {
+                    description.setStrings(new LinkedList<LangString>());
+                    colSpan.setValue(1);
+                    rowSpan.setValue(1);
+                    steps.setEnabled(false);
+                }
 
-        stepXofY.setParameter(0, index);
-        updateOperationsModel();
+                stepXofY.setParameter(0, index);
+                updateOperationsModel();
 
-        boolean operationsEnabled = step != null && step.isEditable();
-        for (Enumeration<AbstractButton> en = operationGroup.getElements(); en.hasMoreElements();) {
-            en.nextElement().setEnabled(operationsEnabled);
-        }
+                boolean operationsEnabled = step != null && step.isEditable();
+                for (Enumeration<AbstractButton> en = operationGroup.getElements(); en.hasMoreElements();) {
+                    en.nextElement().setEnabled(operationsEnabled);
+                }
 
-        if (index == numSteps && index != 0) {
-            addStep.setVisible(true);
-            addStep.setEnabled(numOperations > 0);
-            nextStep.setVisible(false);
-            nextStep.setEnabled(false);
-            removeStep.setEnabled(true);
-            cancelLastOperation.setEnabled(numOperations > 0);
-        } else {
-            addStep.setVisible(false);
-            nextStep.setVisible(true);
-            nextStep.setEnabled(numSteps > 0);
-            removeStep.setEnabled(false);
-            cancelLastOperation.setEnabled(false);
-        }
+                if (index == numSteps && index != 0) {
+                    addStep.setVisible(true);
+                    addStep.setEnabled(numOperations > 0);
+                    nextStep.setVisible(false);
+                    nextStep.setEnabled(false);
+                    removeStep.setEnabled(true);
+                    cancelLastOperation.setEnabled(numOperations > 0);
+                } else {
+                    addStep.setVisible(false);
+                    nextStep.setVisible(true);
+                    nextStep.setEnabled(numSteps > 0);
+                    removeStep.setEnabled(false);
+                    cancelLastOperation.setEnabled(false);
+                }
 
-        prevStep.setEnabled(index > 1);
+                prevStep.setEnabled(index > 1);
 
-        stepEditor.setEnabled(step != null);
-        zoomSlider.setEnabled(step != null);
-        description.setEnabled(step != null);
-        colSpan.setEnabled(step != null);
-        rowSpan.setEnabled(step != null);
+                stepEditor.setEnabled(step != null);
+                zoomSlider.setEnabled(step != null);
+                description.setEnabled(step != null);
+                colSpan.setEnabled(step != null);
+                rowSpan.setEnabled(step != null);
 
-        getContentPane().repaint();
+                getContentPane().repaint();
+            }
+        });
     }
 
     /**
@@ -904,12 +915,19 @@ public class OrigamiEditor extends CommonGui
      */
     protected void updateOperationsModel()
     {
-        DefaultListModel model = new DefaultListModel();
+        final DefaultListModel model = new DefaultListModel();
         if (step != null) {
             for (Operation o : step.getOperations())
                 model.addElement(o);
         }
-        operationsList.setModel(model);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                operationsList.setModel(model);
+            }
+        });
     }
 
     /**
@@ -923,7 +941,13 @@ public class OrigamiEditor extends CommonGui
             return;
 
         if (currentOperation != null) {
-            ((DefaultListModel) operationsList.getModel()).removeElement(currentOperation);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run()
+                {
+                    ((DefaultListModel) operationsList.getModel()).removeElement(currentOperation);
+                }
+            });
             setCurrentOperationArgument(null);
         }
 
@@ -932,9 +956,17 @@ public class OrigamiEditor extends CommonGui
         if (operation != null) {
             if (operation.getArguments().size() > 0)
                 setCurrentOperationArgument(operation.getArguments().get(0));
-            ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
-            operationsList.repaint();
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run()
+                {
+                    ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
+                }
+            });
         }
+
+        operationsList.repaint();
 
         stepEditor.clearChosenItems();
     }
@@ -948,8 +980,14 @@ public class OrigamiEditor extends CommonGui
     {
         this.currentOperationArgument = argument;
         stepEditor.setCurrentOperationArgument(argument);
-        operationsList.recomputeHeights();
-        operationsList.repaint();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                operationsList.recomputeHeights();
+                operationsList.repaint();
+            }
+        });
 
         // arguments that just fetch text input from the user can ask for the input right now
         // trying to proceed to next argument will cause the text input to be shown, and when it is completed, next
@@ -1023,6 +1061,7 @@ public class OrigamiEditor extends CommonGui
                         }
                         setStep(step);
                     }
+
                     operationsList.repaint();
                 }
             }).start();
@@ -1133,9 +1172,27 @@ public class OrigamiEditor extends CommonGui
         private static final long serialVersionUID = -583073126579360879L;
 
         @Override
-        public void actionPerformed(ActionEvent e)
+        public void actionPerformed(final ActionEvent e)
         {
-            new SettingsFrame().setVisible(true);
+            statusBar.showL7dMessage("editor", "settingsDialog.opening", null);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    final SettingsFrame frame = new SettingsFrame();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            if (e.getSource() instanceof JComponent)
+                                ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+                            frame.setVisible(true);
+                        }
+                    });
+                }
+            }).start();
         }
     }
 
@@ -1151,14 +1208,37 @@ public class OrigamiEditor extends CommonGui
         private static final long serialVersionUID = -4947778589092614575L;
 
         @Override
-        public void actionPerformed(ActionEvent e)
+        public void actionPerformed(final ActionEvent e)
         {
-            // TODO check if the currently edited origami is saved, if not, show a warning
-            OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(null);
-            propertiesFrame.setVisible(true);
-            if (propertiesFrame.getOrigami() != null) {
-                setOrigami(propertiesFrame.getOrigami());
-            }
+            statusBar.showL7dMessage("editor", "newFileDialog.opening", null);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    // TODO check if the currently edited origami is saved, if not, show a warning
+                    final OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(null);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            if (e.getSource() instanceof JComponent)
+                                ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+                            propertiesFrame.setVisible(true);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    if (propertiesFrame.getOrigami() != null) {
+                                        setOrigami(propertiesFrame.getOrigami());
+                                    }
+                                }
+                            }).start();
+                        }
+                    });
+                }
+            }).start();
         }
 
     }
@@ -1177,6 +1257,10 @@ public class OrigamiEditor extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
+            statusBar.showL7dMessage("editor", "openDialog.opening", null);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
             JFileChooser chooser = new JFileChooser();
             File currentDir = ServiceLocator.get(ConfigurationManager.class).get().getLastOpenPath().getParentFile();
             chooser.setCurrentDirectory(currentDir);
@@ -1191,22 +1275,36 @@ public class OrigamiEditor extends CommonGui
                     appMessages.getString("openDialog.approve.tooltip.title"), "open-file-32.png",
                     KeyStroke.getKeyStroke("alt " + appMessages.getString("openDialog.approve.mnemonic"))));
             if (chooser.showDialog(OrigamiEditor.this, null) == JFileChooser.APPROVE_OPTION) {
-                File selected = chooser.getSelectedFile();
+                if (e.getSource() instanceof JComponent)
+                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+
+                final File selected = chooser.getSelectedFile();
                 ServiceLocator.get(ConfigurationManager.class).get().setLastOpenPath(selected);
-                try {
-                    Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(selected.toURI(), false);
-                    setOrigami(o);
-                } catch (UnsupportedDataFormatException e1) {
-                    JOptionPane.showMessageDialog(rootPane,
-                            appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
-                            appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
-                            JOptionPane.ERROR_MESSAGE);
-                    Logger.getLogger("application").error(e1);
-                } catch (IOException e1) {
-                    JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
-                            appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
-                    Logger.getLogger("application").error(e1);
-                }
+                new Thread(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(selected.toURI(), false);
+                            setOrigami(o);
+                        } catch (UnsupportedDataFormatException e1) {
+                            JOptionPane.showMessageDialog(rootPane,
+                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                                    appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            Logger.getLogger("application").error(e1);
+                        } catch (IOException e1) {
+                            JOptionPane.showMessageDialog(rootPane,
+                                    appMessages.getString("exception.IOException.loadModel"),
+                                    appMessages.getString("exception.IOException.loadModel.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            Logger.getLogger("application").error(e1);
+                        }
+                    }
+                }).start();
+            } else {
+                if (e.getSource() instanceof JComponent)
+                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
             }
         }
 
@@ -1258,20 +1356,29 @@ public class OrigamiEditor extends CommonGui
 
             ServiceLocator.get(ConfigurationManager.class).get().setLastOpenURL(selectedUrl);
 
-            try {
-                Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(selectedUrl, false);
-                setOrigami(o);
-            } catch (UnsupportedDataFormatException e1) {
-                JOptionPane.showMessageDialog(rootPane,
-                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
-                        appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
-                        JOptionPane.ERROR_MESSAGE);
-                Logger.getLogger("application").error(e1);
-            } catch (IOException e1) {
-                JOptionPane.showMessageDialog(rootPane, appMessages.getString("exception.IOException.loadModel"),
-                        appMessages.getString("exception.IOException.loadModel.title"), JOptionPane.ERROR_MESSAGE);
-                Logger.getLogger("application").error(e1);
-            }
+            final URL url = selectedUrl;
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    try {
+                        Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(url, false);
+                        setOrigami(o);
+                    } catch (UnsupportedDataFormatException e1) {
+                        JOptionPane.showMessageDialog(rootPane,
+                                appMessages.getString("exception.UnsupportedDataFormatException.loadModel"),
+                                appMessages.getString("exception.UnsupportedDataFormatException.loadModel.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                        Logger.getLogger("application").error(e1);
+                    } catch (IOException e1) {
+                        JOptionPane.showMessageDialog(rootPane,
+                                appMessages.getString("exception.IOException.loadModel"),
+                                appMessages.getString("exception.IOException.loadModel.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                        Logger.getLogger("application").error(e1);
+                    }
+                }
+            }).start();
         }
 
     }
@@ -1301,6 +1408,10 @@ public class OrigamiEditor extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
+            statusBar.showL7dMessage("editor", "exportDialog.opening", null);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
             JFileChooser chooser = new JFileChooser();
             File defaultFile = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
             chooser.setCurrentDirectory(defaultFile);
@@ -1315,6 +1426,9 @@ public class OrigamiEditor extends CommonGui
                     appMessages.getString("exportDialog.approve.tooltip.title"), "save.png",
                     KeyStroke.getKeyStroke("alt " + appMessages.getString("exportDialog.approve.mnemonic"))));
             if (chooser.showDialog(OrigamiEditor.this, null) == JFileChooser.APPROVE_OPTION) {
+                if (e.getSource() instanceof JComponent)
+                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+
                 File f = chooser.getSelectedFile();
                 if (!chooser.accept(f)) {
                     f = new File(f.toString() + "." + format.toString().toLowerCase());
@@ -1331,19 +1445,31 @@ public class OrigamiEditor extends CommonGui
                     }
                 }
 
-                try {
-                    ServiceLocator.get(OrigamiHandler.class).export(origami, f, format);
-                    OrigamiEditor.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
-                    JOptionPane.showMessageDialog(getRootPane(),
-                            OrigamiEditor.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE, null);
-                } catch (IOException e1) {
-                    OrigamiEditor.this.format.applyPattern(appMessages.getString("failedToExport.message"));
-                    JOptionPane.showMessageDialog(getRootPane(),
-                            OrigamiEditor.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
-                    Logger.getLogger("application").warn("Unable to export origami.", e1);
-                }
+                final File file = f;
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            ServiceLocator.get(OrigamiHandler.class).export(origami, file, format);
+                            OrigamiEditor.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
+                            JOptionPane.showMessageDialog(getRootPane(),
+                                    OrigamiEditor.this.format.format(new Object[] { file.toString() }),
+                                    appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE,
+                                    null);
+                        } catch (IOException e1) {
+                            OrigamiEditor.this.format.applyPattern(appMessages.getString("failedToExport.message"));
+                            JOptionPane.showMessageDialog(getRootPane(),
+                                    OrigamiEditor.this.format.format(new Object[] { file.toString() }),
+                                    appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
+                            Logger.getLogger("application").warn("Unable to export origami.", e1);
+                        }
+                    }
+                }).start();
+            } else {
+                if (e.getSource() instanceof JComponent)
+                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
             }
         }
 
@@ -1360,16 +1486,35 @@ public class OrigamiEditor extends CommonGui
         private static final long serialVersionUID = -3808672661069071582L;
 
         @Override
-        public void actionPerformed(ActionEvent e)
+        public void actionPerformed(final ActionEvent e)
         {
-            OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(origami);
-            propertiesFrame.setVisible(true);
-            Origami result = propertiesFrame.getOrigami();
-            if (origami == null) {
-                setOrigami(result);
-            }
-            if (step != null && !step.isModelStateValid(true))
-                setStep(step);
+            statusBar.showL7dMessage("editor", "propertiesDialog.opening", null);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    final OrigamiPropertiesFrame propertiesFrame = new OrigamiPropertiesFrame(origami);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            if (e.getSource() instanceof JComponent)
+                                ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+
+                            propertiesFrame.setVisible(true);
+                            Origami result = propertiesFrame.getOrigami();
+                            if (origami == null) {
+                                setOrigami(result);
+                            }
+                            if (step != null && !step.isModelStateValid(true))
+                                setStep(step);
+                        }
+                    });
+                }
+            }).start();
         }
 
     }
@@ -1405,7 +1550,7 @@ public class OrigamiEditor extends CommonGui
         {
             setCurrentOperation(OperationsHelper.getOperation(operation, alternativeActionsShown));
 
-            MessageBar statusBar = ServiceLocator.get(MessageBar.class);
+            final MessageBar statusBar = ServiceLocator.get(MessageBar.class);
             if (statusBar != null) {
                 ResourceBundle b = ResourceBundle.getBundle(bundleName, ServiceLocator.get(ConfigurationManager.class)
                         .get().getLocale());
@@ -1417,7 +1562,14 @@ public class OrigamiEditor extends CommonGui
                     statusText += ": " + b.getString(key + ".description");
                 } catch (MissingResourceException ex) {}
 
-                statusBar.showMessage(statusText);
+                final String text = statusText;
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        statusBar.showMessage(text);
+                    }
+                });
             }
         }
 

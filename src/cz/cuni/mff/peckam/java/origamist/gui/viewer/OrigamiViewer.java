@@ -4,9 +4,11 @@
 package cz.cuni.mff.peckam.java.origamist.gui.viewer;
 
 import java.applet.AppletContext;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
@@ -250,6 +252,7 @@ public class OrigamiViewer extends CommonGui
             fileListingScrollPane = new JScrollPane(fileListing);
             fileListingScrollPane.setPreferredSize(new Dimension(DefaultUnitConverter.getInstance().dialogUnitXAsPixel(
                     170, fileListing), 0));
+            fileListing.setVisible(isShowFileListing());
 
             if (toSelect != null && wasFound) {
                 displayedOrigami = ((cz.cuni.mff.peckam.java.origamist.files.File) toSelect.getUserObject())
@@ -261,12 +264,19 @@ public class OrigamiViewer extends CommonGui
                 displayedOrigami = filesToDisplay.recursiveFileIterator().next().getOrigami();
             }
 
-            modelInfo = new ModelInfoPanel(displayedOrigami);
+            modelInfo = new ModelInfoPanel(displayedOrigami, isShowFileListing() ? BorderLayout.NORTH
+                    : BorderLayout.EAST);
             addPropertyChangeListener("displayedOrigami", new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt)
                 {
-                    modelInfo.setOrigami(displayedOrigami);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            modelInfo.setOrigami(displayedOrigami);
+                        }
+                    });
                 }
             });
 
@@ -292,7 +302,13 @@ public class OrigamiViewer extends CommonGui
                 @Override
                 public void propertyChange(PropertyChangeEvent evt)
                 {
-                    setDisplayMode(renderer.getDisplayMode());
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            setDisplayMode(renderer.getDisplayMode());
+                        }
+                    });
                 }
             });
 
@@ -317,12 +333,20 @@ public class OrigamiViewer extends CommonGui
         Container pane = getContentPane();
         // the "0:grow" items in the layout specification says that the preferred size of the component is the maximum
         // available space and no minimum constraints are applied
-        pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow,pref"));
-        CellConstraints cc = new CellConstraints();
-        pane.add(mainToolbar, cc.xyw(1, 1, 2));
-        pane.add(fileListingScrollPane, cc.xy(1, 2));
-        pane.add(modelInfo, cc.xy(1, 3));
-        pane.add(renderer, cc.xywh(2, 2, 1, 2));
+        if (isShowFileListing()) {
+            pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow,pref"));
+            CellConstraints cc = new CellConstraints();
+            pane.add(mainToolbar, cc.xyw(1, 1, 2));
+            pane.add(fileListingScrollPane, cc.xy(1, 2));
+            pane.add(modelInfo, cc.xy(1, 3));
+            pane.add(renderer, cc.xywh(2, 2, 1, 2));
+        } else {
+            pane.setLayout(new FormLayout("min(pref;200dlu),0:grow", "pref,fill:0:grow"));
+            CellConstraints cc = new CellConstraints();
+            pane.add(mainToolbar, cc.xyw(1, 1, 2));
+            pane.add(modelInfo, cc.xy(1, 2));
+            pane.add(renderer, cc.xy(2, 2));
+        }
     }
 
     /**
@@ -477,10 +501,10 @@ public class OrigamiViewer extends CommonGui
                         continue;
                     } catch (UnsupportedDataFormatException e) {
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "invalidModelFile",
-                                new Object[] { file.getSrc() }, e);
+                                new Object[] { file.getSrc() }, null);
                     } catch (IOException e) {
                         Logger.getLogger("viewer").l7dlog(Level.ERROR, "modelLoadIOError",
-                                new Object[] { file.getSrc() }, e);
+                                new Object[] { file.getSrc() }, null);
                     }
                     i--;
                     iterator.remove();
@@ -554,9 +578,16 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                listingItem.setEnabled(isShowFileListing());
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        listingItem.setEnabled(isShowFileListing());
+                    }
+                });
             }
         });
+        listingItem.setEnabled(isShowFileListing());
 
         toolbar.add(new JToolBar.Separator());
 
@@ -570,8 +601,14 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (getDisplayMode() == DisplayMode.DIAGRAM)
-                    displayGroup.setSelected(displayDiagram.getModel(), true);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        if (getDisplayMode() == DisplayMode.DIAGRAM)
+                            displayGroup.setSelected(displayDiagram.getModel(), true);
+                    }
+                });
             }
         });
 
@@ -583,8 +620,14 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                if (getDisplayMode() == DisplayMode.PAGE)
-                    displayGroup.setSelected(displayPage.getModel(), true);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        if (getDisplayMode() == DisplayMode.PAGE)
+                            displayGroup.setSelected(displayPage.getModel(), true);
+                    }
+                });
             }
         });
         displayGroup.setSelected(displayPage.getModel(), true);
@@ -602,14 +645,21 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void valueChanged(TreeSelectionEvent evt)
             {
-                try {
-                    diagramPrev.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
-                            .getLastPathComponent()).getPreviousLeaf() != null);
-                } catch (NullPointerException e) {}
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            diagramPrev.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
+                                    .getLastPathComponent()).getPreviousLeaf() != null);
+                        } catch (NullPointerException e) {}
+                    }
+                });
             }
         };
         fileListing.addTreeSelectionListener(prevListener);
         prevListener.valueChanged(new TreeSelectionEvent(this, null, true, null, null));
+        diagramPrev.setVisible(isShowFileListing());
 
         final JButton diagramNext;
         toolbar.add(diagramNext = toolbar.createToolbarButton(new NextOrigamiAction(), "menu.nextDiagram", "right.png"));
@@ -617,14 +667,21 @@ public class OrigamiViewer extends CommonGui
             @Override
             public void valueChanged(TreeSelectionEvent evt)
             {
-                try {
-                    diagramNext.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
-                            .getLastPathComponent()).getNextLeaf() != null);
-                } catch (NullPointerException e) {}
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            diagramNext.setEnabled(((DefaultMutableTreeNode) fileListing.getSelectionPath()
+                                    .getLastPathComponent()).getNextLeaf() != null);
+                        } catch (NullPointerException e) {}
+                    }
+                });
             }
         };
         fileListing.addTreeSelectionListener(nextListener);
         nextListener.valueChanged(new TreeSelectionEvent(this, null, true, null, null));
+        diagramNext.setVisible(isShowFileListing());
 
         toolbar.add(new JToolBar.Separator());
 
@@ -830,7 +887,13 @@ public class OrigamiViewer extends CommonGui
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            setDisplayMode(mode);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run()
+                {
+                    setDisplayMode(mode);
+                }
+            });
         }
     }
 
@@ -849,9 +912,15 @@ public class OrigamiViewer extends CommonGui
         {
             TreePath currPath = fileListing.getSelectionPath();
             try {
-                TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
+                final TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
                         .getPreviousLeaf().getPath());
-                fileListing.setSelectionPath(newPath);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        fileListing.setSelectionPath(newPath);
+                    }
+                });
             } catch (NullPointerException e) {}
         }
     }
@@ -871,9 +940,15 @@ public class OrigamiViewer extends CommonGui
         {
             TreePath currPath = fileListing.getSelectionPath();
             try {
-                TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
+                final TreePath newPath = new TreePath(((DefaultMutableTreeNode) currPath.getLastPathComponent())
                         .getNextLeaf().getPath());
-                fileListing.setSelectionPath(newPath);
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        fileListing.setSelectionPath(newPath);
+                    }
+                });
             } catch (NullPointerException e) {}
         }
     }
@@ -933,19 +1008,28 @@ public class OrigamiViewer extends CommonGui
                     }
                 }
 
-                try {
-                    ServiceLocator.get(OrigamiHandler.class).export(displayedOrigami, f, format);
-                    OrigamiViewer.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
-                    JOptionPane.showMessageDialog(getRootPane(),
-                            OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE, null);
-                } catch (IOException e1) {
-                    OrigamiViewer.this.format.applyPattern(appMessages.getString("failedToExport.message"));
-                    JOptionPane.showMessageDialog(getRootPane(),
-                            OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
-                    Logger.getLogger("application").warn("Unable to export origami.", e1);
-                }
+                final File file = f;
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            ServiceLocator.get(OrigamiHandler.class).export(displayedOrigami, file, format);
+                            OrigamiViewer.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
+                            JOptionPane.showMessageDialog(getRootPane(),
+                                    OrigamiViewer.this.format.format(new Object[] { file.toString() }),
+                                    appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE,
+                                    null);
+                        } catch (IOException e1) {
+                            OrigamiViewer.this.format.applyPattern(appMessages.getString("failedToExport.message"));
+                            JOptionPane.showMessageDialog(getRootPane(),
+                                    OrigamiViewer.this.format.format(new Object[] { file.toString() }),
+                                    appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
+                            Logger.getLogger("application").warn("Unable to export origami.", e1);
+                        }
+                    }
+                }).start();
             }
         }
 
@@ -1031,26 +1115,37 @@ public class OrigamiViewer extends CommonGui
                     }
                 }
 
-                try {
-                    try {
-                        ServiceLocator.get(ListingHandler.class).export(filesToDisplay, f, relativeBase,
-                                modelRelativeBase);
-                        OrigamiViewer.this.format
-                                .applyPattern(appMessages.getString("exportListingSuccessful.message"));
-                        JOptionPane.showMessageDialog(getRootPane(),
-                                OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                                appMessages.getString("exportListingSuccessful.title"),
-                                JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (JAXBException e1) {
-                        throw new IOException(e1);
+                final URI relativeBase2 = relativeBase;
+                final URI modelRelativeBase2 = modelRelativeBase;
+                final File file = f;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            try {
+                                ServiceLocator.get(ListingHandler.class).export(filesToDisplay, file, relativeBase2,
+                                        modelRelativeBase2);
+                                OrigamiViewer.this.format.applyPattern(appMessages
+                                        .getString("exportListingSuccessful.message"));
+                                JOptionPane.showMessageDialog(getRootPane(),
+                                        OrigamiViewer.this.format.format(new Object[] { file.toString() }),
+                                        appMessages.getString("exportListingSuccessful.title"),
+                                        JOptionPane.INFORMATION_MESSAGE, null);
+                            } catch (JAXBException e1) {
+                                throw new IOException(e1);
+                            }
+                        } catch (IOException e1) {
+                            OrigamiViewer.this.format.applyPattern(appMessages
+                                    .getString("failedToExportListing.message"));
+                            JOptionPane.showMessageDialog(getRootPane(),
+                                    OrigamiViewer.this.format.format(new Object[] { file.toString() }),
+                                    appMessages.getString("failedToExportListing.title"), JOptionPane.ERROR_MESSAGE,
+                                    null);
+                            Logger.getLogger("application").warn("Unable to export listing.", e1);
+                        }
                     }
-                } catch (IOException e1) {
-                    OrigamiViewer.this.format.applyPattern(appMessages.getString("failedToExportListing.message"));
-                    JOptionPane.showMessageDialog(getRootPane(),
-                            OrigamiViewer.this.format.format(new Object[] { f.toString() }),
-                            appMessages.getString("failedToExportListing.title"), JOptionPane.ERROR_MESSAGE, null);
-                    Logger.getLogger("application").warn("Unable to export listing.", e1);
-                }
+                }).start();
             }
         }
     }
@@ -1104,9 +1199,27 @@ public class OrigamiViewer extends CommonGui
         private static final long serialVersionUID = -583073126579360879L;
 
         @Override
-        public void actionPerformed(ActionEvent e)
+        public void actionPerformed(final ActionEvent e)
         {
-            new SettingsFrame().setVisible(true);
+            if (e.getSource() instanceof JComponent)
+                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            new Thread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    final SettingsFrame frame = new SettingsFrame();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            if (e.getSource() instanceof JComponent)
+                                ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
+
+                            frame.setVisible(true);
+                        }
+                    });
+                }
+            }).start();
         }
 
     }
