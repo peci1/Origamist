@@ -234,7 +234,7 @@ public class OrigamiEditor extends CommonGui
                     showAlternativeActions(!alternativeActionsShown);
                     e.consume();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_SPACE) {
-                    if (currentOperationArgument != null) {
+                    if (currentOperation != null) {
                         proceedToNextOperationArgument();
                         e.consume();
                     }
