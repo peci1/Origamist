@@ -93,24 +93,26 @@
 					</refPoint>
 					<layer>1</layer>
 				</foldOperation>
-				<foldOperation type="VALLEY_FOLD">
-					<angle>3.141592</angle>
-					<line>
-						<start>
+				<repeatOperation>
+					<foldOperation type="VALLEY_FOLD">
+						<angle>3.141592</angle>
+						<line>
+							<start>
+								<x>0.70707070707070708</x>
+								<y>0.64646464646464646</y>
+							</start>
+							<end>
+								<x>0.35353535353535354</x>
+								<y>1</y>
+							</end>
+						</line>
+						<refPoint>
 							<x>0.70707070707070708</x>
-							<y>0.64646464646464646</y>
-						</start>
-						<end>
-							<x>0.35353535353535354</x>
 							<y>1</y>
-						</end>
-					</line>
-					<refPoint>
-						<x>0.70707070707070708</x>
-						<y>1</y>
-					</refPoint>
-					<layer>1</layer>
-				</foldOperation>
+						</refPoint>
+						<layer>1</layer>
+					</foldOperation>
+				</repeatOperation>
 			</step>
 			<step id="4">
 				<description>Rotate it 90° right.</description>

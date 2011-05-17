@@ -36,7 +36,6 @@ import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
 import javax.swing.FocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
@@ -53,6 +52,7 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
@@ -65,13 +65,15 @@ import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
 import javax.swing.origamist.JDropDownButton;
 import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
-import javax.swing.origamist.JList;
 import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
 import javax.swing.origamist.JToolBarWithBgImage;
 import javax.swing.origamist.MessageBar;
 import javax.swing.origamist.OrigamistToolBar;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeModel;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -196,7 +198,7 @@ public class OrigamiEditor extends CommonGui
     protected ObservablePropertyListener<Operation> operationsObserver;
 
     /** The list of operations defined for the current step. */
-    protected JList                                 operationsList;
+    protected OperationsTree                        operationsTree;
 
     /** The description of the step. */
     protected JLangStringListTextField<JTextField>  description;
@@ -276,14 +278,13 @@ public class OrigamiEditor extends CommonGui
                         addStep.setEnabled(step.getOperations().size() > 0);
                         cancelLastOperation.setEnabled(step.getOperations().size() > 0);
 
-                        DefaultListModel model = ((DefaultListModel) operationsList.getModel());
                         if (evt.getEvent().getChangeType() != ChangeTypes.ADD) {
-                            model.removeElement(evt.getEvent().getItem());
+                            operationsTree.removeOperation(evt.getEvent().getItem());
                         }
                         if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
-                            model.addElement(evt.getEvent().getItem());
+                            operationsTree.addTopLevelOperation(evt.getEvent().getItem());
                         }
-                        operationsList.repaint();
+                        operationsTree.repaint();
                     }
                 });
             }
@@ -711,12 +712,12 @@ public class OrigamiEditor extends CommonGui
         builder.appendRelatedComponentsGapRow();
         builder.nextLine(2);
 
-        operationsList = new JList();
-        operationsList.setCellRenderer(new OperationListCellRenderer());
-        operationsList.setBorder(BorderFactory.createEmptyBorder());
+        operationsTree = new OperationsTree();
+        operationsTree.setCellRenderer(new OperationListCellRenderer());
+        operationsTree.setBorder(BorderFactory.createEmptyBorder());
         updateOperationsModel();
 
-        JScrollPane operationsListScroll = new JScrollPane(operationsList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane operationsListScroll = new JScrollPane(operationsTree, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         builder.appendRow("fill:min:grow");
         builder.append(operationsListScroll);
@@ -918,17 +919,13 @@ public class OrigamiEditor extends CommonGui
      */
     protected void updateOperationsModel()
     {
-        final DefaultListModel model = new DefaultListModel();
-        if (step != null) {
-            for (Operation o : step.getOperations())
-                model.addElement(o);
-        }
+        final TreeModel model = operationsTree.getModelForOperations(step == null ? null : step.getOperations());
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run()
             {
-                operationsList.setModel(model);
+                operationsTree.setModel(model);
             }
         });
     }
@@ -938,17 +935,19 @@ public class OrigamiEditor extends CommonGui
      * 
      * @param operation The operation to set.
      */
-    public void setCurrentOperation(Operation operation)
+    public void setCurrentOperation(final Operation operation)
     {
         if (step == null || !step.isEditable())
             return;
 
         if (currentOperation != null) {
+            final Operation operationToRemove = currentOperation;
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run()
                 {
-                    ((DefaultListModel) operationsList.getModel()).removeElement(currentOperation);
+                    operationsTree.removeOperation(operationToRemove);
+                    operationsTree.repaint();
                 }
             });
             setCurrentOperationArgument(null);
@@ -964,12 +963,11 @@ public class OrigamiEditor extends CommonGui
                 @Override
                 public void run()
                 {
-                    ((DefaultListModel) operationsList.getModel()).addElement(currentOperation);
+                    operationsTree.addTopLevelOperation(operation);
+                    operationsTree.repaint();
                 }
             });
         }
-
-        operationsList.repaint();
 
         stepEditor.clearChosenItems();
     }
@@ -987,8 +985,8 @@ public class OrigamiEditor extends CommonGui
             @Override
             public void run()
             {
-                operationsList.recomputeHeights();
-                operationsList.repaint();
+                operationsTree.recomputeHeights();
+                operationsTree.repaint();
             }
         });
 
@@ -1065,7 +1063,7 @@ public class OrigamiEditor extends CommonGui
                         setStep(step);
                     }
 
-                    operationsList.repaint();
+                    operationsTree.repaint();
                 }
             }).start();
         }
@@ -1717,19 +1715,33 @@ public class OrigamiEditor extends CommonGui
      * 
      * @author Martin Pecka
      */
-    protected class OperationListCellRenderer extends DefaultListCellRenderer
+    protected class OperationListCellRenderer extends DefaultTreeCellRenderer
     {
 
         /** */
         private static final long serialVersionUID = -8983928724421088263L;
 
-        @Override
-        public Component getListCellRendererComponent(javax.swing.JList list, Object value, int index,
-                boolean isSelected, boolean cellHasFocus)
         {
-            Operation operation = (Operation) value;
+            setLeafIcon(null);
+            setOpenIcon(null);
+            setClosedIcon(null);
+        }
 
-            JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded,
+                boolean leaf, int row, boolean hasFocus)
+        {
+            JLabel result = (JLabel) super
+                    .getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
+            Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
+            if (!(userObject instanceof Operation))
+                return result;
+
+            result.setFont(result.getFont().deriveFont(Font.BOLD));
+            result.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+            Operation operation = (Operation) userObject;
 
             if (operation != currentOperation) {
                 result.setText(operation.getDefaultDescription());
