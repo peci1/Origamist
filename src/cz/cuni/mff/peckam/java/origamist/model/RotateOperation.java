@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
@@ -17,6 +18,14 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
  */
 public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.RotateOperation
 {
+
+    @Override
+    protected void init()
+    {
+        super.init();
+        type = Operations.ROTATE; // it doesn't help to specify the value as fixed in XSD
+    }
+
     @Override
     public ModelState getModelState(ModelState previousState)
     {

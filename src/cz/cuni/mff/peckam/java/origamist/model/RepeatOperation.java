@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 
 /**
@@ -12,6 +13,13 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
  */
 public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperation
 {
+    @Override
+    protected void init()
+    {
+        super.init();
+        type = Operations.REPEAT_ACTION; // it doesn't help to specify the value as fixed in XSD
+    }
+
     @Override
     public ModelState getModelState(ModelState previousState)
     {

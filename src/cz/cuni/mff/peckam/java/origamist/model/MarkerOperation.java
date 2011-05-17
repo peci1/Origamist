@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.IntegerArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
@@ -20,6 +21,13 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextArgument;
  */
 public class MarkerOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.MarkerOperation
 {
+    @Override
+    protected void init()
+    {
+        super.init();
+        type = Operations.MARKER; // it doesn't help to specify the value as fixed in XSD
+    }
+
     @Override
     public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
