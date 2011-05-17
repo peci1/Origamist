@@ -211,7 +211,6 @@ public class JDropDownButtonReflectingSelectionGroup extends JDropDownButton
         mainButton.setIcon(item.getIcon());
         mainButton.setToolTipText(item.getToolTipText());
         mainButton.setMnemonic(item.getMnemonic());
-        setFixedSize(mainButton, arrowButton);
         invalidate();
         repaint();
     }
@@ -225,7 +224,6 @@ public class JDropDownButtonReflectingSelectionGroup extends JDropDownButton
         mainButton.setIcon(icon);
         mainButton.setToolTipText(tooltip);
         mainButton.setMnemonic(mnemonic);
-        setFixedSize(mainButton, arrowButton);
         invalidate();
         repaint();
     }

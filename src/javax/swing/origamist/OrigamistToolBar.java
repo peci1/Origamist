@@ -3,6 +3,7 @@
  */
 package javax.swing.origamist;
 
+import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.net.URL;
@@ -19,6 +20,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
@@ -175,6 +177,15 @@ public class OrigamistToolBar extends JToolBar
                 button.setIcon(new ImageIcon(url));
         }
 
+        final AbstractButton btn;
+        if (button instanceof JDropDownButton) {
+            btn = ((JDropDownButton) button).getMainButton();
+        } else if (button instanceof JMenuItem) {
+            btn = null;
+        } else {
+            btn = button;
+        }
+
         final PropertyChangeListener listener = new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt)
@@ -194,6 +205,15 @@ public class OrigamistToolBar extends JToolBar
                 } catch (MissingResourceException e) {
                     button.setText("");
                 }
+
+                if (btn != null) {
+                    if (btn.getText() == null || btn.getText().length() == 0) {
+                        btn.setHorizontalAlignment(SwingConstants.CENTER);
+                    } else {
+                        btn.setHorizontalAlignment(SwingConstants.LEFT);
+                    }
+                }
+
                 String mnemonic = null;
                 try {
                     mnemonic = messages.getString(bundleName + ".mnemonic");
@@ -245,6 +265,14 @@ public class OrigamistToolBar extends JToolBar
         };
         listener.propertyChange(new PropertyChangeEvent(this, "messages", null, messages));
         addPropertyChangeListener("messages", listener);
+
+        if (btn != null && btn.getIcon() != null) {
+            if (btn != button) {
+                btn.setMinimumSize(new Dimension(btn.getIcon().getIconWidth() + 3, btn.getIcon().getIconHeight() + 3));
+            } else {
+                button.setMinimumSize(new Dimension(btn.getIcon().getIconWidth() + 2, btn.getIcon().getIconHeight() + 2));
+            }
+        }
 
         return button;
     }

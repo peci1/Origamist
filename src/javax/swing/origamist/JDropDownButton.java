@@ -140,7 +140,6 @@ public class JDropDownButton extends JButton
     public void setText(String text)
     {
         mainButton.setText(text);
-        setFixedSize(mainButton, arrowButton);
     }
 
     /**
@@ -318,6 +317,7 @@ public class JDropDownButton extends JButton
         Icon disDownArrow = new DisabledDownArrow();
         arrowButton.setDisabledIcon(disDownArrow);
         arrowButton.setMaximumSize(new Dimension(11, 100));
+        arrowButton.setMinimumSize(new Dimension(11, 11));
         mainButton.setOpaque(isOpaque());
         arrowButton.setOpaque(isOpaque());
 
@@ -332,25 +332,6 @@ public class JDropDownButton extends JButton
         tb.add(arrowButton);
         tb.setOpaque(false);
         add(tb);
-
-        setFixedSize(mainButton, arrowButton);
-
-    }
-
-    /**
-     * Forces the width of this button to be the sum of the widths of the main
-     * button and the arrow button. The height is the max of the main button or
-     * the arrow button.
-     */
-    protected void setFixedSize(JButton mainButton, JButton arrowButton)
-    {
-        int width = (int) (mainButton.getPreferredSize().getWidth() + arrowButton.getPreferredSize().getWidth());
-        int height = (int) Math.max(mainButton.getPreferredSize().getHeight(), arrowButton.getPreferredSize()
-                .getHeight());
-
-        setMaximumSize(new Dimension(width, height));
-        setMinimumSize(new Dimension(width, height));
-        setPreferredSize(new Dimension(width, height));
     }
 
     /**
@@ -463,7 +444,7 @@ public class JDropDownButton extends JButton
         }
     }
 
-    private static class ToolBar extends JToolBar
+    private class ToolBar extends JToolBar
     {
 
         /** */

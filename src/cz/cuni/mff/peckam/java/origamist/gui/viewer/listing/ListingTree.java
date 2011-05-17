@@ -49,8 +49,12 @@ public class ListingTree extends JTree
 
     public ListingTree(Listing listing)
     {
-        setModel(new DefaultTreeModel(createStructure(listing)));
+        this();
+        setListing(listing);
+    }
 
+    public ListingTree()
+    {
         setSelectionModel(new DefaultTreeSelectionModel());
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
@@ -73,6 +77,16 @@ public class ListingTree extends JTree
                         repaint();
                     }
                 });
+    }
+
+    /**
+     * Set a new listing that will be displayed by this tree.
+     * 
+     * @param listing The listing to display.
+     */
+    public void setListing(Listing listing)
+    {
+        setModel(new DefaultTreeModel(createStructure(listing)));
     }
 
     /**

@@ -42,6 +42,9 @@ public class JHideablePanel extends JPanel
     /** The arrow to show when the content is hidden. */
     protected Icon            hiddenIcon;
 
+    /** The alignment of the hide button. */
+    protected String          buttonAlignment;
+
     /**
      * Create the panel that has a button to show/hide its contents.
      * 
@@ -110,6 +113,8 @@ public class JHideablePanel extends JPanel
     public JHideablePanel(JPanel content, JButton arrowButton, final String buttonAlignment,
             String shownArrowDirection, String hiddenArrowDirection)
     {
+        this.buttonAlignment = buttonAlignment;
+
         shownIcon = getIconForDirection(shownArrowDirection);
         hiddenIcon = getIconForDirection(hiddenArrowDirection);
 
@@ -132,8 +137,52 @@ public class JHideablePanel extends JPanel
 
         setLayout(new BorderLayout());
 
-        add(hideButton, buttonAlignment);
+        addHideButtonToLayout();
         add(content, BorderLayout.CENTER);
+    }
+
+    /**
+     * Add the hide button to the layout according to current buttonAlignment.
+     */
+    protected void addHideButtonToLayout()
+    {
+        add(hideButton, buttonAlignment);
+    }
+
+    /**
+     * @return Alignment of the button. One of <code>BorderLayout.(NORTH|SOUTH|EAST|WEST)</code>.
+     */
+    public String getButtonAlignment()
+    {
+        return buttonAlignment;
+    }
+
+    /**
+     * Set the new alignment of the hide button.
+     * <p>
+     * This call relayouts the component if needed.
+     * 
+     * @param buttonAlignment Alignment of the button. One of <code>BorderLayout.(NORTH|SOUTH|EAST|WEST)</code>.
+     */
+    public void setButtonAlignment(String buttonAlignment)
+    {
+        String oldAlignment = this.buttonAlignment;
+        this.buttonAlignment = buttonAlignment;
+
+        if (!oldAlignment.equals(buttonAlignment)) {
+            remove(hideButton);
+
+            shownIcon = getIconForDirection(getOppositeAlignment(buttonAlignment));
+            hiddenIcon = getIconForDirection(buttonAlignment);
+
+            if (content.isVisible()) {
+                hideButton.setIcon(shownIcon);
+            } else {
+                hideButton.setIcon(hiddenIcon);
+            }
+
+            addHideButtonToLayout();
+        }
     }
 
     /**

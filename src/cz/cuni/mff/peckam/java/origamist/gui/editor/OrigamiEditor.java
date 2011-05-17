@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -374,6 +375,8 @@ public class OrigamiEditor extends CommonGui
 
         statusBar = new JStatusBar();
         statusBar.showMessage(" ");
+
+        getTopmostComponent().setMinimumSize(new Dimension(750, 500));
     }
 
     /**

@@ -9,6 +9,8 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -100,6 +102,8 @@ public class DiagramRenderer extends JPanelWithOverlay
 
     /** The toolbar of the currently displayed step if the display mode is DIAGRAM. */
     protected JToolBar                                                      stepToolbar;
+    /** The step renderer that is the owner of the stepToolbar. */
+    protected StepRendererWithControls                                      stepToolBarsRenderer;
 
     /** The panel holding all toolbars this renderer should show. */
     protected final JPanel                                                  toolbarPane;
@@ -128,9 +132,9 @@ public class DiagramRenderer extends JPanelWithOverlay
     /** The quick-jump combobox for navigating through pages. */
     protected final JComboBox                                               pageSelect;
     /** The model of pageSelect for PAGE mode. */
-    protected ComboBoxModel                                                 pageSelectPageModel;
+    protected ComboBoxModel                                                 pageSelectPageModel    = new DefaultComboBoxModel();
     /** The model of pageSelect for DIAGRAM mode. */
-    protected ComboBoxModel                                                 pageSelectDiagramModel;
+    protected ComboBoxModel                                                 pageSelectDiagramModel = new DefaultComboBoxModel();
     /** The string saying "Step x of y" to be displayed in <code>pageSelect</code> */
     protected ParametrizedLocalizedString                                   stepXofY;
     /** The string saying "Page x of y" to be displayed in <code>pageSelect</code> */
@@ -141,6 +145,15 @@ public class DiagramRenderer extends JPanelWithOverlay
      * @param firstStep
      */
     public DiagramRenderer(Origami o, Step firstStep)
+    {
+        this();
+        setOrigami(o, firstStep, false);
+    }
+
+    /**
+     * 
+     */
+    public DiagramRenderer()
     {
         overlayLabel = new JLocalizedLabel("viewer", "DiagramRenderer.loading");
         overlayLabel.setFont(overlayLabel.getFont().deriveFont(Font.BOLD, 40));
@@ -239,25 +252,33 @@ public class DiagramRenderer extends JPanelWithOverlay
             public void propertyChange(PropertyChangeEvent evt)
             {
                 if (DisplayMode.DIAGRAM.equals(mode)) {
-                    firstButtonDiagram.setEnabled(origami.getModel().getSteps().getStep()
-                            .indexOf(DiagramRenderer.this.firstStep) > 0);
+                    firstButtonDiagram.setEnabled(origami != null
+                            && origami.getModel().getSteps().getStep().indexOf(DiagramRenderer.this.firstStep) > 0);
                     prevButtonDiagram.setEnabled(firstButtonDiagram.isEnabled());
                     lastButtonDiagram
-                            .setEnabled(origami.getModel().getSteps().getStep().indexOf(DiagramRenderer.this.firstStep) < origami
-                                    .getModel().getSteps().getStep().size() - 1);
+                            .setEnabled(origami != null
+                                    && origami.getModel().getSteps().getStep().indexOf(DiagramRenderer.this.firstStep) < origami
+                                            .getModel().getSteps().getStep().size() - 1);
                     nextButtonDiagram.setEnabled(lastButtonDiagram.isEnabled());
                 } else {
-                    int numSteps = origami.getModel().getSteps().getStep().size();
-                    int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                    int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
+                    if (origami != null) {
+                        int numSteps = origami.getModel().getSteps().getStep().size();
+                        int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
+                        int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
 
-                    int stepIndex = origami.getModel().getSteps().getStep().indexOf(DiagramRenderer.this.firstStep) + 1;
-                    int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
+                        int stepIndex = origami.getModel().getSteps().getStep().indexOf(DiagramRenderer.this.firstStep) + 1;
+                        int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
 
-                    firstButtonPage.setEnabled(pageIndex > 1);
-                    prevButtonPage.setEnabled(firstButtonPage.isEnabled());
-                    lastButtonPage.setEnabled(pageIndex < numPages);
-                    nextButtonPage.setEnabled(lastButtonPage.isEnabled());
+                        firstButtonPage.setEnabled(pageIndex > 1);
+                        prevButtonPage.setEnabled(firstButtonPage.isEnabled());
+                        lastButtonPage.setEnabled(pageIndex < numPages);
+                        nextButtonPage.setEnabled(lastButtonPage.isEnabled());
+                    } else {
+                        firstButtonPage.setEnabled(false);
+                        prevButtonPage.setEnabled(false);
+                        lastButtonPage.setEnabled(false);
+                        nextButtonPage.setEnabled(false);
+                    }
                 }
             }
         };
@@ -278,7 +299,6 @@ public class DiagramRenderer extends JPanelWithOverlay
             }
         };
 
-        setOrigami(o, firstStep, false);
         setDisplayMode(DisplayMode.PAGE);
         getContent().setOpaque(false);
     }
@@ -414,8 +434,10 @@ public class DiagramRenderer extends JPanelWithOverlay
 
                 setBackground(origami.getPaper().getColor().getBackground());
 
-                for (StepRendererWithControls r : stepRendererPool)
-                    r.setOrigami(origami);
+                for (StepRendererWithControls r : stepRendererPool) {
+                    if (r != null)
+                        r.setOrigami(origami);
+                }
 
                 for (EmptyCellRenderer comp : emptyCellRendererPool.getAltView())
                     comp.setOrigami(origami);
@@ -480,18 +502,20 @@ public class DiagramRenderer extends JPanelWithOverlay
             case PAGE:
                 pageSelect.setModel(pageSelectPageModel);
 
-                // when switching back to PAGE mode, don't automatically display the previously displayed step
-                // as the
-                // first step in the page, but make the page begin with a step that corresponds to the first
-                // step of
-                // this page
-                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-                int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
-                int newStepIndex = (pageIndex - 1) * stepsPerPage;
-                Step step = origami.getModel().getSteps().getStep().get(newStepIndex);
-                if (step != null)
-                    setStep(step);
+                if (origami != null) {
+                    // when switching back to PAGE mode, don't automatically display the previously displayed step
+                    // as the
+                    // first step in the page, but make the page begin with a step that corresponds to the first
+                    // step of
+                    // this page
+                    int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
+                    int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
+                    int pageIndex = (stepIndex - 1) / stepsPerPage + 1;
+                    int newStepIndex = (pageIndex - 1) * stepsPerPage;
+                    Step step = origami.getModel().getSteps().getStep().get(newStepIndex);
+                    if (step != null)
+                        setStep(step);
+                }
 
                 prevButtonDiagram.setVisible(false);
                 prevButtonPage.setVisible(true);
@@ -529,10 +553,16 @@ public class DiagramRenderer extends JPanelWithOverlay
                 stepRenderers.clear();
                 usedEmptyCellRenderers.clear();
 
+                if (origami == null) {
+                    hideOverlay();
+                    return;
+                }
+
                 new Thread() {
                     @Override
                     public void run()
                     {
+                        final Thread _this = this;
                         if (mode == DisplayMode.DIAGRAM) {
                             final StepRendererWithControls r = getStepRenderer(0);
                             r.setDisplayMode(mode);
@@ -547,6 +577,10 @@ public class DiagramRenderer extends JPanelWithOverlay
                                     if (diagramPane.getLayout() != diagramModeLayout)
                                         diagramPane.setLayout(diagramModeLayout);
                                     diagramPane.add(r, new CellConstraints(1, 1));
+
+                                    synchronized (_this) {
+                                        _this.notify();
+                                    }
                                 }
                             });
                         } else {
@@ -621,19 +655,33 @@ public class DiagramRenderer extends JPanelWithOverlay
                                             diagramPane.add(panels[i], new CellConstraints(x + 1, y + 1));
                                         }
                                     }
+
+                                    synchronized (_this) {
+                                        _this.notify();
+                                    }
                                 }
                             });
+                        }
+
+                        synchronized (this) {
+                            try {
+                                this.wait(10000);
+                            } catch (InterruptedException e) {}
                         }
 
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
                             public void run()
                             {
-                                if (stepToolbar != null)
+                                if (stepToolbar != null && stepToolBarsRenderer != null)
+                                    stepToolBarsRenderer.getOverlay().add(stepToolbar, new CellConstraints(1, 1));
+                                else if (stepToolbar != null)
                                     toolbarPane.remove(stepToolbar);
+
                                 if (mode.equals(DisplayMode.DIAGRAM) && stepRenderers.size() > 0) {
                                     // in DIAGRAM view we want to add the step's toolbar to the toolbar of this renderer
                                     stepToolbar = stepRenderers.get(0).getToolbar();
+                                    stepToolBarsRenderer = stepRenderers.get(0);
                                     // also detaches the toolbar from the StepRendererWithControls
                                     toolbarPane.add(stepToolbar);
                                     stepToolbar.setVisible(true);
@@ -642,6 +690,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                                 // this is important!
                                 getContent().revalidate();
                                 hideOverlay();
+                                repaint();
                             }
                         });
                     }
@@ -688,6 +737,14 @@ public class DiagramRenderer extends JPanelWithOverlay
             }
         });
         r.getRenderer().getCanvas().setResizeMode(JCanvas3D.RESIZE_DELAYED);
+        r.getRenderer().getCanvas().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e)
+            {
+                revalidate();
+                repaint();
+            }
+        });
         return r;
     }
 
