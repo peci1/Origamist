@@ -29,7 +29,7 @@ public class ExistingLineArgument extends LineArgument
     }
 
     @Override
-    public void readDataFromEditor(StepEditor editor)
+    public void readDataFromObject(StepEditor editor)
     {
         if (editor.getChosenExistingLine() != null)
             this.line = editor.getChosenExistingLine();

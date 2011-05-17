@@ -788,6 +788,8 @@ public class StepViewingCanvasController
     protected Transform3D computeInitialViewTransform(Origami origami)
     {
         Transform3D result = new Transform3D();
+        if (origami == null)
+            return result;
         UnitDimension dimension = origami.getModel().getPaper().getSize().convertTo(Unit.M);
         double length = Math.sqrt(Math.pow(dimension.getWidth(), 2) + Math.pow(dimension.getHeight(), 2));
         // inspired in ViewingPlatform#setNominalViewingTransform()

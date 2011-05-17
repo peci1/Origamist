@@ -72,7 +72,7 @@ public class LineArgument extends OperationArgument implements EditorDataReceive
     }
 
     @Override
-    public void readDataFromEditor(StepEditor editor)
+    public void readDataFromObject(StepEditor editor)
     {
         if (editor.getChosenLine() != null)
             this.line = editor.getChosenLine();

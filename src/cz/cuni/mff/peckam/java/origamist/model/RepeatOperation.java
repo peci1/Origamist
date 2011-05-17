@@ -4,9 +4,14 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.BooleanArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LastOperationsArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 
 /**
  * A repeat operation.
@@ -31,6 +36,26 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
         }
 
         return previousState;
+    }
+
+    @Override
+    protected List<OperationArgument> initArguments()
+    {
+        List<OperationArgument> arguments = new ArrayList<OperationArgument>(2);
+
+        arguments.add(new LastOperationsArgument(true, "operation.argument.last.operations"));
+        arguments.add(new BooleanArgument(true, "operation.argument.hidden", "operation.argument.hidden.message",
+                "operation.argument.hidden.displayed", "operation.argument.hidden.hidden"));
+
+        return arguments;
+    }
+
+    @Override
+    public void fillFromArguments() throws IllegalStateException
+    {
+        this.operations.clear();
+        this.operations.addAll(((LastOperationsArgument) arguments.get(0)).getOperations());
+        this.display = ((BooleanArgument) arguments.get(1)).getValue();
     }
 
     @Override

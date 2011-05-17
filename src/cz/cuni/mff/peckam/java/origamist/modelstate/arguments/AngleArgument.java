@@ -17,7 +17,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * 
  * @author Martin Pecka
  */
-public class AngleArgument extends OperationArgument implements TextInputDataReceiver
+public class AngleArgument extends OperationArgument implements UserInputDataReceiver
 {
     /** The angle. */
     protected Double    angle = null;

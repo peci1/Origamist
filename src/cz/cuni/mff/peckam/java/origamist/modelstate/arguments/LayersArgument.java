@@ -91,7 +91,7 @@ public class LayersArgument extends OperationArgument implements EditorDataRecei
     }
 
     @Override
-    public void readDataFromEditor(StepEditor editor)
+    public void readDataFromObject(StepEditor editor)
     {
         if (editor.getChosenLayers() != null && editor.getChosenLayers().size() > 0)
             this.layers = editor.getChosenLayers();

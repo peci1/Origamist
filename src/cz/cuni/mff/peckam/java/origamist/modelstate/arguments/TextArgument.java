@@ -16,7 +16,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * 
  * @author Martin Pecka
  */
-public class TextArgument extends OperationArgument implements TextInputDataReceiver
+public class TextArgument extends OperationArgument implements UserInputDataReceiver
 {
 
     /** The text. */

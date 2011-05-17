@@ -72,7 +72,7 @@ public class PointArgument extends OperationArgument implements EditorDataReceiv
     }
 
     @Override
-    public void readDataFromEditor(StepEditor editor)
+    public void readDataFromObject(StepEditor editor)
     {
         if (editor.getChosenPoint() != null)
             this.point = editor.getChosenPoint();

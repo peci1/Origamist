@@ -91,15 +91,18 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.OperationContainer;
 import cz.cuni.mff.peckam.java.origamist.model.OperationsHelper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
+import cz.cuni.mff.peckam.java.origamist.model.RepeatOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Model;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Steps;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.EditorDataReceiver;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
-import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.TextInputDataReceiver;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationsTreeDataReceiver;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.UserInputDataReceiver;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.StepThumbnailGenerator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
@@ -981,20 +984,29 @@ public class OrigamiEditor extends CommonGui
     {
         this.currentOperationArgument = argument;
         stepEditor.setCurrentOperationArgument(argument);
-        SwingUtilities.invokeLater(new Runnable() {
+
+        // SwingUtilities.invokeLater(new Runnable() {
+        // @Override
+        // public void run()
+        // {
+        // operationsTree.recomputeHeights();
+        // operationsTree.repaint();
+        // }
+        // });
+        operationsTree.repaint();
+
+        new Thread(new Runnable() {
             @Override
             public void run()
             {
-                operationsTree.recomputeHeights();
-                operationsTree.repaint();
+                // arguments that just fetch text input from the user can ask for the input right now
+                // trying to proceed to next argument will cause the text input to be shown, and when it is completed,
+                // next
+                // argument is automatically selected
+                if (currentOperationArgument != null && currentOperationArgument instanceof UserInputDataReceiver)
+                    proceedToNextOperationArgument();
             }
-        });
-
-        // arguments that just fetch text input from the user can ask for the input right now
-        // trying to proceed to next argument will cause the text input to be shown, and when it is completed, next
-        // argument is automatically selected
-        if (argument != null && argument instanceof TextInputDataReceiver)
-            proceedToNextOperationArgument();
+        }).start();
     }
 
     /**
@@ -1007,10 +1019,12 @@ public class OrigamiEditor extends CommonGui
         if (currentOperationArgument != null) {
 
             if (currentOperationArgument instanceof EditorDataReceiver) {
-                ((EditorDataReceiver) currentOperationArgument).readDataFromEditor(stepEditor);
+                ((EditorDataReceiver) currentOperationArgument).readDataFromObject(stepEditor);
+            } else if (currentOperationArgument instanceof OperationsTreeDataReceiver) {
+                ((OperationsTreeDataReceiver) currentOperationArgument).readDataFromObject(operationsTree);
             } else if (!currentOperationArgument.isComplete()) {
-                if (currentOperationArgument instanceof TextInputDataReceiver) {
-                    ((TextInputDataReceiver) currentOperationArgument).askForData();
+                if (currentOperationArgument instanceof UserInputDataReceiver) {
+                    ((UserInputDataReceiver) currentOperationArgument).askForData();
                 }
             }
 
@@ -1037,14 +1051,18 @@ public class OrigamiEditor extends CommonGui
     protected void tryCompleteOperation()
     {
         if (currentOperation.areRequiredAgrumentsComplete()) {
+            final Operation operation = currentOperation;
             new Thread(new Runnable() {
                 @Override
                 public void run()
                 {
-                    Operation operation = currentOperation;
                     setCurrentOperation(null);
 
                     operation.fillFromArguments();
+                    if (operation instanceof RepeatOperation) {
+                        List<Operation> operations = ((RepeatOperation) operation).getOperations();
+                        step.getOperations().removeAll(operations);
+                    }
                     step.getOperations().add(operation);
 
                     if (!step.isModelStateValid(true)) {
@@ -1702,7 +1720,21 @@ public class OrigamiEditor extends CommonGui
             if (operations.size() == 0) {
                 return;
             } else {
-                operations.remove(operations.size() - 1);
+                Operation last = operations.get(operations.size() - 1);
+                if (last instanceof OperationContainer) {
+                    int dialogResult = JOptionPane.showConfirmDialog(OrigamiEditor.this,
+                            editorMessages.getString("OrigamiEditor.delete.repeat.operation.or.last.message"),
+                            editorMessages.getString("OrigamiEditor.delete.repeat.operation.or.last.title"),
+                            JOptionPane.YES_NO_CANCEL_OPTION);
+                    if (dialogResult == JOptionPane.YES_OPTION) {
+                        operations.remove(operations.size() - 1);
+                    } else if (dialogResult == JOptionPane.NO_OPTION) {
+                        operations.remove(operations.size() - 1);
+                        operations.addAll(((OperationContainer) last).getOperations());
+                    }
+                } else {
+                    operations.remove(operations.size() - 1);
+                }
             }
 
             if (!step.isModelStateValid(true))

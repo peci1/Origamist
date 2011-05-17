@@ -16,7 +16,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * 
  * @author Martin Pecka
  */
-public class IntegerArgument extends OperationArgument implements TextInputDataReceiver
+public class IntegerArgument extends OperationArgument implements UserInputDataReceiver
 {
     /** The integer. */
     protected Integer integer = null;
