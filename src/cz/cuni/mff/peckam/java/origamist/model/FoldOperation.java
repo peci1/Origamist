@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,8 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * Valley or mountain fold.
@@ -64,6 +67,23 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         this.angle = ((AngleArgument) arguments.get(2)).getAngle();
         if (arguments.get(3).isComplete())
             this.refPoint = ((PointArgument) arguments.get(3)).getPoint2D();
+    }
+
+    @Override
+    public String getDefaultDescription()
+    {
+        String prefix = "FOLD";
+        StringBuilder text = new StringBuilder("<html><body><dl style=\"margin:0px;\"><dt>").append(getL7dName())
+                .append("</dt>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        AngleUnit prefUnit = ServiceLocator.get(ConfigurationManager.class).get().getPreferredAngleUnit();
+        String angleText = prefUnit.formatValue(AngleUnit.RAD.convertTo(angle, prefUnit));
+        text.append(MessageFormat.format(messages.getString(prefix + ".angleFormat"), new Object[] { angleText }));
+        text.append("</dd>");
+
+        text.append("</dl></body></html>");
+        return text.toString();
     }
 
     @Override

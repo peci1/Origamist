@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,8 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * A thunderbolt fold.
@@ -126,6 +129,43 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         this.secondLine = ((LineArgument) arguments.get(3)).getLine2D();
         if (arguments.get(4).isComplete())
             this.secondAngle = ((AngleArgument) arguments.get(4)).getAngle();
+    }
+
+    @Override
+    public String getDefaultDescription()
+    {
+        String prefix = type.toString();
+        StringBuilder text = new StringBuilder("<html><body><dl style=\"margin:0px;\"><dt>").append(getL7dName())
+                .append("</dt>");
+
+        AngleUnit prefUnit = ServiceLocator.get(ConfigurationManager.class).get().getPreferredAngleUnit();
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        if (invert == null || !invert)
+            text.append(messages.getString(prefix + ".firstMountain"));
+        else
+            text.append(messages.getString(prefix + ".firstValley"));
+        text.append("</dd>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        String angleText = prefUnit.formatValue(AngleUnit.RAD.convertTo(angle, prefUnit));
+        text.append(MessageFormat.format(messages.getString(prefix + ".angleFormat"), new Object[] { angleText }));
+        text.append("</dd>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        if (invert == null || !invert)
+            text.append(messages.getString(prefix + ".secondValley"));
+        else
+            text.append(messages.getString(prefix + ".secondMountain"));
+        text.append("</dd>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        angleText = prefUnit.formatValue(AngleUnit.RAD.convertTo(secondAngle != null ? secondAngle : angle, prefUnit));
+        text.append(MessageFormat.format(messages.getString(prefix + ".secondAngleFormat"), new Object[] { angleText }));
+        text.append("</dd>");
+
+        text.append("</dl></body></html>");
+        return text.toString();
     }
 
     @Override

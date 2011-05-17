@@ -1728,38 +1728,13 @@ public class OrigamiEditor extends CommonGui
                 boolean isSelected, boolean cellHasFocus)
         {
             Operation operation = (Operation) value;
-            // TODO improve the value of the displayed information
+
             JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-            String operationName = OperationsHelper.toString(operation.getType());
-
             if (operation != currentOperation) {
-                result.setText(operationName);
+                result.setText(operation.getDefaultDescription());
             } else {
-                StringBuilder text = new StringBuilder("<html><body><span style=\"color:gray;\">")
-                        .append(operationName).append("</span>");
-                if (operation.getArguments().size() > 0) {
-                    text.append("<ol style=\"margin: 0px; margin-left: 18px;\">");
-                    String currentArgStyle = "font-weight: bold; font-size: 120%; background-color: rgb(240,240,255);";
-                    String optionalArgStyle = "font-style: italic;";
-                    String completedArgStyle = "color: black; font-weight: bold;";
-                    for (OperationArgument arg : operation.getArguments()) {
-                        text.append("<li><span style=\"font-size: 90%; color: gray; font-weight: normal;");
-                        if (currentOperationArgument == arg)
-                            text.append(currentArgStyle);
-                        if (!arg.isRequired())
-                            text.append(optionalArgStyle);
-                        if (arg.isComplete())
-                            text.append(completedArgStyle);
-                        text.append("\">");
-                        if (currentOperationArgument == arg)
-                            text.append(" &gt; ");
-                        text.append(editorMessages.getString(arg.getResourceBundleKey())).append(" </span></li>");
-                    }
-                    text.append("</ol>");
-                }
-                text.append("</body></html>");
-                result.setText(text.toString());
+                result.setText(operation.getConstructDescription(currentOperationArgument));
                 result.revalidate();
             }
 

@@ -6,15 +6,18 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import javax.swing.ImageIcon;
 import javax.xml.bind.annotation.XmlTransient;
 
+import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
 
@@ -44,11 +47,26 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
      */
     protected transient ImageIcon               icon          = null;
 
+    /** The bundle for Operation. */
+    protected transient ResourceBundle          messages;
+
+    /** The name of the resource bundle that contains operations string. */
+    public static final String                  BUNDLE_NAME   = Operation.class.getName().replaceAll("\\.[^.]*$", "")
+                                                                      + ".Operations";
+
     /**
      * 
      */
     public Operation()
     {
+        ServiceLocator.get(ConfigurationManager.class).get()
+                .addAndRunResourceBundleListener(new Configuration.ResourceBundleLocaleListener(BUNDLE_NAME) {
+                    @Override
+                    public void bundleChanged()
+                    {
+                        messages = this.bundle;
+                    }
+                });
     }
 
     /**
@@ -167,6 +185,59 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     {
         if (!areRequiredAgrumentsComplete())
             throw new IllegalStateException("Cannot fill operation properties from uncompleted argument list.");
+    }
+
+    /**
+     * @return The name of this operation in the current locale.
+     */
+    public String getL7dName()
+    {
+        return messages.getString(type.toString());
+    }
+
+    /**
+     * @return The description of the operation.
+     */
+    public String getDefaultDescription()
+    {
+        return OperationsHelper.toString(type);
+    }
+
+    /**
+     * Return the description of this operation while it is being constructed.
+     * 
+     * @param currentArgument The argument the user currently sets.
+     * @return The description.
+     */
+    public String getConstructDescription(OperationArgument currentArgument)
+    {
+        StringBuilder text = new StringBuilder("<html><body><span style=\"color:gray;\">").append(
+                OperationsHelper.toString(type)).append("</span>");
+        if (getArguments().size() > 0) {
+            text.append("<ol style=\"margin: 0px; margin-left: 18px;\">");
+            String currentArgStyle = "font-weight: bold; font-size: 120%; background-color: rgb(240,240,255);";
+            String optionalArgStyle = "font-style: italic;";
+            String completedArgStyle = "color: black; font-weight: bold;";
+            for (OperationArgument arg : getArguments()) {
+                text.append("<li><span style=\"font-size: 90%; color: gray; font-weight: normal;");
+                if (currentArgument == arg)
+                    text.append(currentArgStyle);
+                if (!arg.isRequired())
+                    text.append(optionalArgStyle);
+                if (arg.isComplete())
+                    text.append(completedArgStyle);
+                text.append("\">");
+                if (currentArgument == arg)
+                    text.append(" &gt; ");
+                text.append(
+                        ResourceBundle.getBundle("editor",
+                                ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString(
+                                arg.getResourceBundleKey())).append(" </span></li>");
+            }
+            text.append("</ol>");
+        }
+        text.append("</body></html>");
+        return text.toString();
     }
 
     @Override

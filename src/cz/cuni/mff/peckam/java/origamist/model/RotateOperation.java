@@ -3,13 +3,17 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
+import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 
 /**
  * Rotate operation.
@@ -55,6 +59,23 @@ public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     {
         super.fillFromArguments();
         this.angle = ((AngleArgument) arguments.get(0)).getAngle();
+    }
+
+    @Override
+    public String getDefaultDescription()
+    {
+        String prefix = type.toString();
+        StringBuilder text = new StringBuilder("<html><body><dl style=\"margin:0px;\"><dt>").append(getL7dName())
+                .append("</dt>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        AngleUnit prefUnit = ServiceLocator.get(ConfigurationManager.class).get().getPreferredAngleUnit();
+        String angleText = prefUnit.formatValue(AngleUnit.RAD.convertTo(angle, prefUnit));
+        text.append(MessageFormat.format(messages.getString(prefix + ".angleFormat"), new Object[] { angleText }));
+        text.append("</dd>");
+
+        text.append("</dl></body></html>");
+        return text.toString();
     }
 
     @Override

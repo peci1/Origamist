@@ -3,6 +3,7 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,5 +55,20 @@ public class MarkerOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
         this.refPoint = ((PointArgument) arguments.get(0)).getPoint2D();
         this.text = ((TextArgument) arguments.get(1)).getText();
         this.stepsToHide = ((IntegerArgument) arguments.get(2)).getInteger();
+    }
+
+    @Override
+    public String getDefaultDescription()
+    {
+        String prefix = type.toString();
+        StringBuilder text = new StringBuilder("<html><body><dl style=\"margin:0px;\"><dt>").append(getL7dName())
+                .append("</dt>");
+
+        text.append("<dd style=\"margin-left: 10px;\">");
+        text.append(MessageFormat.format(messages.getString(prefix + ".textFormat"), new Object[] { this.text }));
+        text.append("</dd>");
+
+        text.append("</dl></body></html>");
+        return text.toString();
     }
 }

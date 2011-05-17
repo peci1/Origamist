@@ -188,6 +188,8 @@ public class Configuration extends PropertyChangeSource
      */
     public AngleUnit getPreferredAngleUnit()
     {
+        if (preferredAngleUnit == null)
+            setPreferredAngleUnit(AngleUnit.DEGREE);
         return preferredAngleUnit;
     }
 
