@@ -347,6 +347,9 @@ public class Triangle3d implements Cloneable
 
     /**
      * Return the intersection points of this triangle and the given line.
+     * <p>
+     * Note that some heuristic is performed (such as "magnetizing" edges and vertices), so it generally doesn't hold
+     * that the returned segment is a subsegment of the argument (it can be probably 10*EPSILON-different).
      * 
      * @param line The line to get intersections with.
      * @return A segment that defines the intersection of the given line (or segment) and this triangle (the segment can
@@ -367,7 +370,17 @@ public class Triangle3d implements Cloneable
             for (Segment3d s : getEdges()) { // find intersections with edges
                 intersection = s.getIntersection(line);
                 if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
-                    intersections.add(intersection.p);
+                    // the point->param->point conversion is done to be as close to the edge as possible
+                    double param = s.getParameterForPoint(intersection.p);
+                    // make vertices magnetic
+                    if (param < 1 * EPSILON) {
+                        intersections.add(s.getPointForParameter(0));
+                    } else if (param > 1 - 1 * EPSILON) {
+                        intersections.add(s.getPointForParameter(1));
+                    } else {
+                        intersections.add(s.getPointForParameter(param));
+                        // intersections.add(intersection.p);
+                    }
                 } else if (intersection != null) {
                     // the line lies on the same line as the edge and they have nonempty intersection - we can return
                     return intersection;
@@ -386,6 +399,8 @@ public class Triangle3d implements Cloneable
             // rounding erros may affect the method a lot, so ensure it is a little more tolerant
             MathHelper.removeEpsilonEqualPoints(intersections, 2d * EPSILON);
 
+            // if there is a nearby point contained in an edge of the triangle, then retain only that on-edge point and
+            // remove all nearby points
             for (int i = 0; i < intersections.size(); i++) {
                 if (!sidesContain(intersections.get(i))) {
                     Point3d substitution = null;
@@ -429,7 +444,10 @@ public class Triangle3d implements Cloneable
             Line3d intersection = plane.getIntersection(line);
             // line.contains(...) is being called because the line can be also a Segment3d
             if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
-                return new Segment3d(intersection.p, intersection.p);
+                if (contains(intersection.p))
+                    return new Segment3d(intersection.p, intersection.p);
+                else
+                    return null;
             } else {
                 assert false : "Triangle3d#getIntersection(Line3d): line not parallel to the triangle's plane, but its intersection with the plane isn't a single point";
                 return null;
