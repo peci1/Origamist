@@ -5,11 +5,15 @@ package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
 import static java.lang.Math.abs;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
@@ -53,7 +57,10 @@ import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.StepViewingCanvasController;
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
+import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
+import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.ModelPaper;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
@@ -64,6 +71,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelTriangle;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
@@ -161,6 +169,12 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /** The set of layers the currently highlighted point lies in. */
     protected Set<Group>             layersForHighlightedPoint  = null;
 
+    /** If true, show the 2D preview window. */
+    protected boolean                showPreview                = true;
+
+    /** The OSD panel with model 2D preview. */
+    protected OSDPanel               preview                    = null;
+
     {
         updatePickCanvas();
         updateTransforms();
@@ -238,7 +252,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     private double oldZoom = 100d;
 
     @Override
-    public void setStep(Step step)
+    public void setStep(Step step, final Runnable afterSetCallback)
     {
         if (step != null && step.getAttachedTo() == null) {
             return;
@@ -255,7 +269,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
         if (this.step != null)
             oldZoom = this.step.getZoom();
-        super.setStep(step);
+        super.setStep(step, afterSetCallback);
 
         availableItems.clear();
         highlighted = null;
@@ -281,6 +295,25 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         // reset the zoom according to the current step
         if (step != null)
             support.firePropertyChange("zoom", oldZoom, (double) step.getZoom());
+
+        if (preview != null)
+            preview.repaint();
+    }
+
+    /**
+     * @return If true, show the 2D preview window.
+     */
+    public boolean isShowPreview()
+    {
+        return showPreview;
+    }
+
+    /**
+     * @param showPreview If true, show the 2D preview window.
+     */
+    public void setShowPreview(boolean showPreview)
+    {
+        this.showPreview = showPreview;
     }
 
     @Override
@@ -418,6 +451,202 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             tGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             // TODO create an ErrorTransformGroup that would signalize to the user that an operation is invalid
             throw e;
+        }
+    }
+
+    @Override
+    protected void setupUniverse() throws InvalidOperationException
+    {
+        super.setupUniverse();
+
+        createAndSetupOSD();
+    }
+
+    /**
+     * Create and setup all OSD components.
+     */
+    protected void createAndSetupOSD()
+    {
+        if (preview == null) {
+            preview = new OSDPanel(canvas, 10, 10, 128, 128, false, true) {
+                protected final float lineWidth     = 5f;
+                protected final float pointSizeHalf = 3f;
+
+                @Override
+                protected void paint(final Graphics2D graphics)
+                {
+                    BufferedImage model = new BufferedImage(paintArea.getWidth(), paintArea.getHeight(),
+                            paintArea.getType());
+                    model.createGraphics().fillRect(0, 0, 100, 100);
+                    try {
+                        drawTopTextureToBuffer(model);
+                    } catch (Exception e) {
+                        return;
+                    }
+
+                    Graphics2D g = (Graphics2D) graphics.create();
+
+                    g.setBackground(new Color(0, 0, 0, 0));
+                    g.clearRect(0, 0, paintArea.getWidth(), paintArea.getHeight());
+
+                    g.drawImage(model, 0, 0, model.getWidth(), model.getHeight(), 0, bounds.height, bounds.width, 0,
+                            null);
+
+                    Rectangle usedPart = getUsedBufferPart(paintArea);
+                    int x = usedPart.x, y = usedPart.y;
+                    int w = usedPart.width, h = usedPart.height;
+
+                    // usedPart contains the really used part of buffer, but we need to compensate that for the shorter
+                    // side, its
+                    // most distant point isn't generally 1, but something less; so we take the inverse ratio and
+                    // multiply it with
+                    // the shorter dimension to compensate this effect
+                    DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
+                    if (paperDim.getWidth() >= paperDim.getHeight()) {
+                        h = (int) (h * paperDim.getWidth() / paperDim.getHeight());
+                    } else {
+                        w = (int) (w * paperDim.getHeight() / paperDim.getWidth());
+                    }
+
+                    g.setStroke(new BasicStroke(lineWidth));
+
+                    for (Group gr : selected) {
+                        if (gr.getUserData() instanceof Layer) {
+                            Layer l = (Layer) gr.getUserData();
+                            g.setColor(getColorManager().getSelectedFg());
+                            paintLayer(g, l, x, y, w, h, usedPart);
+                        } else if (gr.getUserData() instanceof ModelSegment) {
+                            ModelSegment s = (ModelSegment) gr.getUserData();
+                            g.setColor(getColorManager().getSelectedLine());
+                            paintSegment(g, s, x, y, w, h, usedPart);
+                        } else if (gr.getUserData() instanceof ModelPoint) {
+                            ModelPoint p = (ModelPoint) gr.getUserData();
+                            g.setColor(getColorManager().getSelectedPoint());
+                            paintPoint(g, p, x, y, w, h, usedPart);
+                        }
+                    }
+
+                    for (Group gr : chosen) {
+                        if (gr.getUserData() instanceof Layer) {
+                            Layer l = (Layer) gr.getUserData();
+                            g.setColor(getColorManager().getChosenFg());
+                            paintLayer(g, l, x, y, w, h, usedPart);
+                        } else if (gr.getUserData() instanceof ModelSegment) {
+                            ModelSegment s = (ModelSegment) gr.getUserData();
+                            g.setColor(getColorManager().getChosenLine());
+                            paintSegment(g, s, x, y, w, h, usedPart);
+                        } else if (gr.getUserData() instanceof ModelPoint) {
+                            ModelPoint p = (ModelPoint) gr.getUserData();
+                            g.setColor(getColorManager().getChosenPoint());
+                            paintPoint(g, p, x, y, w, h, usedPart);
+                        }
+                    }
+
+                    for (NewLine l : newLines) {
+                        ModelPoint p1 = (ModelPoint) l.p1.getUserData();
+                        ModelPoint p2 = (ModelPoint) l.p2.getUserData();
+                        g.setColor(getColorManager().getChosenLine());
+                        paintSegment(g, new ModelSegment(p1, p2, null, 0), x, y, w, h, usedPart);
+                    }
+
+                    if (highlighted != null) {
+                        if (highlighted.getUserData() instanceof Layer) {
+                            Layer l = (Layer) highlighted.getUserData();
+                            if (chosen.contains(highlighted))
+                                g.setColor(getColorManager().getChosenHighlightFg());
+                            else if (selected.contains(highlighted))
+                                g.setColor(getColorManager().getSelectedHighlightFg());
+                            else
+                                g.setColor(getColorManager().getHighlightFg());
+                            paintLayer(g, l, x, y, w, h, usedPart);
+                        } else if (highlighted.getUserData() instanceof ModelSegment) {
+                            ModelSegment s = (ModelSegment) highlighted.getUserData();
+                            if (chosen.contains(highlighted))
+                                g.setColor(getColorManager().getChosenHighlightedLine());
+                            else if (selected.contains(highlighted))
+                                g.setColor(getColorManager().getSelectedHighlightedLine());
+                            else
+                                g.setColor(getColorManager().getHighlightedLine());
+                            paintSegment(g, s, x, y, w, h, usedPart);
+                        } else if (highlighted.getUserData() instanceof ModelPoint) {
+                            ModelPoint p = (ModelPoint) highlighted.getUserData();
+                            if (chosen.contains(highlighted))
+                                g.setColor(getColorManager().getChosenHighlightedPoint());
+                            else if (selected.contains(highlighted))
+                                g.setColor(getColorManager().getSelectedHighlightedPoint());
+                            else
+                                g.setColor(getColorManager().getHighlightedPoint());
+                            paintPoint(g, p, x, y, w, h, usedPart);
+                        }
+                    }
+
+                    g.dispose();
+                }
+
+                protected void paintLayer(Graphics2D g, Layer l, int x, int y, int w, int h, Rectangle usedPart)
+                {
+                    for (ModelTriangle t : l.getTriangles()) {
+                        Triangle2d t2 = t.getOriginalPosition();
+                        int[] xpoints = new int[] { x + (int) (t2.getP1().x * w), x + (int) (t2.getP2().x * w),
+                                x + (int) (t2.getP3().x * w) };
+                        int[] ypoints = new int[] { y + (int) (t2.getP1().y * h), y + (int) (t2.getP2().y * h),
+                                y + (int) (t2.getP3().y * h) };
+                        g.fillPolygon(xpoints, ypoints, 3);
+                    }
+                }
+
+                protected void paintSegment(Graphics2D g, ModelSegment s, int x, int y, int w, int h, Rectangle usedPart)
+                {
+                    Segment2d s2 = s.getOriginal();
+                    int x1 = (int) (x + s2.getP1().x * w);
+                    int x2 = (int) (x + s2.getP2().x * w);
+                    int y1 = (int) (y + s2.getP1().y * h);
+                    int y2 = (int) (y + s2.getP2().y * h);
+
+                    x1 = shiftToUsedPartX(x1, lineWidth / 2, usedPart);
+                    x2 = shiftToUsedPartX(x2, lineWidth / 2, usedPart);
+
+                    y1 = shiftToUsedPartY(y1, lineWidth / 2, usedPart);
+                    y2 = shiftToUsedPartY(y2, lineWidth / 2, usedPart);
+
+                    g.drawLine(x1, y1, x2, y2);
+                }
+
+                protected void paintPoint(Graphics2D g, ModelPoint p, int x, int y, int w, int h, Rectangle usedPart)
+                {
+                    Point2d p2 = p.getOriginal();
+
+                    int x1 = (int) (x + p2.x * w - pointSizeHalf);
+                    int y1 = (int) (y + p2.y * h - pointSizeHalf);
+
+                    x1 = shiftToUsedPartX(x1, pointSizeHalf - 1, usedPart);
+                    y1 = shiftToUsedPartY(y1, pointSizeHalf - 1, usedPart);
+
+                    g.fillRect(x1, y1, (int) (pointSizeHalf * 2), (int) (pointSizeHalf * 2));
+                }
+
+                protected int shiftToUsedPartX(int x, float minDistance, Rectangle usedPart)
+                {
+                    return shiftToUsedPart(x, minDistance, usedPart.x, usedPart.width);
+                }
+
+                protected int shiftToUsedPartY(int y, float minDistance, Rectangle usedPart)
+                {
+                    return shiftToUsedPart(y, minDistance, usedPart.y, usedPart.height);
+                }
+
+                protected int shiftToUsedPart(int coord, float minDistance, int offset, int size)
+                {
+                    if (coord < offset + minDistance)
+                        return offset + (int) minDistance;
+
+                    if (coord > offset + size - minDistance)
+                        return offset + size - (int) minDistance;
+
+                    return coord;
+                }
+            };
+            preview.attachToUniverse(universe);
         }
     }
 
@@ -720,6 +949,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             }
         }
 
+        if (preview != null)
+            preview.repaint();
     }
 
     /**
@@ -919,6 +1150,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             highlighted = layer;
             layerAppearanceManager.setAppearance(layer);
         }
+        if (preview != null)
+            preview.repaint();
     }
 
     /**
@@ -1822,6 +2055,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             "highlightPreviousItem");
                     action.actionPerformed(event);
                 }
+                if (preview != null)
+                    preview.repaint();
             }
         }
 
@@ -1840,11 +2075,15 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
                         "toggleHighlightedItemSelection");
                 action.actionPerformed(event);
+                if (preview != null)
+                    preview.repaint();
             } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() >= 2) {
                 Action action = new ClearSelectionAction();
                 ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
                         "clearSelection");
                 action.actionPerformed(event);
+                if (preview != null)
+                    preview.repaint();
             }
         }
 
@@ -1862,6 +2101,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 action.actionPerformed(event);
                 pick(e.getX(), e.getY(), e);
                 removeUnnecessaryListeners();
+                if (preview != null)
+                    preview.repaint();
             }
         }
     }

@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
@@ -69,6 +70,7 @@ import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
@@ -339,6 +341,27 @@ public class StepViewingCanvasController
     }
 
     /**
+     * Return the rectangle the current origami will really ocuppy on the given buffer (assumed you want to scale it to
+     * be the largest possible).
+     * 
+     * @param buffer The buffer the origami will be drawn on.
+     * @return The rectangle the origami will ocuppy on the buffer.
+     */
+    protected Rectangle getUsedBufferPart(BufferedImage buffer)
+    {
+        DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
+
+        double horizRatio = buffer.getWidth() / paperDim.getWidth();
+        double vertRatio = buffer.getHeight() / paperDim.getHeight();
+        double ratio = Math.min(horizRatio, vertRatio);
+
+        int usedWidth = (int) (ratio * paperDim.getWidth());
+        int usedHeight = (int) (ratio * paperDim.getHeight());
+
+        return new Rectangle(0, 0, usedWidth, usedHeight);
+    }
+
+    /**
      * Initialize the texture graphics to be able to draw fold lines on it after this method finishes.
      * 
      * @param buffer The buffer to create the graphics from.
@@ -350,9 +373,11 @@ public class StepViewingCanvasController
     {
         Graphics2D graphics = buffer.createGraphics();
 
+        Rectangle usedPart = getUsedBufferPart(buffer);
+
         graphics.setColor(bgColor);
         graphics.setBackground(bgColor);
-        graphics.clearRect(0, 0, buffer.getWidth(), buffer.getHeight());
+        graphics.clearRect(usedPart.x, usedPart.y, usedPart.width, usedPart.height);
 
         graphics.setColor(Color.BLACK);
         graphics.setStroke(new BasicStroke(0.5f));
@@ -388,24 +413,47 @@ public class StepViewingCanvasController
     {
         if (topTexture == null) {
             BufferedImage buffer = createTextureBuffer();
-            Graphics2D graphics = initTextureGraphics(buffer, getColorManager().getForeground());
 
-            int w = buffer.getWidth();
-            int h = buffer.getHeight();
-            ModelSegment segment;
-            for (LineArray array : getModelState().getLineArrays()) {
-                segment = (ModelSegment) array.getUserData();
-                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection(),
-                        step.getId() - segment.getOriginatingStepId()));
-
-                Segment2d seg = segment.getOriginal();
-                graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
-                        (int) (h - seg.getP2().y * h));
-            }
+            drawTopTextureToBuffer(buffer);
 
             topTexture = createTextureFromBuffer(buffer);
         }
         return topTexture;
+    }
+
+    /**
+     * Draw the top texture onto the specified buffer.
+     * 
+     * @param buffer The buffer to draw to.
+     */
+    protected void drawTopTextureToBuffer(BufferedImage buffer)
+    {
+        Graphics2D graphics = initTextureGraphics(buffer, getColorManager().getForeground());
+
+        Rectangle usedPart = getUsedBufferPart(buffer);
+        int x = usedPart.x, y = usedPart.y;
+        int w = usedPart.width, h = usedPart.height;
+
+        // usedPart contains the really used part of buffer, but we need to compensate that for the shorter side, its
+        // most distant point isn't generally 1, but something less; so we take the inverse ratio and multiply it with
+        // the shorter dimension to compensate this effect
+        DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
+        if (paperDim.getWidth() >= paperDim.getHeight()) {
+            h = (int) (h * paperDim.getWidth() / paperDim.getHeight());
+        } else {
+            w = (int) (w * paperDim.getHeight() / paperDim.getWidth());
+        }
+
+        ModelSegment segment;
+        for (LineArray array : getModelState().getLineArrays()) {
+            segment = (ModelSegment) array.getUserData();
+            graphics.setStroke(strokeFactory.getForDirection(segment.getDirection(),
+                    step.getId() - segment.getOriginatingStepId()));
+
+            Segment2d seg = segment.getOriginal();
+            graphics.drawLine(x + (int) (seg.getP1().x * w), y + (int) (h - seg.getP1().y * h), x
+                    + (int) (seg.getP2().x * w), y + (int) (h - seg.getP2().y * h));
+        }
     }
 
     /**
@@ -415,24 +463,47 @@ public class StepViewingCanvasController
     {
         if (bottomTexture == null) {
             BufferedImage buffer = createTextureBuffer();
-            Graphics2D graphics = initTextureGraphics(buffer, getColorManager().getBackground());
 
-            int w = buffer.getWidth();
-            int h = buffer.getHeight();
-            ModelSegment segment;
-            for (LineArray array : getModelState().getLineArrays()) {
-                segment = (ModelSegment) array.getUserData();
-                graphics.setStroke(strokeFactory.getForDirection(segment.getDirection() == null ? null : segment
-                        .getDirection().getOpposite(), step.getId() - segment.getOriginatingStepId()));
-
-                Segment2d seg = segment.getOriginal();
-                graphics.drawLine((int) (seg.getP1().x * w), (int) (h - seg.getP1().y * h), (int) (seg.getP2().x * w),
-                        (int) (h - seg.getP2().y * h));
-            }
+            drawBottomTextureToBuffer(buffer);
 
             bottomTexture = createTextureFromBuffer(buffer);
         }
         return bottomTexture;
+    }
+
+    /**
+     * Draw the bottom texture onto the specified buffer.
+     * 
+     * @param buffer The buffer to draw to.
+     */
+    protected void drawBottomTextureToBuffer(BufferedImage buffer)
+    {
+        Graphics2D graphics = initTextureGraphics(buffer, getColorManager().getBackground());
+
+        Rectangle usedPart = getUsedBufferPart(buffer);
+        int x = usedPart.x, y = usedPart.y;
+        int w = usedPart.width, h = usedPart.height;
+
+        // usedPart contains the really used part of buffer, but we need to compensate that for the shorter side, its
+        // most distant point isn't generally 1, but something less; so we take the inverse ratio and multiply it with
+        // the shorter dimension to compensate this effect
+        DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
+        if (paperDim.getWidth() >= paperDim.getHeight()) {
+            h = (int) (h * paperDim.getWidth() / paperDim.getHeight());
+        } else {
+            w = (int) (w * paperDim.getHeight() / paperDim.getWidth());
+        }
+
+        ModelSegment segment;
+        for (LineArray array : getModelState().getLineArrays()) {
+            segment = (ModelSegment) array.getUserData();
+            graphics.setStroke(strokeFactory.getForDirection(segment.getDirection() == null ? null : segment
+                    .getDirection().getOpposite(), step.getId() - segment.getOriginatingStepId()));
+
+            Segment2d seg = segment.getOriginal();
+            graphics.drawLine(x + (int) (seg.getP1().x * w), y + (int) (h - seg.getP1().y * h), x
+                    + (int) (seg.getP2().x * w), y + (int) (h - seg.getP2().y * h));
+        }
     }
 
     /**
@@ -576,7 +647,7 @@ public class StepViewingCanvasController
         transform.mul(scale);
 
         Point3d modelCenter = new Point3d();
-        ((BoundingSphere) branchGraph.getBounds()).getCenter(modelCenter);
+        ((BoundingSphere) tGroup.getBounds()).getCenter(modelCenter);
         modelCenter.negate();
 
         Transform3D translation = new Transform3D();
@@ -720,23 +791,10 @@ public class StepViewingCanvasController
             branchGraph = new BranchGroup();
             branchGraph.setCapability(BranchGroup.ALLOW_DETACH);
 
-            setupTGroup();
-
-            branchGraph.addChild(tGroup);
+            createAndAddBranchGraphChildren();
 
             setupTransform();
             tGroup.setTransform(transform);
-
-            Behavior rotate = new CenteredMouseRotate(tGroup) {
-                @Override
-                public void transformChanged(Transform3D transform)
-                {
-                    StepViewingCanvasController.this.transform = transform;
-                }
-
-            };
-            rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
-            branchGraph.addChild(rotate);
 
             branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
             // (or even reading of them) will produce an error if you don't set the proper capability
@@ -750,6 +808,29 @@ public class StepViewingCanvasController
             // (or even reading of them) will produce an error if you don't set the proper capability
             throw e;
         }
+    }
+
+    /**
+     * Create and attach all desired branchGraph children.
+     * 
+     * @throws InvalidOperationException If a child cannot be created due to an invalid operation in the model.
+     */
+    protected void createAndAddBranchGraphChildren() throws InvalidOperationException
+    {
+        setupTGroup();
+
+        branchGraph.addChild(tGroup);
+
+        Behavior rotate = new CenteredMouseRotate(tGroup) {
+            @Override
+            public void transformChanged(Transform3D transform)
+            {
+                StepViewingCanvasController.this.transform = transform;
+            }
+
+        };
+        rotate.setSchedulingBounds(new BoundingSphere(new Point3d(), 1000000d));
+        branchGraph.addChild(rotate);
     }
 
     /**
