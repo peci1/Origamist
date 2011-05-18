@@ -287,7 +287,16 @@ public class Triangle3d implements Cloneable
      */
     public boolean isVertex(Point3d point)
     {
-        return p1.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON) || p3.epsilonEquals(point, EPSILON);
+        if (p1.epsilonEquals(point, EPSILON) || p2.epsilonEquals(point, EPSILON) || p3.epsilonEquals(point, EPSILON))
+            return true;
+
+        // the following shouldn't be needed, but for robustness it is there
+        for (Segment3d s : getEdges()) {
+            Double param = s.getParameterForPoint(point);
+            if (param != null && (param < EPSILON || param > 1 - EPSILON))
+                return true;
+        }
+        return false;
     }
 
     /**
