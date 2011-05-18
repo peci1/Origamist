@@ -300,6 +300,26 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * Return the nearest vertex to the given point.
+     * 
+     * @param point The point to find nearest vertex for.
+     * @return The nearest vertex.
+     */
+    public Point3d getNearestVertex(Point3d point)
+    {
+        double dist1 = p1.distance(point);
+        double dist2 = p2.distance(point);
+        double dist3 = p3.distance(point);
+
+        if (dist1 <= dist2 && dist1 <= dist3)
+            return p1;
+        else if (dist2 <= dist1 && dist2 <= dist3)
+            return p2;
+        else
+            return p3;
+    }
+
+    /**
      * Return the point corresponding to the given barycentric coordinates in this triangle.
      * 
      * @param b The barycentric coordinates to convert.
@@ -602,10 +622,12 @@ public class Triangle3d implements Cloneable
             // v is the intersection point which is also a vertex; p is the other intersection point
             Point3d v, p;
             if (this.isVertex(p1)) {
-                v = p1;
+                v = getNearestVertex(p1); // robustness
+                // v = p1;
                 p = p2;
             } else {
-                v = p2;
+                v = getNearestVertex(p2);
+                // v = p2;
                 p = p1;
             }
 
