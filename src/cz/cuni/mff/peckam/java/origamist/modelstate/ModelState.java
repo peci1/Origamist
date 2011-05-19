@@ -574,9 +574,11 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
-            LayerFilter layerFilter, double angle)
+            LayerFilter layerFilter, double angle) throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, null);
     }
@@ -596,9 +598,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest)
+            throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, null, neighborTest);
     }
@@ -619,9 +624,11 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
-            LayerFilter layerFilter, double angle)
+            LayerFilter layerFilter, double angle) throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, null);
     }
@@ -643,9 +650,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, NeighborInclusionTest neighborTest)
+            throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, null, neighborTest);
     }
@@ -668,9 +678,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers)
+            throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, null);
     }
@@ -695,9 +708,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers)
+            throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, refPoint, layerFilter, angle, foundAffectedLayers, null);
     }
@@ -721,10 +737,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     public Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
-            NeighborInclusionTest neighborTest)
+            NeighborInclusionTest neighborTest) throws InvalidOperationException, IllegalStateException
     {
         return makeFold(direction, startPoint, endPoint, null, layerFilter, angle, foundAffectedLayers, neighborTest);
     }
@@ -752,10 +770,12 @@ public class ModelState implements Cloneable
      *         neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If the requested operation is invalid.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     protected Map<Layer, Layer> makeFold(Direction direction, Point2d startPoint, Point2d endPoint, Point2d refPoint,
             LayerFilter layerFilter, double angle, Map<Layer, Segment3d> foundAffectedLayers,
-            NeighborInclusionTest neighborTest)
+            NeighborInclusionTest neighborTest) throws InvalidOperationException, IllegalStateException
     {
         if (angle < -EPSILON || angle > Math.PI + EPSILON)
             throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to makeFold().");
@@ -801,9 +821,11 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If no or all layers are to be rotated while angle is non-zero.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Map<Layer, ModelSegment> layerInts, double angle,
-            Map<Layer, Direction> foldDirections)
+            Map<Layer, Direction> foldDirections) throws InvalidOperationException, IllegalStateException
     {
         return bendPaper(segment, null, layerInts, angle, null, foldDirections);
     }
@@ -828,9 +850,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If no or all layers are to be rotated while angle is non-zero.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Map<Layer, ModelSegment> layerInts, double angle,
-            NeighborInclusionTest neighborTest, Map<Layer, Direction> foldDirections)
+            NeighborInclusionTest neighborTest, Map<Layer, Direction> foldDirections) throws InvalidOperationException,
+            IllegalStateException
     {
         return bendPaper(segment, null, layerInts, angle, neighborTest, foldDirections);
     }
@@ -856,9 +881,11 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If no or all layers are to be rotated while angle is non-zero.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Point3d refPoint, Map<Layer, ModelSegment> layerInts,
-            double angle, Map<Layer, Direction> foldDirections)
+            double angle, Map<Layer, Direction> foldDirections) throws InvalidOperationException, IllegalStateException
     {
         return bendPaper(segment, refPoint, layerInts, angle, null, foldDirections);
     }
@@ -886,9 +913,12 @@ public class ModelState implements Cloneable
      *         those rotated because they neighbor to a already rotated layer).
      * 
      * @throws IllegalArgumentException If angle isn't in interval &lt;0, &pi;&gt;.
+     * @throws InvalidOperationException If no or all layers are to be rotated while angle is non-zero.
+     * @throws IllegalStateException If this operation cannot find a layer for a triangle.
      */
     protected Map<Layer, Layer> bendPaper(ModelSegment segment, Point3d refPoint, Map<Layer, ModelSegment> layerInts,
             double angle, NeighborInclusionTest neighborTest, Map<Layer, Direction> foldDirections)
+            throws InvalidOperationException, IllegalStateException
     {
         if (angle < -EPSILON || angle > Math.PI + EPSILON)
             throw new IllegalArgumentException("Cannot pass angles outside <0, PI> interval to bendPaper().");
@@ -1016,6 +1046,10 @@ public class ModelState implements Cloneable
             }
         }
 
+        if (queue.isEmpty()) {
+            throw new InvalidOperationException("bend.paper.nothing.to.bend");
+        }
+
         // to find all triangles that have to be rotated, first add all triangles in "affected" layers that lie in the
         // right halfspace, and then go over neighbors of all found triangles to rotate and add them, if the neighbor
         // doesn't lie on an opposite side of a fold line.
@@ -1070,10 +1104,18 @@ public class ModelState implements Cloneable
             }
         }
 
+        if (trianglesToRotate.size() == triangles.size()) {
+            throw new InvalidOperationException("bend.paper.whole.model.rotation");
+        }
+
         Set<Layer> layersToRotate = new HashSet<Layer>();
         // find a set of layers that contain all the triangles to be rotated
         for (ModelTriangle tr : trianglesToRotate) {
             layersToRotate.add(trianglesToLayers.get(tr));
+        }
+
+        if (layersToRotate.size() == layers.size()) {
+            throw new InvalidOperationException("bend.paper.whole.model.rotation");
         }
 
         // HEURISTIC: If we have guessed refPoint, and we find out that more than a half of all triangles should be
