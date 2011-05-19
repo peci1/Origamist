@@ -51,7 +51,7 @@ public class ModelPoint extends Point3d implements Cloneable
      */
     public boolean epsilonEquals(ModelPoint point)
     {
-        return super.epsilonEquals(point, EPSILON);
+        return super.epsilonEquals(point, EPSILON) && original.epsilonEquals(point.original, EPSILON);
     }
 
     @Override

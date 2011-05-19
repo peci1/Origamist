@@ -34,6 +34,7 @@ import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 
 /**
  * This panel renders the given state of the model.
@@ -161,11 +162,10 @@ public class StepRendererWithControls extends JPanelWithOverlay
         getOverlay().add(toolbar, new CellConstraints(1, 1));
     }
 
-    public StepRendererWithControls(Origami o, Step s)
+    public StepRendererWithControls(Origami o)
     {
         this();
         setOrigami(o);
-        setStep(s);
     }
 
     /**
@@ -197,11 +197,15 @@ public class StepRendererWithControls extends JPanelWithOverlay
     }
 
     /**
-     * @param stepId the step to set
+     * @param step the step to set
+     * @param afterSetCallback The callback to call after the step is changed. Will be run outside EDT.
+     * @param exceptionCallback The callback to call if the setting thread encounters an
+     *            {@link InvalidOperationException}. Will be run outside EDT.
      */
-    public void setStep(Step step)
+    public void setStep(final Step step, final Runnable afterSetCallback,
+            final ParametrizedCallable<?, ? super Exception> exceptionCallback)
     {
-        renderer.setStep(step);
+        renderer.setStep(step, afterSetCallback, exceptionCallback);
 
         updateText();
     }

@@ -7,6 +7,7 @@ import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -790,7 +791,8 @@ public class ModelState implements Cloneable
         final Map<Layer, Direction> foldDirections = new HashMap<Layer, Direction>(layerInts.size());
 
         // filter out the layers we aren't interested in
-        layerFilter.filter(layerInts);
+        if (layerFilter != null)
+            layerFilter.filter(layerInts);
 
         // cut triangles along the segment and make the appropriate fold lines
         for (Entry<Layer, ModelSegment> entry : layerInts.entrySet())
@@ -1402,6 +1404,45 @@ public class ModelState implements Cloneable
 
             this.triangles.addAll(triangles);
         }
+    }
+
+    /**
+     * @return True if the paper structure is correct, so no paper tearing or intersecting is performed.
+     */
+    public boolean isModelPhysicallyCorrect()
+    {
+        for (ModelTriangle t : triangles) {
+            for (ModelTriangle n : t.getNeighbors()) {
+                ModelTriangleEdge[] common2dEdge = t.getCommonEdge2d(n, false);
+                if (common2dEdge != null) {
+
+                    Segment3d tEdge = common2dEdge[0].getSegment3d();
+                    Segment3d nEdge = common2dEdge[1].getSegment3d();
+
+                    if (abs(common2dEdge[0].getSegment2d().getLength() - common2dEdge[1].getSegment2d().getLength()) < 100 * EPSILON) {
+                        double[] distances = new double[] { tEdge.getP1().distance(nEdge.getP1()),
+                                tEdge.getP2().distance(nEdge.getP1()), tEdge.getP1().distance(nEdge.getP2()),
+                                tEdge.getP2().distance(nEdge.getP2()) };
+                        Arrays.sort(distances);
+
+                        // now distances should contain distances between the common edges' border points, sorted, so,
+                        // if the edges are almost equal, two of the distances must be very small
+                        if (distances[1] > 1000 * EPSILON)
+                            return false;
+                    } else {
+                        if (!tEdge.overlaps(nEdge))
+                            return false;
+                    }
+                } else {
+                    Logger.getLogger(getClass())
+                            .warn("ModelState#isModelPhysicallyCorrect(): neighboring triangles don't have common 2D segment");
+                }
+            }
+        }
+
+        // TODO check for paper intersection
+
+        return true;
     }
 
     /**

@@ -3,16 +3,20 @@
  */
 package cz.cuni.mff.peckam.java.origamist.modelstate;
 
+import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
+
 import java.util.AbstractList;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle3d;
@@ -402,6 +406,100 @@ public class ModelTriangle extends Triangle3d
 
         }
 
+        return result;
+    }
+
+    /**
+     * @return An array of all edges of the triangle. Further modifications to this array will have no effect on the
+     *         triangle.
+     */
+    public ModelTriangleEdge[] getModelTriangleEdges()
+    {
+        return new ModelTriangleEdge[] { new ModelTriangleEdge(this, 0), new ModelTriangleEdge(this, 1),
+                new ModelTriangleEdge(this, 2) };
+    }
+
+    /**
+     * Returns the common part of edges of this and the given triangle. If they have just a common point, a segment
+     * with zero direction vector will be returned. If the triangles overlay by more than an edge, the result is
+     * undefined. If the triangles do not have a common segment, <code>null</code> will be returned.
+     * <p>
+     * The triangles are checked in both 3D and 2D.
+     * 
+     * @param t The segment to find common edge with.
+     * @param strict If true, then the edges must match exactly. If it is false, it is sufficient that the edges
+     *            overlap.
+     * @return The common part of edges of this and the given triangle.
+     */
+    public ModelSegment getCommonEdge(ModelTriangle t, boolean strict)
+    {
+        ModelSegment result = null;
+        for (ModelTriangleEdge edge1 : getModelTriangleEdges()) {
+            for (ModelTriangleEdge edge2 : t.getModelTriangleEdges()) {
+                if (strict) {
+                    if (edge1.getSegment2d().epsilonEquals(edge2.getSegment2d(), true)
+                            && edge1.getSegment3d().epsilonEquals(edge2.getSegment3d(), true))
+                        return edge1.getSegment();
+                } else {
+                    if (edge1.getSegment2d().overlaps(edge2.getSegment2d())
+                            && edge1.getSegment3d().overlaps(edge2.getSegment3d())) {
+                        Segment2d intersection2 = edge1.getSegment2d().getIntersection(edge2.getSegment2d());
+                        Segment3d intersection3 = edge1.getSegment3d().getIntersection(edge2.getSegment3d());
+                        // if the intersection isn't just a point, we can surely return
+                        if (intersection2 != null && !intersection2.getVector().epsilonEquals(new Vector2d(), EPSILON)
+                                && intersection3 != null
+                                && !intersection3.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                            return new ModelSegment(intersection3, intersection2);
+                        if (intersection2 != null && intersection3 != null)
+                            result = new ModelSegment(intersection3, intersection2);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the common edges of this and the given triangle's original 2D triangles. If the triangles do not have a
+     * common segment, <code>null</code> will be returned.
+     * 
+     * @param t The triangle to find common edge with.
+     * @param strict If true, then the edges must match exactly. If it is false, it is sufficient that the edges
+     *            overlap.
+     * @return The common part of edges of this and the given triangle.
+     */
+    public ModelTriangleEdge[] getCommonEdge2d(ModelTriangle t, boolean strict)
+    {
+        ModelTriangleEdge[] result = null;
+        int i = 0, j = 0;
+        out: for (Segment2d edge1 : getOriginalPosition().getEdges()) {
+            j = 0;
+            for (Segment2d edge2 : t.getOriginalPosition().getEdges()) {
+                if (strict) {
+                    if (edge1.epsilonEquals(edge2, true)) {
+                        result = new ModelTriangleEdge[] { new ModelTriangleEdge(this, i), new ModelTriangleEdge(t, j) };
+                        break out;
+                    }
+                } else {
+                    if (edge1.overlaps(edge2)) {
+                        Segment2d intersection = edge1.getIntersection(edge2);
+                        // if the intersection isn't just a point, we can surely break
+                        if (intersection != null && !intersection.getVector().epsilonEquals(new Vector2d(), EPSILON)) {
+                            result = new ModelTriangleEdge[] { new ModelTriangleEdge(this, i),
+                                    new ModelTriangleEdge(t, j) };
+                            break out;
+                        } else if (intersection != null) {
+                            result = new ModelTriangleEdge[] { new ModelTriangleEdge(this, i),
+                                    new ModelTriangleEdge(t, j) };
+                            // not breaking here allows us to find really the edges that overlap, not just breaking at
+                            // the first two edges that just regularly intersect
+                        }
+                    }
+                }
+                j++;
+            }
+            i++;
+        }
         return result;
     }
 

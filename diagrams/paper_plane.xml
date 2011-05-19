@@ -367,6 +367,11 @@
 					</secondLine>
 				</crimpFoldOperation>
 			</step>
+			<step id="12">
+				<rotateOperation>
+					<angle>3.141592</angle>
+				</rotateOperation>
+			</step>
 		</steps>
 	</model>
 </m:origami>

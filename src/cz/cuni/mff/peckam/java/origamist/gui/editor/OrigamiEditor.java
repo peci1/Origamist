@@ -85,6 +85,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
@@ -852,17 +853,23 @@ public class OrigamiEditor extends CommonGui
             this.origami.removeObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
                     Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
 
-        ParametrizedCallable<Void, InvalidOperationException> errorHandler = new ParametrizedCallable<Void, InvalidOperationException>() {
+        ParametrizedCallable<Void, Exception> errorHandler = new ParametrizedCallable<Void, Exception>() {
             @Override
-            public Void call(final InvalidOperationException arg)
+            public Void call(final Exception arg)
             {
                 if (arg != null) {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run()
                         {
-                            JOptionPane.showMessageDialog(OrigamiEditor.this, arg.getUserFriendlyMessage(),
-                                    editorMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
+                            if (arg instanceof InvalidOperationException) {
+                                JOptionPane.showMessageDialog(OrigamiEditor.this,
+                                        ((InvalidOperationException) arg).getUserFriendlyMessage(),
+                                        appMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(OrigamiEditor.this, arg.getMessage(),
+                                        appMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
+                            }
                         }
                     });
                 }
@@ -1101,10 +1108,13 @@ public class OrigamiEditor extends CommonGui
                                     public void run()
                                     {
                                         JOptionPane.showMessageDialog(OrigamiEditor.this, ioe.getUserFriendlyMessage(),
-                                                editorMessages.getString("invalid.operation.title"),
+                                                appMessages.getString("invalid.operation.title"),
                                                 JOptionPane.ERROR_MESSAGE);
                                     }
                                 });
+                            } else if (e instanceof PaperStructureException) {
+                                JOptionPane.showMessageDialog(OrigamiEditor.this, e.getMessage(),
+                                        appMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
                             } else {
                                 statusBar.showMessage(
                                         "<html><span style=\"color:red;font-weight:bold\">"

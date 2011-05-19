@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.gui.editor;
 
 import static java.lang.Math.abs;
 
+import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -28,12 +29,14 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import javax.media.j3d.Appearance;
+import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Group;
 import javax.media.j3d.LineArray;
 import javax.media.j3d.OrderedGroup;
+import javax.media.j3d.PickInfo;
 import javax.media.j3d.PointArray;
 import javax.media.j3d.PointAttributes;
 import javax.media.j3d.PolygonAttributes;
@@ -43,6 +46,8 @@ import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
+import javax.media.j3d.WakeupCriterion;
+import javax.media.j3d.WakeupOnAWTEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.origamist.MessageBar;
@@ -50,9 +55,10 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickResult;
-import com.sun.j3d.utils.picking.PickTool;
+import org.apache.log4j.Logger;
+
+import com.sun.j3d.utils.pickfast.PickTool;
+import com.sun.j3d.utils.pickfast.behaviors.PickMouseBehavior;
 import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
@@ -88,9 +94,6 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
  */
 public class StepEditingCanvasController extends StepViewingCanvasController
 {
-
-    /** The canvas support for picking. Automatically updated when branch graph changes. */
-    protected PickCanvas             pickCanvas;
 
     /** The transform for transforming vworld coordinates to image plate coordinates. */
     protected Transform3D            vWorldToImagePlate         = new Transform3D();
@@ -177,7 +180,6 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     protected OSDPanel               preview                    = null;
 
     {
-        updatePickCanvas();
         updateTransforms();
 
         addPropertyChangeListener("pickMode", new PropertyChangeListener() {
@@ -254,7 +256,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
     @Override
     public void setStep(Step step, final Runnable afterSetCallback,
-            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
+            final ParametrizedCallable<?, ? super Exception> exceptionCallback)
     {
         if (step != null && step.getAttachedTo() == null) {
             return;
@@ -286,14 +288,13 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         layersToChooseFrom = null;
         layersToChooseFromAsGroups = null;
         layersForHighlightedPoint = null;
+        currentOperationArgument = null;
     }
 
     @Override
     protected void afterSetStep()
     {
         super.afterSetStep();
-        // branchGraph changes, so we have to recreate the pick canvas
-        updatePickCanvas();
         // reset the zoom according to the current step
         if (step != null)
             support.firePropertyChange("zoom", oldZoom, (double) step.getZoom());
@@ -454,6 +455,355 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             // TODO create an ErrorTransformGroup that would signalize to the user that an operation is invalid
             throw e;
         }
+    }
+
+    @Override
+    protected void createAndAddBranchGraphChildren() throws InvalidOperationException
+    {
+        super.createAndAddBranchGraphChildren();
+
+        // setup the pick behavior
+        PickMouseBehavior behavior = new PickMouseBehavior(canvas, branchGraph, null) {
+            {
+                pickCanvas.setMode(PickInfo.PICK_GEOMETRY);
+                pickCanvas.setFlags(PickInfo.SCENEGRAPHPATH | PickInfo.ALL_GEOM_INFO | PickInfo.NODE
+                        | PickInfo.CLOSEST_INTERSECTION_POINT | PickInfo.LOCAL_TO_VWORLD);
+                pickCanvas.setTolerance(3f);
+
+                setSchedulingBounds(new BoundingSphere(new Point3d(), 1000));
+            }
+
+            @Override
+            public void processStimulus(@SuppressWarnings("rawtypes") Enumeration criteria)
+            {
+                WakeupCriterion wakeup;
+                AWTEvent[] evt = null;
+                int xpos = 0, ypos = 0;
+
+                while (criteria.hasMoreElements()) {
+                    wakeup = (WakeupCriterion) criteria.nextElement();
+                    if (wakeup instanceof WakeupOnAWTEvent)
+                        evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                }
+
+                if (evt != null && evt[0] instanceof MouseEvent) {
+                    mevent = (MouseEvent) evt[0];
+
+                    xpos = mevent.getPoint().x;
+                    ypos = mevent.getPoint().y;
+                }
+
+                updateScene(xpos, ypos);
+
+                removeUnnecessaryListeners();
+
+                wakeupOn(wakeupCondition);
+            }
+
+            @Override
+            public void updateScene(final int x, final int y)
+            {
+                if (branchGraph == null || !branchGraph.isLive())
+                    return;
+
+                pickCanvas.setShapeLocation(x, y);
+
+                List<PickInfo> results;
+                try {
+                    results = pickMode.filterPickResults(pickCanvas, pickCanvas.pickAllSorted());
+                } catch (Exception ex) {
+                    // picking points sometimes causes this exception to be thrown, but if we ignore this pick call,
+                    // nothing serious happens
+                    Logger.getLogger(getClass()).warn("Picking failed", ex);
+                    return;
+                }
+
+                if (results.size() > 0) {
+                    if (pickMode == PickMode.LAYER) {
+                        boolean containsHighlighted = false;
+                        List<Group> newAvailableItems = new LinkedList<Group>();
+                        if (results.size() == availableItems.size()) {
+                            Iterator<Group> it = availableItems.iterator();
+                            boolean different = false;
+                            for (PickInfo r : results) {
+                                TransformGroup tg = (TransformGroup) pickCanvas.getNode(r,
+                                        PickTool.TYPE_TRANSFORM_GROUP);
+                                if (!different && it.next() != tg)
+                                    different = true;
+                                if (tg == highlighted)
+                                    containsHighlighted = true;
+                                newAvailableItems.add(tg);
+                            }
+                            if (!different)
+                                return;
+                        } else {
+                            for (PickInfo r : results) {
+                                TransformGroup tg = (TransformGroup) pickCanvas.getNode(r,
+                                        PickTool.TYPE_TRANSFORM_GROUP);
+                                if (tg == highlighted)
+                                    containsHighlighted = true;
+                                newAvailableItems.add(tg);
+                            }
+                        }
+                        availableItems = newAvailableItems;
+
+                        if (containsHighlighted)
+                            return;
+
+                        if (layersToChooseFrom != null) {
+                            for (Group g : availableItems) {
+                                if (g.getUserData() instanceof Layer && layersToChooseFrom.contains(g.getUserData())) {
+                                    setHighlightedLayer(g);
+                                    return;
+                                }
+                            }
+                            setHighlightedLayer(null);
+                        } else {
+                            setHighlightedLayer(availableItems.get(0));
+                        }
+                    } else if (pickMode == PickMode.LINE) {
+                        boolean containsHighlighted = false;
+                        List<Group> newAvailableItems = new LinkedList<Group>();
+                        if (results.size() == availableItems.size()) {
+                            Iterator<Group> it = availableItems.iterator();
+                            boolean different = false;
+                            for (PickInfo r : results) {
+                                BranchGroup tg = (BranchGroup) pickCanvas.getNode(r, PickTool.TYPE_BRANCH_GROUP);
+                                if (!different && it.next() != tg)
+                                    different = true;
+
+                                // if some layers are selected, provide only those lines that lie in the selected layers
+                                boolean isInSelectedLayers = selectedLayers.size() == 0;
+                                ModelSegment seg = (ModelSegment) tg.getUserData();
+                                for (Layer l : selectedLayers) {
+                                    if (l.liesInThisLayer(seg)) {
+                                        isInSelectedLayers = true;
+                                        break;
+                                    }
+                                }
+                                if (!isInSelectedLayers)
+                                    continue;
+
+                                if (tg == highlighted)
+                                    containsHighlighted = true;
+
+                                newAvailableItems.add(tg);
+                            }
+                            if (!different)
+                                return;
+                        } else {
+                            for (PickInfo r : results) {
+                                BranchGroup tg = (BranchGroup) pickCanvas.getNode(r, PickTool.TYPE_BRANCH_GROUP);
+
+                                // if some layers are selected, provide only those lines that lie in the selected layers
+                                boolean isInSelectedLayers = selectedLayers.size() == 0;
+                                ModelSegment seg = (ModelSegment) tg.getUserData();
+                                for (Layer l : selectedLayers) {
+                                    if (l.liesInThisLayer(seg)) {
+                                        isInSelectedLayers = true;
+                                        break;
+                                    }
+                                }
+                                if (!isInSelectedLayers)
+                                    continue;
+
+                                if (tg == highlighted)
+                                    containsHighlighted = true;
+
+                                newAvailableItems.add(tg);
+                            }
+                        }
+                        availableItems = newAvailableItems;
+
+                        if (containsHighlighted)
+                            return;
+
+                        if (availableItems.size() > 0)
+                            setHighlightedLine(availableItems.get(0));
+                    } else if (pickMode == PickMode.POINT) {
+                        // update the projection transform
+                        updateTransforms();
+
+                        HashSet<ModelPoint> points = new HashSet<ModelPoint>(results.size());
+                        LinkedHashSet<Group> pointGroups = new LinkedHashSet<Group>();
+                        LinkedList<Group> pointsToAttach = new LinkedList<Group>();
+                        final double tolerance = 6d;
+
+                        Point2d evtPos = new Point2d(x, y);
+
+                        Set<Group> permanent = new HashSet<Group>(chosen);
+                        permanent.addAll(selected);
+
+                        // if there are some selected or chosen points, add the close ones to the new available layers
+                        for (Group g : permanent) {
+                            if (g.getUserData() instanceof ModelPoint) {
+                                if (evtPos.distance(getPointCanvasPosition(g)) < tolerance
+                                        && liesInSelectedLinesOrLayers(g)) {
+                                    points.add((ModelPoint) g.getUserData());
+                                    pointGroups.add(g);
+                                }
+                            }
+                        }
+
+                        List<Group> snapPoints = new LinkedList<Group>();
+                        main: for (PickInfo r : results) {
+                            BranchGroup group = (BranchGroup) pickCanvas.getNode(r, PickTool.TYPE_BRANCH_GROUP);
+
+                            // if we picked an existing point, just add it
+                            if (group.getUserData() instanceof ModelPoint) {
+                                if (pointGroups.contains(group) || !liesInSelectedLinesOrLayers(group))
+                                    continue main;
+                                pointGroups.add(group);
+                                points.add((ModelPoint) group.getUserData());
+                                continue main;
+                            }
+
+                            // we don't want the currentNewLine to make snap points
+                            if (group == currentNewLine)
+                                continue main;
+
+                            // we have picked a fold line
+                            ModelSegment userSegment = (ModelSegment) group.getUserData();
+
+                            // if any of the already available points lies on the fold line, skip this line
+                            for (Group g : pointGroups) {
+                                if (userSegment.getOriginal().contains(((ModelPoint) g.getUserData()).getOriginal())) {
+                                    continue main;
+                                }
+                            }
+
+                            LineArray geom = (LineArray) r.getIntersectionInfos()[0].getGeometry();
+                            Point3d[] edges = new Point3d[] { new Point3d(), new Point3d() };
+                            geom.getCoordinates(0, edges);
+
+                            Segment3d vworldSegment = new Segment3d(edges[0], edges[1]);
+
+                            Point3d vworldIntersection = r.getClosestIntersectionPoint();
+
+                            double param = vworldSegment.getParameterForPoint(vworldIntersection);
+                            Point3d point = userSegment.getPointForParameter(param);
+                            Point2d point2 = userSegment.getOriginal().getPointForParameter(param);
+
+                            ModelPoint modelPoint = new ModelPoint(point, point2);
+
+                            if (points.contains(modelPoint))
+                                continue;
+
+                            for (ModelPoint p : points) {
+                                if (p.epsilonEquals(modelPoint))
+                                    continue main;
+                            }
+
+                            boolean isSnapPoint = false;
+                            // create the snap points (edges and center of the line) and try to use them
+                            Point3d center = vworldSegment.getPointForParameter(0.5d);
+                            Point3d[] snaps = new Point3d[] { new Point3d(vworldSegment.getP1()),
+                                    new Point3d(vworldSegment.getP2()), center };
+                            for (Point3d p : snaps) {
+                                if (evtPos.distance(getLocalPointCanvasPosition(p, r.getLocalToVWorld())) < tolerance) {
+                                    vworldIntersection = p;
+                                    param = vworldSegment.getParameterForPoint(p);
+                                    point = userSegment.getPointForParameter(param);
+                                    point2 = userSegment.getOriginal().getPointForParameter(param);
+                                    modelPoint = new ModelPoint(point, point2);
+                                    isSnapPoint = true;
+                                    break;
+                                }
+                            }
+
+                            // the point changed, so we must re-check if it doesn't collide with an already available
+                            // point
+                            if (isSnapPoint) {
+                                if (points.contains(modelPoint))
+                                    continue main;
+
+                                for (ModelPoint p : points) {
+                                    if (p.epsilonEquals(modelPoint))
+                                        continue main;
+                                }
+                            }
+
+                            Group g = pointFactory.createPoint(modelPoint, vworldIntersection);
+                            // make snap points look like squares
+                            if (isSnapPoint)
+                                ((Shape3D) g.getChild(0)).getAppearance().getPointAttributes()
+                                        .setPointAntialiasingEnable(false);
+
+                            if (!liesInSelectedLinesOrLayers(g))
+                                continue main;
+
+                            points.add(modelPoint);
+                            pointGroups.add(g);
+                            pointsToAttach.add(g);
+                            if (isSnapPoint)
+                                snapPoints.add(g);
+                        }
+                        // we don't rather attach the new points while we iterate over pick results, it could cause mess
+                        for (Group g : pointsToAttach) {
+                            pointGroup.addChild(g);
+                        }
+
+                        // change priorities of points
+                        LinkedList<Group> newAvailableItems = new LinkedList<Group>(pointGroups);
+                        newAvailableItems.removeAll(pointsToAttach);
+                        newAvailableItems.addAll(0, pointsToAttach);
+                        newAvailableItems.removeAll(snapPoints);
+                        newAvailableItems.addAll(0, snapPoints);
+                        for (Group g : currentChosen) {
+                            if (newAvailableItems.remove(g))
+                                newAvailableItems.add(0, g);
+                        }
+
+                        // detach unused old points
+                        availableItems.removeAll(newAvailableItems);
+                        for (Group g : availableItems) {
+                            if (!isPermanent(g)) {
+                                ((BranchGroup) g).detach();
+                            }
+                        }
+
+                        availableItems = newAvailableItems;
+
+                        if (availableItems.size() > 0) {
+                            int index = 0;
+                            if (isChoosingSecondPoint()) {
+                                // if the user chooses a second point of a line, highlight the points that can be chosen
+                                boolean foundChoosable = false;
+                                for (Group g : availableItems) {
+                                    if (g.getUserData() instanceof ModelPoint) {
+                                        if (canChoosePoint(g)) {
+                                            foundChoosable = true;
+                                            break;
+                                        }
+                                    }
+                                    index++;
+                                }
+                                if (!foundChoosable)
+                                    index = 0;
+                            }
+
+                            if (!availableItems.contains(highlighted))
+                                setHighlightedPoint(availableItems.get(index));
+                        }
+                    }
+                } else {
+                    if (highlighted != null) {
+                        clearHighlighted();
+                        clearAvailableItems();
+                    }
+                    if (currentNewLine != null
+                            && (!chosen.contains(currentNewLine.p1) || !chosen.contains(currentNewLine.p2))) {
+                        currentNewLine.detach();
+                        newLines.remove(currentNewLine);
+                        currentNewLine = null;
+                    }
+                }
+
+                if (preview != null)
+                    preview.repaint();
+            }
+        };
+        branchGraph.addChild(behavior);
     }
 
     @Override
@@ -659,310 +1009,23 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     }
 
     /**
-     * A callback to be called when picking is to be performed.
+     * Return true if the given point can be selected - either we're not currently selecting the second point of a line,
+     * or we are, and the given point can be chosen as the end of the line.
      * 
-     * The given coordinates are relative to the canvas.
-     * 
-     * @param x The x coordinte in the canvas.
-     * @param y The y coordinte in the canvas.
-     * @param e The mouse event that caused this callback to be called.
+     * @param g The point to check.
+     * @return True if it can be chosen.
      */
-    protected void pick(int x, int y, MouseEvent e)
+    protected boolean canChoosePoint(Group g)
     {
-        if (branchGraph == null || !branchGraph.isLive())
-            return;
+        if (!isChoosingSecondPoint())
+            return true;
 
-        pickCanvas.setShapeLocation(x, y);
-
-        List<PickResult> results;
-        try {
-            results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
-        } catch (Exception ex) {
-            // picking points sometimes causes this exception to be thrown, but if we ignore this pick call, nothing
-            // serious happens
-            return;
-        }
-
-        if (results.size() > 0) {
-            if (pickMode == PickMode.LAYER) {
-                boolean containsHighlighted = false;
-                List<Group> newAvailableItems = new LinkedList<Group>();
-                if (results.size() == availableItems.size()) {
-                    Iterator<Group> it = availableItems.iterator();
-                    boolean different = false;
-                    for (PickResult r : results) {
-                        TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
-                        if (!different && it.next() != tg)
-                            different = true;
-                        if (tg == highlighted)
-                            containsHighlighted = true;
-                        newAvailableItems.add(tg);
-                    }
-                    if (!different)
-                        return;
-                } else {
-                    for (PickResult r : results) {
-                        TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
-                        if (tg == highlighted)
-                            containsHighlighted = true;
-                        newAvailableItems.add(tg);
-                    }
-                }
-                availableItems = newAvailableItems;
-
-                if (containsHighlighted)
-                    return;
-
-                if (layersToChooseFrom != null) {
-                    for (Group g : availableItems) {
-                        if (g.getUserData() instanceof Layer && layersToChooseFrom.contains(g.getUserData())) {
-                            setHighlightedLayer(g);
-                            return;
-                        }
-                    }
-                    setHighlightedLayer(null);
-                } else {
-                    setHighlightedLayer(availableItems.get(0));
-                }
-            } else if (pickMode == PickMode.LINE) {
-                boolean containsHighlighted = false;
-                List<Group> newAvailableItems = new LinkedList<Group>();
-                if (results.size() == availableItems.size()) {
-                    Iterator<Group> it = availableItems.iterator();
-                    boolean different = false;
-                    for (PickResult r : results) {
-                        BranchGroup tg = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
-                        if (!different && it.next() != tg)
-                            different = true;
-
-                        // if some layers are selected, provide only those lines that lie in the selected layers
-                        boolean isInSelectedLayers = selectedLayers.size() == 0;
-                        ModelSegment seg = (ModelSegment) tg.getUserData();
-                        for (Layer l : selectedLayers) {
-                            if (l.liesInThisLayer(seg)) {
-                                isInSelectedLayers = true;
-                                break;
-                            }
-                        }
-                        if (!isInSelectedLayers)
-                            continue;
-
-                        if (tg == highlighted)
-                            containsHighlighted = true;
-
-                        newAvailableItems.add(tg);
-                    }
-                    if (!different)
-                        return;
-                } else {
-                    for (PickResult r : results) {
-                        BranchGroup tg = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
-
-                        // if some layers are selected, provide only those lines that lie in the selected layers
-                        boolean isInSelectedLayers = selectedLayers.size() == 0;
-                        ModelSegment seg = (ModelSegment) tg.getUserData();
-                        for (Layer l : selectedLayers) {
-                            if (l.liesInThisLayer(seg)) {
-                                isInSelectedLayers = true;
-                                break;
-                            }
-                        }
-                        if (!isInSelectedLayers)
-                            continue;
-
-                        if (tg == highlighted)
-                            containsHighlighted = true;
-
-                        newAvailableItems.add(tg);
-                    }
-                }
-                availableItems = newAvailableItems;
-
-                if (containsHighlighted)
-                    return;
-
-                if (availableItems.size() > 0)
-                    setHighlightedLine(availableItems.get(0));
-            } else if (pickMode == PickMode.POINT) {
-                // update the projection transform
-                updateTransforms();
-
-                HashSet<ModelPoint> points = new HashSet<ModelPoint>(results.size());
-                LinkedHashSet<Group> pointGroups = new LinkedHashSet<Group>();
-                LinkedList<Group> pointsToAttach = new LinkedList<Group>();
-                final double tolerance = 6d;
-
-                Point2d evtPos = new Point2d(x, y);
-
-                Set<Group> permanent = new HashSet<Group>(chosen);
-                permanent.addAll(selected);
-
-                // if there are some selected or chosen points, add the close ones to the new available layers
-                for (Group g : permanent) {
-                    if (g.getUserData() instanceof ModelPoint) {
-                        if (evtPos.distance(getPointCanvasPosition(g)) < tolerance && liesInSelectedLinesOrLayers(g)) {
-                            points.add((ModelPoint) g.getUserData());
-                            pointGroups.add(g);
-                        }
-                    }
-                }
-
-                List<Group> snapPoints = new LinkedList<Group>();
-                main: for (PickResult r : results) {
-                    BranchGroup group = (BranchGroup) r.getNode(PickResult.BRANCH_GROUP);
-
-                    // if we picked an existing point, just add it
-                    if (group.getUserData() instanceof ModelPoint) {
-                        if (pointGroups.contains(group) || !liesInSelectedLinesOrLayers(group))
-                            continue main;
-                        pointGroups.add(group);
-                        points.add((ModelPoint) group.getUserData());
-                        continue main;
-                    }
-
-                    // we don't want the currentNewLine to make snap points
-                    if (group == currentNewLine)
-                        continue main;
-
-                    // we have picked a fold line
-                    ModelSegment userSegment = (ModelSegment) group.getUserData();
-
-                    // if any of the already available points lies on the fold line, skip this line
-                    for (Group g : pointGroups) {
-                        if (userSegment.getOriginal().contains(((ModelPoint) g.getUserData()).getOriginal()))
-                            continue main;
-                    }
-
-                    Point3d[] edges = r.getIntersection(0).getPrimitiveCoordinates();
-                    assert edges.length == 2;
-                    Segment3d vworldSegment = new Segment3d(edges[0], edges[1]);
-
-                    Point3d vworldIntersection = r.getIntersection(0).getPointCoordinates();
-
-                    double param = vworldSegment.getParameterForPoint(vworldIntersection);
-                    Point3d point = userSegment.getPointForParameter(param);
-                    Point2d point2 = userSegment.getOriginal().getPointForParameter(param);
-
-                    ModelPoint modelPoint = new ModelPoint(point, point2);
-
-                    if (points.contains(modelPoint))
-                        continue;
-
-                    for (ModelPoint p : points) {
-                        if (p.epsilonEquals(modelPoint))
-                            continue main;
-                    }
-
-                    boolean isSnapPoint = false;
-                    // create the snap points (edges and center of the line) and try to use them
-                    Point3d center = vworldSegment.getPointForParameter(0.5d);
-                    Point3d[] snaps = new Point3d[] { new Point3d(vworldSegment.getP1()),
-                            new Point3d(vworldSegment.getP2()), center };
-                    for (Point3d p : snaps) {
-                        if (evtPos.distance(getLocalPointCanvasPosition(p, r.getLocalToVworld())) < tolerance) {
-                            vworldIntersection = p;
-                            param = vworldSegment.getParameterForPoint(p);
-                            point = userSegment.getPointForParameter(param);
-                            point2 = userSegment.getOriginal().getPointForParameter(param);
-                            modelPoint = new ModelPoint(point, point2);
-                            isSnapPoint = true;
-                            break;
-                        }
-                    }
-
-                    // the point changed, so we must re-check if it doesn't collide with an already available point
-                    if (isSnapPoint) {
-                        if (points.contains(modelPoint))
-                            continue main;
-
-                        for (ModelPoint p : points) {
-                            if (p.epsilonEquals(modelPoint))
-                                continue main;
-                        }
-                    }
-
-                    Group g = pointFactory.createPoint(modelPoint, vworldIntersection);
-                    // make snap points look like squares
-                    if (isSnapPoint)
-                        ((Shape3D) g.getChild(0)).getAppearance().getPointAttributes()
-                                .setPointAntialiasingEnable(false);
-
-                    if (!liesInSelectedLinesOrLayers(g))
-                        continue main;
-
-                    points.add(modelPoint);
-                    pointGroups.add(g);
-                    pointsToAttach.add(g);
-                    if (isSnapPoint)
-                        snapPoints.add(g);
-                }
-                // we don't rather attach the new points while we iterate over pick results, it could cause mess
-                for (Group g : pointsToAttach) {
-                    pointGroup.addChild(g);
-                }
-
-                // change priorities of points
-                LinkedList<Group> newAvailableItems = new LinkedList<Group>(pointGroups);
-                newAvailableItems.removeAll(pointsToAttach);
-                newAvailableItems.addAll(0, pointsToAttach);
-                newAvailableItems.removeAll(snapPoints);
-                newAvailableItems.addAll(0, snapPoints);
-
-                // detach unused old points
-                availableItems.removeAll(newAvailableItems);
-                for (Group g : availableItems) {
-                    if (!isPermanent(g)) {
-                        ((BranchGroup) g).detach();
-                    }
-                }
-
-                availableItems = newAvailableItems;
-
-                if (availableItems.size() > 0) {
-                    int index = 0;
-                    if (isChoosingSecondPoint()) {
-                        // if the user chooses a second point of a line, highlight the points that can be chosen
-                        boolean foundChoosable = false;
-                        for (; index < availableItems.size(); index++) {
-                            if (availableItems.get(index).getUserData() instanceof ModelPoint) {
-                                if (getModelState().canChooseLine(
-                                        (ModelPoint) currentChosen.iterator().next().getUserData(),
-                                        (ModelPoint) availableItems.get(index).getUserData())) {
-                                    foundChoosable = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (!foundChoosable)
-                            index = 0;
-                    }
-                    setHighlightedPoint(availableItems.get(index));
-                }
-            }
+        if (g.getUserData() instanceof ModelPoint) {
+            ModelPoint start = (ModelPoint) currentChosen.iterator().next().getUserData();
+            return getModelState().canChooseLine(start, (ModelPoint) g.getUserData());
         } else {
-            if (highlighted != null) {
-                clearHighlighted();
-                clearAvailableItems();
-            }
-            if (currentNewLine != null && (!chosen.contains(currentNewLine.p1) || !chosen.contains(currentNewLine.p2))) {
-                currentNewLine.detach();
-                newLines.remove(currentNewLine);
-                currentNewLine = null;
-            }
+            return false;
         }
-
-        if (preview != null)
-            preview.repaint();
-    }
-
-    /**
-     * Call this method to update the pick canvas after canvas or branchGraph changes.
-     */
-    protected void updatePickCanvas()
-    {
-        pickCanvas = new PickCanvas(canvas, branchGraph);
-        pickCanvas.setMode(PickTool.GEOMETRY_INTERSECT_INFO);
-        pickCanvas.setTolerance(3f);
     }
 
     /**
@@ -1066,7 +1129,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * Performs the changes needed to make a highlighted item unhighlighted.
      */
-    protected void clearHighlighted()
+    protected synchronized void clearHighlighted()
     {
         if (highlighted == null)
             return;
@@ -1083,7 +1146,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * Performs the changes needed to make all selected items unselected.
      */
-    protected void clearSelection()
+    protected synchronized void clearSelection()
     {
         if (selected.size() == 0)
             return;
@@ -1098,7 +1161,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * Performs the changes needed to make all chosen items unchosen.
      */
-    protected void clearChosen()
+    protected synchronized void clearChosen()
     {
         if (chosen.size() == 0)
             return;
@@ -1114,7 +1177,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * Performs the changes needed to remove all available items.
      */
-    protected void clearAvailableItems()
+    protected synchronized void clearAvailableItems()
     {
         if (availableItems.size() == 0)
             return;
@@ -1137,7 +1200,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param layer The layer to highlight. Pass <code>null</code> to clear the highlight.
      */
-    protected void setHighlightedLayer(Group layer)
+    protected synchronized void setHighlightedLayer(Group layer)
     {
         if (layer == highlighted)
             return;
@@ -1165,7 +1228,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param line The line to highlight. Pass <code>null</code> to clear the highlight.
      */
-    protected void setHighlightedLine(Group line)
+    protected synchronized void setHighlightedLine(Group line)
     {
         if (line == highlighted)
             return;
@@ -1191,7 +1254,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param point The point to highlight. Pass <code>null</code> to clear the highlight.
      */
-    protected void setHighlightedPoint(Group point)
+    protected synchronized void setHighlightedPoint(Group point)
     {
         if (point == highlighted)
             return;
@@ -1222,14 +1285,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             boolean choosingSecondPoint = isChoosingSecondPoint();
 
             // if we select the second point of a line and the line isn't choosable, return
-            if (choosingSecondPoint
-                    && !getModelState().canChooseLine((ModelPoint) currentChosen.iterator().next().getUserData(),
-                            (ModelPoint) point.getUserData()))
+            if (!canChoosePoint(point))
                 return;
 
             highlighted = point;
-            ((BranchGroup) highlighted).detach();
-            highlightedPointGroup.addChild(highlighted);
+            highlightedPointGroup.moveTo((BranchGroup) highlighted);
             pointAppearanceManager.setAppearance(point);
 
             // suggest the layers the point lies in
@@ -1288,7 +1348,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param layer The layer to select.
      */
-    protected void selectLayer(Group layer)
+    protected synchronized void selectLayer(Group layer)
     {
         if (!(currentOperationArgument instanceof LayersArgument)) {
             if (selected.contains(layer))
@@ -1314,7 +1374,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param layer The layer to deselect.
      */
-    protected void deselectLayer(Group layer)
+    protected synchronized void deselectLayer(Group layer)
     {
         deselectLayer(layer, false);
     }
@@ -1327,7 +1387,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * @param layer The layer to deselect.
      * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
      */
-    protected void deselectLayer(Group layer, boolean forceUnchoose)
+    protected synchronized void deselectLayer(Group layer, boolean forceUnchoose)
     {
         if (!forceUnchoose && !(currentOperationArgument instanceof LayersArgument)) {
             if (selected.remove(layer))
@@ -1347,7 +1407,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param line The line to select.
      */
-    protected void selectLine(Group line)
+    protected synchronized void selectLine(Group line)
     {
         if (!(currentOperationArgument instanceof LineArgument)) {
             if (selected.contains(line))
@@ -1381,7 +1441,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param line The line to deselect.
      */
-    protected void deselectLine(Group line)
+    protected synchronized void deselectLine(Group line)
     {
         deselectLine(line, false);
     }
@@ -1394,7 +1454,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * @param line The line to deselect.
      * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
      */
-    protected void deselectLine(Group line, boolean forceUnchoose)
+    protected synchronized void deselectLine(Group line, boolean forceUnchoose)
     {
         if (!forceUnchoose && !(currentOperationArgument instanceof LineArgument)) {
             if (selected.remove(line))
@@ -1414,7 +1474,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param point The point to select.
      */
-    protected void selectPoint(Group point)
+    protected synchronized void selectPoint(Group point)
     {
         boolean setAppearance = false;
         if (currentOperationArgument == null
@@ -1475,7 +1535,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param point The point to deselect.
      */
-    protected void deselectPoint(Group point)
+    protected synchronized void deselectPoint(Group point)
     {
         deselectPoint(point, false);
     }
@@ -1488,7 +1548,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * @param point The point to deselect.
      * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
      */
-    protected void deselectPoint(Group point, boolean forceUnchoose)
+    protected synchronized void deselectPoint(Group point, boolean forceUnchoose)
     {
         boolean setAppearance = false;
         if (!forceUnchoose
@@ -1518,7 +1578,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param group The group to be made selected.
      */
-    protected void select(Group group)
+    protected synchronized void select(Group group)
     {
         if (group.getUserData() instanceof Layer)
             selectLayer(group);
@@ -1533,7 +1593,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * 
      * @param group The group to deselect.
      */
-    protected void deselect(Group group)
+    protected synchronized void deselect(Group group)
     {
         deselect(group, false);
     }
@@ -1544,7 +1604,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
      * @param group The group to deselect.
      * @param forceUnchoose If true, unchoose the item even if it doesn't belong to currentOperationArgument.
      */
-    protected void deselect(Group group, boolean forceUnchoose)
+    protected synchronized void deselect(Group group, boolean forceUnchoose)
     {
         if (group.getUserData() instanceof Layer)
             deselectLayer(group, forceUnchoose);
@@ -1666,7 +1726,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @param currentOperationArgument The operation argument the editor fetches data for.
      */
-    public void setCurrentOperationArgument(OperationArgument currentOperationArgument)
+    public synchronized void setCurrentOperationArgument(OperationArgument currentOperationArgument)
     {
         this.currentOperationArgument = currentOperationArgument;
 
@@ -1726,7 +1786,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @return If a line is chosen, return it, otherwise return <code>null</code>.
      */
-    public ModelSegment getChosenLine()
+    public synchronized ModelSegment getChosenLine()
     {
         if (currentChosen.size() == 0 || step == null)
             return null;
@@ -1757,7 +1817,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @return If an existing line is chosen, return it, otherwise return <code>null</code>.
      */
-    public ModelSegment getChosenExistingLine()
+    public synchronized ModelSegment getChosenExistingLine()
     {
         if (currentChosen.size() == 0)
             return null;
@@ -1772,7 +1832,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @return If a point is chosen, return it, otherwise return <code>null</code>.
      */
-    public ModelPoint getChosenPoint()
+    public synchronized ModelPoint getChosenPoint()
     {
         if (currentChosen.size() == 0)
             return null;
@@ -1787,7 +1847,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @return If some layers are chosen, return them, otherwise return <code>null</code>.
      */
-    public List<Integer> getChosenLayers()
+    public synchronized List<Integer> getChosenLayers()
     {
         if (currentChosen.size() == 0 || layersToChooseFrom == null)
             return null;
@@ -1820,7 +1880,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /**
      * @return True if the user is currently choosing the second point of a line.
      */
-    public boolean isChoosingSecondPoint()
+    public synchronized boolean isChoosingSecondPoint()
     {
         return currentOperationArgument != null && step != null && pickMode == PickMode.POINT
                 && currentChosen.size() == 1 && currentOperationArgument.getClass() == LineArgument.class;
@@ -1895,17 +1955,26 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
-                selIndex = (selIndex + 1) % items.size();
-                switch (pickMode) {
-                    case POINT:
-                        setHighlightedPoint(items.get(selIndex));
-                        break;
-                    case LINE:
-                        setHighlightedLine(items.get(selIndex));
-                        break;
-                    case LAYER:
-                        setHighlightedLayer(items.get(selIndex));
-                        break;
+                for (int i = 1; i < items.size(); i++) {
+                    selIndex = (selIndex + i) % items.size();
+                    switch (pickMode) {
+                        case POINT:
+                            Group point = items.get(selIndex);
+                            // we could filter items the same way as we do with layersToChooseFrom, but canChoosePoint
+                            // is computationally demanding, so we don't want to compute it for all available items, but
+                            // just for those we really need to know
+                            if (canChoosePoint(point)) {
+                                setHighlightedPoint(items.get(selIndex));
+                                return;
+                            }
+                            break;
+                        case LINE:
+                            setHighlightedLine(items.get(selIndex));
+                            return;
+                        case LAYER:
+                            setHighlightedLayer(items.get(selIndex));
+                            return;
+                    }
                 }
             }
         }
@@ -1931,19 +2000,28 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
-                selIndex = selIndex - 1;
-                if (selIndex == -1)
-                    selIndex = items.size() - 1;
-                switch (pickMode) {
-                    case POINT:
-                        setHighlightedPoint(items.get(selIndex));
-                        break;
-                    case LINE:
-                        setHighlightedLine(items.get(selIndex));
-                        break;
-                    case LAYER:
-                        setHighlightedLayer(items.get(selIndex));
-                        break;
+                for (int i = 1; i < items.size(); i++) {
+                    selIndex = selIndex - i;
+                    if (selIndex <= -1)
+                        selIndex += items.size();
+                    switch (pickMode) {
+                        case POINT:
+                            Group point = items.get(selIndex);
+                            // we could filter items the same way as we do with layersToChooseFrom, but canChoosePoint
+                            // is computationally demanding, so we don't want to compute it for all available items, but
+                            // just for those we really need to know
+                            if (canChoosePoint(point)) {
+                                setHighlightedPoint(items.get(selIndex));
+                                return;
+                            }
+                            break;
+                        case LINE:
+                            setHighlightedLine(items.get(selIndex));
+                            return;
+                        case LAYER:
+                            setHighlightedLayer(items.get(selIndex));
+                            return;
+                    }
                 }
             }
         }
@@ -2063,13 +2141,6 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         }
 
         @Override
-        public void mouseMoved(MouseEvent e)
-        {
-            pick(e.getX(), e.getY(), e);
-            removeUnnecessaryListeners();
-        }
-
-        @Override
         public void mouseClicked(MouseEvent e)
         {
             if (e.getButton() == MouseEvent.BUTTON1 && highlighted != null) {
@@ -2101,8 +2172,6 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
                         "togglePickMode");
                 action.actionPerformed(event);
-                pick(e.getX(), e.getY(), e);
-                removeUnnecessaryListeners();
                 if (preview != null)
                     preview.repaint();
             }
@@ -2487,9 +2556,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     app.getLineAttributes().setLineWidth(getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == overModel) {
-                        overModel.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        lines.addChild(line);
+                        lines.moveTo((BranchGroup) line);
                     }
                     break;
                 case HIGHLIGHTED:
@@ -2501,9 +2568,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2.5f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
                 case SELECTED:
@@ -2515,9 +2580,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
                 case SELECTED_HIGHLIGHTED:
@@ -2529,9 +2592,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
                 case CHOSEN_OLD:
@@ -2543,9 +2604,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
                 case CHOSEN:
@@ -2557,9 +2616,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
                 case CHOSEN_HIGHLIGHTED:
@@ -2571,9 +2628,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             2.5f * getLineWidth(dir, age) * (float) getCompositeZoom() / 100f);
 
                     if (line.getParent() == lines) {
-                        lines.removeChild(line);
-                        ((BranchGroup) line).detach();
-                        overModel.addChild(line);
+                        overModel.moveTo((BranchGroup) line);
                     }
                     break;
             }

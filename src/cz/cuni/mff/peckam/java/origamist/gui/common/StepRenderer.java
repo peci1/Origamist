@@ -22,7 +22,6 @@ import javax.swing.SwingUtilities;
 
 import com.sun.j3d.exp.swing.JCanvas3D;
 
-import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
@@ -209,7 +208,7 @@ public class StepRenderer extends JPanel
      *            {@link InvalidOperationException}. Will be run outside EDT.
      */
     public void setStep(final Step step, final Runnable afterSetCallback,
-            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
+            final ParametrizedCallable<?, ? super Exception> exceptionCallback)
     {
         this.step = step;
 

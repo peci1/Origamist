@@ -69,6 +69,7 @@ import com.sun.j3d.utils.universe.SimpleUniverse;
 import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -257,10 +258,10 @@ public class StepViewingCanvasController
      * @param step the step to set
      * @param afterSetCallback The callback to call after the step is changed. Will be run outside EDT.
      * @param exceptionCallback The callback to call if the setting thread encounters an
-     *            {@link InvalidOperationException}. Will be run outside EDT.
+     *            {@link InvalidOperationException} or {@link PaperStructureException}. Will be run outside EDT.
      */
     public void setStep(final Step step, final Runnable afterSetCallback,
-            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
+            final ParametrizedCallable<?, ? super Exception> exceptionCallback)
     {
         this.step = step;
 
@@ -272,7 +273,7 @@ public class StepViewingCanvasController
             @Override
             public void run()
             {
-                InvalidOperationException exception = null;
+                Exception exception = null;
 
                 synchronized (StepViewingCanvasController.this) {
 
@@ -285,6 +286,9 @@ public class StepViewingCanvasController
                                 "StepRenderer.InvalidOperationException",
                                 new Object[] { StepViewingCanvasController.this.step.getId(),
                                         e.getOperation().toString() }, e);
+                        exception = e;
+                    } catch (PaperStructureException e) {
+                        Logger.getLogger("application").error(e.getMessage(), e);
                         exception = e;
                     } finally {
                         topTexture = null;

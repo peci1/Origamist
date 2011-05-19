@@ -32,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
@@ -45,12 +46,16 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.j3d.exp.swing.JCanvas3D;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.DisplayMode;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.StepRendererWithControls;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.utils.LinkedListWithAdditionalBounds;
 import cz.cuni.mff.peckam.java.origamist.utils.ListWithAdditionalBounds;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
@@ -539,10 +544,17 @@ public class DiagramRenderer extends JPanelWithOverlay
     }
 
     /**
+     * This flag will be reset on each {@link #updateDisplayedSteps()} call and will be set to true by the first run
+     * error handler. This allows only one error message to be issued for multiple errors.
+     */
+    protected boolean errorShown = false;
+
+    /**
      * Updates the displayed steps (eg. manages the number of them and repaints).
      */
     protected void updateDisplayedSteps()
     {
+        errorShown = false;
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run()
@@ -562,11 +574,39 @@ public class DiagramRenderer extends JPanelWithOverlay
                     @Override
                     public void run()
                     {
+                        ParametrizedCallable<Void, Exception> errorHandler = new ParametrizedCallable<Void, Exception>() {
+                            @Override
+                            public Void call(Exception e)
+                            {
+                                if (errorShown)
+                                    return null;
+                                if (e instanceof InvalidOperationException) {
+                                    errorShown = true;
+                                    final InvalidOperationException ioe = (InvalidOperationException) e;
+                                    SwingUtilities.invokeLater(new Runnable() {
+                                        @Override
+                                        public void run()
+                                        {
+                                            JOptionPane.showMessageDialog(DiagramRenderer.this, ioe
+                                                    .getUserFriendlyMessage(), new LocalizedString("application",
+                                                    "invalid.operation.title").toString(), JOptionPane.ERROR_MESSAGE);
+                                        }
+                                    });
+                                } else if (e instanceof PaperStructureException) {
+                                    errorShown = true;
+                                    JOptionPane.showMessageDialog(DiagramRenderer.this, e.getMessage(),
+                                            new LocalizedString("application", "invalid.operation.title").toString(),
+                                            JOptionPane.ERROR_MESSAGE);
+                                }
+                                return null;
+                            }
+                        };
+
                         final Thread _this = this;
                         if (mode == DisplayMode.DIAGRAM) {
                             final StepRendererWithControls r = getStepRenderer(0);
                             r.setDisplayMode(mode);
-                            r.setStep(firstStep);
+                            r.setStep(firstStep, null, errorHandler);
                             r.setZoom(zoom);
                             stepRenderers.add(r);
 
@@ -602,7 +642,7 @@ public class DiagramRenderer extends JPanelWithOverlay
                             for (int i = 0; i < numSteps; i++) {
                                 StepRendererWithControls r = getStepRenderer(i);
                                 r.setDisplayMode(getDisplayMode());
-                                r.setStep(step);
+                                r.setStep(step, null, errorHandler);
                                 r.setZoom(zoom);
 
                                 int gridOrigin = stepsPlacement[i];
@@ -833,24 +873,20 @@ public class DiagramRenderer extends JPanelWithOverlay
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            Object selectedObject = pageSelect.getSelectedItem();
+            final Object selectedObject = pageSelect.getSelectedItem();
             if (selectedObject instanceof Integer) {
-                Integer index = (Integer) selectedObject;
+                final Integer index = (Integer) selectedObject;
+                final Step step;
+
                 if (getDisplayMode().equals(DisplayMode.DIAGRAM)) {
-                    Step step = origami.getModel().getSteps().getStep().get(index - 1);
-                    if (step != null) {
-                        setStep(step);
-                        updateDisplayedSteps();
-                    }
+                    step = origami.getModel().getSteps().getStep().get(index - 1);
                 } else {
-                    int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                    int pageIndex = (index - 1) / stepsPerPage + 1;
-                    int newStepIndex = (pageIndex - 1) * stepsPerPage;
-                    Step step = origami.getModel().getSteps().getStep().get(newStepIndex);
-                    if (step != null) {
-                        setStep(step);
-                        updateDisplayedSteps();
-                    }
+                    step = origami.getFirstStep(index);
+                }
+
+                if (step != null) {
+                    setStep(step);
+                    updateDisplayedSteps();
                 }
             }
             pageSelect.setSelectedIndex(0);
@@ -901,12 +937,9 @@ public class DiagramRenderer extends JPanelWithOverlay
             } else {
                 if (!lastButtonPage.isEnabled())
                     return;
-                int numSteps = origami.getModel().getSteps().getStep().size();
-                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
-                int stepIndex = stepsPerPage * numPages;
-
-                setStep(origami.getModel().getSteps().getStep().get(stepIndex));
+                int numPages = origami.getNumberOfPages();
+                Step step = origami.getFirstStep(numPages);
+                setStep(step);
             }
             updateDisplayedSteps();
         }
@@ -936,12 +969,12 @@ public class DiagramRenderer extends JPanelWithOverlay
             } else {
                 if (!prevButtonPage.isEnabled())
                     return;
-                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-                int pageIndex = (stepIndex - 1) / stepsPerPage;
 
-                if (pageIndex > 0) {
-                    setStep(origami.getModel().getSteps().getStep().get((pageIndex - 1) * stepsPerPage));
+                int page = origami.getPage(firstStep);
+                page--;
+                if (page > 0) {
+                    Step step = origami.getFirstStep(page);
+                    setStep(step);
                     updateDisplayedSteps();
                 }
             }
@@ -972,15 +1005,13 @@ public class DiagramRenderer extends JPanelWithOverlay
             } else {
                 if (!nextButtonPage.isEnabled())
                     return;
-                int numSteps = origami.getModel().getSteps().getStep().size();
-                int stepsPerPage = origami.getPaper().getCols() * origami.getPaper().getRows();
-                int numPages = (int) Math.ceil((double) numSteps / stepsPerPage);
+                int page = origami.getPage(firstStep);
+                int numPages = origami.getNumberOfPages();
 
-                int stepIndex = origami.getModel().getSteps().getStep().indexOf(firstStep) + 1;
-                int pageIndex = (stepIndex - 1) / stepsPerPage;
-
-                if (pageIndex < numPages) {
-                    setStep(origami.getModel().getSteps().getStep().get((pageIndex + 1) * stepsPerPage));
+                if (page < numPages) {
+                    page++;
+                    Step step = origami.getFirstStep(page);
+                    setStep(step);
                     updateDisplayedSteps();
                 }
             }

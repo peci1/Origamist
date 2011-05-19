@@ -236,11 +236,8 @@
                 </foldOperation>
             </step>
             <step id="5">
-                <zoom>100.0</zoom>
-                <turnOverOperation type="TURN_OVER"/>
-            </step>
-            <step id="6">
                 <zoom>370.0</zoom>
+                <turnOverOperation type="TURN_OVER"/>
                 <foldOperation type="MOUNTAIN_FOLD">
                     <angle>3.141592653589793</angle>
                     <line>
@@ -264,77 +261,202 @@
                     <layer>5</layer>
                     <layer>6</layer>
                 </foldOperation>
-                <repeatOperation type="REPEAT_ACTION">
-                    <foldOperation type="MOUNTAIN_FOLD">
-                        <angle>3.141592653589793</angle>
-                        <line>
-                            <start>
-<x>0.7500001585341576</x>
-<y>1.0</y>
-                            </start>
-                            <end>
-<x>1.0</x>
-<y>0.7500001585341581</y>
-                            </end>
-                        </line>
-                        <refPoint>
-                            <x>0.8154148459434509</x>
-                            <y>0.7500000414819501</y>
-                        </refPoint>
-                        <layer>1</layer>
-                        <layer>2</layer>
-                        <layer>3</layer>
-                        <layer>4</layer>
-                        <layer>5</layer>
-                        <layer>6</layer>
-                    </foldOperation>
-                    <foldOperation type="MOUNTAIN_FOLD">
-                        <angle>3.141592653589793</angle>
-                        <line>
-                            <start>
-<x>1.0</x>
-<y>0.2499998414658422</y>
-                            </start>
-                            <end>
-<x>0.7500001585341579</x>
-<y>0.0</y>
-                            </end>
-                        </line>
-                        <refPoint>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>0.75</y>
+                        </start>
+                        <end>
                             <x>0.75</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.75</x>
+                        <y>0.75</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                </foldOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
                             <y>0.25</y>
-                        </refPoint>
-                        <layer>1</layer>
-                        <layer>2</layer>
-                        <layer>3</layer>
-                        <layer>4</layer>
-                        <layer>5</layer>
-                        <layer>6</layer>
-                    </foldOperation>
-                    <foldOperation type="MOUNTAIN_FOLD">
-                        <angle>3.141592653589793</angle>
-                        <line>
-                            <start>
-<x>0.25</x>
-<y>0.5</y>
-                            </start>
-                            <end>
-<x>0.5</x>
-<y>0.25</y>
-                            </end>
-                        </line>
-                        <refPoint>
-                            <x>0.24999995231510386</x>
-                            <y>0.17480343580245986</y>
-                        </refPoint>
-                        <layer>1</layer>
-                        <layer>2</layer>
-                        <layer>3</layer>
-                        <layer>4</layer>
-                        <layer>5</layer>
-                        <layer>6</layer>
-                    </foldOperation>
-                </repeatOperation>
+                        </start>
+                        <end>
+                            <x>0.75</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.75</x>
+                        <y>0.25</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                </foldOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>0.25</y>
+                        </start>
+                        <end>
+                            <x>0.25</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.24999999999999978</x>
+                        <y>0.25000000000000017</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                </foldOperation>
+            </step>
+            <step id="6">
+                <zoom>370.0</zoom>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.375</x>
+                            <y>0.625</y>
+                        </start>
+                        <end>
+                            <x>0.375</x>
+                            <y>0.375</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>5.551115123125783E-17</x>
+                        <y>0.7500001585341586</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                    <layer>7</layer>
+                    <layer>8</layer>
+                    <layer>9</layer>
+                    <layer>10</layer>
+                    <layer>11</layer>
+                    <layer>12</layer>
+                    <layer>13</layer>
+                    <layer>14</layer>
+                </foldOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.625</x>
+                            <y>0.625</y>
+                        </start>
+                        <end>
+                            <x>0.375</x>
+                            <y>0.625</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.7500001585341576</x>
+                        <y>1.0</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                    <layer>7</layer>
+                    <layer>8</layer>
+                    <layer>9</layer>
+                    <layer>10</layer>
+                    <layer>11</layer>
+                    <layer>12</layer>
+                    <layer>13</layer>
+                    <layer>14</layer>
+                </foldOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.625</x>
+                            <y>0.375</y>
+                        </start>
+                        <end>
+                            <x>0.625</x>
+                            <y>0.625</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>1.0</x>
+                        <y>0.2499998414658422</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                    <layer>7</layer>
+                    <layer>8</layer>
+                    <layer>9</layer>
+                    <layer>10</layer>
+                    <layer>11</layer>
+                    <layer>12</layer>
+                    <layer>13</layer>
+                    <layer>14</layer>
+                </foldOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.625</x>
+                            <y>0.375</y>
+                        </start>
+                        <end>
+                            <x>0.37499999999999994</x>
+                            <y>0.37500000000000006</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.24999984146584187</x>
+                        <y>2.7755575615628914E-17</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>5</layer>
+                    <layer>6</layer>
+                    <layer>7</layer>
+                    <layer>8</layer>
+                    <layer>9</layer>
+                    <layer>10</layer>
+                    <layer>11</layer>
+                    <layer>12</layer>
+                    <layer>13</layer>
+                    <layer>14</layer>
+                </foldOperation>
             </step>
             <step id="7">
                 <zoom>370.0</zoom>
