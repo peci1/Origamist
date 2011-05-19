@@ -5,8 +5,14 @@ package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.vecmath.Point2d;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
+
+import org.apache.log4j.Logger;
 
 /**
  * A representation of a 2D triangle.
@@ -202,6 +208,107 @@ public class Triangle2d implements Cloneable
             }
         }
         return false;
+    }
+
+    /**
+     * Return <code>true</code> if the given point lies in one of the sides of this triangle.
+     * 
+     * @param point The point to check.
+     * @return <code>true</code> if the given point lies in one of the sides of this triangle.
+     */
+    public boolean sidesContain(Point2d point)
+    {
+        return s1.contains(point) || s2.contains(point) || s3.contains(point);
+    }
+
+    /**
+     * Return the intersection points of this triangle and the given line.
+     * <p>
+     * Note that some heuristic is performed (such as "magnetizing" edges and vertices), so it generally doesn't hold
+     * that the returned segment is a subsegment of the argument (it can be probably 10*EPSILON-different).
+     * 
+     * @param line The line to get intersections with.
+     * @return A segment that defines the intersection of the given line (or segment) and this triangle (the segment can
+     *         be zero-length), or <code>null</code>, if no intersection exists. A segment start or end inside the
+     *         triangle is also taken as an intersection.
+     */
+    public Segment2d getIntersection(Line2d line)
+    {
+
+        Segment2d intersection = null;
+        List<Point2d> intersections = new ArrayList<Point2d>(3);
+
+        for (Segment2d s : getEdges()) { // find intersections with edges
+            intersection = s.getIntersection(line);
+            if (intersection != null && intersection.v.epsilonEquals(new Vector2d(), EPSILON)) {
+                // the point->param->point conversion is done to be as close to the edge as possible
+                double param = s.getParameterForPoint(intersection.p);
+                // make vertices magnetic
+                if (param < 1 * EPSILON) {
+                    intersections.add(s.getPointForParameter(0));
+                } else if (param > 1 - 1 * EPSILON) {
+                    intersections.add(s.getPointForParameter(1));
+                } else {
+                    intersections.add(s.getPointForParameter(param));
+                }
+            } else if (intersection != null) {
+                // the line lies on the same line as the edge and they have nonempty intersection - we can return
+                return intersection.getIntersection(s);
+            }
+        }
+
+        if (line instanceof Segment2d) {
+            // a segment can start or end inside the triangle
+            for (Point2d p : ((Segment2d) line).getPoints()) {
+                if (this.contains(p)/* && !sidesContain(p) */) {
+                    intersections.add(p);
+                }
+            }
+        }
+
+        // rounding erros may affect the method a lot, so ensure it is a little more tolerant
+        MathHelper.removeEpsilonEqualPoints2d(intersections, 2d * EPSILON);
+
+        // if there is a nearby point contained in an edge of the triangle, then retain only that on-edge point and
+        // remove all nearby points
+        for (int i = 0; i < intersections.size(); i++) {
+            if (!sidesContain(intersections.get(i))) {
+                Point2d substitution = null;
+                for (int j = 0; j < intersections.size(); j++) {
+                    if (j == i)
+                        continue;
+                    if (sidesContain(intersections.get(j))
+                            && intersections.get(i).distance(intersections.get(j)) < 10d * EPSILON) {
+                        substitution = intersections.get(j);
+                        break;
+                    }
+                }
+                if (substitution != null) {
+                    intersections.remove(i--);
+                }
+            }
+        }
+
+        double i = 2d;
+        while (intersections.size() > 2 && i < 10d) {
+            MathHelper.removeEpsilonEqualPoints2d(intersections, i++ * EPSILON);
+        }
+        if (i > 2d)
+            Logger.getLogger(getClass()).warn(
+                    "Used " + (i - 1)
+                            + "*EPSILON for joining intersection points. The resulting intersection points are "
+                            + intersections);
+
+        if (intersections.size() == 2) {
+            return new Segment2d(intersections.get(0), intersections.get(1));
+        } else if (intersections.size() == 1) {
+            return new Segment2d(intersections.get(0), intersections.get(0));
+        } else if (intersections.size() == 0) {
+            return null;
+        } else {
+            throw new IllegalStateException("Illegal count of intersections of a line and triangle: "
+                    + intersections.size());
+        }
     }
 
     /**

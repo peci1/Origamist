@@ -19,6 +19,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
@@ -624,12 +625,18 @@ public class Polygon3d<T extends Triangle3d>
 
         for (T t : triangles) {
             Segment3d intersection = t.getIntersection(line);
-            // a simplified check if the 2D triangle also intersects with the 2D triangle
-            if (line instanceof ModelSegment && t instanceof ModelTriangle) {
+            // a check if the 2D segment also intersects with the 2D triangle
+            if (intersection != null && line instanceof ModelSegment && t instanceof ModelTriangle) {
                 Triangle2d t2 = ((ModelTriangle) t).getOriginalPosition();
                 Segment2d s2 = ((ModelSegment) line).getOriginal();
-                if (t2.getS1().getIntersection(s2) == null && t2.getS2().getIntersection(s2) == null
-                        && t2.getS3().getIntersection(s2) == null) {
+
+                // if the segment doesn't intersect the 2D triangle, skip this intersection
+                Segment2d intersection2 = t2.getIntersection(s2);
+                if (intersection2 == null) {
+                    intersection = null;
+                } else if (intersection2.v.epsilonEquals(new Vector2d(), EPSILON) != intersection.v.epsilonEquals(
+                        new Vector3d(), EPSILON)) {
+                    // the 3D intersection is point and the 2D one is not, or vice versa
                     intersection = null;
                 }
             }

@@ -9,6 +9,7 @@ import java.util.List;
 
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Matrix3d;
+import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
@@ -150,6 +151,32 @@ public class MathHelper
         while (i < list.size() - 1) {
             int j = i + 1;
             Point3d iPoint = list.get(i);
+            while (j < list.size()) {
+                if (iPoint.epsilonEquals(list.get(j), epsilon)) {
+                    list.remove(j);
+                } else {
+                    j++;
+                }
+            }
+            i++;
+        }
+        return list;
+    }
+
+    /**
+     * Provided a list of points, removes those points that are epsilon-equal so that no two remaining points are
+     * epsilon-equal. The changes are made directly to the provided list.
+     * 
+     * @param list The list to scan for duplicates.
+     * @param epsilon The epsilon to use in epsilonEquals().
+     * @return The input list after duplicate removal.
+     */
+    public static List<Point2d> removeEpsilonEqualPoints2d(List<Point2d> list, double epsilon)
+    {
+        int i = 0;
+        while (i < list.size() - 1) {
+            int j = i + 1;
+            Point2d iPoint = list.get(i);
             while (j < list.size()) {
                 if (iPoint.epsilonEquals(list.get(j), epsilon)) {
                     list.remove(j);

@@ -431,7 +431,7 @@ public class Triangle3d implements Cloneable
                     }
                 } else if (intersection != null) {
                     // the line lies on the same line as the edge and they have nonempty intersection - we can return
-                    return intersection;
+                    return intersection.getIntersection(s);
                 }
             }
 
