@@ -1955,8 +1955,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
-                for (int i = 1; i < items.size(); i++) {
-                    selIndex = (selIndex + i) % items.size();
+                for (int i = 1; i <= items.size(); i++) {
+                    selIndex = (selIndex + 1) % items.size();
+                    // BUG sometimes, only this direction and if pickMode is LAYER, the selection just switches between
+                    // two layers instead of continuing to the next layers
+
                     switch (pickMode) {
                         case POINT:
                             Group point = items.get(selIndex);
@@ -1964,7 +1967,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             // is computationally demanding, so we don't want to compute it for all available items, but
                             // just for those we really need to know
                             if (canChoosePoint(point)) {
-                                setHighlightedPoint(items.get(selIndex));
+                                setHighlightedPoint(point);
                                 return;
                             }
                             break;
@@ -2000,10 +2003,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             int selIndex = items.indexOf(highlighted);
 
             if (selIndex > -1) {
-                for (int i = 1; i < items.size(); i++) {
-                    selIndex = selIndex - i;
+                for (int i = 1; i <= items.size(); i++) {
+                    selIndex = selIndex - 1;
                     if (selIndex <= -1)
                         selIndex += items.size();
+
                     switch (pickMode) {
                         case POINT:
                             Group point = items.get(selIndex);
@@ -2011,7 +2015,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             // is computationally demanding, so we don't want to compute it for all available items, but
                             // just for those we really need to know
                             if (canChoosePoint(point)) {
-                                setHighlightedPoint(items.get(selIndex));
+                                setHighlightedPoint(point);
                                 return;
                             }
                             break;
@@ -2125,12 +2129,12 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     && availableItems.size() > 1 && highlighted != null) {
                 // perform selection among available items
                 if (steps > 0) {
-                    Action action = new HighlightNextItemAction();
+                    Action action = new HighlightPreviousItemAction();
                     ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
                             "highlightNextItem");
                     action.actionPerformed(event);
                 } else if (steps < 0) {
-                    Action action = new HighlightPreviousItemAction();
+                    Action action = new HighlightNextItemAction();
                     ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
                             "highlightPreviousItem");
                     action.actionPerformed(event);
