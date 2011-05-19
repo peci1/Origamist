@@ -132,6 +132,11 @@ public class OperationsTree extends JTree
         }
     }
 
+    /**
+     * Add the operation under the tree's top level (just under the single root).
+     * 
+     * @param operation The operation to add.
+     */
     public void addTopLevelOperation(Operation operation)
     {
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) getModel().getRoot();
@@ -139,6 +144,31 @@ public class OperationsTree extends JTree
         ((DefaultTreeModel) getModel()).insertNodeInto(node, root, root.getChildCount());
         addSelectionPath(new TreePath(node.getPath()));
         repaint();
+    }
+
+    /**
+     * Return the node that holds the given operation.
+     * 
+     * @param operation The operation to find node for.
+     * @return The node for the operation.
+     */
+    public TreeNode getNodeForOperation(Operation operation)
+    {
+        return nodesForOperations.forcedGet(operation);
+    }
+
+    /**
+     * Scroll the tree so that the given operation's node is visible.
+     * <p>
+     * Only works if the tree is under a {@link javax.swing.JScrollPane}.
+     * 
+     * @param operation The operation to make visible.
+     */
+    public void scrollToOperation(Operation operation)
+    {
+        DefaultMutableTreeNode node = nodesForOperations.forcedGet(operation);
+        if (node != null)
+            scrollPathToVisible(new TreePath(node.getPath()));
     }
 
     /**

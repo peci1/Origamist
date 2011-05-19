@@ -288,6 +288,7 @@ public class OrigamiEditor extends CommonGui
                         }
                         if (evt.getEvent().getChangeType() != ChangeTypes.REMOVE) {
                             operationsTree.addTopLevelOperation(evt.getEvent().getItem());
+                            operationsTree.scrollToOperation(evt.getEvent().getItem());
                         }
                         operationsTree.repaint();
                     }
@@ -987,6 +988,7 @@ public class OrigamiEditor extends CommonGui
                 public void run()
                 {
                     operationsTree.addTopLevelOperation(operation);
+                    operationsTree.scrollToOperation(operation);
                     operationsTree.repaint();
                 }
             });
@@ -1005,14 +1007,15 @@ public class OrigamiEditor extends CommonGui
         this.currentOperationArgument = argument;
         stepEditor.setCurrentOperationArgument(argument);
 
-        // SwingUtilities.invokeLater(new Runnable() {
-        // @Override
-        // public void run()
-        // {
-        // operationsTree.recomputeHeights();
-        // operationsTree.repaint();
-        // }
-        // });
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run()
+            {
+                operationsTree.recomputeHeights();
+                operationsTree.repaint();
+                operationsTree.scrollToOperation(currentOperation);
+            }
+        });
         operationsTree.repaint();
 
         new Thread(new Runnable() {
