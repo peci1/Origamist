@@ -1878,6 +1878,17 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     }
 
     /**
+     * Selects or chooses all items from availableItems.
+     */
+    public void selectAllAvailableItems()
+    {
+        for (Group g : availableItems) {
+            if (!isPermanent(g))
+                select(g);
+        }
+    }
+
+    /**
      * @return True if the user is currently choosing the second point of a line.
      */
     public synchronized boolean isChoosingSecondPoint()
@@ -2110,6 +2121,19 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
     }
 
+    protected class SelectAllAvailableItemsAction extends AbstractAction
+    {
+        /** */
+        private static final long serialVersionUID = -533535285017641260L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            selectAllAvailableItems();
+        }
+
+    }
+
     /**
      * Mouse event and picking handling.
      * 
@@ -2148,10 +2172,17 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         public void mouseClicked(MouseEvent e)
         {
             if (e.getButton() == MouseEvent.BUTTON1 && highlighted != null) {
-                Action action = new ToggleHighlightedItemSelectionAction();
-                ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
-                        "toggleHighlightedItemSelection");
-                action.actionPerformed(event);
+                if (!e.isControlDown()) {
+                    Action action = new ToggleHighlightedItemSelectionAction();
+                    ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
+                            "toggleHighlightedItemSelection");
+                    action.actionPerformed(event);
+                } else {
+                    Action action = new SelectAllAvailableItemsAction();
+                    ActionEvent event = new ActionEvent(StepEditingCanvasController.this, ActionEvent.ACTION_FIRST,
+                            "selectAllAvailableItems");
+                    action.actionPerformed(event);
+                }
                 if (preview != null)
                     preview.repaint();
             } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() >= 2) {
