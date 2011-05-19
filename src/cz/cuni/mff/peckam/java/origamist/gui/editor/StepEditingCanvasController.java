@@ -79,6 +79,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 
 /**
  * The controller that handles step editing on the given canvas.
@@ -252,7 +253,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     private double oldZoom = 100d;
 
     @Override
-    public void setStep(Step step, final Runnable afterSetCallback)
+    public void setStep(Step step, final Runnable afterSetCallback,
+            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
     {
         if (step != null && step.getAttachedTo() == null) {
             return;
@@ -269,7 +271,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
         if (this.step != null)
             oldZoom = this.step.getZoom();
-        super.setStep(step, afterSetCallback);
+        super.setStep(step, afterSetCallback, exceptionCallback);
 
         availableItems.clear();
         highlighted = null;
@@ -675,7 +677,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         List<PickResult> results;
         try {
             results = pickMode.filterPickResults(pickCanvas.pickAllSorted());
-        } catch (NullPointerException ex) {
+        } catch (Exception ex) {
             // picking points sometimes causes this exception to be thrown, but if we ignore this pick call, nothing
             // serious happens
             return;

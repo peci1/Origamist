@@ -33,6 +33,18 @@ public class HalfSpace3d implements Cloneable
     }
 
     /**
+     * Create a halfspace with its border plane perpendicular to the given normal and containing the given point, and
+     * that contains the part of space where the given normal points.
+     * 
+     * @param normal the normal of the border plane, also defines the half of the space that is contained.
+     * @param point A point on the border plane.
+     */
+    public HalfSpace3d(Vector3d normal, Point3d point)
+    {
+        this(new Plane3d(normal, point));
+    }
+
+    /**
      * Create a halfspace defined by the plane containing p1,p2,p3. The halfspace contains a general point r.
      * 
      * @param p1 A point in the border plane.
@@ -51,10 +63,7 @@ public class HalfSpace3d implements Cloneable
         }
 
         if (!contains(r)) {
-            plane.setA(-plane.getA());
-            plane.setB(-plane.getB());
-            plane.setC(-plane.getC());
-            plane.setD(-plane.getD());
+            invert();
         }
     }
 
@@ -92,6 +101,21 @@ public class HalfSpace3d implements Cloneable
     public boolean contains(Point3d point)
     {
         return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d >= -EPSILON;
+    }
+
+    /**
+     * Invert this halfspace to contain the other half of the space.
+     * 
+     * @return this
+     */
+    public HalfSpace3d invert()
+    {
+        plane.setA(-plane.getA());
+        plane.setB(-plane.getB());
+        plane.setC(-plane.getC());
+        plane.setD(-plane.getD());
+
+        return this;
     }
 
     /**

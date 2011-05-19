@@ -761,6 +761,11 @@ public class Polygon3d<T extends Triangle3d>
             }
         }
 
+        assert part1triangles.size() + part2triangles.size() == triangles.size() : part1triangles.size() + ", "
+                + part2triangles.size() + ": " + triangles.size();
+
+        assert triangles.size() > 0;
+
         Hashtable<Set<T>, List<Polygon3d<T>>> parts = new Hashtable<Set<T>, List<Polygon3d<T>>>(2);
         parts.put(part1triangles, part1);
         parts.put(part2triangles, part2);

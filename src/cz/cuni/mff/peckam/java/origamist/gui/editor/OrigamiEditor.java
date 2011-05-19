@@ -84,6 +84,7 @@ import com.jgoodies.forms.layout.FormLayout;
 
 import cz.cuni.mff.peckam.java.origamist.common.LangString;
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
@@ -112,6 +113,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservableList.ChangeTypes;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyEvent;
 import cz.cuni.mff.peckam.java.origamist.utils.ObservablePropertyListener;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedLocalizedString;
 
 /**
@@ -849,8 +851,26 @@ public class OrigamiEditor extends CommonGui
             this.origami.removeObservablePropertyListener(operationsObserver, Origami.MODEL_PROPERTY,
                     Model.STEPS_PROPERTY, Steps.STEP_PROPERTY, Step.OPERATIONS_PROPERTY);
 
+        ParametrizedCallable<Void, InvalidOperationException> errorHandler = new ParametrizedCallable<Void, InvalidOperationException>() {
+            @Override
+            public Void call(final InvalidOperationException arg)
+            {
+                if (arg != null) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            JOptionPane.showMessageDialog(OrigamiEditor.this, arg.getUserFriendlyMessage(),
+                                    editorMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+                }
+                return null;
+            }
+        };
+
         this.step = step;
-        stepEditor.setStep(step);
+        stepEditor.setStep(step, null, errorHandler);
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -1071,12 +1091,25 @@ public class OrigamiEditor extends CommonGui
                         } catch (RuntimeException e) {
                             step.getOperations().remove(operation);
 
-                            statusBar.showMessage(
-                                    "<html><span style=\"color:red;font-weight:bold\">"
-                                            + editorMessages.getString("OrigamiEditor.invalidOperation")
-                                                    .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
-                                            + "</span></html>", 7000);
-                            Logger.getLogger("application").warn("Invalid operation", e);
+                            if (e instanceof InvalidOperationException) {
+                                final InvalidOperationException ioe = (InvalidOperationException) e;
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run()
+                                    {
+                                        JOptionPane.showMessageDialog(OrigamiEditor.this, ioe.getUserFriendlyMessage(),
+                                                editorMessages.getString("invalid.operation.title"),
+                                                JOptionPane.ERROR_MESSAGE);
+                                    }
+                                });
+                            } else {
+                                statusBar.showMessage(
+                                        "<html><span style=\"color:red;font-weight:bold\">"
+                                                + editorMessages.getString("OrigamiEditor.invalidOperation")
+                                                        .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
+                                                + "</span></html>", 7000);
+                                Logger.getLogger("application").warn("Invalid operation", e);
+                            }
                         }
                         setStep(step);
                     }

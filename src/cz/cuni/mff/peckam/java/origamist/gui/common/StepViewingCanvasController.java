@@ -79,6 +79,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.MarkerRenderData;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 
 /**
  * A controller that performs step rendering onto a given Canvas3D.
@@ -249,6 +250,18 @@ public class StepViewingCanvasController
      */
     public void setStep(final Step step, final Runnable afterSetCallback)
     {
+        setStep(step, afterSetCallback, null);
+    }
+
+    /**
+     * @param step the step to set
+     * @param afterSetCallback The callback to call after the step is changed. Will be run outside EDT.
+     * @param exceptionCallback The callback to call if the setting thread encounters an
+     *            {@link InvalidOperationException}. Will be run outside EDT.
+     */
+    public void setStep(final Step step, final Runnable afterSetCallback,
+            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
+    {
         this.step = step;
 
         if (step != null && step.getAttachedTo() == null) {
@@ -259,38 +272,42 @@ public class StepViewingCanvasController
             @Override
             public void run()
             {
-                try {
-                    synchronized (StepViewingCanvasController.this) {
+                InvalidOperationException exception = null;
 
-                        try {
-                            if (step != null)
-                                setupUniverse();
-                        } catch (InvalidOperationException e) {
-                            Logger.getLogger("application").l7dlog(
-                                    Level.ERROR,
-                                    "StepRenderer.InvalidOperationException",
-                                    new Object[] { StepViewingCanvasController.this.step.getId(),
-                                            e.getOperation().toString() }, e);
-                            // TODO some more clever handling of invalid operations
-                            throw e;
-                        } finally {
-                            topTexture = null;
-                            bottomTexture = null;
-                        }
+                synchronized (StepViewingCanvasController.this) {
+
+                    try {
+                        if (step != null)
+                            setupUniverse();
+                    } catch (InvalidOperationException e) {
+                        Logger.getLogger("application").l7dlog(
+                                Level.ERROR,
+                                "StepRenderer.InvalidOperationException",
+                                new Object[] { StepViewingCanvasController.this.step.getId(),
+                                        e.getOperation().toString() }, e);
+                        exception = e;
+                    } finally {
+                        topTexture = null;
+                        bottomTexture = null;
                     }
-                } finally {
-                    support.firePropertyChange(STEP_PROPERTY, null, step);
                 }
 
-                afterSetStep();
-                if (afterSetCallback != null)
-                    afterSetCallback.run();
+                support.firePropertyChange(STEP_PROPERTY, null, step);
+
+                if (exception == null) {
+                    afterSetStep();
+                    if (afterSetCallback != null)
+                        afterSetCallback.run();
+                } else if (exceptionCallback != null) {
+                    exceptionCallback.call(exception);
+                }
             }
         }).start();
     }
 
     /**
-     * This method is called after the thread run by a {@link #setStep(Step)} call is about to finish.
+     * This method is called after the thread run by a {@link #setStep(Step)} call is about to finish and it didn't end
+     * due to an exception.
      */
     protected void afterSetStep()
     {

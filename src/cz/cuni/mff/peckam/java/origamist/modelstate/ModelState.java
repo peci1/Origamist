@@ -913,7 +913,7 @@ public class ModelState implements Cloneable
         if (r == null) {
             // find a reference point by taking the cross product of the normal of the layer the segment lies in, and
             // the direction vector of the segment; add this vector to a point on the segment to get a general point in
-            // the halfspace that contains the layer to be bent
+            // the halfspace that contains the layers to be bent
 
             Vector3d layerNormalSegmentDirCross = new Vector3d();
             layerNormalSegmentDirCross.cross(segLayer.getNormal(), segment.getVector());
@@ -943,8 +943,15 @@ public class ModelState implements Cloneable
                 angle1 = -angle1;
         }
 
+        Vector3d segNormal = getSegmentNormal(segment);
+
+        Vector3d halfSpaceNormal = new Vector3d();
+        halfSpaceNormal.cross(segNormal, segment.getVector());
+
         // the halfspace that contains the layers to be bent
-        HalfSpace3d halfspace = HalfSpace3d.createPerpendicularToTriangle(segment.getP1(), segment.getP2(), r);
+        HalfSpace3d halfspace = new HalfSpace3d(halfSpaceNormal, segment.getP1());
+        if (!halfspace.contains(r))
+            halfspace.invert();
 
         // further we will need to search in layerInts, but the layers will probably change, so we backup the old
         // removed layers here
@@ -977,6 +984,9 @@ public class ModelState implements Cloneable
                 }
             }
 
+            if (part1.size() == 0 && part2.size() > 0) // can happen if bending already bent folds
+                swapParts = true;
+
             if (swapParts) {
                 List<Polygon3d<ModelTriangle>> tmp = part1;
                 part1 = part2;
@@ -986,14 +996,18 @@ public class ModelState implements Cloneable
             // remove the old layer and add the new ones
             this.layers.remove(layer);
             for (Polygon3d<ModelTriangle> l : part1) {
-                Layer newL = new Layer(l);
-                this.layers.add(newL);
-                newLayersToOldOnes.put(newL, layer);
+                if (l.getTriangles().size() > 0) {
+                    Layer newL = new Layer(l);
+                    this.layers.add(newL);
+                    newLayersToOldOnes.put(newL, layer);
+                }
             }
             for (Polygon3d<ModelTriangle> l : part2) {
-                Layer newL = new Layer(l);
-                this.layers.add(newL);
-                newLayersToOldOnes.put(newL, layer);
+                if (l.getTriangles().size() > 0) {
+                    Layer newL = new Layer(l);
+                    this.layers.add(newL);
+                    newLayersToOldOnes.put(newL, layer);
+                }
             }
 
             // add triangles from layers from part1 to the queue
@@ -1128,9 +1142,8 @@ public class ModelState implements Cloneable
         // check if line and refLine have exactly one common point in 3D
         Segment3d intPoint = line3.getIntersection(refLine3);
         if (intPoint == null || !intPoint.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
-            throw new InvalidOperationException(
-                    "line and refLine must intersect in exactly one point, but their intersection is: "
-                            + (intPoint == null ? "empty" : intPoint.toStringAsIntersection()));
+            throw new InvalidOperationException("line.and.ref.line.must.intersect.in.exactly.one.point",
+                    intPoint == null ? "null" : intPoint.toStringAsIntersection());
         }
 
         Segment2d oppositeLine2;
@@ -1144,9 +1157,7 @@ public class ModelState implements Cloneable
             // check if the oppositeLine lies in the paper
             if (!getOrigami().getModel().getPaper().containsRelative(oppositeLine2.getP1())
                     || !getOrigami().getModel().getPaper().containsRelative(oppositeLine2.getP2())) {
-                throw new InvalidOperationException(
-                        "The opposite side of line couldn't be found (the found one doesn't lie on the paper). "
-                                + "Please specify it explicitly.");
+                throw new InvalidOperationException("opposite.line.couldnt.be.found");
             }
 
             oppositeLine3 = new Segment3d(locatePointFromPaperTo3D(oppositeLine2.getP1()),
@@ -1167,13 +1178,13 @@ public class ModelState implements Cloneable
 
             Segment3d intersection = oppositeLine3.getIntersection(line3);
             if (intersection == null) {
-                throw new InvalidOperationException("line and oppositeLine don't intersect.");
+                throw new InvalidOperationException("line.and.opposite.line.dont.intersect");
             } else {
                 Segment3d intersection2 = refLine3.getIntersection(intersection);
                 if (intersection2 == null) {
-                    throw new InvalidOperationException("line and oppositeLine don't intersect on refLine.");
+                    throw new InvalidOperationException("line.and.opposite.line.dont.intersect.on.refline");
                 } else if (!intersection2.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
-                    throw new InvalidOperationException("line and oppositeLine can't be parallel to refLine.");
+                    throw new InvalidOperationException("line.and.opposite.line.cant.be.parallel.to.refline");
                 }
             }
         }
@@ -1208,30 +1219,17 @@ public class ModelState implements Cloneable
         Direction dir = direction, oppositeDir = direction;
         {// determine the real from-screen direction of the folds
          // lineLayerNormal and its opposite should point "outside" the triangle defined by common, lineP and oppositeP
-            double[] trialPoints = new double[] { 0.5d, 0, 75d, 0.25d, 0.1d, 0.9d, 0.01d, 0.99d };
 
-            Layer lineLayer = null;
-            for (double d : trialPoints) {
-                lineLayer = getLayerForPoint(new ModelPoint(line3.getPointForParameter(d), line.getPointForParameter(d)));
-                if (lineLayer != null)
-                    break;
+            Vector3d lineLayerNormal = getSegmentNormal(new ModelSegment(line3, line));
+            Vector3d oppositeLineLayerNormal = getSegmentNormal(new ModelSegment(oppositeLine3, oppositeLine2));
+
+            if (lineLayerNormal == null) {
+                throw new InvalidOperationException("reverse.fold.no.line.normal");
             }
 
-            Layer oppositeLineLayer = null;
-            for (double d : trialPoints) {
-                oppositeLineLayer = getLayerForPoint(new ModelPoint(oppositeLine3.getPointForParameter(d),
-                        oppositeLine2.getPointForParameter(d)));
-                if (oppositeLineLayer != null)
-                    break;
+            if (oppositeLineLayerNormal == null) {
+                throw new InvalidOperationException("reverse.fold.no.opposite.line.normal");
             }
-
-            if (lineLayer == null || oppositeLineLayer == null) {
-                throw new InvalidOperationException(
-                        "Cannot find layer for line or oppositeLine, which is essential for reverse fold.");
-            }
-
-            Vector3d lineLayerNormal = new Vector3d(lineLayer.getNormal());
-            Vector3d oppositeLineLayerNormal = new Vector3d(oppositeLineLayer.getNormal());
 
             if (lineLayerNormal.angle(lineP_oppositeP) < Math.PI / 2d - EPSILON)
                 lineLayerNormal.negate();
@@ -1415,8 +1413,8 @@ public class ModelState implements Cloneable
      * </p>
      * 
      * <p>
-     * This function returns the layers that intersect with a stripe defined by the two given points and that is
-     * perpendicular to the layer the line lies in.
+     * This function returns the layers that intersect with a stripe defined by the given segment and that has the
+     * direction of the average normal of the segment (see {@link #getSegmentNormal(ModelSegment)}).
      * </p>
      * 
      * <p>
@@ -1433,20 +1431,15 @@ public class ModelState implements Cloneable
      */
     public LinkedHashMap<Layer, ModelSegment> getLayers(final ModelSegment segment)
     {
-        // find the top layer
-        final Layer firstLayer = getLayerForPoint(new ModelPoint(segment.getPointForParameter(0.5d), segment
-                .getOriginal().getPointForParameter(0.5d)));
-        if (firstLayer == null)
+        // find the segment's average normal
+        final Vector3d segNormal = getSegmentNormal(segment);
+        if (segNormal == null)
             return new LinkedHashMap<Layer, ModelSegment>();
 
-        // TODO if the segment is border between more layers, then the average of all normals should be taken
-
-        // find another layers: is done by creating a stripe perpendicular to the first layer and finding intersections
-        // of the stripe with triangles
-
-        final Vector3d stripeDirection = firstLayer.getNormal();
-        final Line3d p1line = new Line3d(segment.getP1(), stripeDirection);
-        final Line3d p2line = new Line3d(segment.getP2(), stripeDirection);
+        // find another layers: is done by creating a stripe pointing in the found normal's direction and finding
+        // intersections of the stripe with triangles
+        final Line3d p1line = new Line3d(segment.getP1(), segNormal);
+        final Line3d p2line = new Line3d(segment.getP2(), segNormal);
 
         final Stripe3d stripe = new Stripe3d(p1line, p2line);
 
@@ -1524,18 +1517,95 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * Return the layer that contains the given point.
+     * Return the average normal of all layers the given point lies in.
+     * <p>
+     * If the average normal is a zero vector, return the normal of any layer the point lies in.
+     * <p>
+     * If the point doesn't lie in any layer, the normal cannot be detected, so <code>null</code> will be returned and a
+     * warning will be issued by this class' logger.
+     * <p>
+     * The average normal is determined as angle weighted normal, described in: G. Thurmer, C. A. Wuthrich,
+     * "Computing vertex normals from polygonal facets" Journal of Graphics Tools, 3 1998
      * 
-     * @param point The point to find layer for.
-     * @return The layer that contains the given point.
+     * @param point The point to find normal for.
+     * @return The normal at the point, or <code>null</code> if the point doesn't lie in any of the layers.
      */
-    protected Layer getLayerForPoint(ModelPoint point)
+    protected Vector3d getNormalAtPoint(ModelPoint point)
     {
+        Vector3d anyNormal = null;
+
+        List<Layer> containingLayers = new LinkedList<Layer>();
+
+        // find if any layer contains the given point, remember the containing layers
         for (Layer l : layers) {
-            if (l.contains(point))
-                return l;
+            if (l.contains(point)) {
+                containingLayers.add(l);
+                if (anyNormal == null) {
+                    anyNormal = new Vector3d(l.getNormal());
+                }
+            }
         }
-        Logger.getLogger(getClass()).warn("getLayerForPoint: cannot find layer for point " + point);
+
+        if (anyNormal == null) {
+            Logger.getLogger(getClass()).warn("getNormalAtPoint: cannot find layer for point " + point);
+            return null;
+        }
+
+        // if there is only 1 layer the point lies in, we save lots of computing by just returning - the weighted normal
+        // of a single layer is just its normal
+        if (containingLayers.size() == 1) {
+            anyNormal.normalize();
+            return anyNormal;
+        }
+
+        // find all triangles that have the given point as their vertex, compute the normal of the triangle, multiply it
+        // with the angle at the point, and add it to the result normal
+        final Vector3d result = new Vector3d();
+        for (Layer l : containingLayers) {
+            for (ModelTriangle t : l.getTriangles()) {
+                if (t.isVertex(point)) {
+                    Point3d vertex = t.getNearestVertex(point);
+                    Segment3d[] edges = t.getVertexEdges(vertex);
+                    // it'd be more precise to project the triangle onto some 2D plane and use the 2D angle (not doing
+                    // so leads us to not having the sum of 360°), but it just isn't worth it; we don't need such
+                    // precise computation
+                    double angle = edges[0].getVector().angle(edges[1].getVector());
+                    Vector3d normal = new Vector3d(t.getNormal());
+                    normal.scale(angle);
+                    result.add(normal);
+                }
+            }
+        }
+
+        // if the found normal is non-zero, normalize it and return; otherwise, the normals have cancelled each other,
+        // so we must return simply one of the layers' normals
+        if (!result.epsilonEquals(new Vector3d(), EPSILON)) {
+            result.normalize();
+            return result;
+        } else {
+            return anyNormal;
+        }
+    }
+
+    /**
+     * Return the average normal of the layers this segment lies in.
+     * <p>
+     * Basically, if the segment isn't a border of the layer it lies in, the layer's normal will be returned.
+     * <p>
+     * If this segment lies in no layers, <code>null</code> will be returned and a warning will be issued by this class'
+     * logger.
+     * 
+     * @param segment The segment to find normal for.
+     * @return The average normal of a point on this segment.
+     */
+    protected Vector3d getSegmentNormal(ModelSegment segment)
+    {
+        final double[] trialPoints = new double[] { 0.5d, 0.75d, 0.25d, 0.1d, 0.9d, 0.01d, 0.99d };
+        for (double d : trialPoints) {
+            Vector3d normal = getNormalAtPoint(segment.getPointForParameter(d));
+            if (normal != null)
+                return normal;
+        }
         return null;
     }
 

@@ -320,6 +320,25 @@ public class Triangle3d implements Cloneable
     }
 
     /**
+     * Return the edges that contain the given vertex.
+     * 
+     * @param vertex The vertex to find edges for.
+     * @return Either a 2-element array of edges, or <code>null</code>, if the given point isn't a vertex.
+     */
+    public Segment3d[] getVertexEdges(Point3d vertex)
+    {
+        if (vertex.epsilonEquals(p1, EPSILON)) {
+            return new Segment3d[] { s1, s3 };
+        } else if (vertex.epsilonEquals(p2, EPSILON)) {
+            return new Segment3d[] { s1, s2 };
+        } else if (vertex.epsilonEquals(p3, EPSILON)) {
+            return new Segment3d[] { s2, s3 };
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Return the point corresponding to the given barycentric coordinates in this triangle.
      * 
      * @param b The barycentric coordinates to convert.

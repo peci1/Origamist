@@ -22,9 +22,11 @@ import javax.swing.SwingUtilities;
 
 import com.sun.j3d.exp.swing.JCanvas3D;
 
+import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 
 /**
  * The panel for rendering a step.
@@ -197,6 +199,18 @@ public class StepRenderer extends JPanel
      */
     public void setStep(final Step step, final Runnable afterSetCallback)
     {
+        setStep(step, afterSetCallback, null);
+    }
+
+    /**
+     * @param step the step to set
+     * @param afterSetCallback The callback to call after the step is changed. Will be run outside EDT.
+     * @param exceptionCallback The callback to call if the setting thread encounters an
+     *            {@link InvalidOperationException}. Will be run outside EDT.
+     */
+    public void setStep(final Step step, final Runnable afterSetCallback,
+            final ParametrizedCallable<?, ? super InvalidOperationException> exceptionCallback)
+    {
         this.step = step;
 
         if (step != null && step.getAttachedTo() == null) {
@@ -206,7 +220,7 @@ public class StepRenderer extends JPanel
         if (getWidth() > 0 && getHeight() > 0)
             canvas.setSize(getWidth(), getHeight());
 
-        canvasController.setStep(step, afterSetCallback);
+        canvasController.setStep(step, afterSetCallback, exceptionCallback);
     }
 
     /**

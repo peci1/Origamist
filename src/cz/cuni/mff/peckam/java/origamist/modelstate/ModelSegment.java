@@ -51,11 +51,33 @@ public class ModelSegment extends Segment3d
     }
 
     /**
+     * Create a model segment with <code>null</code> direction and originatingStepId 0.
+     * 
+     * @param segment The segment in 3D.
+     * @param original The image of this segment on the paper in 2D.
+     */
+    public ModelSegment(Segment3d segment, Segment2d original)
+    {
+        this(segment, original, null, 0);
+    }
+
+    /**
      * @param line The foldLine to fetch data from.
      */
     public ModelSegment(FoldLine line)
     {
         this(line.getSegment3d(), line.getSegment2d(), line.getDirection(), line.getFold().getOriginatingStepId());
+    }
+
+    /**
+     * Create a model segment with <code>null</code> direction and originatingStepId 0.
+     * 
+     * @param p1 The start point.
+     * @param p2 The end point.
+     */
+    public ModelSegment(ModelPoint p1, ModelPoint p2)
+    {
+        this(p1, p2, null, 0);
     }
 
     /**
@@ -257,6 +279,12 @@ public class ModelSegment extends Segment3d
         return this == other
                 || (super.epsilonEquals(other, allowInverseDirection) && other.getOriginal().epsilonEquals(original,
                         allowInverseDirection));
+    }
+
+    @Override
+    public ModelPoint getPointForParameter(double param)
+    {
+        return new ModelPoint(super.getPointForParameter(param), original.getPointForParameter(param));
     }
 
     @Override
