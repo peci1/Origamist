@@ -649,14 +649,16 @@ public class Polygon3d<T extends Triangle3d>
             }
 
             if (intersection != null) {
-                if (parameters.get(intersection.p) == null)
-                    parameters.put(intersection.p, line.getParameterForPoint(intersection.p));
-                if (parameters.get(intersection.p2) == null)
-                    parameters.put(intersection.p2, line.getParameterForPoint(intersection.p2));
-                double p1 = parameters.get(intersection.p);
-                double p2 = parameters.get(intersection.p2);
-                if (p1 > p2) { // here we don't want to compare using epsilon-equals
-                    intersection = new Segment3d(intersection.p2, intersection.p);
+                Double p1 = line.getParameterForPoint(intersection.p);
+                Double p2 = line.getParameterForPoint(intersection.p2);
+                if (p1 != null && p2 != null) {
+                    if (parameters.get(intersection.p) == null)
+                        parameters.put(intersection.p, p1);
+                    if (parameters.get(intersection.p2) == null)
+                        parameters.put(intersection.p2, p2);
+                    if (p1 > p2) { // here we don't want to compare using epsilon-equals
+                        intersection = new Segment3d(intersection.p2, intersection.p);
+                    }
                 }
                 intersections.add(new IntersectionWithTriangle<T>(t, intersection));
             }
