@@ -14,7 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
@@ -827,22 +826,16 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 @Override
                 protected void paint(final Graphics2D graphics)
                 {
-                    BufferedImage model = new BufferedImage(paintArea.getWidth(), paintArea.getHeight(),
-                            paintArea.getType());
-                    model.createGraphics().fillRect(0, 0, 100, 100);
-                    try {
-                        drawTopTextureToBuffer(model);
-                    } catch (Exception e) {
-                        return;
-                    }
-
                     Graphics2D g = (Graphics2D) graphics.create();
 
                     g.setBackground(new Color(0, 0, 0, 0));
                     g.clearRect(0, 0, paintArea.getWidth(), paintArea.getHeight());
 
-                    g.drawImage(model, 0, 0, model.getWidth(), model.getHeight(), 0, bounds.height, bounds.width, 0,
-                            null);
+                    try {
+                        drawTopTextureToBuffer(paintArea);
+                    } catch (Exception e) {
+                        return;
+                    }
 
                     Rectangle usedPart = getUsedBufferPart(paintArea);
                     int x = usedPart.x, y = usedPart.y;
@@ -941,8 +934,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         Triangle2d t2 = t.getOriginalPosition();
                         int[] xpoints = new int[] { x + (int) (t2.getP1().x * w), x + (int) (t2.getP2().x * w),
                                 x + (int) (t2.getP3().x * w) };
-                        int[] ypoints = new int[] { y + (int) (t2.getP1().y * h), y + (int) (t2.getP2().y * h),
-                                y + (int) (t2.getP3().y * h) };
+                        int[] ypoints = new int[] { y + (int) ((1 - t2.getP1().y) * h),
+                                y + (int) ((1 - t2.getP2().y) * h), y + (int) ((1 - t2.getP3().y) * h) };
                         g.fillPolygon(xpoints, ypoints, 3);
                     }
                 }
@@ -952,8 +945,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     Segment2d s2 = s.getOriginal();
                     int x1 = (int) (x + s2.getP1().x * w);
                     int x2 = (int) (x + s2.getP2().x * w);
-                    int y1 = (int) (y + s2.getP1().y * h);
-                    int y2 = (int) (y + s2.getP2().y * h);
+                    int y1 = (int) (y + (1 - s2.getP1().y) * h);
+                    int y2 = (int) (y + (1 - s2.getP2().y) * h);
 
                     x1 = shiftToUsedPartX(x1, lineWidth / 2, usedPart);
                     x2 = shiftToUsedPartX(x2, lineWidth / 2, usedPart);
@@ -969,7 +962,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     Point2d p2 = p.getOriginal();
 
                     int x1 = (int) (x + p2.x * w - pointSizeHalf);
-                    int y1 = (int) (y + p2.y * h - pointSizeHalf);
+                    int y1 = (int) (y + (1 - p2.y) * h - pointSizeHalf);
 
                     x1 = shiftToUsedPartX(x1, pointSizeHalf - 1, usedPart);
                     y1 = shiftToUsedPartY(y1, pointSizeHalf - 1, usedPart);

@@ -59,6 +59,8 @@ public class OSDPanel
      * @param y Top-left corner's y coordinate in px.
      * @param width Width of the panel in px.
      * @param height Height of the panel in px.
+     * @param fromRight Whether the x coordinate is relative to the right side of canvas or not.
+     * @param fromBottom Whether the y coordinate is relative to the bottom side of canvas or not.
      */
     public OSDPanel(Canvas3D canvas, int x, int y, int width, int height, final boolean fromRight,
             final boolean fromBottom)
@@ -88,7 +90,7 @@ public class OSDPanel
         plate = new QuadArray(4, QuadArray.COORDINATES | QuadArray.TEXTURE_COORDINATE_2);
         if (fromRight || fromBottom)
             plate.setCapability(QuadArray.ALLOW_COORDINATE_WRITE);
-        plate.setTextureCoordinates(0, 0, new float[] { 0, 1 - relHeight, relWidth, 1 - relHeight, relWidth, 1, 0, 1 });
+        plate.setTextureCoordinates(0, 0, new float[] { 0, 1, relWidth, 1, relWidth, 1 - relHeight, 0, 1 - relHeight });
         updatePlateCoords();
 
         textureImage = new ImageComponent2D(ImageComponent2D.FORMAT_RGBA8, textureSize.width, textureSize.height, true,
