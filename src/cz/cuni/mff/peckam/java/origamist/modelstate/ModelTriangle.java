@@ -446,9 +446,8 @@ public class ModelTriangle extends Triangle3d
                         Segment2d intersection2 = edge1.getSegment2d().getIntersection(edge2.getSegment2d());
                         Segment3d intersection3 = edge1.getSegment3d().getIntersection(edge2.getSegment3d());
                         // if the intersection isn't just a point, we can surely return
-                        if (intersection2 != null && !intersection2.getVector().epsilonEquals(new Vector2d(), EPSILON)
-                                && intersection3 != null
-                                && !intersection3.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                        if (intersection2 != null && !intersection2.isSinglePoint() && intersection3 != null
+                                && !intersection3.isSinglePoint())
                             return new ModelSegment(intersection3, intersection2);
                         if (intersection2 != null && intersection3 != null)
                             result = new ModelSegment(intersection3, intersection2);

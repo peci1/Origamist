@@ -137,6 +137,22 @@ public class Line3d implements Cloneable, Vector<Double>
     }
 
     /**
+     * @return True if this segment is just a single point.
+     */
+    public boolean isSinglePoint()
+    {
+        return v.epsilonEquals(new Vector3d(), EPSILON);
+    }
+
+    /**
+     * @return True if this segment isn't trivial (has non-zero length).
+     */
+    protected boolean isNonTrivial()
+    {
+        return !isSinglePoint();
+    }
+
+    /**
      * Return true if this line is parallel to the other line.
      * 
      * @param line The other line.

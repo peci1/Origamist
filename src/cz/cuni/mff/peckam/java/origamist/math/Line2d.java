@@ -153,6 +153,22 @@ public class Line2d implements Cloneable, Vector<Double>
     }
 
     /**
+     * @return True if this segment is just a single point.
+     */
+    public boolean isSinglePoint()
+    {
+        return v.epsilonEquals(new Vector2d(), EPSILON);
+    }
+
+    /**
+     * @return True if this segment isn't trivial (has non-zero length).
+     */
+    protected boolean isNonTrivial()
+    {
+        return !isSinglePoint();
+    }
+
+    /**
      * Returns true if this line contains the given point.
      * 
      * @param p The point to check.

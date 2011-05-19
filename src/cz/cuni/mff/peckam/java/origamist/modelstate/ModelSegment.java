@@ -106,6 +106,18 @@ public class ModelSegment extends Segment3d
                 ((ModelPoint) inter.getPoint(1)).getOriginal()), direction, originatingStepId);
     }
 
+    @Override
+    public boolean isSinglePoint()
+    {
+        return super.isSinglePoint() && original.isSinglePoint();
+    }
+
+    @Override
+    protected boolean isNonTrivial()
+    {
+        return !super.isSinglePoint() && !original.isSinglePoint();
+    }
+
     /**
      * @return The image of this segment on the paper in 2D.
      */

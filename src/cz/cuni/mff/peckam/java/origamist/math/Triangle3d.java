@@ -16,6 +16,8 @@ import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
 
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelTriangle;
+
 /**
  * A representation of a 3D triangle.
  * 
@@ -268,7 +270,7 @@ public class Triangle3d implements Cloneable
                     if (edge1.overlaps(edge2)) {
                         Segment3d intersection = edge1.getIntersection(edge2);
                         // if the intersection isn't just a point, we can surely return
-                        if (intersection != null && !intersection.getVector().epsilonEquals(new Vector3d(), EPSILON))
+                        if (intersection != null && !intersection.isSinglePoint())
                             return intersection;
                         if (intersection != null)
                             result = intersection;
@@ -417,7 +419,7 @@ public class Triangle3d implements Cloneable
 
             for (Segment3d s : getEdges()) { // find intersections with edges
                 intersection = s.getIntersection(line);
-                if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
+                if (intersection != null && intersection.isSinglePoint()) {
                     // the point->param->point conversion is done to be as close to the edge as possible
                     double param = s.getParameterForPoint(intersection.p);
                     // make vertices magnetic
@@ -491,7 +493,7 @@ public class Triangle3d implements Cloneable
             // the line isn't parallel to the triangle's plane
             Line3d intersection = plane.getIntersection(line);
             // line.contains(...) is being called because the line can be also a Segment3d
-            if (intersection != null && intersection.v.epsilonEquals(new Vector3d(), EPSILON)) {
+            if (intersection != null && intersection.isSinglePoint()) {
                 if (contains(intersection.p))
                     return new Segment3d(intersection.p, intersection.p);
                 else
@@ -691,9 +693,14 @@ public class Triangle3d implements Cloneable
             for (Triangle3d n : neighbors) {
                 n.neighbors.remove(this);
                 for (T t : triangles) {
-                    Segment3d commonEdge = n.getCommonEdge(t, false);
+                    Segment3d commonEdge;
+                    if (t instanceof ModelTriangle && n instanceof ModelTriangle) {
+                        commonEdge = ((ModelTriangle) n).getCommonEdge((ModelTriangle) t, false);
+                    } else {
+                        commonEdge = n.getCommonEdge(t, false);
+                    }
                     // don't consider triangles with single common point as neighbors
-                    if (commonEdge != null && !commonEdge.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
+                    if (commonEdge != null && commonEdge.isNonTrivial()) {
                         n.neighbors.add(t);
                         t.neighbors.add(n);
                     }
@@ -707,7 +714,7 @@ public class Triangle3d implements Cloneable
                     for (T t2 : triangles.subList(i + 1, triangles.size())) {
                         Segment3d commonEdge = t1.getCommonEdge(t2, false);
                         // don't consider triangles with single common point as neighbors
-                        if (commonEdge != null && !commonEdge.getVector().epsilonEquals(new Vector3d(), EPSILON)) {
+                        if (commonEdge != null && commonEdge.isNonTrivial()) {
                             t1.neighbors.add(t2);
                             t2.neighbors.add(t1);
                         }
