@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
 import java.util.prefs.BackingStoreException;
 
 import javax.swing.JApplet;
@@ -151,46 +152,89 @@ public abstract class CommonGui extends JApplet
      */
     protected void registerServices()
     {
-        ServiceLocator.add(OrigamiHandler.class, new JAXBOrigamiHandler(this.getDocumentBase()));
-        ServiceLocator.add(ListingHandler.class, new JAXBListingHandler());
-        ServiceLocator.add(ConfigurationManager.class, new ConfigurationManagerImpl());
-        ServiceLocator.add(HashCodeAndEqualsHelper.class, new HashCodeAndEqualsHelperImpl());
-        ServiceLocator.add(TooltipFactory.class, new TooltipFactory());
+        ServiceLocator.add(OrigamiHandler.class, new Callable<JAXBOrigamiHandler>() {
+            @Override
+            public JAXBOrigamiHandler call() throws Exception
+            {
+                return new JAXBOrigamiHandler(getDocumentBase());
+            }
+        });
+
+        ServiceLocator.add(ListingHandler.class, new Callable<JAXBListingHandler>() {
+            @Override
+            public JAXBListingHandler call() throws Exception
+            {
+                return new JAXBListingHandler();
+            }
+        });
+
+        ServiceLocator.add(ConfigurationManager.class, new Callable<ConfigurationManagerImpl>() {
+            @Override
+            public ConfigurationManagerImpl call() throws Exception
+            {
+                return new ConfigurationManagerImpl();
+            }
+        });
+
+        ServiceLocator.add(HashCodeAndEqualsHelper.class, new Callable<HashCodeAndEqualsHelperImpl>() {
+            @Override
+            public HashCodeAndEqualsHelperImpl call() throws Exception
+            {
+                return new HashCodeAndEqualsHelperImpl();
+            }
+        });
+
+        ServiceLocator.add(TooltipFactory.class, new Callable<TooltipFactory>() {
+            @Override
+            public TooltipFactory call() throws Exception
+            {
+                return new TooltipFactory();
+            }
+        });
 
         // setup JAXB bindings
-        try {
-            ServiceLocator.add(BindingsManager.class, new BindingsManager(JAXBContext.newInstance(
-                    "cz.cuni.mff.peckam.java.origamist.model.jaxb:cz.cuni.mff.peckam.java.origamist.files.jaxb:"
-                            + "cz.cuni.mff.peckam.java.origamist.common.jaxb", getClass().getClassLoader())));
+        Callable<BindingsManager> callback = new Callable<BindingsManager>() {
+            @Override
+            public BindingsManager call() throws Exception
+            {
+                BindingsManager manager = null;
+                try {
+                    manager = new BindingsManager(JAXBContext.newInstance(
+                            "cz.cuni.mff.peckam.java.origamist.model.jaxb:cz.cuni.mff.peckam.java.origamist.files.jaxb:"
+                                    + "cz.cuni.mff.peckam.java.origamist.common.jaxb", getClass().getClassLoader()));
 
-            BindingsManager manager = ServiceLocator.get(BindingsManager.class);
+                    @SuppressWarnings("unused")
+                    SchemaInfo c1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/common/v1",
+                            "resources/schemata/common_v1.xsd", true);
 
-            @SuppressWarnings("unused")
-            SchemaInfo c1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/common/v1",
-                    "resources/schemata/common_v1.xsd", true);
+                    SchemaInfo d1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1",
+                            "resources/schemata/diagram_v1.xsd", true);
 
-            SchemaInfo d1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v1",
-                    "resources/schemata/diagram_v1.xsd", true);
+                    SchemaInfo d2 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2",
+                            "resources/schemata/diagram_v2.xsd", true);
 
-            SchemaInfo d2 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2",
-                    "resources/schemata/diagram_v2.xsd", true);
+                    manager.addTransform(d1, d2, "resources/schemata/diagram_v1_to_v2.xsl", null);
 
-            manager.addTransform(d1, d2, "resources/schemata/diagram_v1_to_v2.xsl", null);
+                    manager.addUnmarshallerConfigurator(d2, new ObjectFactoryConfigurator(new ObjectFactory()));
 
-            manager.addUnmarshallerConfigurator(d2, new ObjectFactoryConfigurator(new ObjectFactory()));
+                    SchemaInfo f1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/files/v1",
+                            "resources/schemata/files_v1.xsd", true);
+                    manager.addUnmarshallerConfigurator(f1, new ObjectFactoryConfigurator(
+                            new cz.cuni.mff.peckam.java.origamist.files.ObjectFactory()));
 
-            SchemaInfo f1 = manager.addSchema("http://www.mff.cuni.cz/~peckam/java/origamist/files/v1",
-                    "resources/schemata/files_v1.xsd", true);
-            manager.addUnmarshallerConfigurator(f1, new ObjectFactoryConfigurator(
-                    new cz.cuni.mff.peckam.java.origamist.files.ObjectFactory()));
+                } catch (JAXBException e) {
+                    Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
+                } catch (IOException e) {
+                    Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
+                } catch (TransformerConfigurationException e) {
+                    Logger.getLogger(getClass()).error("Couldn't initialize Transform: " + e);
+                }
+                return manager;
+            }
+        };
 
-        } catch (JAXBException e) {
-            Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
-        } catch (IOException e) {
-            Logger.getLogger(getClass()).error("Couldn't initialize JAXB: " + e);
-        } catch (TransformerConfigurationException e) {
-            Logger.getLogger(getClass()).error("Couldn't initialize Transform: " + e);
-        }
+        ServiceLocator.add(BindingsManager.class, callback);
+
     }
 
     /**

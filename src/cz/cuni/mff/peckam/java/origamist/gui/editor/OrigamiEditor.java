@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
@@ -1149,7 +1150,13 @@ public class OrigamiEditor extends CommonGui
     {
         super.registerServices();
         ServiceLocator.add(OrigamiEditor.class, this);
-        ServiceLocator.add(StepThumbnailGenerator.class, new StepThumbnailGenerator());
+        ServiceLocator.add(StepThumbnailGenerator.class, new Callable<StepThumbnailGenerator>() {
+            @Override
+            public StepThumbnailGenerator call() throws Exception
+            {
+                return new StepThumbnailGenerator();
+            }
+        });
     }
 
     @Override

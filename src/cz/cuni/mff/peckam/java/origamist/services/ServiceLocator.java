@@ -4,6 +4,9 @@
 package cz.cuni.mff.peckam.java.origamist.services;
 
 import java.util.Hashtable;
+import java.util.concurrent.Callable;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class serves as a pool of implementations of available services
@@ -26,18 +29,33 @@ public class ServiceLocator
     /**
      * Storage for the implementations
      */
-    protected final static Hashtable<Class<?>, Object> services = new Hashtable<Class<?>, Object>();
+    protected final static Hashtable<Class<?>, Object>      services       = new Hashtable<Class<?>, Object>();
+
+    /** Storage for callbacks returning the services. */
+    protected final static Hashtable<Class<?>, Callable<?>> serviceGetters = new Hashtable<Class<?>, Callable<?>>();
 
     /**
-     * Adds a new service for type T and stores its implementation
+     * Adds a new service for type T and stores its implementation.
      * 
-     * @param <T> The service type
-     * @param service The Class of the service to add
-     * @param implementation Its implementation
+     * @param <T> The service type.
+     * @param service The Class of the service to add.
+     * @param implementation Its implementation.
      */
     public static <T> void add(Class<T> service, T implementation)
     {
         services.put(service, implementation);
+    }
+
+    /**
+     * Adds a new service for type T and saves the callback to instantiate the service.
+     * 
+     * @param <T> The service type.
+     * @param service The Class of the service to add.
+     * @param serviceGetter The callback returning the service.
+     */
+    public static <T> void add(Class<T> service, Callable<? extends T> serviceGetter)
+    {
+        serviceGetters.put(service, serviceGetter);
     }
 
     /**
@@ -51,7 +69,22 @@ public class ServiceLocator
     public static <T> T get(Class<T> service)
     {
         try {
-            return (T) services.get(service);
+            Object found = services.get(service);
+            if (found != null)
+                return (T) found;
+            Callable<?> getter = serviceGetters.get(service);
+            if (getter != null) {
+                try {
+                    found = getter.call();
+                    services.put(service, found);
+                } catch (Exception e) {
+                    Logger.getLogger(ServiceLocator.class).error("Service getting callback threw exception.", e);
+                } finally {
+                    serviceGetters.remove(getter);
+                }
+                return (T) found;
+            }
+            return null;
         } catch (ClassCastException e) {
             return null;
         }
@@ -65,6 +98,7 @@ public class ServiceLocator
      */
     public static <T> void remove(Class<T> service)
     {
-        services.remove(service);
+        if (services.remove(service) == null)
+            serviceGetters.remove(service);
     }
 }
