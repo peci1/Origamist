@@ -8,8 +8,10 @@ import static java.lang.Math.abs;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -416,6 +418,9 @@ public class Triangle3d implements Cloneable
 
             Segment3d intersection = null;
             List<Point3d> intersections = new ArrayList<Point3d>(3);
+            // non-vertex intersections will be added directly; vertex intersections would appear twice (for both
+            // edges), so we rather handle vertices specially
+            Set<Point3d> verticesToAdd = new HashSet<Point3d>();
 
             for (Segment3d s : getEdges()) { // find intersections with edges
                 intersection = s.getIntersection(line);
@@ -423,31 +428,46 @@ public class Triangle3d implements Cloneable
                     // the point->param->point conversion is done to be as close to the edge as possible
                     double param = s.getParameterForPoint(intersection.p);
                     // make vertices magnetic
-                    if (param < 1 * EPSILON) {
-                        intersections.add(s.getPointForParameter(0));
-                    } else if (param > 1 - 1 * EPSILON) {
-                        intersections.add(s.getPointForParameter(1));
+                    if (param < 100 * EPSILON || param > 1 - 100 * EPSILON) {
+                        verticesToAdd.add(getNearestVertex(intersection.p));
                     } else {
                         intersections.add(s.getPointForParameter(param));
-                        // intersections.add(intersection.p);
                     }
                 } else if (intersection != null) {
                     // the line lies on the same line as the edge and they have nonempty intersection - we can return
                     return intersection.getIntersection(s);
                 }
             }
+            intersections.addAll(verticesToAdd);
 
-            if (line instanceof Segment3d) {
+            if (intersections.size() < 2 && line instanceof Segment3d) {
                 // a segment can start or end inside the triangle
                 for (Point3d p : ((Segment3d) line).getPoints()) {
-                    if (this.contains(p)/* && !sidesContain(p) */) {
+                    if (this.contains(p) && !sidesContain(p)) {
                         intersections.add(p);
                     }
                 }
             }
 
-            // rounding erros may affect the method a lot, so ensure it is a little more tolerant
+            // rounding errors may affect the method a lot, so ensure it is a little more tolerant
             MathHelper.removeEpsilonEqualPoints(intersections, 2d * EPSILON);
+
+            // rounding errors may cause that we get three points lying on one line
+            if (intersections.size() > 2
+                    && new Line3d(intersections.get(0), intersections.get(1)).contains(intersections.get(2))) {
+                Segment3d seg1 = new Segment3d(intersections.get(0), intersections.get(1));
+                Segment3d seg2 = new Segment3d(intersections.get(0), intersections.get(2));
+                Segment3d seg3 = new Segment3d(intersections.get(1), intersections.get(2));
+
+                double seg1l = seg1.getLength(), seg2l = seg2.getLength(), seg3l = seg3.getLength();
+
+                if (seg1l >= seg2l && seg1l >= seg3l)
+                    return seg1;
+                else if (seg2l >= seg1l && seg2l >= seg3l)
+                    return seg2;
+                else
+                    return seg3;
+            }
 
             // if there is a nearby point contained in an edge of the triangle, then retain only that on-edge point and
             // remove all nearby points
