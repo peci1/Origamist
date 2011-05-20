@@ -21,6 +21,7 @@ import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.OperationContainer;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * Argument that fetches the selected operations.
@@ -113,6 +114,7 @@ public class LastOperationsArgument extends OperationArgument implements Operati
                         messages.getString("operation.argument.last.operations.confirm.title"),
                         JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
                     operations = null;
+                    return;
                 }
             } else {
                 JOptionPane.showMessageDialog(null,
@@ -120,9 +122,19 @@ public class LastOperationsArgument extends OperationArgument implements Operati
                         messages.getString("operation.argument.last.operations.only.last.title"),
                         JOptionPane.ERROR_MESSAGE);
                 operations = null;
+                return;
             }
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
         } else {
             operations = null;
         }
     }
+
+    @Override
+    public String getL7dUserTip()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "last.operations.user.tip").toString() + "<br/>"
+                + super.getL7dUserTip();
+    }
+
 }

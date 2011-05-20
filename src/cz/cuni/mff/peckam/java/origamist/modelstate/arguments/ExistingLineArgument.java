@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate.arguments;
 
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * A line argument that can only be filled with an existing line.
@@ -33,5 +34,15 @@ public class ExistingLineArgument extends LineArgument
     {
         if (editor.getChosenExistingLine() != null)
             this.line = editor.getChosenExistingLine();
+        if (line != null)
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
+
+    @Override
+    public String getL7dUserTip()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "existing.line.user.tip").toString() + "<br/>"
+                + super.getL7dUserTip();
+    }
+
 }

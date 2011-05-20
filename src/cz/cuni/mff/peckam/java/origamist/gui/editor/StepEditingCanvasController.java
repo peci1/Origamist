@@ -178,6 +178,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /** The OSD panel with model 2D preview. */
     protected OSDPanel               preview                    = null;
 
+    /** The OSD panel for displaying messages to the user. */
+    protected HelpPanel              helpPanel                  = null;
+
     {
         updateTransforms();
 
@@ -187,6 +190,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             {
                 clearHighlighted();
                 clearAvailableItems();
+                helpPanel.showL7dMessage("editor", "pick.mode.changed.to", null,
+                        new Object[] { pickMode.toL7dString() });
+                helpPanel.removeMessage("available.items");
             }
         });
 
@@ -288,6 +294,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         layersToChooseFromAsGroups = null;
         layersForHighlightedPoint = null;
         currentOperationArgument = null;
+
+        if (helpPanel != null)
+            helpPanel.removeMessage("operation.argument");
     }
 
     @Override
@@ -533,8 +542,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                                     containsHighlighted = true;
                                 newAvailableItems.add(tg);
                             }
-                            if (!different)
+                            if (!different) {
+                                helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
+                                        "available.items", new Object[] { availableItems.size() });
                                 return;
+                            }
                         } else {
                             for (PickInfo r : results) {
                                 TransformGroup tg = (TransformGroup) pickCanvas.getNode(r,
@@ -546,19 +558,26 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         }
                         availableItems = newAvailableItems;
 
-                        if (containsHighlighted)
+                        if (containsHighlighted) {
+                            helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
+                                    "available.items", new Object[] { availableItems.size() });
                             return;
+                        }
 
                         if (layersToChooseFrom != null) {
                             for (Group g : availableItems) {
                                 if (g.getUserData() instanceof Layer && layersToChooseFrom.contains(g.getUserData())) {
                                     setHighlightedLayer(g);
+                                    helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor",
+                                            null, "available.items", new Object[] { availableItems.size() });
                                     return;
                                 }
                             }
                             setHighlightedLayer(null);
                         } else {
                             setHighlightedLayer(availableItems.get(0));
+                            helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
+                                    "available.items", new Object[] { availableItems.size() });
                         }
                     } else if (pickMode == PickMode.LINE) {
                         boolean containsHighlighted = false;
@@ -588,8 +607,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
                                 newAvailableItems.add(tg);
                             }
-                            if (!different)
+                            if (!different) {
+                                helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
+                                        "available.items", new Object[] { availableItems.size() });
                                 return;
+                            }
                         } else {
                             for (PickInfo r : results) {
                                 BranchGroup tg = (BranchGroup) pickCanvas.getNode(r, PickTool.TYPE_BRANCH_GROUP);
@@ -613,6 +635,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             }
                         }
                         availableItems = newAvailableItems;
+
+                        helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
+                                "available.items", new Object[] { availableItems.size() });
 
                         if (containsHighlighted)
                             return;
@@ -784,6 +809,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             if (!availableItems.contains(highlighted))
                                 setHighlightedPoint(availableItems.get(index));
                         }
+                        helpPanel.showL7dMessage("editor", "there.are.num.available.points.under.cursor", null,
+                                "available.items", new Object[] { availableItems.size() });
                     }
                 } else {
                     if (highlighted != null) {
@@ -795,6 +822,21 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         currentNewLine.detach();
                         newLines.remove(currentNewLine);
                         currentNewLine = null;
+                    }
+
+                    switch (pickMode) {
+                        case LAYER:
+                            helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
+                                    "available.items", new Object[] { availableItems.size() });
+                            break;
+                        case LINE:
+                            helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
+                                    "available.items", new Object[] { availableItems.size() });
+                            break;
+                        case POINT:
+                            helpPanel.showL7dMessage("editor", "there.are.num.available.points.under.cursor", null,
+                                    "available.items", new Object[] { availableItems.size() });
+                            break;
                     }
                 }
 
@@ -993,6 +1035,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             };
             preview.attachToUniverse(universe);
         }
+
+        helpPanel = new HelpPanel(canvas, 10, 10, 256, 256, true, false);
+        helpPanel.attachToUniverse(universe);
     }
 
     @Override
@@ -1774,6 +1819,12 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
         if (currentOperationArgument != null && currentOperationArgument.preferredPickMode() != null)
             setPickMode(currentOperationArgument.preferredPickMode());
+
+        if (currentOperationArgument != null && currentOperationArgument.getL7dUserTip() != null) {
+            helpPanel.showMessage(currentOperationArgument.getL7dUserTip(), "operation.argument");
+        } else {
+            helpPanel.removeMessage("operation.argument");
+        }
     }
 
     /**

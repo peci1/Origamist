@@ -11,6 +11,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * Angle argument.
@@ -88,6 +89,15 @@ public class AngleArgument extends OperationArgument implements UserInputDataRec
     }
 
     @Override
+    public String getL7dUserTip()
+    {
+        if (isRequired())
+            return new LocalizedString(OperationArgument.class.getName(), "proceed").toString();
+        else
+            return new LocalizedString(OperationArgument.class.getName(), "optional.dialog").toString();
+    }
+
+    @Override
     public void askForData()
     {
         ResourceBundle messages = ResourceBundle.getBundle("editor", ServiceLocator.get(ConfigurationManager.class)
@@ -100,5 +110,8 @@ public class AngleArgument extends OperationArgument implements UserInputDataRec
             dialog.setBounds(lowerBound, upperBound, boundsUnit);
 
         angle = dialog.getAngle();
+
+        if (angle != null)
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
 }

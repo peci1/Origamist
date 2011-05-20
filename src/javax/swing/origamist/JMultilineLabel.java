@@ -5,6 +5,7 @@ package javax.swing.origamist;
 
 import javax.swing.JEditorPane;
 import javax.swing.UIManager;
+import javax.swing.text.html.HTMLEditorKit;
 
 /**
  * A JLabel-like component displaying its text in multiple lines if needed.
@@ -27,6 +28,23 @@ public class JMultilineLabel extends JEditorPane
 
     public JMultilineLabel(String text)
     {
+        // IMPORTANT: fix for bug 6993691
+        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6993691
+        this.setEditorKit(new HTMLEditorKit() {
+            private static final long serialVersionUID = -4615871144396935653L;
+
+            protected Parser getParser()
+            {
+                try {
+                    @SuppressWarnings("rawtypes")
+                    Class c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
+                    Parser defaultParser = (Parser) c.newInstance();
+                    return defaultParser;
+                } catch (Throwable e) {}
+                return null;
+            }
+        });
+
         this.setEditable(false);
         this.setCursor(null);
         this.setOpaque(false);
@@ -51,21 +69,24 @@ public class JMultilineLabel extends JEditorPane
     {
         this.rawText = text;
         if (text == null || "".equals(text)) {
-            super.setText("<html><body>&nbsp;</body></html>");
+            super.setText("<html>&nbsp;</html>");
             return;
         }
 
         String t = text;
         if (!text.startsWith("<html>")) {
-            t = "<html><body>" + text.replaceAll("<", "&lt;") + "</body></html>";
+            t = "<html>" + text.replaceAll("<", "&lt;");
             wasSetHtml = false;
         } else {
             wasSetHtml = true;
         }
         t = text.replaceAll("</html>", "");
         // HACK: the next line is needed, without it the last line sometimes disappears
-        if (!disableLastLineHack)
+        if (!disableLastLineHack) {
             t += "<br/>&nbsp;</html>";
+        } else {
+            t += "</html>";
+        }
         super.setText(t);
     }
 

@@ -15,6 +15,7 @@ import javax.media.j3d.Shape3D;
 import com.sun.j3d.utils.pickfast.PickTool;
 
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 public enum PickMode
 {
@@ -119,4 +120,12 @@ public enum PickMode
      * @return The filtered pick results.
      */
     abstract List<PickInfo> filterPickResults(PickTool pickTool, PickInfo[] results);
+
+    /**
+     * @return A localized name of this pick mode.
+     */
+    public String toL7dString()
+    {
+        return new LocalizedString(PickMode.class.getName(), this.toString()).toString();
+    }
 }

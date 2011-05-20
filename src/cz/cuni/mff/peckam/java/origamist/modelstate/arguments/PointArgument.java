@@ -7,6 +7,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
 import cz.cuni.mff.peckam.java.origamist.model.Point2D;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * A point argument.
@@ -76,5 +77,15 @@ public class PointArgument extends OperationArgument implements EditorDataReceiv
     {
         if (editor.getChosenPoint() != null)
             this.point = editor.getChosenPoint();
+        if (point != null)
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
+
+    @Override
+    public String getL7dUserTip()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "point.user.tip").toString() + "<br/>"
+                + super.getL7dUserTip();
+    }
+
 }

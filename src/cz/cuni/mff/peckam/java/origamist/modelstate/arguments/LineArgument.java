@@ -7,6 +7,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
 import cz.cuni.mff.peckam.java.origamist.model.Line2D;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * A line argument.
@@ -76,5 +77,15 @@ public class LineArgument extends OperationArgument implements EditorDataReceive
     {
         if (editor.getChosenLine() != null)
             this.line = editor.getChosenLine();
+        if (line != null)
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
+
+    @Override
+    public String getL7dUserTip()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "line.user.tip").toString() + "<br/>"
+                + super.getL7dUserTip();
+    }
+
 }

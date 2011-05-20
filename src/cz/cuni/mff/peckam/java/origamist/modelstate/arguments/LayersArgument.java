@@ -8,6 +8,7 @@ import java.util.List;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.StepEditor;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * Argument for selecting layers.
@@ -95,5 +96,15 @@ public class LayersArgument extends OperationArgument implements EditorDataRecei
     {
         if (editor.getChosenLayers() != null && editor.getChosenLayers().size() > 0)
             this.layers = editor.getChosenLayers();
+        if (layers != null)
+            support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
+
+    @Override
+    public String getL7dUserTip()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "layer.user.tip").toString() + "<br/>"
+                + super.getL7dUserTip();
+    }
+
 }

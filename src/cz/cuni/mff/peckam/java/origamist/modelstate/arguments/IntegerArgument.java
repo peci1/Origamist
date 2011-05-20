@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * Integer argument.
@@ -64,6 +65,15 @@ public class IntegerArgument extends OperationArgument implements UserInputDataR
     }
 
     @Override
+    public String getL7dUserTip()
+    {
+        if (isRequired())
+            return new LocalizedString(OperationArgument.class.getName(), "proceed").toString();
+        else
+            return new LocalizedString(OperationArgument.class.getName(), "optional.dialog").toString();
+    }
+
+    @Override
     public void askForData()
     {
         ResourceBundle messages = ResourceBundle.getBundle("editor", ServiceLocator.get(ConfigurationManager.class)
@@ -75,6 +85,7 @@ public class IntegerArgument extends OperationArgument implements UserInputDataR
             if (input != null) {
                 try {
                     integer = Integer.parseInt(input);
+                    support.firePropertyChange(COMPLETE_PROPERTY, false, true);
                     return;
                 } catch (NumberFormatException e) {
                     JOptionPane

@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
  * Argument asking for a boolean.
@@ -65,6 +66,15 @@ public class BooleanArgument extends OperationArgument implements UserInputDataR
     }
 
     @Override
+    public String getL7dUserTip()
+    {
+        if (isRequired())
+            return new LocalizedString(OperationArgument.class.getName(), "proceed").toString();
+        else
+            return new LocalizedString(OperationArgument.class.getName(), "optional.dialog").toString();
+    }
+
+    @Override
     public void askForData()
     {
         ResourceBundle messages = ResourceBundle.getBundle("editor", ServiceLocator.get(ConfigurationManager.class)
@@ -82,6 +92,7 @@ public class BooleanArgument extends OperationArgument implements UserInputDataR
                     value = true;
                 else
                     value = false;
+                support.firePropertyChange(COMPLETE_PROPERTY, false, true);
                 return;
             } else {
                 value = null;
