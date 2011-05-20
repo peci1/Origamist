@@ -198,6 +198,29 @@ public class Plane3d implements Cloneable
         return normal;
     }
 
+    /**
+     * Return the distance of the given point from this plane.
+     * 
+     * @param p The point to get distance of.
+     * @return The distance of the given point from this plane.
+     */
+    public double distance(Point3d p)
+    {
+        return Math.abs(signedDistance(p));
+    }
+
+    /**
+     * Return the distance of the given point from this plane. Will be negative if the point is on the other side than
+     * the normal of this plane.
+     * 
+     * @param p The point to get distance of.
+     * @return The signed distance of the given point from this plane.
+     */
+    public double signedDistance(Point3d p)
+    {
+        return (a * p.x + b * p.y + c * p.z + d) / Math.sqrt(a * a + b * b + c * c);
+    }
+
     @Override
     public int hashCode()
     {

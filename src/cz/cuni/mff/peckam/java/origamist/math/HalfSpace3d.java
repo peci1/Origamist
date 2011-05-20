@@ -104,6 +104,17 @@ public class HalfSpace3d implements Cloneable
     }
 
     /**
+     * Return true if this halfspace contains the given point, but its distance from the border plane is nonzero.
+     * 
+     * @param point The point to check.
+     * @return Whether this halfspace contains the given point and its border plane does not.
+     */
+    public boolean containsExclusive(Point3d point)
+    {
+        return plane.signedDistance(point) > EPSILON;
+    }
+
+    /**
      * Invert this halfspace to contain the other half of the space.
      * 
      * @return this

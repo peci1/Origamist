@@ -35,6 +35,9 @@ import javax.vecmath.Vector3d;
 import org.apache.log4j.Logger;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperIntersectionException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
+import cz.cuni.mff.peckam.java.origamist.exceptions.PaperTearException;
 import cz.cuni.mff.peckam.java.origamist.math.HalfSpace3d;
 import cz.cuni.mff.peckam.java.origamist.math.IntersectionWithTriangle;
 import cz.cuni.mff.peckam.java.origamist.math.Line2d;
@@ -1407,10 +1410,19 @@ public class ModelState implements Cloneable
     }
 
     /**
-     * @return True if the paper structure is correct, so no paper tearing or intersecting is performed.
+     * Check if the paper meets all the physical constraints (it doesn't tear or intersect).
+     * <p>
+     * Although this check runs asymptotically in O(n^2), where n is the number of layers, it should be practically
+     * quite fast.
+     * 
+     * @throws PaperStructureException If the paper structure is invalid.
      */
-    public boolean isModelPhysicallyCorrect()
+    public void checkPaperPhysicalConstraints() throws PaperStructureException
     {
+        // check for paper tear
+        // just walk through all triangles, take their 2D neighbors and check if their common edges are almost equal in
+        // 3D
+
         for (ModelTriangle t : triangles) {
             for (ModelTriangle n : t.getNeighbors()) {
                 ModelTriangleEdge[] common2dEdge = t.getCommonEdge2d(n, false);
@@ -1428,21 +1440,106 @@ public class ModelState implements Cloneable
                         // now distances should contain distances between the common edges' border points, sorted, so,
                         // if the edges are almost equal, two of the distances must be very small
                         if (distances[1] > 1000 * EPSILON)
-                            return false;
-                    } else {
+                            throw new PaperTearException(t, n);
+                    } else { // this branch shouldn't be taken because we try to not have triangles with vertices in the
+                             // interior of another triangle's edge
                         if (!tEdge.overlaps(nEdge))
-                            return false;
+                            throw new PaperTearException(t, n);
                     }
                 } else {
-                    Logger.getLogger(getClass())
-                            .warn("ModelState#isModelPhysicallyCorrect(): neighboring triangles don't have common 2D segment");
+                    Logger.getLogger(getClass()).warn(
+                            "ModelState#isModelPhysicallyCorrect(): neighboring triangles don't have common 2D segment. t="
+                                    + t + ", n = " + n);
                 }
             }
         }
 
-        // TODO check for paper intersection
+        // check for paper intersection
+        // 1) this algorithm tests mutually all non-parallel layers
+        // 2) the intersection line of the layers' planes is taken and it defines one halfspace for each layer
+        // 3) find intersections of the two layers with their intersection line and note the intersection segments
+        // 4a) if the intersection segments don't overlap, the layers don't intersect
+        // 4b) otherwise constrain the halfspace by a stripe defined by the other layer's intersection segment
+        // 5) test if the layer's triangles are only on one side of the halfspace - if not, the layers intersect (don't
+        // test points outside the constraining stripe)
 
-        return true;
+        ModelSegment[] layerInts = new ModelSegment[2];
+        Vector3d[] stripeDirections = new Vector3d[] { new Vector3d(), new Vector3d() };
+        Stripe3d[] stripeConstraints = new Stripe3d[2];
+
+        int i = 0;
+        for (Layer l : layers) {
+            if (i + 1 < layers.size()) {
+                for (Layer l2 : layers.subList(i + 1, layers.size())) {
+                    double angle = l.getNormal().angle(l2.getNormal());
+                    // the threshold serves as EPSILON, but is scaled the bigger the shorter the normals are (note that
+                    // we don't normalize plane normals) - to compensate the inaccuracy of computing angles for very
+                    // short vectors.
+                    double threshold = 100 * EPSILON * (1d / Math.min(l.getNormal().length(), l2.getNormal().length()));
+                    if (angle <= threshold || angle >= Math.PI - threshold) // don't check parallel layers
+                        continue;
+
+                    Line3d line = l.getPlane().getIntersection(l2.getPlane());
+                    if (line == null) // shouldn't be null, because normals are different
+                        continue;
+
+                    layerInts[0] = l.getIntersectionSegment(line);
+                    if (layerInts[0] == null || layerInts[0].isSinglePoint()) // the line doesn't intersect the layer
+                        continue;
+                    layerInts[1] = l2.getIntersectionSegment(line);
+                    if (layerInts[1] == null || layerInts[1].isSinglePoint()) // the line doesn't intersect the layer
+                        continue;
+
+                    // taking only the intersection segment made by joining start of the first and end of the last
+                    // intersection subsegment may cause false-negatives for non-convex polygons; for simplicity, we
+                    // omit this
+
+                    // if the layers don't have a common part on the intersection line, continue
+                    if (!layerInts[0].overlaps(layerInts[1]))
+                        continue;
+
+                    stripeDirections[0].cross(l.getNormal(), line.getVector());
+                    stripeDirections[1].cross(l2.getNormal(), line.getVector());
+                    stripeDirections[0].normalize();
+                    stripeDirections[1].normalize();
+
+                    // note that we access layerInts[1] for stripeConstraints[0] and vice versa, which is correct!
+                    stripeConstraints[0] = new Stripe3d(new Line3d(layerInts[1].getP1(), stripeDirections[0]),
+                            new Line3d(layerInts[1].getP2(), stripeDirections[0]));
+                    stripeConstraints[1] = new Stripe3d(new Line3d(layerInts[0].getP1(), stripeDirections[1]),
+                            new Line3d(layerInts[0].getP2(), stripeDirections[1]));
+
+                    int j = 0;
+                    for (Layer layer : new Layer[] { l, l2 }) {
+                        Vector3d n = layer.getNormal();
+                        Vector3d hsNormal = new Vector3d();
+                        hsNormal.cross(n, line.getVector());
+                        HalfSpace3d hs = new HalfSpace3d(hsNormal, line.getPoint());
+                        Boolean inHalfspace = null;
+                        for (ModelTriangle t : layer.getTriangles()) {
+                            for (Point3d p : t.getVertices()) {
+                                double dist = hs.getPlane().signedDistance(p);
+                                // don't test points lying in the border plane
+                                if (Math.abs(dist) <= 1000 * EPSILON)
+                                    continue;
+
+                                // if the point isn't in the projection of the other layer onto this one, continue
+                                if (!stripeConstraints[j].contains(p))
+                                    continue;
+
+                                if (inHalfspace == null) {
+                                    inHalfspace = dist > 1000 * EPSILON;
+                                } else if (inHalfspace != dist > 1000 * EPSILON) {
+                                    throw new PaperIntersectionException(l, l2);
+                                }
+                            }
+                        }
+                        j++;
+                    }
+                }
+            }
+            i++;
+        }
     }
 
     /**

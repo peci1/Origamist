@@ -174,7 +174,7 @@ public class Layer extends Polygon3d<ModelTriangle>
 
     /**
      * Return the single segment defining the intersection of the given stripe with this polygon (this segment joins the
-     * first and last segment returned by {@link Polygon3d#getIntersections}).
+     * first and last segment returned by {@link Polygon3d#getIntersections(Stripe3d)}).
      * 
      * @param stripe The stripe to find the intersection with.
      * @return The intersection of the given stripe and this polygon. <code>null</code> if the stripe is parallel to
@@ -185,6 +185,27 @@ public class Layer extends Polygon3d<ModelTriangle>
     {
         @SuppressWarnings("unchecked")
         List<? extends ModelSegment> ints = (List<? extends ModelSegment>) getIntersections(stripe);
+        if (ints == null || ints.size() == 0)
+            return null;
+
+        Point3d int1 = ints.get(0).getP1();
+        Point3d int2 = ints.get(ints.size() - 1).getP2();
+        Point2d int1_2 = ints.get(0).getOriginal().getP1();
+        Point2d int2_2 = ints.get(ints.size() - 1).getOriginal().getP2();
+
+        return new ModelSegment(new Segment3d(int1, int2), new Segment2d(int1_2, int2_2), null, -1);
+    }
+
+    /**
+     * Return the single segment defining the intersection of the given line with this polygon (this segment joins the
+     * first and last segment returned by {@link Polygon3d#getIntersections(Line3d)}).
+     * 
+     * @param line The line to find the intersection with.
+     * @return The intersection of the given line and this polygon. <code>null</code> if the line doesn't intersect.
+     */
+    public ModelSegment getIntersectionSegment(Line3d line)
+    {
+        List<? extends ModelSegment> ints = (List<? extends ModelSegment>) getIntersections(line);
         if (ints == null || ints.size() == 0)
             return null;
 

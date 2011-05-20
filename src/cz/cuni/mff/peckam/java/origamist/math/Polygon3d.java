@@ -22,6 +22,8 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
+import org.apache.log4j.Logger;
+
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelTriangle;
 import cz.cuni.mff.peckam.java.origamist.utils.ChangeNotification;
@@ -649,8 +651,10 @@ public class Polygon3d<T extends Triangle3d>
             }
 
             if (intersection != null) {
-                Double p1 = line.getParameterForPoint(intersection.p);
-                Double p2 = line.getParameterForPoint(intersection.p2);
+                // the nearest point search is performed to cancel the segment "magnetizing" heuristic in
+                // Triangle3d#getIntersection()
+                Double p1 = line.getParameterForPoint(line.getNearestPoint(intersection.p));
+                Double p2 = line.getParameterForPoint(line.getNearestPoint(intersection.p2));
                 if (p1 != null && p2 != null) {
                     if (parameters.get(intersection.p) == null)
                         parameters.put(intersection.p, p1);
@@ -659,8 +663,12 @@ public class Polygon3d<T extends Triangle3d>
                     if (p1 > p2) { // here we don't want to compare using epsilon-equals
                         intersection = new Segment3d(intersection.p2, intersection.p);
                     }
+                    intersections.add(new IntersectionWithTriangle<T>(t, intersection));
+                } else {
+                    Logger.getLogger(getClass())
+                            .warn("Polygon3d#getIntersectionsWithTriangles(): couldn't locate intersection segment points on the intersecting line. The line was "
+                                    + line + ", the segment was " + intersection);
                 }
-                intersections.add(new IntersectionWithTriangle<T>(t, intersection));
             }
         }
 

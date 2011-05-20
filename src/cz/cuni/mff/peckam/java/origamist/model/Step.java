@@ -202,8 +202,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
                 }
             }
 
-            if (!this.modelStates[i].isModelPhysicallyCorrect())
-                throw new PaperStructureException();
+            this.modelStates[i].checkPaperPhysicalConstraints();
         } catch (RuntimeException e) {
             thrownException = e;
             this.modelStates[i] = null;

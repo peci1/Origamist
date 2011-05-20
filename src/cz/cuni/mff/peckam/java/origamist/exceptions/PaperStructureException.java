@@ -22,7 +22,7 @@ public class PaperStructureException extends RuntimeException
     @Override
     public String getMessage()
     {
-        return ResourceBundle.getBundle(getClass().getName(),
+        return ResourceBundle.getBundle(PaperStructureException.class.getName(),
                 ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString("message");
     }
 }
