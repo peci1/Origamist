@@ -616,6 +616,31 @@ public class StepViewingCanvasController
     }
 
     /**
+     * @return The current normal of the screen in vworld coordinates.
+     */
+    public Vector3d getCurrentScreenNormal()
+    {
+        ViewInfo vi = new ViewInfo(canvas.getView());
+        Transform3D imagePlateToVworld = new Transform3D();
+        vi.getImagePlateToVworld(canvas, imagePlateToVworld, null);
+
+        Point3d eyePos = new Point3d();
+        canvas.getCenterEyeInImagePlate(eyePos);
+        imagePlateToVworld.transform(eyePos);
+
+        Point3d centerPos = new Point3d();
+        canvas.getCenterEyeInImagePlate(centerPos);
+        centerPos.z = 0;
+        imagePlateToVworld.transform(centerPos);
+
+        Vector3d screenNormal = new Vector3d(eyePos);
+        screenNormal.sub(centerPos);
+        screenNormal.normalize();
+
+        return screenNormal;
+    }
+
+    /**
      * Set this.transform to a new value.
      * 
      * @return The transform used for the step just after initialization.
@@ -629,10 +654,6 @@ public class StepViewingCanvasController
         ViewInfo vi = new ViewInfo(canvas.getView());
         Transform3D imagePlateToVworld = new Transform3D();
         vi.getImagePlateToVworld(canvas, imagePlateToVworld, null);
-
-        Point3d eyePos = new Point3d();
-        canvas.getCenterEyeInImagePlate(eyePos);
-        imagePlateToVworld.transform(eyePos);
 
         Point3d centerPos = new Point3d();
         canvas.getCenterEyeInImagePlate(centerPos);
@@ -654,9 +675,7 @@ public class StepViewingCanvasController
 
         transform.set(viewingAngleRotation);
 
-        Vector3d screenNormal = new Vector3d(centerPos);
-        screenNormal.sub(eyePos);
-        screenNormal.normalize();
+        Vector3d screenNormal = getCurrentScreenNormal();
 
         Transform3D rotation = new Transform3D();
         rotation.set(new AxisAngle4d(screenNormal, state.getRotation()));

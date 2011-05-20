@@ -105,7 +105,9 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
             @Override
             public void handleTimerEvent(Object data, long time)
             {
-                messages.remove(data);
+                synchronized (HelpPanel.this) {
+                    messages.remove(data);
+                }
                 repaint();
             }
         }, message);
@@ -130,13 +132,15 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
             @Override
             public void handleTimerEvent(Object data, long time)
             {
-                if (messageKeys.get(key) == data) {
-                    String message = messageKeys.remove(key);
-                    if (message != null) {
-                        messages.remove(message);
-                        repaint();
-                    }
-                } // otherwise the message was removed manually
+                synchronized (HelpPanel.this) {
+                    if (messageKeys.get(key) == data) {
+                        String message = messageKeys.remove(key);
+                        if (message != null) {
+                            messages.remove(message);
+                            repaint();
+                        }
+                    } // otherwise the message was removed manually
+                }
             }
         }, message);
         repaint();
@@ -198,6 +202,9 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
      */
     protected synchronized void updateLabelText()
     {
+        if (messages == null)
+            return;
+
         StringBuilder string = new StringBuilder("<html><head>");
         string.append("<style type=\"text/css\">");
         string.append("li {margin: 0px 0px 4px 0px;}");

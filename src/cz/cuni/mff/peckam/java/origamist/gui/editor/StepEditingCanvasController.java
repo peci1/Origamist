@@ -46,14 +46,17 @@ import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
 import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
+import javax.media.j3d.WakeupOnBehaviorPost;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
 
+import com.sun.j3d.utils.behaviors.mouse.MouseBehavior;
 import com.sun.j3d.utils.pickfast.PickTool;
 import com.sun.j3d.utils.pickfast.behaviors.PickMouseBehavior;
 import com.sun.j3d.utils.universe.ViewInfo;
@@ -76,6 +79,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.ModelSegment;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelTriangle;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLinesArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
@@ -851,6 +855,68 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             }
         };
         branchGraph.addChild(behavior);
+
+        MouseBehavior mouse = new MouseBehavior(canvas, tGroup) {
+            protected static final String BACKSIDE_VIEWING_KEY = "backside.viewing";
+            {
+                setSchedulingBounds(new BoundingSphere(new Point3d(), 1000));
+            }
+
+            @Override
+            public void processStimulus(@SuppressWarnings("rawtypes") Enumeration criteria)
+            {
+                WakeupCriterion wakeup;
+                AWTEvent[] events;
+                MouseEvent evt;
+                // int id;
+                // int dx, dy;
+
+                while (criteria.hasMoreElements()) {
+                    wakeup = (WakeupCriterion) criteria.nextElement();
+                    if (wakeup instanceof WakeupOnAWTEvent) {
+                        events = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                        if (events.length > 0) {
+                            evt = (MouseEvent) events[events.length - 1];
+                            doProcess(evt);
+                        }
+                    }
+
+                    else if (wakeup instanceof WakeupOnBehaviorPost) {
+                        while (true) {
+                            // access to the queue must be synchronized
+                            synchronized (mouseq) {
+                                if (mouseq.isEmpty())
+                                    break;
+                                evt = (MouseEvent) mouseq.remove(0);
+                                // consolidate MOUSE_DRAG events
+                                while ((evt.getID() == MouseEvent.MOUSE_DRAGGED) && !mouseq.isEmpty()
+                                        && (((MouseEvent) mouseq.get(0)).getID() == MouseEvent.MOUSE_DRAGGED)) {
+                                    evt = (MouseEvent) mouseq.remove(0);
+                                }
+                            }
+                            doProcess(evt);
+                        }
+                    }
+
+                }
+                wakeupOn(mouseCriterion);
+            }
+
+            void doProcess(MouseEvent evt)
+            {
+                Vector3d screenNormal = new Vector3d(0, 0, 1);
+                baseTransform.transform(screenNormal);
+                Vector3d modelScreenNormal = new Vector3d(0, 0, 1);
+                transform.transform(modelScreenNormal);
+
+                if (screenNormal.angle(modelScreenNormal) > Math.PI / 2d) {
+                    helpPanel.showL7dMessage("editor", BACKSIDE_VIEWING_KEY);
+                } else {
+                    helpPanel.removeMessage(BACKSIDE_VIEWING_KEY);
+                }
+            }
+        };
+        branchGraph.addChild(mouse);
     }
 
     @Override
@@ -1042,8 +1108,10 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             preview.attachToUniverse(universe);
         }
 
-        helpPanel = new HelpPanel(canvas, 10, 10, 256, 256, true, false);
-        helpPanel.attachToUniverse(universe);
+        if (helpPanel == null) {
+            helpPanel = new HelpPanel(canvas, 10, 10, 256, 256, true, false);
+            helpPanel.attachToUniverse(universe);
+        }
     }
 
     @Override
@@ -1463,7 +1531,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             if (currentChosen.contains(line))
                 return;
 
-            if (currentChosen.size() > 0) {
+            if (currentChosen.size() > 0 && !(currentOperationArgument instanceof ExistingLinesArgument)) {
                 helpPanel.showMessage("<html><body><span style=\"font-weight:bold;color:red;\">"
                         + new LocalizedString("editor", "StepEditor.tooMuchLines") + "</span></body></html>", 4000,
                         INCOMPLMETE_ARGUMENT_KEY);
@@ -1871,6 +1939,23 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             return (ModelSegment) chosen.getUserData();
 
         return null;
+    }
+
+    /**
+     * @return If some existing lines are chosen, return them, otherwise return <code>null</code>.
+     */
+    public synchronized List<ModelSegment> getChosenExistingLines()
+    {
+        if (currentChosen.size() == 0)
+            return null;
+
+        List<ModelSegment> result = new LinkedList<ModelSegment>();
+        for (Group chosen : currentChosen) {
+            if (chosen.getUserData() instanceof ModelSegment)
+                result.add((ModelSegment) chosen.getUserData());
+        }
+
+        return result.size() > 0 ? result : null;
     }
 
     /**

@@ -135,6 +135,14 @@ public class StepEditor extends StepRenderer
     }
 
     /**
+     * @return If some existing lines are chosen, return them, otherwise return <code>null</code>.
+     */
+    public List<ModelSegment> getChosenExistingLines()
+    {
+        return getCanvasController().getChosenExistingLines();
+    }
+
+    /**
      * @return If a point is chosen, return it, otherwise return <code>null</code>.
      */
     public ModelPoint getChosenPoint()
