@@ -5,6 +5,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
+import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 
 /**
  * Turn over operation.
@@ -31,6 +32,12 @@ public class TurnOverOperation extends cz.cuni.mff.peckam.java.origamist.model.j
     public boolean isCompletelyDelayedToNextStep()
     {
         return true;
+    }
+
+    @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        return messages.getString("turn.over.user.tip");
     }
 
     @Override

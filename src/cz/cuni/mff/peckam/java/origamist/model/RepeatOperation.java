@@ -59,6 +59,22 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     }
 
     @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        String bundleKey = null;
+        if (argument == getArguments().get(0)) {
+            bundleKey = "repeat.steps.user.tip";
+        } else if (argument == getArguments().get(1)) {
+            bundleKey = "repeat.visible.user.tip";
+        }
+
+        if (bundleKey != null)
+            return messages.getString(bundleKey);
+        else
+            return null;
+    }
+
+    @Override
     public boolean isCompletelyDelayedToNextStep()
     {
         return !isDisplay();

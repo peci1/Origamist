@@ -70,6 +70,26 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     }
 
     @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        String bundleKey = null;
+        if (argument == getArguments().get(0)) {
+            bundleKey = "fold.line.user.tip";
+        } else if (argument == getArguments().get(1)) {
+            bundleKey = "fold.layers.user.tip";
+        } else if (argument == getArguments().get(2)) {
+            bundleKey = "fold.angle";
+        } else if (argument == getArguments().get(3)) {
+            bundleKey = "fold.refPoint";
+        }
+
+        if (bundleKey != null)
+            return messages.getString(bundleKey);
+        else
+            return null;
+    }
+
+    @Override
     public String getDefaultDescription()
     {
         String prefix = "FOLD";

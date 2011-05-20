@@ -196,6 +196,17 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     }
 
     /**
+     * Return the text that should be displayed to the user when constructing the given argument.
+     * 
+     * @param argument The argument that is constructed (pass only the instances from {@link #getArguments()}).
+     * @return The text to display (may contain HTML).
+     */
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        return null;
+    }
+
+    /**
      * @return The description of the operation.
      */
     public String getDefaultDescription()

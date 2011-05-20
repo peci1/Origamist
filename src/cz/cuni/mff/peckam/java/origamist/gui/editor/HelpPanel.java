@@ -15,7 +15,6 @@ import java.util.Map;
 
 import javax.media.j3d.Canvas3D;
 import javax.swing.origamist.JMultilineLabel;
-import javax.swing.origamist.MessageBar;
 
 import org.apache.log4j.Logger;
 import org.w3c.tools.timers.EventHandler;
@@ -28,7 +27,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
  * 
  * @author Martin Pecka
  */
-public class HelpPanel extends OSDPanel implements MessageBar
+public class HelpPanel extends OSDPanel implements ExtendedMessageBar
 {
 
     /** The queue for timed actions. */
@@ -68,14 +67,7 @@ public class HelpPanel extends OSDPanel implements MessageBar
         repaint();
     }
 
-    /**
-     * Show the given message. The passed key can be used to remove the message.
-     * <p>
-     * If a message with the same key exists, it will be removed first.
-     * 
-     * @param message The message to display. HTML is allowed.
-     * @param key The key that can be used to remove the message. Don't pass <code>null</code>.
-     */
+    @Override
     public synchronized void showMessage(String message, Object key)
     {
         if (messageKeys.containsKey(key))
@@ -84,35 +76,18 @@ public class HelpPanel extends OSDPanel implements MessageBar
         showMessage(message);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The given messageKey is used as the key for message removal.
-     */
     @Override
     public synchronized void showL7dMessage(String bundle, String messageKey)
     {
         showMessage(new LocalizedString(bundle, messageKey).toString(), messageKey);
     }
 
-    /**
-     * Shows the given message loaded from resource bundle and transformed by {@link java.text.MessageFormat} with the
-     * given arguments. The given messageKey can be used as key to remove the message.
-     * <p>
-     * HTML is allowed in the loaded string.
-     * 
-     * @param bundle The name of the resource bundle to load the key from.
-     * @param messageKey The key of the message to show.
-     * @param params The parameters to be passed to {@link java.text.MessageFormat}.
-     */
+    @Override
     public synchronized void showL7dMessage(String bundle, String messageKey, Object... params)
     {
         showMessage(MessageFormat.format(new LocalizedString(bundle, messageKey).toString(), params), messageKey);
     }
 
-    /**
-     * @param milis {@inheritDoc} Milis are also autocomputed if a negative value is given.
-     */
     @Override
     public synchronized void showMessage(String message, Integer milis)
     {
@@ -128,31 +103,13 @@ public class HelpPanel extends OSDPanel implements MessageBar
         repaint();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The given messageKey is used as the key to remove this message. If a message with this key exists, it will be
-     * first removed.
-     * 
-     * @param milis {@inheritDoc} Milis are also autocomputed if a negative value is given.
-     */
     @Override
     public synchronized void showL7dMessage(String bundle, String messageKey, Integer milis)
     {
         showMessage(new LocalizedString(bundle, messageKey).toString(), milis, messageKey);
     }
 
-    /**
-     * Shows the given message for the given time and then removes it. The passed key can be used to remove the message
-     * before the timeout.
-     * <p>
-     * If a message with the given key exists, it will be first removed.
-     * 
-     * @param message The message to show. HTML is allowed.
-     * @param milis The time the message will be displayed for (in miliseconds). If <code>null</code> or negative,
-     *            autocompute the time from the length of the message.
-     * @param key The key that can be used to remove the message. Don't pass <code>null</code>.
-     */
+    @Override
     public synchronized void showMessage(String message, Integer milis, final Object key)
     {
         if (messageKeys.containsKey(key))
@@ -176,54 +133,20 @@ public class HelpPanel extends OSDPanel implements MessageBar
         repaint();
     }
 
-    /**
-     * Shows the given message loaded from resource bundle for the given time and then removes it.
-     * <p>
-     * The given messageKey is used as the key to remove this message. If a message with this key exists, it will be
-     * first removed.
-     * <p>
-     * HTML is allowed in the loaded string.
-     * 
-     * @param bundle The name of the resource bundle to load the key from.
-     * @param messageKey The key of the message to show.
-     * @param milis The time the message will be displayed for (in miliseconds). If <code>null</code> or negative,
-     *            autocompute the time from the length of the message.
-     * @param params The parameters to be passed to {@link java.text.MessageFormat}..
-     */
+    @Override
     public synchronized void showL7dMessage(String bundle, String messageKey, Integer milis, Object... params)
     {
         showL7dMessage(bundle, messageKey, milis, messageKey, params);
     }
 
-    /**
-     * Shows the given message loaded from resource bundle for the given time and then removes it.
-     * <p>
-     * If a message with the given key exists, it will be first removed.
-     * <p>
-     * HTML is allowed in the loaded string.
-     * <p>
-     * You have to pass an extra <code>(Object[])null</code> to the method as the last argument if you don't want to
-     * provide any parameters.
-     * 
-     * @param bundle The name of the resource bundle to load the key from.
-     * @param messageKey The key of the message to show.
-     * @param milis The time the message will be displayed for (in miliseconds). If <code>null</code> or negative,
-     *            autocompute the time from the length of the message.
-     * @param key The key that can be used to remove the message. Don't pass <code>null</code>.
-     * @param params The parameters to be passed to {@link java.text.MessageFormat}..
-     */
+    @Override
     public synchronized void showL7dMessage(String bundle, String messageKey, Integer milis, Object key,
             Object... params)
     {
         showMessage(MessageFormat.format(new LocalizedString(bundle, messageKey).toString(), params), milis, key);
     }
 
-    /**
-     * Remove the message for the specified key. If no message exists for the given key, a message equal to the key is
-     * searched to be removed. If both methods fail, nothing happens.
-     * 
-     * @param key The key of the removed message.
-     */
+    @Override
     public synchronized void removeMessage(Object key)
     {
         String message = messageKeys.get(key);

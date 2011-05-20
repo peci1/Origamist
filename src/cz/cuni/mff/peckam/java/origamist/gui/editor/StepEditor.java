@@ -87,6 +87,14 @@ public class StepEditor extends StepRenderer
     }
 
     /**
+     * @return The message bar that can be used to display some text to the user.
+     */
+    public ExtendedMessageBar getMessageBar()
+    {
+        return getCanvasController().getMessageBar();
+    }
+
+    /**
      * @return The type of primitives the user can pick.
      */
     public PickMode getPickMode()

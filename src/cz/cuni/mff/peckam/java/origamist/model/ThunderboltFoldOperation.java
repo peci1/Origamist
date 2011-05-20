@@ -132,6 +132,28 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
     }
 
     @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        String bundleKey = null;
+        if (argument == getArguments().get(0)) {
+            bundleKey = "thunder.line.user.tip";
+        } else if (argument == getArguments().get(1)) {
+            bundleKey = "thunder.layers.user.tip";
+        } else if (argument == getArguments().get(2)) {
+            bundleKey = "thunder.angle.user.tip";
+        } else if (argument == getArguments().get(3)) {
+            bundleKey = "thunder.second.line.user.tip";
+        } else if (argument == getArguments().get(4)) {
+            bundleKey = "thunder.second.angle.user.tip";
+        }
+
+        if (bundleKey != null)
+            return messages.getString(bundleKey);
+        else
+            return null;
+    }
+
+    @Override
     public String getDefaultDescription()
     {
         String prefix = type.toString();

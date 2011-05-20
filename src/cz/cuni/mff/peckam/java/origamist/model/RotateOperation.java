@@ -62,6 +62,20 @@ public class RotateOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     }
 
     @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        String bundleKey = null;
+        if (argument == getArguments().get(0)) {
+            bundleKey = "rotate.user.tip";
+        }
+
+        if (bundleKey != null)
+            return messages.getString(bundleKey);
+        else
+            return null;
+    }
+
+    @Override
     public String getDefaultDescription()
     {
         String prefix = type.toString();

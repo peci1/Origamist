@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -49,7 +48,6 @@ import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.origamist.MessageBar;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
@@ -82,8 +80,7 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
-import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
-import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
+import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 
 /**
@@ -181,6 +178,15 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     /** The OSD panel for displaying messages to the user. */
     protected HelpPanel              helpPanel                  = null;
 
+    /** Key for helpPanel. */
+    protected static final String    INCOMPLMETE_ARGUMENT_KEY   = "incomplete.argument";
+
+    /** Key for helpPanel. */
+    protected static final String    AVAILABLE_ITEMS_KEY        = "available.items";
+
+    /** Key for helpPanel. */
+    protected static final String    OPERATION_ARGUMENT_KEY     = "operation.argument";
+
     {
         updateTransforms();
 
@@ -192,7 +198,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 clearAvailableItems();
                 helpPanel.showL7dMessage("editor", "pick.mode.changed.to", null,
                         new Object[] { pickMode.toL7dString() });
-                helpPanel.removeMessage("available.items");
+                helpPanel.removeMessage(AVAILABLE_ITEMS_KEY);
             }
         });
 
@@ -296,7 +302,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         currentOperationArgument = null;
 
         if (helpPanel != null)
-            helpPanel.removeMessage("operation.argument");
+            helpPanel.removeMessage(OPERATION_ARGUMENT_KEY);
     }
 
     @Override
@@ -544,7 +550,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             }
                             if (!different) {
                                 helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
-                                        "available.items", new Object[] { availableItems.size() });
+                                        AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                                 return;
                             }
                         } else {
@@ -560,7 +566,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
                         if (containsHighlighted) {
                             helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
-                                    "available.items", new Object[] { availableItems.size() });
+                                    AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                             return;
                         }
 
@@ -569,7 +575,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                                 if (g.getUserData() instanceof Layer && layersToChooseFrom.contains(g.getUserData())) {
                                     setHighlightedLayer(g);
                                     helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor",
-                                            null, "available.items", new Object[] { availableItems.size() });
+                                            null, AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                                     return;
                                 }
                             }
@@ -577,7 +583,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         } else {
                             setHighlightedLayer(availableItems.get(0));
                             helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
-                                    "available.items", new Object[] { availableItems.size() });
+                                    AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                         }
                     } else if (pickMode == PickMode.LINE) {
                         boolean containsHighlighted = false;
@@ -609,7 +615,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             }
                             if (!different) {
                                 helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
-                                        "available.items", new Object[] { availableItems.size() });
+                                        AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                                 return;
                             }
                         } else {
@@ -637,7 +643,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         availableItems = newAvailableItems;
 
                         helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
-                                "available.items", new Object[] { availableItems.size() });
+                                AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
 
                         if (containsHighlighted)
                             return;
@@ -810,7 +816,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                                 setHighlightedPoint(availableItems.get(index));
                         }
                         helpPanel.showL7dMessage("editor", "there.are.num.available.points.under.cursor", null,
-                                "available.items", new Object[] { availableItems.size() });
+                                AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                     }
                 } else {
                     if (highlighted != null) {
@@ -827,15 +833,15 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     switch (pickMode) {
                         case LAYER:
                             helpPanel.showL7dMessage("editor", "there.are.num.available.layers.under.cursor", null,
-                                    "available.items", new Object[] { availableItems.size() });
+                                    AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                             break;
                         case LINE:
                             helpPanel.showL7dMessage("editor", "there.are.num.available.lines.under.cursor", null,
-                                    "available.items", new Object[] { availableItems.size() });
+                                    AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                             break;
                         case POINT:
                             helpPanel.showL7dMessage("editor", "there.are.num.available.points.under.cursor", null,
-                                    "available.items", new Object[] { availableItems.size() });
+                                    AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                             break;
                     }
                 }
@@ -1458,11 +1464,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 return;
 
             if (currentChosen.size() > 0) {
-                ServiceLocator.get(MessageBar.class).showMessage(
-                        "<html><body><span style=\"font-weight:bold;color:red;\">"
-                                + ResourceBundle.getBundle("editor",
-                                        ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString(
-                                        "StepEditor.tooMuchLines") + "</span></body></html>", null);
+                helpPanel.showMessage("<html><body><span style=\"font-weight:bold;color:red;\">"
+                        + new LocalizedString("editor", "StepEditor.tooMuchLines") + "</span></body></html>", 4000,
+                        INCOMPLMETE_ARGUMENT_KEY);
                 return;
             }
 
@@ -1530,28 +1534,23 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
             if (currentOperationArgument instanceof PointArgument) {
                 if (currentChosen.size() > 0) {
-                    ServiceLocator.get(MessageBar.class).showMessage(
-                            ResourceBundle.getBundle("editor",
-                                    ServiceLocator.get(ConfigurationManager.class).get().getLocale()).getString(
-                                    "StepEditor.tooMuchPoints"), null);
+                    helpPanel.showMessage("<html><body><span style=\"font-weight:bold;color:red;\">"
+                            + new LocalizedString("editor", "StepEditor.tooMuchPoints") + "</span></body></html>",
+                            4000, INCOMPLMETE_ARGUMENT_KEY);
                     return;
                 }
             } else if (currentOperationArgument instanceof LineArgument
                     && !(currentOperationArgument instanceof ExistingLineArgument)) {
                 if (currentChosen.size() > 1) {
-                    ServiceLocator.get(MessageBar.class).showMessage(
-                            "<html><body><span style=\"font-weight:bold;color:red;\">"
-                                    + ResourceBundle.getBundle("editor",
-                                            ServiceLocator.get(ConfigurationManager.class).get().getLocale())
-                                            .getString("StepEditor.tooMuchPoints") + "</span></body></html>", null);
+                    helpPanel.showMessage("<html><body><span style=\"font-weight:bold;color:red;\">"
+                            + new LocalizedString("editor", "StepEditor.tooMuchPoints") + "</span></body></html>",
+                            4000, INCOMPLMETE_ARGUMENT_KEY);
                     return;
                 } else if (currentChosen.size() == 1
                         && currentChosen.iterator().next().getUserData() instanceof ModelSegment) {
-                    ServiceLocator.get(MessageBar.class).showMessage(
-                            "<html><body><span style=\"font-weight:bold;color:red;\">"
-                                    + ResourceBundle.getBundle("editor",
-                                            ServiceLocator.get(ConfigurationManager.class).get().getLocale())
-                                            .getString("StepEditor.pointLineMix") + "</span></body></html>", null);
+                    helpPanel.showMessage("<html><body><span style=\"font-weight:bold;color:red;\">"
+                            + new LocalizedString("editor", "StepEditor.pointLineMix") + "</span></body></html>", 4000,
+                            INCOMPLMETE_ARGUMENT_KEY);
                     return;
                 }
             }
@@ -1821,9 +1820,10 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             setPickMode(currentOperationArgument.preferredPickMode());
 
         if (currentOperationArgument != null && currentOperationArgument.getL7dUserTip() != null) {
-            helpPanel.showMessage(currentOperationArgument.getL7dUserTip(), "operation.argument");
+            helpPanel.showMessage(currentOperationArgument.getL7dUserTip(), OPERATION_ARGUMENT_KEY);
         } else {
-            helpPanel.removeMessage("operation.argument");
+            helpPanel.removeMessage(OPERATION_ARGUMENT_KEY);
+            helpPanel.removeMessage(INCOMPLMETE_ARGUMENT_KEY);
         }
     }
 
@@ -1939,6 +1939,14 @@ public class StepEditingCanvasController extends StepViewingCanvasController
     {
         return currentOperationArgument != null && step != null && pickMode == PickMode.POINT
                 && currentChosen.size() == 1 && currentOperationArgument.getClass() == LineArgument.class;
+    }
+
+    /**
+     * @return The message bar that can be used to display some text to the user.
+     */
+    public ExtendedMessageBar getMessageBar()
+    {
+        return helpPanel;
     }
 
     @Override

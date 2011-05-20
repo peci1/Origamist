@@ -71,6 +71,28 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
     }
 
     @Override
+    public String getL7dUserTip(OperationArgument argument)
+    {
+        String bundleKey = null;
+        if (argument == getArguments().get(0)) {
+            bundleKey = "reverse.line.user.tip";
+        } else if (argument == getArguments().get(1)) {
+            bundleKey = "reverse.refLine.user.tip";
+        } else if (argument == getArguments().get(2)) {
+            bundleKey = "reverse.layers.user.tip";
+        } else if (argument == getArguments().get(3)) {
+            bundleKey = "reverse.opposite.line.user.tip";
+        } else if (argument == getArguments().get(4)) {
+            bundleKey = "reverse.opposite.layers.user.tip";
+        }
+
+        if (bundleKey != null)
+            return messages.getString(bundleKey);
+        else
+            return null;
+    }
+
+    @Override
     public String toString()
     {
         return "ReverseFoldOperation [type=" + type + ", layer=" + layer + ", line=" + line + ", refLine=" + refLine

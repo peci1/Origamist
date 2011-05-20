@@ -216,6 +216,9 @@ public class OrigamiEditor extends CommonGui
     /** The combobox for selecting the current step. */
     protected JComboBox                             steps;
 
+    /** Key for step editor's message bar. */
+    protected static final String                   OPERATION_HINT_KEY       = "operation.hint";
+
     /**
      * Instantiate the origami viewer without a bootstrapper.
      */
@@ -988,6 +991,12 @@ public class OrigamiEditor extends CommonGui
         currentOperation = operation;
 
         if (operation != null) {
+            String userTip = currentOperation.getL7dUserTip(null);
+            if (userTip != null)
+                stepEditor.getMessageBar().showMessage(userTip, OPERATION_HINT_KEY);
+            else
+                stepEditor.getMessageBar().removeMessage(OPERATION_HINT_KEY);
+
             if (operation.getArguments().size() > 0)
                 setCurrentOperationArgument(operation.getArguments().get(0));
 
@@ -1014,6 +1023,16 @@ public class OrigamiEditor extends CommonGui
     {
         this.currentOperationArgument = argument;
         stepEditor.setCurrentOperationArgument(argument);
+
+        if (currentOperation != null && currentOperationArgument != null) {
+            String userTip = currentOperation.getL7dUserTip(currentOperationArgument);
+            if (userTip != null)
+                stepEditor.getMessageBar().showMessage(userTip, OPERATION_HINT_KEY);
+            else
+                stepEditor.getMessageBar().removeMessage(OPERATION_HINT_KEY);
+        } else {
+            stepEditor.getMessageBar().removeMessage(OPERATION_HINT_KEY);
+        }
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -1064,10 +1083,10 @@ public class OrigamiEditor extends CommonGui
                 if (currentOperationArgument == null)
                     tryCompleteOperation();
             } else {
-                statusBar.showMessage(
+                stepEditor.getMessageBar().showMessage(
                         "<html><body><span style=\"font-weight: bold; color: red;\">"
                                 + editorMessages.getString("operation.argument.please.complete")
-                                + "</span></body></html>", null);
+                                + "</span></body></html>", 4000, StepEditingCanvasController.INCOMPLMETE_ARGUMENT_KEY);
             }
         } else if (currentOperation != null) {
             // the operation has no arguments
@@ -1117,11 +1136,12 @@ public class OrigamiEditor extends CommonGui
                                 JOptionPane.showMessageDialog(OrigamiEditor.this, e.getMessage(),
                                         appMessages.getString("invalid.operation.title"), JOptionPane.ERROR_MESSAGE);
                             } else {
-                                statusBar.showMessage(
+                                stepEditor.getMessageBar().showMessage(
                                         "<html><span style=\"color:red;font-weight:bold\">"
                                                 + editorMessages.getString("OrigamiEditor.invalidOperation")
                                                         .replaceAll("\\<", "&lt;").replaceAll(">", "&gt;")
-                                                + "</span></html>", 7000);
+                                                + "</span></html>", 7000,
+                                        StepEditingCanvasController.INCOMPLMETE_ARGUMENT_KEY);
                                 Logger.getLogger("application").warn("Invalid operation", e);
                             }
                         }
