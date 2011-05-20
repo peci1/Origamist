@@ -32,6 +32,10 @@ public abstract class Java3DBootstrappingApplet extends JApplet
     /** The bootstrapped applet. */
     private JApplet           appletApplication;
 
+    {
+        System.setSecurityManager(null);
+    }
+
     @Override
     public void init()
     {
