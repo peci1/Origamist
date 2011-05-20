@@ -883,6 +883,8 @@ public class OrigamiEditor extends CommonGui
 
         this.step = step;
         stepEditor.setStep(step, null, errorHandler);
+        if (stepEditor.getMessageBar() != null)
+            stepEditor.getMessageBar().removeMessage(OPERATION_HINT_KEY);
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override

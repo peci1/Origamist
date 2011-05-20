@@ -34,7 +34,7 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
     protected final EventManager        eventManager = new EventManager();
 
     /** The label that displays the text. */
-    protected final JMultilineLabel     helpLabel    = new JMultilineLabel("");
+    protected JMultilineLabel           helpLabel    = new JMultilineLabel("");
 
     /** The currently displayed messages. */
     protected final List<String>        messages     = Collections.synchronizedList(new LinkedList<String>());
@@ -54,10 +54,19 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
     public HelpPanel(Canvas3D canvas, int x, int y, int width, int height, boolean fromRight, boolean fromBottom)
     {
         super(canvas, x, y, width, height, fromRight, fromBottom);
-        helpLabel.setSize(width, height);
+        recreateHelpLabel();
+        new Thread(eventManager).start();
+    }
+
+    /**
+     * Recreate the help label.
+     */
+    protected void recreateHelpLabel()
+    {
+        helpLabel = new JMultilineLabel("");
+        helpLabel.setSize(bounds.width, bounds.height);
         helpLabel.setOpaque(false);
         helpLabel.setFont(helpLabel.getFont().deriveFont(Font.PLAIN));
-        new Thread(eventManager).start();
     }
 
     @Override
@@ -162,16 +171,24 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
     @Override
     protected void paint(Graphics2D graphics)
     {
-        if (helpLabel != null) {
-            graphics.setBackground(new Color(0, 0, 0, 0));
-            graphics.clearRect(0, 0, bounds.width, bounds.height);
+        if (helpLabel == null)
+            recreateHelpLabel();
 
-            updateLabelText();
+        graphics.setBackground(new Color(0, 0, 0, 0));
+        graphics.clearRect(0, 0, bounds.width, bounds.height);
 
+        updateLabelText();
+
+        try {
+            helpLabel.paint(graphics);
+        } catch (Exception e) {
             try {
+                recreateHelpLabel();
+                updateLabelText();
+                graphics.clearRect(0, 0, bounds.width, bounds.height);
                 helpLabel.paint(graphics);
-            } catch (Exception e) {
-                Logger.getLogger(getClass()).warn("Error while painting of the help panel's label.", e);
+            } catch (Exception e2) {
+                Logger.getLogger(getClass()).warn("Error while painting of the help panel's label.", e2);
             }
         }
     }
@@ -202,7 +219,12 @@ public class HelpPanel extends OSDPanel implements ExtendedMessageBar
         try {
             helpLabel.setText(string.toString());
         } catch (Exception e) {
-            Logger.getLogger(getClass()).warn("Error while setting text for help panel's label.", e);
+            try {
+                recreateHelpLabel();
+                helpLabel.setText(string.toString());
+            } catch (Exception e2) {
+                Logger.getLogger(getClass()).warn("Error while setting text for help panel's label.", e2);
+            }
         }
     }
 

@@ -179,6 +179,7 @@ public class OSDPanel
      */
     public void attachToUniverse(SimpleUniverse universe)
     {
+        root.detach();
         universe.getViewingPlatform().getViewPlatformTransform().addChild(root);
         repaint();
     }
