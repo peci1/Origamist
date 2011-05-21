@@ -81,11 +81,18 @@ public class LineArgument extends OperationArgument implements EditorDataReceive
             support.firePropertyChange(COMPLETE_PROPERTY, false, true);
     }
 
+    /**
+     * @return The part of this argument's tip to be displayed before the parent part.
+     */
+    protected String getUserTipPart()
+    {
+        return new LocalizedString(OperationArgument.class.getName(), "line.user.tip").toString();
+    }
+
     @Override
     public String getL7dUserTip()
     {
-        return new LocalizedString(OperationArgument.class.getName(), "line.user.tip").toString() + "<br/>"
-                + super.getL7dUserTip();
+        return getUserTipPart() + "<br/>" + super.getL7dUserTip();
     }
 
 }

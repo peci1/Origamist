@@ -36,6 +36,20 @@ public class Segment2d extends Line2d
         p2.add(v);
     }
 
+    /**
+     * Set the points of this segment.
+     * 
+     * @param p1
+     * @param p2
+     */
+    public void set(Point2d p1, Point2d p2)
+    {
+        this.p = p1;
+        this.p2 = p2;
+        this.v = new Vector2d(p2);
+        this.v.sub(p1);
+    }
+
     public Point2d getP1()
     {
         return this.p;

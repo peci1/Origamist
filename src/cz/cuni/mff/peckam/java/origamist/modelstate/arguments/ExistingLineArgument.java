@@ -39,10 +39,9 @@ public class ExistingLineArgument extends LineArgument
     }
 
     @Override
-    public String getL7dUserTip()
+    protected String getUserTipPart()
     {
-        return new LocalizedString(OperationArgument.class.getName(), "existing.line.user.tip").toString() + "<br/>"
-                + super.getL7dUserTip();
+        return new LocalizedString(OperationArgument.class.getName(), "existing.line.user.tip").toString();
     }
 
 }

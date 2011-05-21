@@ -12,8 +12,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.PullOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for FoldUnfoldOperationBase complex type.
+ * <p>Java class for PullOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="FoldUnfoldOperationBase">
+ * &lt;complexType name="PullOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}FoldUnfoldOperations" />
+ *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}PullOperations" fixed="PULL" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -40,25 +40,25 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  * 
  */
-@XmlType(name = "FoldUnfoldOperationBase")
+@XmlType(name = "PullOperationBase")
 @XmlSeeAlso({
-    FoldUnfoldOperation.class
+    PullOperation.class
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public abstract class FoldUnfoldOperationBase
+public abstract class PullOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
-    public FoldUnfoldOperationBase() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldUnfoldOperationBase")) {
+    public PullOperationBase() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.PullOperationBase")) {
             init();
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof FoldUnfoldOperationBase)) {
+        if (!(object instanceof PullOperationBase)) {
             return false;
         }
         if (this == object) {

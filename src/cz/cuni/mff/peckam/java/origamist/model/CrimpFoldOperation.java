@@ -10,9 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.vecmath.Point2d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
@@ -40,9 +42,11 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         if (this.type == Operations.OUTSIDE_CRIMP_FOLD)
             dir = dir.getOpposite();
 
+        Segment2d newRefLine = new Segment2d(new Point2d(), new Point2d());
+
         List<Map<Layer, Layer>> layersToBend = previousState.makeReverseFold(dir, getLine().toSegment2d(),
                 getOppositeLine() != null ? getOppositeLine().toSegment2d() : null, getRefLine().toSegment2d(),
-                new LayerFilter(layer), oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null);
+                new LayerFilter(layer), oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null, newRefLine);
 
         {// if we rotated the layers so that they face the screen by their opposite sides, we don't want to change the
          // fold direction because the change will be made simply by the rotation of the layers
@@ -56,9 +60,8 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         }
 
         previousState.makeReverseFold(dir, getSecondLine().toSegment2d(),
-                getSecondOppositeLine() != null ? getSecondOppositeLine().toSegment2d() : null, getRefLine()
-                        .toSegment2d(), new LayerFilter(layersToBend.get(0).keySet()), new LayerFilter(layersToBend
-                        .get(1).keySet()));
+                getSecondOppositeLine() != null ? getSecondOppositeLine().toSegment2d() : null, newRefLine,
+                new LayerFilter(layersToBend.get(0).keySet()), new LayerFilter(layersToBend.get(1).keySet()));
 
         return previousState;
     }

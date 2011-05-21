@@ -5,6 +5,8 @@ package cz.cuni.mff.peckam.java.origamist.math;
 
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
+import java.util.Collection;
+
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
@@ -112,6 +114,27 @@ public class HalfSpace3d implements Cloneable
     public boolean containsExclusive(Point3d point)
     {
         return plane.signedDistance(point) > EPSILON;
+    }
+
+    /**
+     * Return true if this halfspace contains all the given triangles and at least one of their points is contained
+     * exclusively.
+     * 
+     * @param triangles The list of triangles to check.
+     * @return Whether the triangles are contained or not.
+     */
+    public boolean containsTriangles(Collection<? extends Triangle3d> triangles)
+    {
+        for (Triangle3d t : triangles) {
+            for (Point3d p : t.getVertices()) {
+                double sDist = plane.signedDistance(p);
+                if (sDist > EPSILON)
+                    return true;
+                else if (sDist < -EPSILON)
+                    return false;
+            }
+        }
+        return false;
     }
 
     /**

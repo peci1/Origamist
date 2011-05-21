@@ -543,10 +543,47 @@
 			</extension>
 		</complexContent>
 	</complexType>
+	
+	<complexType name="PullOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:PullOperations" fixed="PULL" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="PullOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.PullOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:PullOperationBase">
+				<sequence>
+					<group ref="m:lineList" />
+					<group ref="m:layerList" />
+					<group ref="m:refPoint" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
 
 	<group name="layerList">
 		<sequence>
 			<element name="layer" type="int" maxOccurs="unbounded">
+				<annotation>
+					<appinfo>
+						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
+					</appinfo>
+				</annotation>
+			</element>
+		</sequence>
+	</group>
+	
+	<group name="lineList">
+		<sequence>
+			<element name="line" type="m:Line2D" maxOccurs="unbounded">
 				<annotation>
 					<appinfo>
 						<jxb:property collectionType="cz.cuni.mff.peckam.java.origamist.utils.ObservableList" />
@@ -676,6 +713,12 @@
 	<simpleType name="RepeatOperations">
 		<restriction base="m:Operations">
 			<enumeration value="REPEAT_ACTION" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="PullOperations">
+		<restriction base="m:Operations">
+			<enumeration value="PULL" />
 		</restriction>
 	</simpleType>
 

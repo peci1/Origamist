@@ -76,7 +76,7 @@ public class OperationsHelper
                 result = new RotateOperation();
                 break;
             case PULL:
-                result = null; // TODO
+                result = new PullOperation();
                 break;
             case INSIDE_CRIMP_FOLD:
                 result = new CrimpFoldOperation();

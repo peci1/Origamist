@@ -13,32 +13,30 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ReverseFoldOperations.
+ * <p>Java class for PullOperations.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="ReverseFoldOperations">
+ * &lt;simpleType name="PullOperations">
  *   &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations">
- *     &lt;enumeration value="INSIDE_REVERSE_FOLD"/>
- *     &lt;enumeration value="OUTSIDE_REVERSE_FOLD"/>
+ *     &lt;enumeration value="PULL"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "ReverseFoldOperations")
+@XmlType(name = "PullOperations")
 @XmlEnum(Operations.class)
-public enum ReverseFoldOperations {
+public enum PullOperations {
 
-    INSIDE_REVERSE_FOLD,
-    OUTSIDE_REVERSE_FOLD;
+    PULL;
 
     public String value() {
         return name();
     }
 
-    public static ReverseFoldOperations fromValue(String v) {
+    public static PullOperations fromValue(String v) {
         return valueOf(v);
     }
 
