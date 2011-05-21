@@ -915,6 +915,14 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     helpPanel.removeMessage(BACKSIDE_VIEWING_KEY);
                 }
             }
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e)
+            {
+                // ignore - the Oracle people forgot a debugging line uncommented, so if I didn't overwrite this method,
+                // each mouse wheel motion would produce a line to sysout
+            }
+
         };
         branchGraph.addChild(mouse);
     }
