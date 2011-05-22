@@ -468,7 +468,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             setupTransform();
             tGroup.setTransform(transform);
 
-            // og.addChild(getOperationSignsGroup()); //uncomment to see operation signs in editor
+            // og.addChild(getOperationSignsGroup()); // uncomment to see operation signs in editor
 
             og.addChild(getMarkerGroups());
 

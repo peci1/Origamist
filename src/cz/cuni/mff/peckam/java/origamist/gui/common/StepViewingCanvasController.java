@@ -861,7 +861,7 @@ public class StepViewingCanvasController
             if (markerSegment != null) {
                 // now we want to align the shape's initial x axis with the line we have found for this operation
                 Vector3d dir = new Vector3d(1, 0, 0);
-                baseTransform.transform(dir);
+                baseRotInv.transform(dir);
                 // if the x axis isn't parallel to the found line, create a rotation matrix between them
                 Double quotient = MathHelper.vectorQuotient3d(markerSegment.getVector(), dir);
                 if (quotient == null) {
@@ -879,12 +879,25 @@ public class StepViewingCanvasController
                     Point3d p2 = new Point3d(markerSegment.getP2());
                     p2.add(dir);
                     if (!MathHelper.rotate(p1, new Line3d(markerSegment.getP1(), cross), angle).epsilonEquals(p2,
-                            MathHelper.EPSILON)) {
+                            1000 * MathHelper.EPSILON)) {
                         angle = -angle;
                     }
+
+                    // let the shape's normal point to the screen
+                    Vector3d screenNormal = step.getModelState(false).getScreenNormal();
                     transform.set(new AxisAngle4d(cross, angle));
+                    Vector3d shapeNormal = new Vector3d(0, 0, 1);
+                    baseRotInv.transform(shapeNormal);
+                    transform.transform(shapeNormal);
+                    transform.transform(dir);
+                    Transform3D additionalTransform = new Transform3D();
+                    additionalTransform.set(new AxisAngle4d(dir, shapeNormal.angle(screenNormal)));
+                    transform.mul(additionalTransform, transform);
+
                 } else if (quotient < 0) {
-                    transform.setScale(-1);
+                    Vector3d axis = new Vector3d(0, 0, 1);
+                    baseRotInv.transform(axis);
+                    transform.set(new AxisAngle4d(axis, Math.PI));
                 }
             }
 

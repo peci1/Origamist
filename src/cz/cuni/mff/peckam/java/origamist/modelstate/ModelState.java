@@ -1165,15 +1165,17 @@ public class ModelState implements Cloneable
 
         if (furthestRotationCenter != null) {
             double max = (furthestRotatedPoint != null ? furthestRotatedPoint.distance(furthestRotationCenter) : 0);
-            for (ModelTriangle tr : trianglesToRotate) {
-                int i = 0;
-                for (Point3d p : tr.getVertices()) {
-                    double dist = p.distance(furthestRotationCenter);
-                    if (dist > max) {
-                        max = dist;
-                        furthestRotatedPoint = new ModelPoint(p, tr.getOriginalPosition().getVertices()[i]);
+            for (Layer l : layersToRotate) {
+                for (ModelTriangle tr : l.getTriangles()) {
+                    int i = 0;
+                    for (Point3d p : tr.getVertices()) {
+                        double dist = p.distance(furthestRotationCenter);
+                        if (dist > max) {
+                            max = dist;
+                            furthestRotatedPoint = new ModelPoint(p, tr.getOriginalPosition().getVertices()[i]);
+                        }
+                        i++;
                     }
-                    i++;
                 }
             }
         }
@@ -1181,15 +1183,18 @@ public class ModelState implements Cloneable
         if (furthestRotationSegment != null) {
             double max = (furthestRotatedPointAroundSegment != null ? furthestRotationSegment
                     .distance(furthestRotatedPointAroundSegment) : 0);
-            for (ModelTriangle tr : trianglesToRotate) {
-                int i = 0;
-                for (Point3d p : tr.getVertices()) {
-                    double dist = furthestRotationSegment.distance(p);
-                    if (dist > max) {
-                        max = dist;
-                        furthestRotatedPointAroundSegment = new ModelPoint(p, tr.getOriginalPosition().getVertices()[i]);
+            for (Layer l : layersToRotate) {
+                for (ModelTriangle tr : l.getTriangles()) {
+                    int i = 0;
+                    for (Point3d p : tr.getVertices()) {
+                        double dist = furthestRotationSegment.distance(p);
+                        if (dist > max) {
+                            max = dist;
+                            furthestRotatedPointAroundSegment = new ModelPoint(p, tr.getOriginalPosition()
+                                    .getVertices()[i]);
+                        }
+                        i++;
                     }
-                    i++;
                 }
             }
         }
