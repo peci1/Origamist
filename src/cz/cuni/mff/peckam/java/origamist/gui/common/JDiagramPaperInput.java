@@ -127,6 +127,8 @@ public class JDiagramPaperInput extends JPanel
             }
         });
 
+        paperPreview = new DiagramPaperPreview();
+
         cols = new JSpinner(new SpinnerNumberModel(paper.getCols() != null ? paper.getCols() : 1, 1, null, 1));
         cols.addChangeListener(new ChangeListener() {
             @Override
@@ -136,6 +138,8 @@ public class JDiagramPaperInput extends JPanel
                 paperPreview.repaint();
             }
         });
+        if (paper.getCols() == null)
+            cols.setValue(3);
         rows = new JSpinner(new SpinnerNumberModel(paper.getRows() != null ? paper.getRows() : 1, 1, null, 1));
         rows.addChangeListener(new ChangeListener() {
             @Override
@@ -145,8 +149,8 @@ public class JDiagramPaperInput extends JPanel
                 paperPreview.repaint();
             }
         });
-
-        paperPreview = new DiagramPaperPreview();
+        if (paper.getRows() == null)
+            rows.setValue(3);
     }
 
     /**
