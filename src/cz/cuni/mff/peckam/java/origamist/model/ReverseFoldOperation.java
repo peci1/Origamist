@@ -6,9 +6,11 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -22,6 +24,9 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
  */
 public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation
 {
+    /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
+    protected Segment3d markerPosition = null;
+
     @Override
     public ModelState getModelState(ModelState previousState)
     {
@@ -29,9 +34,17 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
         if (this.type == Operations.OUTSIDE_REVERSE_FOLD)
             dir = dir.getOpposite();
 
+        previousState.setFurthestRotationSegment(getLine().toSegment2d());
+
         previousState.makeReverseFold(dir, getLine().toSegment2d(), getOppositeLine() != null ? getOppositeLine()
                 .toSegment2d() : null, getRefLine().toSegment2d(), new LayerFilter(layer),
                 oppositeLayer.size() > 0 ? new LayerFilter(oppositeLayer) : null);
+
+        ModelPoint furthest = previousState.getFurthestRotatedPointAroundSegment();
+        if (furthest != null)
+            markerPosition = new Segment3d(furthest, previousState.getFurthestRotationSegment().getNearestPoint(
+                    furthest));
+        previousState.clearFurthestRotationSegment();
 
         return previousState;
     }
@@ -68,6 +81,12 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
             this.oppositeLine = ((LineArgument) arguments.get(3)).getLine2D();
             this.oppositeLayer = ((LayersArgument) arguments.get(4)).getLayers();
         }
+    }
+
+    @Override
+    public Segment3d getMarkerPosition()
+    {
+        return markerPosition;
     }
 
     @Override

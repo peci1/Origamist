@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLinesArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -24,6 +26,9 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
  */
 public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.PullOperation
 {
+    /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
+    protected Segment3d markerPosition = null;
+
     @Override
     protected void init()
     {
@@ -36,10 +41,19 @@ public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     {
         Map<Layer, Layer> layers = null;
 
+        if (getLine().size() > 0)
+            previousState.setFurthestRotationSegment(getLine().get(0).toSegment2d());
+
         for (Line2D line : this.line) {
             layers = previousState.pullFold(line.getStart().toPoint2d(), line.getEnd().toPoint2d(),
                     refPoint.toPoint2d(), layers != null ? new LayerFilter(layers.keySet()) : new LayerFilter(layer));
         }
+
+        ModelPoint furthest = previousState.getFurthestRotatedPointAroundSegment();
+        if (furthest != null)
+            markerPosition = new Segment3d(furthest, previousState.getFurthestRotationSegment().getNearestPoint(
+                    furthest));
+        previousState.clearFurthestRotationSegment();
 
         return previousState;
     }
@@ -64,6 +78,12 @@ public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         this.line = ((ExistingLinesArgument) arguments.get(0)).getLines();
         this.layer = ((LayersArgument) arguments.get(1)).getLayers();
         this.refPoint = ((PointArgument) arguments.get(2)).getPoint2D();
+    }
+
+    @Override
+    public Segment3d getMarkerPosition()
+    {
+        return markerPosition;
     }
 
     @Override

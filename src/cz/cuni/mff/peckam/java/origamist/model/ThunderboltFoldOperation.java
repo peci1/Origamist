@@ -18,9 +18,11 @@ import javax.vecmath.Vector3d;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -38,6 +40,9 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ThunderboltFoldOperation
 {
+
+    /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
+    protected Segment3d markerPosition = null;
 
     @Override
     public ModelState getModelState(ModelState previousState) throws InvalidOperationException
@@ -67,6 +72,8 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
                                 + " has to be a border point of both of them), but their intersection is: "
                                 + intPoint.toStringAsIntersection(), this);
         }
+
+        previousState.setFurthestRotationSegment(getLine().toSegment2d());
 
         Map<Layer, Layer> layersToBend = previousState.makeFold(dir, line.getP1(), line.getP2(), refPoint,
                 new LayerFilter(layer), angle);
@@ -101,6 +108,12 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         previousState.makeFold(dir, secondLine.getP1(), secondLine.getP2(), refPoint,
                 new LayerFilter(layersToBend.keySet()), secondAngle);
 
+        ModelPoint furthest = previousState.getFurthestRotatedPointAroundSegment();
+        if (furthest != null)
+            markerPosition = new Segment3d(furthest, previousState.getFurthestRotationSegment().getNearestPoint(
+                    furthest));
+        previousState.clearFurthestRotationSegment();
+
         return previousState;
     }
 
@@ -129,6 +142,12 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
         this.secondLine = ((LineArgument) arguments.get(3)).getLine2D();
         if (arguments.get(4).isComplete())
             this.secondAngle = ((AngleArgument) arguments.get(4)).getAngle();
+    }
+
+    @Override
+    public Segment3d getMarkerPosition()
+    {
+        return markerPosition;
     }
 
     @Override

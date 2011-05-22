@@ -70,68 +70,68 @@ public class ModelState implements Cloneable
     /**
      * Folds on this paper.
      */
-    protected ObservableList<Fold>                 folds                 = new ObservableList<Fold>();
+    protected ObservableList<Fold>                 folds                             = new ObservableList<Fold>();
 
     /** Cache for arrays of the lines representing folds. */
-    protected LineArray[]                          foldLineArrays        = null;
+    protected LineArray[]                          foldLineArrays                    = null;
 
     /**
      * If true, the value of foldLineArray doesn't have to be consistent and a call to updateLineArray is needed.
      */
-    protected boolean                              foldLineArraysDirty   = true;
+    protected boolean                              foldLineArraysDirty               = true;
 
     /** The triangles this model state consists of. */
-    protected ObservableList<ModelTriangle>        triangles             = new ObservableList<ModelTriangle>();
+    protected ObservableList<ModelTriangle>        triangles                         = new ObservableList<ModelTriangle>();
 
     /** The layers of the paper. */
-    protected ObservableList<Layer>                layers                = new ObservableList<Layer>();
+    protected ObservableList<Layer>                layers                            = new ObservableList<Layer>();
 
     /** The list of markers to be displayed. */
-    protected ObservableList<Marker>               markers               = new ObservableList<Marker>();
+    protected ObservableList<Marker>               markers                           = new ObservableList<Marker>();
 
     /** The mapping of triangles to their containing layer. Automatically updated when <code>layers</code> change */
-    protected Hashtable<ModelTriangle, Layer>      trianglesToLayers     = new Hashtable<ModelTriangle, Layer>();
+    protected Hashtable<ModelTriangle, Layer>      trianglesToLayers                 = new Hashtable<ModelTriangle, Layer>();
 
     /**
      * A cache for quick finding of a 3D triangle corresponding to the given 2D triangle. Automatically updated when
      * <code>triangles</code> change.
      */
-    protected Hashtable<Triangle2d, ModelTriangle> paperToSpaceTriangles = new Hashtable<Triangle2d, ModelTriangle>();
+    protected Hashtable<Triangle2d, ModelTriangle> paperToSpaceTriangles             = new Hashtable<Triangle2d, ModelTriangle>();
 
     /** Cache for finding 3D locations of points corresponding to 2D points on the paper. */
-    protected Hashtable<Point2d, Point3d>          paperToSpacePoint     = new Hashtable<Point2d, Point3d>();
+    protected Hashtable<Point2d, Point3d>          paperToSpacePoint                 = new Hashtable<Point2d, Point3d>();
 
     /**
      * The triangles the model state consists of. Each array component contains triangles of one layer. Indices in the
      * array correspond to indices in the layer list. This representation can be directly used by Java3D.
      */
-    protected TriangleArray[]                      trianglesArrays       = null;
+    protected TriangleArray[]                      trianglesArrays                   = null;
 
     /**
      * If true, the value of trianglesArrays doesn't have to be consistent and a call to updateVerticesArray is needed.
      */
-    protected boolean                              trianglesArraysDirty  = true;
+    protected boolean                              trianglesArraysDirty              = true;
 
     /** The data from markers needed for rendering. This list should be automatically handled by the markers list. */
-    protected List<MarkerRenderData>               markerData            = new LinkedList<MarkerRenderData>();
+    protected List<MarkerRenderData>               markerData                        = new LinkedList<MarkerRenderData>();
 
     /** If true, the 3D positions of markers need to be recomputed before returning them to some caller. */
-    protected boolean                              markersDirty          = true;
+    protected boolean                              markersDirty                      = true;
 
     /**
      * Rotation of the model (around the axis from eyes to display) in radians.
      */
-    protected double                               rotationAngle         = 0;
+    protected double                               rotationAngle                     = 0;
 
     /**
      * The angle the model is viewed from (angle between eyes and the unfolded paper surface) in radians.
      * 
      * PI/2 means top view, -PI/2 means bottom view
      */
-    protected double                               viewingAngle          = Math.PI / 2.0;
+    protected double                               viewingAngle                      = Math.PI / 2.0;
 
     /** The normal of the screen. Originally it is a vector of (0,0,1) and rotation and viewing angle are applied to it. */
-    protected Vector3d                             screenNormal          = null;
+    protected Vector3d                             screenNormal                      = null;
 
     /**
      * The step this state belongs to.
@@ -146,7 +146,25 @@ public class ModelState implements Cloneable
     /**
      * The number of steps a foldline remains visible.
      */
-    protected int                                  stepBlendingTreshold  = 5;
+    protected int                                  stepBlendingTreshold              = 5;
+
+    /**
+     * Denotes the point to measure furthest rotated point distance from. If <code>null</code>, furthest rotated point
+     * from point calculation is disabled.
+     */
+    protected ModelPoint                           furthestRotationCenter            = null;
+
+    /** The furthest point from furthestRotationCenter found by bendPaper() calls. */
+    protected ModelPoint                           furthestRotatedPoint              = null;
+
+    /**
+     * Denotes the segment to measure furthest rotated point distance from. If <code>null</code>, furthest rotated point
+     * around segment calculation is disabled.
+     */
+    protected ModelSegment                         furthestRotationSegment           = null;
+
+    /** The furthest point from furthestRotationSegment found by bendPaper() calls. */
+    protected ModelPoint                           furthestRotatedPointAroundSegment = null;
 
     public ModelState()
     {
@@ -1145,6 +1163,37 @@ public class ModelState implements Cloneable
             }
         }
 
+        if (furthestRotationCenter != null) {
+            double max = (furthestRotatedPoint != null ? furthestRotatedPoint.distance(furthestRotationCenter) : 0);
+            for (ModelTriangle tr : trianglesToRotate) {
+                int i = 0;
+                for (Point3d p : tr.getVertices()) {
+                    double dist = p.distance(furthestRotationCenter);
+                    if (dist > max) {
+                        max = dist;
+                        furthestRotatedPoint = new ModelPoint(p, tr.getOriginalPosition().getVertices()[i]);
+                    }
+                    i++;
+                }
+            }
+        }
+
+        if (furthestRotationSegment != null) {
+            double max = (furthestRotatedPointAroundSegment != null ? furthestRotationSegment
+                    .distance(furthestRotatedPointAroundSegment) : 0);
+            for (ModelTriangle tr : trianglesToRotate) {
+                int i = 0;
+                for (Point3d p : tr.getVertices()) {
+                    double dist = furthestRotationSegment.distance(p);
+                    if (dist > max) {
+                        max = dist;
+                        furthestRotatedPointAroundSegment = new ModelPoint(p, tr.getOriginalPosition().getVertices()[i]);
+                    }
+                    i++;
+                }
+            }
+        }
+
         Map<Layer, Layer> result = new HashMap<Layer, Layer>(layersToRotate.size());
         for (Layer l : layersToRotate) {
             // remove, rotate, and then add the triangles back to make sure all caches and maps will hold the correct
@@ -1926,7 +1975,7 @@ public class ModelState implements Cloneable
      * @param point The point to find normal for.
      * @return The normal at the point, or <code>null</code> if the point doesn't lie in any of the layers.
      */
-    protected Vector3d getNormalAtPoint(ModelPoint point)
+    public Vector3d getNormalAtPoint(ModelPoint point)
     {
         Vector3d anyNormal = null;
 
@@ -1994,7 +2043,7 @@ public class ModelState implements Cloneable
      * @param segment The segment to find normal for.
      * @return The average normal of a point on this segment.
      */
-    protected Vector3d getSegmentNormal(ModelSegment segment)
+    public Vector3d getSegmentNormal(ModelSegment segment)
     {
         final double[] trialPoints = new double[] { 0.5d, 0.75d, 0.25d, 0.1d, 0.9d, 0.01d, 0.99d };
         for (double d : trialPoints) {
@@ -2480,6 +2529,105 @@ public class ModelState implements Cloneable
             // TODO when arbitrary viewing angle is allowed, this will need to be changed
         }
         return screenNormal;
+    }
+
+    /**
+     * Enables measuring of the furthest point affected by a rotation. Use the given point as the origin to measure
+     * distance from.
+     * <p>
+     * Use {@link #getFurthestRotatedPoint()} to get the point after some bending is performed.
+     * 
+     * @param center The center to measure distance from.
+     * 
+     * @see #getFurthestRotatedPoint()
+     * @see #clearFurthestRotationPointCenter()
+     */
+    public void setFurthestRotationPointCenter(Point2d center)
+    {
+        furthestRotationCenter = new ModelPoint(locatePointFromPaperTo3D(center), center);
+        furthestRotatedPoint = null;
+    }
+
+    /**
+     * @return The furthestRotationCenter.
+     */
+    public ModelPoint getFurthestRotationCenter()
+    {
+        return furthestRotationCenter;
+    }
+
+    /**
+     * @return The furthest point affected by a rotation (measured in 3D) from the point last set by a call to
+     *         {@link #setFurthestRotationPointCenter(Point2d)}.
+     * 
+     * @see #setFurthestRotationPointCenter(Point2d)
+     * @see #clearFurthestRotationPointCenter()
+     */
+    public ModelPoint getFurthestRotatedPoint()
+    {
+        return furthestRotatedPoint;
+    }
+
+    /**
+     * Disable computing of the furthest rotated point.
+     * 
+     * @see #setFurthestRotationPointCenter(Point2d)
+     * @see #getFurthestRotatedPoint()
+     */
+    public void clearFurthestRotationPointCenter()
+    {
+        furthestRotationCenter = null;
+        furthestRotatedPoint = null;
+    }
+
+    /**
+     * Enables measuring of the furthest point from the given segment affected by a rotation. Use the given segment as
+     * the origin to measure distance from.
+     * <p>
+     * Use {@link #getFurthestRotatedPointAroundSegment()} to get the point after some bending is performed.
+     * 
+     * @param center The center to measure distance from.
+     * 
+     * @see #getFurthestRotatedPointAroundSegment()
+     * @see #clearFurthestRotationSegment()
+     */
+    public void setFurthestRotationSegment(Segment2d center)
+    {
+        furthestRotationSegment = new ModelSegment(new Segment3d(locatePointFromPaperTo3D(center.getP1()),
+                locatePointFromPaperTo3D(center.getP2())), center);
+        furthestRotatedPointAroundSegment = null;
+    }
+
+    /**
+     * @return The furthestRotationSegment.
+     */
+    public ModelSegment getFurthestRotationSegment()
+    {
+        return furthestRotationSegment;
+    }
+
+    /**
+     * @return The furthest point affected by a rotation (measured in 3D) from the segment last set by a call to
+     *         {@link #setFurthestRotationSegment(Segment2d)}.
+     * 
+     * @see #setFurthestRotationSegment(Segment2d)
+     * @see #clearFurthestRotationSegment()
+     */
+    public ModelPoint getFurthestRotatedPointAroundSegment()
+    {
+        return furthestRotatedPointAroundSegment;
+    }
+
+    /**
+     * Disable computing of the furthest rotated point around segment.
+     * 
+     * @see #setFurthestRotationSegment(Segment2d)
+     * @see #getFurthestRotatedPointAroundSegment()
+     */
+    public void clearFurthestRotationSegment()
+    {
+        furthestRotationSegment = null;
+        furthestRotatedPointAroundSegment = null;
     }
 
     /**

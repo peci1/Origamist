@@ -16,4 +16,9 @@ public interface OperationContainer
      * @return The operations this container contains.
      */
     List<Operation> getOperations();
+
+    /**
+     * @return True if the enclosed operations should be visible even in the step where they have originated.
+     */
+    boolean areContentsVisible();
 }

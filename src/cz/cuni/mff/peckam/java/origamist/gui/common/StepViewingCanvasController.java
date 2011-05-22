@@ -27,6 +27,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 
 import javax.media.j3d.Appearance;
@@ -37,6 +38,7 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Font3D;
 import javax.media.j3d.FontExtrusion;
+import javax.media.j3d.Geometry;
 import javax.media.j3d.Group;
 import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.LineArray;
@@ -45,6 +47,7 @@ import javax.media.j3d.Material;
 import javax.media.j3d.OrderedGroup;
 import javax.media.j3d.OrientedShape3D;
 import javax.media.j3d.PolygonAttributes;
+import javax.media.j3d.QuadArray;
 import javax.media.j3d.RenderingAttributes;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Text3D;
@@ -56,8 +59,10 @@ import javax.media.j3d.TransformGroup;
 import javax.media.j3d.TransparencyAttributes;
 import javax.media.j3d.TriangleArray;
 import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Color3f;
+import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
@@ -70,8 +75,13 @@ import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
+import cz.cuni.mff.peckam.java.origamist.math.Line3d;
+import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.DoubleDimension;
+import cz.cuni.mff.peckam.java.origamist.model.Operation;
+import cz.cuni.mff.peckam.java.origamist.model.OperationContainer;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.model.Step;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Unit;
@@ -124,6 +134,9 @@ public class StepViewingCanvasController
 
     /** The transform group containing the whole step. */
     protected TransformGroup          tGroup;
+
+    /** The group containing the whole model. */
+    protected Group                   model;
 
     /** The branch graph to be added to the scene. */
     protected BranchGroup             branchGraph              = null;
@@ -687,7 +700,7 @@ public class StepViewingCanvasController
         transform.mul(scale);
 
         Point3d modelCenter = new Point3d();
-        ((BoundingSphere) tGroup.getBounds()).getCenter(modelCenter);
+        ((BoundingSphere) model.getBounds()).getCenter(modelCenter);
         modelCenter.negate();
 
         Transform3D translation = new Transform3D();
@@ -702,10 +715,10 @@ public class StepViewingCanvasController
     /**
      * @return The transform groups containing nodes for displaying markers.
      */
-    protected TransformGroup getMarkerGroups()
+    protected Group getMarkerGroups()
     {
         ModelState state = getModelState();
-        final TransformGroup result = new TransformGroup();
+        final BranchGroup result = new BranchGroup();
 
         double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
         Font3D font = new Font3D(markerFont, new FontExtrusion());
@@ -722,16 +735,8 @@ public class StepViewingCanvasController
         textAp.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
 
         for (MarkerRenderData marker : state.getMarkerRenderData()) {
-            TransformGroup group = new TransformGroup();
-            group.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-            group.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
             // we use Text3D here bacause Text2D looks very, very blurry (even if it isn't zoomed)
             Text3D textGeom = new Text3D(font, marker.getText());
-
-            OrientedShape3D text = new OrientedShape3D(textGeom, textAp, OrientedShape3D.ROTATE_ABOUT_POINT,
-                    new Point3f());
-            group.addChild(text);
 
             Transform3D transform = new Transform3D();
             transform.setScale(scale);
@@ -739,14 +744,207 @@ public class StepViewingCanvasController
             translation.scale(oneRelInMeters);
             transform.setTranslation(translation);
 
-            group.setTransform(transform);
-
             // TODO add a behavior for fine-positioning colliding markers
+
+            result.addChild(createBillboard(textGeom, textAp, transform));
+        }
+
+        return result;
+    }
+
+    /**
+     * @return The node containing all signs of current step's operations.
+     */
+    protected Group getOperationSignsGroup()
+    {
+        final BranchGroup result = new BranchGroup();
+
+        final Matrix3d rot = new Matrix3d();
+        baseTransform.get(rot, new Vector3d());
+        rot.invert();
+        // inverted rotation component of baseTransform
+        Transform3D baseRotInv = new Transform3D(rot, new Vector3d(), 1);
+
+        double oneRelInMeters = origami.getModel().getPaper().getOneRelInMeters();
+
+        // width and height of the shape
+        double width = 0.2, height = 0.2;
+
+        // used for auto-placing signs with no explicit location
+        int usedCorners = 0;
+
+        Queue<Operation> operations = new LinkedList<Operation>(getStep().getOperations());
+        while (!operations.isEmpty()) {
+            Operation o = operations.poll();
+
+            // do not add signs for operations hidden in the step by a repeat operation
+            if (o instanceof OperationContainer) {
+                OperationContainer oc = (OperationContainer) o;
+                if (oc.areContentsVisible()) {
+                    operations.addAll(oc.getOperations());
+                }
+            }
+
+            ImageIcon image = o.getIcon();
+
+            if (image == null)
+                continue;
+
+            Point3d startPoint;
+            Segment3d markerSegment = o.getMarkerPosition();
+            if (markerSegment != null) {
+                startPoint = new Point3d(markerSegment.getP1());
+            } else {
+                double x, y;
+                int mod = usedCorners % 4;
+                double radius = ((BoundingSphere) model.getBounds()).getRadius() * Math.sqrt(2) / oneRelInMeters;
+                x = (mod == 0 || mod == 3 ? -width / 2 : radius + width / 2)
+                        + ((usedCorners / 4) * width * (mod == 0 || mod == 3 ? -1 : 1));
+                y = (mod > 1 ? radius + height / 2 : -height / 2) + ((usedCorners / 4) * height * (mod > 1 ? 1 : -1));
+                startPoint = new Point3d(x, y, 0);
+                usedCorners++;
+            }
+
+            float w = image.getIconWidth(), h = image.getIconHeight();
+            float hRatio = 1, vRatio = 1; // aspect ratio of the image to draw
+            if (w < h)
+                hRatio = w / h;
+            else
+                vRatio = h / w;
+
+            // textures need power-of-2 long sides
+            Dimension textureSize = getTextureSize((int) w, (int) h);
+
+            // horizontal and vertical scale of the real image in the texture
+            float hScale = w / textureSize.width, vScale = h / textureSize.height;
+
+            // the quadrilateral for displaying the image
+            QuadArray geom = new QuadArray(4, QuadArray.COORDINATES | QuadArray.TEXTURE_COORDINATE_2);
+            geom.setCoordinates(0, new double[] { -width / 2 * hRatio, -height / 2 * vRatio, 0, width / 2 * hRatio,
+                    -height / 2 * vRatio, 0, width / 2 * hRatio, height / 2 * vRatio, 0, -width / 2 * hRatio,
+                    height / 2 * vRatio, 0 });
+            geom.setTextureCoordinates(0, 0, new float[] { 0, 1 - vScale, hScale, 1 - vScale, hScale, 1, 0, 1 });
+
+            // setup the texture and other appearance
+            BufferedImage buffer = new BufferedImage(textureSize.width, textureSize.height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = buffer.createGraphics();
+            g.setBackground(new Color(0, 0, 0, 0));
+            g.clearRect(0, 0, textureSize.width, textureSize.height);
+            g.drawImage(image.getImage(), 0, 0, null);
+
+            ImageComponent2D tImage = new ImageComponent2D(ImageComponent2D.FORMAT_RGBA8, buffer);
+            Texture2D texture = new Texture2D(Texture2D.BASE_LEVEL, Texture2D.RGBA, textureSize.width,
+                    textureSize.height);
+            texture.setImage(0, tImage);
+            texture.setMinFilter(Texture.NICEST);
+            texture.setMagFilter(Texture.NICEST);
+
+            Appearance app = new Appearance();
+            app.setRenderingAttributes(new RenderingAttributes());
+            app.getRenderingAttributes().setDepthTestFunction(RenderingAttributes.ALWAYS);
+            app.getRenderingAttributes().setDepthBufferEnable(false);
+            app.getRenderingAttributes().setDepthBufferWriteEnable(false);
+            app.setPolygonAttributes(new PolygonAttributes());
+            app.getPolygonAttributes().setCullFace(PolygonAttributes.CULL_NONE);
+            app.setTextureAttributes(new TextureAttributes());
+            app.setColoringAttributes(new ColoringAttributes(new Color3f(Color.yellow), ColoringAttributes.NICEST));
+            app.getTextureAttributes().setPerspectiveCorrectionMode(TextureAttributes.NICEST);
+            app.getTextureAttributes().setTextureMode(TextureAttributes.REPLACE);
+            app.setTransparencyAttributes(new TransparencyAttributes());
+            app.getTransparencyAttributes().setTransparencyMode(TransparencyAttributes.BLENDED);
+
+            app.setTexture(texture);
+
+            // the transform of our shape
+            Transform3D transform = new Transform3D();
+
+            if (markerSegment != null) {
+                // now we want to align the shape's initial x axis with the line we have found for this operation
+                Vector3d dir = new Vector3d(1, 0, 0);
+                baseTransform.transform(dir);
+                // if the x axis isn't parallel to the found line, create a rotation matrix between them
+                Double quotient = MathHelper.vectorQuotient3d(markerSegment.getVector(), dir);
+                if (quotient == null) {
+                    // take the cross product of the two vectors and compute the angle between them - then we can
+                    // construct an AxisAngle4d
+                    Vector3d cross = new Vector3d();
+                    cross.cross(markerSegment.getVector(), dir);
+                    double angle = markerSegment.getVector().angle(dir);
+
+                    // angle is cropped to [0,PI], but it can be larger, so detect if we need the larger angle
+                    Vector3d v = new Vector3d(markerSegment.getVector());
+                    v.normalize();
+                    Point3d p1 = new Point3d(markerSegment.getP2());
+                    p1.add(v);
+                    Point3d p2 = new Point3d(markerSegment.getP2());
+                    p2.add(dir);
+                    if (!MathHelper.rotate(p1, new Line3d(markerSegment.getP1(), cross), angle).epsilonEquals(p2,
+                            MathHelper.EPSILON)) {
+                        angle = -angle;
+                    }
+                    transform.set(new AxisAngle4d(cross, angle));
+                } else if (quotient < 0) {
+                    transform.setScale(-1);
+                }
+            }
+
+            startPoint.scale(oneRelInMeters);
+
+            // scale of the shape - if we have found a line for this operation, scale this shape to stretch along whole
+            // line
+            double scale;
+            if (markerSegment != null)
+                scale = 2 * markerSegment.getLength() / (width * hRatio) * oneRelInMeters;
+            else
+                scale = oneRelInMeters;
+
+            transform.setScale(transform.getScale() * scale);
+            transform.setTranslation(new Vector3d(startPoint));
+
+            // cancel the rotation imposed by baseTransform
+            transform.mul(baseRotInv);
+
+            // let the upper-left corner match the start of the found segment
+            Transform3D initialTranslation = new Transform3D();
+            initialTranslation.setTranslation(new Vector3d(width / 2 * hRatio, height / 2 * vRatio, 0));
+            transform.mul(initialTranslation);
+
+            // create the necessary nodes
+            TransformGroup group = new TransformGroup();
+
+            Shape3D shape = new Shape3D(geom, app);
+            group.addChild(shape);
+
+            group.setTransform(transform);
 
             result.addChild(group);
         }
 
         return result;
+    }
+
+    /**
+     * Create a billboard node from the given geometry, appearance and transform. The billboard will rotate about point
+     * (0,0,0) in the local coordiantes given by transform.
+     * 
+     * @param geometry Geometry of the billboard.
+     * @param appearance Appearance of the billboard.
+     * @param transform Transform of the billboard.
+     * @return The node representing the billboard.
+     */
+    protected Group createBillboard(Geometry geometry, Appearance appearance, Transform3D transform)
+    {
+        TransformGroup group = new TransformGroup();
+        group.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        group.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+
+        OrientedShape3D billboard = new OrientedShape3D(geometry, appearance, OrientedShape3D.ROTATE_ABOUT_POINT,
+                new Point3f());
+        group.addChild(billboard);
+
+        group.setTransform(transform);
+
+        return group;
     }
 
     /**
@@ -767,7 +965,7 @@ public class StepViewingCanvasController
 
             OrderedGroup og = new OrderedGroup();
 
-            Group model = new TransformGroup();
+            model = new TransformGroup();
 
             TriangleArray[] triangleArrays = state.getTrianglesArrays();
             Shape3D top, bottom;
@@ -804,6 +1002,11 @@ public class StepViewingCanvasController
 
             og.addChild(model);
 
+            setupTransform();
+            tGroup.setTransform(transform);
+
+            og.addChild(getOperationSignsGroup());
+
             og.addChild(getMarkerGroups());
 
             tGroup.addChild(og);
@@ -832,9 +1035,6 @@ public class StepViewingCanvasController
             branchGraph.setCapability(BranchGroup.ALLOW_DETACH);
 
             createAndAddBranchGraphChildren();
-
-            setupTransform();
-            tGroup.setTransform(transform);
 
             branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
             // (or even reading of them) will produce an error if you don't set the proper capability
@@ -1051,6 +1251,33 @@ public class StepViewingCanvasController
     public Canvas3D getCanvas()
     {
         return canvas;
+    }
+
+    /**
+     * Return the smallest possible texture size so that the whole rectangle of width and height fits into it.
+     * 
+     * @param width The minimum width of the texture.
+     * @param height The minimum height of the texture.
+     * @return Size of texture (both dimensions are powers of 2).
+     */
+    protected Dimension getTextureSize(int width, int height)
+    {
+        return new Dimension(getSmallestPower(width), getSmallestPower(height));
+    }
+
+    /**
+     * Return the smallest power of 2 greater than value.
+     * 
+     * @param value The value to find the smallest non-less power of.
+     * @return The smallest power of 2 greater than value.
+     */
+    protected int getSmallestPower(int value)
+    {
+        int n = 1;
+        while (n < value)
+            n <<= 1;
+
+        return n;
     }
 
     /**

@@ -395,12 +395,13 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             OrderedGroup og = new OrderedGroup();
             og.setPickable(true);
 
-            TransformGroup model = new TransformGroup();
+            model = new OrderedGroup();
             model.setPickable(true);
 
             layers = new TransformGroup();
             layers.setPickable(true);
 
+            Group geometry = new BranchGroup();
             TriangleArray[] triangleArrays = state.getTrianglesArrays();
             Shape3D top, bottom;
             Appearance appearance;
@@ -424,7 +425,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 layers.addChild(group);
             }
 
-            model.addChild(layers);
+            geometry.addChild(layers);
 
             LineArray[] lineArrays = state.getLineArrays();
 
@@ -437,30 +438,37 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             for (LineArray lineArray : lineArrays) {
                 lines.addChild(lineFactory.createLine(lineArray, (ModelSegment) lineArray.getUserData()));
             }
-            model.addChild(lines);
+            geometry.addChild(lines);
 
-            og.addChild(model);
+            model.addChild(geometry);
 
             overModel = new TransformGroup();
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             overModel.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
             overModel.setPickable(true);
-            og.addChild(overModel);
+            model.addChild(overModel);
 
             pointGroup = new BranchGroup();
             pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
             pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             pointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
             pointGroup.setPickable(true);
-            og.addChild(pointGroup);
+            model.addChild(pointGroup);
 
             highlightedPointGroup = new BranchGroup();
             highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
             highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             highlightedPointGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
             highlightedPointGroup.setPickable(true);
-            og.addChild(highlightedPointGroup);
+            model.addChild(highlightedPointGroup);
+
+            og.addChild(model);
+
+            setupTransform();
+            tGroup.setTransform(transform);
+
+            // og.addChild(getOperationSignsGroup()); //uncomment to see operation signs in editor
 
             og.addChild(getMarkerGroups());
 

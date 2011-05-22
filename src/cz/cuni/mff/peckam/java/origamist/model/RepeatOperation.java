@@ -39,6 +39,12 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     }
 
     @Override
+    public boolean areContentsVisible()
+    {
+        return isDisplayed();
+    }
+
+    @Override
     protected List<OperationArgument> initArguments()
     {
         List<OperationArgument> arguments = new ArrayList<OperationArgument>(2);
@@ -55,7 +61,8 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     {
         this.operations.clear();
         this.operations.addAll(((LastOperationsArgument) arguments.get(0)).getOperations());
-        this.display = ((BooleanArgument) arguments.get(1)).getValue();
+        if (((BooleanArgument) arguments.get(1)).getValue() != null)
+            this.displayed = ((BooleanArgument) arguments.get(1)).getValue();
     }
 
     @Override
@@ -77,7 +84,7 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     @Override
     public boolean isCompletelyDelayedToNextStep()
     {
-        return !isDisplay();
+        return !isDisplayed();
     }
 
     @Override
@@ -89,7 +96,7 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
         text.append(MessageFormat.format(messages.getString(prefix + ".countFormat"),
                 new Object[] { operations.size() }));
         text.append(", ");
-        if (display != null && display) {
+        if (displayed) {
             text.append(messages.getString(prefix + ".displayed"));
         } else {
             text.append(messages.getString(prefix + ".hidden"));
@@ -103,6 +110,6 @@ public class RepeatOperation extends cz.cuni.mff.peckam.java.origamist.model.jax
     @Override
     public String toString()
     {
-        return "RepeatOperation [display=" + display + ", operations=" + operations + "]";
+        return "RepeatOperation [displayed=" + displayed + ", operations=" + operations + "]";
     }
 }

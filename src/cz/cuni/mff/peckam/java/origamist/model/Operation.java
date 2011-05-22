@@ -13,12 +13,12 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
-import cz.cuni.mff.peckam.java.origamist.services.interfaces.HashCodeAndEqualsHelper;
 import cz.cuni.mff.peckam.java.origamist.utils.HasBoundProperties;
 
 /**
@@ -41,11 +41,6 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
 
     /** The list of arguments of this operation. */
     protected transient List<OperationArgument> arguments     = null;
-
-    /**
-     * Icon of this operation.
-     */
-    protected transient ImageIcon               icon          = null;
 
     /** The bundle for Operation. */
     protected transient ResourceBundle          messages;
@@ -75,22 +70,7 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     @XmlTransient
     public ImageIcon getIcon()
     {
-        return icon;
-    }
-
-    /**
-     * Set the icon of this operation.
-     * 
-     * If you change the type of this operation, the image gets updated to the default icon of the new type.
-     * 
-     * @param icon The icon to set
-     */
-    public void setIcon(ImageIcon icon)
-    {
-        ImageIcon oldIcon = this.icon;
-        this.icon = icon;
-        if ((oldIcon != icon && (oldIcon != null || icon != null)) || (oldIcon != null && !oldIcon.equals(icon)))
-            support.firePropertyChange(ICON_PROPERTY, oldIcon, icon);
+        return OperationsHelper.getIcon(type);
     }
 
     @Override
@@ -100,7 +80,6 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
         super.setType(value);
         if (oldType != value)
             support.firePropertyChange(TYPE_PROPERTY, oldType, value);
-        setIcon(OperationsHelper.getIcon(value));
     }
 
     /**
@@ -129,6 +108,22 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     public boolean isCompletelyDelayedToNextStep()
     {
         return false;
+    }
+
+    /**
+     * Return a segment with the operation's furthest rotated point as P1 and the center of the operation as P2 (in the
+     * last modelState this operation was applied to). If this method returns <code>null</code>, no specific location is
+     * required.
+     * 
+     * @return A segment with the operation's furthest rotated point as P1 and the center of the operation as P2. If
+     *         this method returns <code>null</code>, no specific location is required.
+     * 
+     * @throws IllegalStateException Can be thrown if this operation hasn't been applied to a modelState yet (but
+     *             doesn't have to).
+     */
+    public Segment3d getMarkerPosition() throws IllegalStateException
+    {
+        return null;
     }
 
     /**
@@ -251,34 +246,4 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
         return text.toString();
     }
 
-    @Override
-    public int hashCode()
-    {
-        final int prime = 31;
-        int result = super.hashCode();
-        if (icon == null) {
-            result = prime * result;
-        } else {
-            result = prime * result + ServiceLocator.get(HashCodeAndEqualsHelper.class).hashCode(icon);
-        }
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Operation other = (Operation) obj;
-        if (icon == null) {
-            if (other.icon != null)
-                return false;
-        } else if (!ServiceLocator.get(HashCodeAndEqualsHelper.class).equals(icon, other.icon))
-            return false;
-        return true;
-    }
 }

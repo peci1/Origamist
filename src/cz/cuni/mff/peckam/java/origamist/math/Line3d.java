@@ -234,6 +234,17 @@ public class Line3d implements Cloneable, Vector<Double>
         return v;
     }
 
+    /**
+     * Return the distance of the given point from this line.
+     * 
+     * @param point The point to get distance of.
+     * @return Distance of this line and the given point.
+     */
+    public double distance(Point3d point)
+    {
+        return point.distance(getNearestPoint(point));
+    }
+
     @Override
     public int hashCode()
     {

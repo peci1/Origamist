@@ -3,6 +3,8 @@
  */
 package cz.cuni.mff.peckam.java.origamist.model;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.swing.ImageIcon;
@@ -18,6 +20,9 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  */
 public class OperationsHelper
 {
+    /** The cache of icons. */
+    protected static Map<Operations, ImageIcon> icons = new EnumMap<Operations, ImageIcon>(Operations.class);
+
     /**
      * Get the default icon for the operation.
      * 
@@ -26,8 +31,59 @@ public class OperationsHelper
      */
     public static ImageIcon getIcon(Operations operation)
     {
-        // TODO image icon code
-        return null;
+        ImageIcon icon = icons.get(operation);
+        if (icon != null)
+            return icon;
+
+        String path = "/resources/images/fold-marks/";
+        switch (operation) {
+            case MOUNTAIN_FOLD:
+                path += "mountain_fold.png";
+                break;
+            case VALLEY_FOLD:
+                path += "valley_fold.png";
+                break;
+            case MOUNTAIN_VALLEY_FOLD_UNFOLD:
+                path += "mountain_fold_unfold.png";
+                break;
+            case VALLEY_MOUNTAIN_FOLD_UNFOLD:
+                path += "valley_fold_unfold.png";
+                break;
+            case THUNDERBOLT_FOLD:
+                path += "thunderbolt_fold.png";
+                break;
+            case INSIDE_REVERSE_FOLD:
+                path += "inside_reverse_fold.png";
+                break;
+            case OUTSIDE_REVERSE_FOLD:
+                path += "outside_reverse_fold.png";
+                break;
+            case INSIDE_CRIMP_FOLD:
+                path += "inside_crimp_fold.png";
+                break;
+            case OUTSIDE_CRIMP_FOLD:
+                path += "outside_crimp_fold.png";
+                break;
+            case ROTATE:
+                path += "rotate.png";
+                break;
+            case TURN_OVER:
+                path += "turn_over.png";
+                break;
+            case REPEAT_ACTION:
+                path += "repeat_one.png";
+                break;
+            case PULL:
+                path += "pull.png";
+                break;
+            default:
+                return null;
+        }
+
+        icon = new ImageIcon(OperationsHelper.class.getResource(path));
+
+        icons.put(operation, icon);
+        return icon;
     }
 
     /**

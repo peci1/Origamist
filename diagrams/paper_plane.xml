@@ -99,7 +99,7 @@
                     </refPoint>
                     <layer>1</layer>
                 </foldOperation>
-                <repeatOperation type="REPEAT_ACTION">
+                <repeatOperation type="REPEAT_ACTION" displayed="true">
                     <foldOperation type="VALLEY_FOLD">
                         <angle>3.141592</angle>
                         <line>

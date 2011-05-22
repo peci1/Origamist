@@ -539,7 +539,7 @@
 		<complexContent>
 			<extension base="m:RepeatOperationBase">
 				<group ref="m:operations" />
-				<attribute name="display" type="boolean" default="false" />
+				<attribute name="displayed" type="boolean" use="required" />
 			</extension>
 		</complexContent>
 	</complexType>

@@ -15,10 +15,12 @@ import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.ExistingLineArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -35,6 +37,9 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
 public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.CrimpFoldOperation
 {
 
+    /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
+    protected Segment3d markerPosition = null;
+
     @Override
     public ModelState getModelState(ModelState previousState) throws InvalidOperationException
     {
@@ -43,6 +48,8 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
             dir = dir.getOpposite();
 
         Segment2d newRefLine = new Segment2d(new Point2d(), new Point2d());
+
+        previousState.setFurthestRotationSegment(getLine().toSegment2d());
 
         List<Map<Layer, Layer>> layersToBend = previousState.makeReverseFold(dir, getLine().toSegment2d(),
                 getOppositeLine() != null ? getOppositeLine().toSegment2d() : null, getRefLine().toSegment2d(),
@@ -62,6 +69,12 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         previousState.makeReverseFold(dir, getSecondLine().toSegment2d(),
                 getSecondOppositeLine() != null ? getSecondOppositeLine().toSegment2d() : null, newRefLine,
                 new LayerFilter(layersToBend.get(0).keySet()), new LayerFilter(layersToBend.get(1).keySet()));
+
+        ModelPoint furthest = previousState.getFurthestRotatedPointAroundSegment();
+        if (furthest != null)
+            markerPosition = new Segment3d(furthest, previousState.getFurthestRotationSegment().getNearestPoint(
+                    furthest));
+        previousState.clearFurthestRotationSegment();
 
         return previousState;
     }
@@ -104,6 +117,12 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         if (arguments.get(6).isComplete()) {
             this.secondOppositeLine = ((LineArgument) arguments.get(6)).getLine2D();
         }
+    }
+
+    @Override
+    public Segment3d getMarkerPosition()
+    {
+        return markerPosition;
     }
 
     @Override

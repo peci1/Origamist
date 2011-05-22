@@ -10,9 +10,11 @@ import java.util.List;
 import javax.vecmath.Point2d;
 
 import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
+import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
 import cz.cuni.mff.peckam.java.origamist.modelstate.LayerFilter;
+import cz.cuni.mff.peckam.java.origamist.modelstate.ModelPoint;
 import cz.cuni.mff.peckam.java.origamist.modelstate.ModelState;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.AngleArgument;
 import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.LayersArgument;
@@ -30,6 +32,9 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldOperation
 {
 
+    /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
+    protected Segment3d markerPosition = null;
+
     @Override
     public ModelState getModelState(ModelState previousState)
     {
@@ -37,9 +42,17 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         if (this.type == Operations.VALLEY_FOLD)
             dir = dir.getOpposite();
 
+        previousState.setFurthestRotationSegment(getLine().toSegment2d());
+
         Point2d refPoint = (getRefPoint() != null ? getRefPoint().toPoint2d() : null);
         previousState.makeFold(dir, getLine().getStart().toPoint2d(), getLine().getEnd().toPoint2d(), refPoint,
                 new LayerFilter(layer), angle);
+
+        ModelPoint furthest = previousState.getFurthestRotatedPointAroundSegment();
+        if (furthest != null)
+            markerPosition = new Segment3d(furthest, previousState.getFurthestRotationSegment().getNearestPoint(
+                    furthest));
+        previousState.clearFurthestRotationSegment();
 
         return previousState;
     }
@@ -67,6 +80,12 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
         this.angle = ((AngleArgument) arguments.get(2)).getAngle();
         if (arguments.get(3).isComplete())
             this.refPoint = ((PointArgument) arguments.get(3)).getPoint2D();
+    }
+
+    @Override
+    public Segment3d getMarkerPosition()
+    {
+        return markerPosition;
     }
 
     @Override
