@@ -1478,98 +1478,6 @@ public class OrigamiEditor extends CommonGui
     }
 
     /**
-     * Exports the currently displayed origami to the given format.
-     * 
-     * @author Martin Pecka
-     */
-    class ExportAction extends AbstractAction
-    {
-
-        /** */
-        private static final long serialVersionUID = -399462365929673938L;
-
-        /** The format to export to. */
-        protected ExportFormat    format;
-
-        /**
-         * @param format The format to export to.
-         */
-        public ExportAction(ExportFormat format)
-        {
-            this.format = format;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            statusBar.showL7dMessage("editor", "exportDialog.opening", null);
-            if (e.getSource() instanceof JComponent)
-                ((JComponent) e.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
-            JFileChooser chooser = new JFileChooser();
-            File defaultFile = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
-            chooser.setCurrentDirectory(defaultFile);
-            chooser.setFileFilter(new FileNameExtensionFilter("*." + format.toString().toLowerCase(), format.toString()));
-            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-            chooser.setApproveButtonText(appMessages.getString("exportDialog.approve"));
-            chooser.setApproveButtonMnemonic(KeyStroke.getKeyStroke(
-                    appMessages.getString("exportDialog.approve.mnemonic")).getKeyCode());
-            chooser.setApproveButtonToolTipText(ServiceLocator.get(TooltipFactory.class).getDecorated(
-                    appMessages.getString("exportDialog.approve.tooltip.message"),
-                    appMessages.getString("exportDialog.approve.tooltip.title"), "save.png",
-                    KeyStroke.getKeyStroke("alt " + appMessages.getString("exportDialog.approve.mnemonic"))));
-            if (chooser.showDialog(OrigamiEditor.this, null) == JFileChooser.APPROVE_OPTION) {
-                if (e.getSource() instanceof JComponent)
-                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
-
-                File f = chooser.getSelectedFile();
-                if (!chooser.accept(f)) {
-                    f = new File(f.toString() + "." + format.toString().toLowerCase());
-                }
-                ServiceLocator.get(ConfigurationManager.class).get().setLastExportPath(f);
-
-                if (f.exists()) {
-                    OrigamiEditor.this.format.applyPattern(appMessages.getString("exportDialog.overwrite"));
-                    if (JOptionPane.showConfirmDialog(OrigamiEditor.this,
-                            OrigamiEditor.this.format.format(new Object[] { f }),
-                            appMessages.getString("exportDialog.overwrite.title"), JOptionPane.YES_NO_OPTION,
-                            JOptionPane.QUESTION_MESSAGE, null) != JOptionPane.YES_OPTION) {
-                        return;
-                    }
-                }
-
-                final File file = f;
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            ServiceLocator.get(OrigamiHandler.class).export(origami, file, format);
-                            OrigamiEditor.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
-                            JOptionPane.showMessageDialog(getRootPane(),
-                                    OrigamiEditor.this.format.format(new Object[] { file.toString() }),
-                                    appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE,
-                                    null);
-                        } catch (IOException e1) {
-                            OrigamiEditor.this.format.applyPattern(appMessages.getString("failedToExport.message"));
-                            JOptionPane.showMessageDialog(getRootPane(),
-                                    OrigamiEditor.this.format.format(new Object[] { file.toString() }),
-                                    appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
-                            Logger.getLogger("application").warn("Unable to export origami.", e1);
-                        }
-                    }
-                }).start();
-            } else {
-                if (e.getSource() instanceof JComponent)
-                    ((JComponent) e.getSource()).setCursor(Cursor.getDefaultCursor());
-            }
-        }
-
-    }
-
-    /**
      * Display the origami properties dialog.
      * 
      * @author Martin Pecka
@@ -1611,6 +1519,37 @@ public class OrigamiEditor extends CommonGui
             }).start();
         }
 
+    }
+
+    /**
+     * Exports the currently displayed origami to the desired format.
+     * 
+     * @author Martin Pecka
+     */
+    protected class ExportAction extends cz.cuni.mff.peckam.java.origamist.gui.common.ExportAction
+    {
+        /** */
+        private static final long serialVersionUID = -4751828351174341121L;
+
+        public ExportAction(ExportFormat format)
+        {
+            super(null, format);
+        }
+
+        @Override
+        protected void beforeAction(ActionEvent evt)
+        {
+            this.origami = OrigamiEditor.this.origami;
+            if (evt.getSource() instanceof Component)
+                ((Component) evt.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        }
+
+        @Override
+        protected void done(ActionEvent evt)
+        {
+            if (evt.getSource() instanceof Component)
+                ((Component) evt.getSource()).setCursor(Cursor.getDefaultCursor());
+        }
     }
 
     /**

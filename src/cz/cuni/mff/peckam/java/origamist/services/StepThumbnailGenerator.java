@@ -55,6 +55,7 @@ public class StepThumbnailGenerator extends Service
             @Override
             public void run()
             {
+                controller.adjustSize();
                 synchronized (StepThumbnailGenerator.this) {
                     StepThumbnailGenerator.this.notify();
                 }
@@ -133,9 +134,7 @@ public class StepThumbnailGenerator extends Service
             hasRendered = true;
         }
 
-        controller.setStep(
-                origami.getModel().getSteps().getStep().get(origami.getModel().getSteps().getStep().size() - 1),
-                afterSetCallback);
+        controller.setStep(step, afterSetCallback);
 
         synchronized (this) {
             try {

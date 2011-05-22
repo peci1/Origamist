@@ -731,12 +731,28 @@ public class DiagramRenderer extends JPanelWithOverlay
                                 getContent().revalidate();
                                 hideOverlay();
                                 repaint();
+
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run()
+                                    {
+                                        stepsUpdated();
+                                    }
+                                }).start();
                             }
                         });
                     }
                 }.start();
             }
         });
+    }
+
+    /**
+     * Called when steps are resized. Won't be called in EDT.
+     */
+    protected void stepsUpdated()
+    {
+
     }
 
     /**

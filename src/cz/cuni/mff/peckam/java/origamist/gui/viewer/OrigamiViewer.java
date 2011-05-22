@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -36,7 +37,6 @@ import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
@@ -75,6 +75,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTree;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
+import cz.cuni.mff.peckam.java.origamist.services.StepThumbnailGenerator;
 import cz.cuni.mff.peckam.java.origamist.services.TooltipFactory;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManager;
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.ListingHandler;
@@ -751,23 +752,8 @@ public class OrigamiViewer extends CommonGui
 
         dropDownSave.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.listing"));
 
-        final JMenuItem listingItem;
-        dropDownSave.addComponent(listingItem = toolbar.createToolbarDropdownItem(new ExportListingAction(),
-                "menu.save.listing", "listing.png"));
-        addPropertyChangeListener("showFileListing", new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt)
-            {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        listingItem.setEnabled(isShowFileListing());
-                    }
-                });
-            }
-        });
-        listingItem.setEnabled(isShowFileListing());
+        dropDownSave.addComponent(toolbar.createToolbarDropdownItem(new ExportListingAction(), "menu.save.listing",
+                "listing.png"));
 
         toolbar.add(new JToolBar.Separator());
 
@@ -974,6 +960,13 @@ public class OrigamiViewer extends CommonGui
     {
         super.registerServices();
         ServiceLocator.add(OrigamiViewer.class, this);
+        ServiceLocator.add(StepThumbnailGenerator.class, new Callable<StepThumbnailGenerator>() {
+            @Override
+            public StepThumbnailGenerator call() throws Exception
+            {
+                return new StepThumbnailGenerator();
+            }
+        });
     }
 
     @Override
@@ -1130,85 +1123,35 @@ public class OrigamiViewer extends CommonGui
     }
 
     /**
-     * Exports the currently displayed origami to the given format.
+     * Exports the currently selected origami to the desired format.
      * 
      * @author Martin Pecka
      */
-    class ExportAction extends AbstractAction
+    protected class ExportAction extends cz.cuni.mff.peckam.java.origamist.gui.common.ExportAction
     {
 
         /** */
-        private static final long serialVersionUID = -399462365929673938L;
+        private static final long serialVersionUID = 5881716509643737123L;
 
-        /** The format to export to. */
-        protected ExportFormat    format;
-
-        /**
-         * @param format The format to export to.
-         */
         public ExportAction(ExportFormat format)
         {
-            this.format = format;
+            super(null, format);
         }
 
         @Override
-        public void actionPerformed(ActionEvent e)
+        protected void beforeAction(ActionEvent evt)
         {
-            JFileChooser chooser = new JFileChooser();
-            File defaultFile = ServiceLocator.get(ConfigurationManager.class).get().getLastExportPath().getParentFile();
-            chooser.setCurrentDirectory(defaultFile);
-            chooser.setFileFilter(new FileNameExtensionFilter("*." + format.toString().toLowerCase(), format.toString()));
-            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-            chooser.setApproveButtonText(appMessages.getString("exportDialog.approve"));
-            chooser.setApproveButtonMnemonic(KeyStroke.getKeyStroke(
-                    appMessages.getString("exportDialog.approve.mnemonic")).getKeyCode());
-            chooser.setApproveButtonToolTipText(ServiceLocator.get(TooltipFactory.class).getDecorated(
-                    appMessages.getString("exportDialog.approve.tooltip.message"),
-                    appMessages.getString("exportDialog.approve.tooltip.title"), "save.png",
-                    KeyStroke.getKeyStroke("alt " + appMessages.getString("exportDialog.approve.mnemonic"))));
-            if (chooser.showDialog(OrigamiViewer.this, null) == JFileChooser.APPROVE_OPTION) {
-                File f = chooser.getSelectedFile();
-                if (!chooser.accept(f)) {
-                    f = new File(f.toString() + "." + format.toString().toLowerCase());
-                }
-                ServiceLocator.get(ConfigurationManager.class).get().setLastExportPath(f);
-
-                if (f.exists()) {
-                    OrigamiViewer.this.format.applyPattern(appMessages.getString("exportDialog.overwrite"));
-                    if (JOptionPane.showConfirmDialog(OrigamiViewer.this,
-                            OrigamiViewer.this.format.format(new Object[] { f }),
-                            appMessages.getString("exportDialog.overwrite.title"), JOptionPane.YES_NO_OPTION,
-                            JOptionPane.QUESTION_MESSAGE, null) != JOptionPane.YES_OPTION) {
-                        return;
-                    }
-                }
-
-                final File file = f;
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            ServiceLocator.get(OrigamiHandler.class).export(displayedOrigami, file, format);
-                            OrigamiViewer.this.format.applyPattern(appMessages.getString("exportSuccessful.message"));
-                            JOptionPane.showMessageDialog(getRootPane(),
-                                    OrigamiViewer.this.format.format(new Object[] { file.toString() }),
-                                    appMessages.getString("exportSuccessful.title"), JOptionPane.INFORMATION_MESSAGE,
-                                    null);
-                        } catch (IOException e1) {
-                            OrigamiViewer.this.format.applyPattern(appMessages.getString("failedToExport.message"));
-                            JOptionPane.showMessageDialog(getRootPane(),
-                                    OrigamiViewer.this.format.format(new Object[] { file.toString() }),
-                                    appMessages.getString("failedToExport.title"), JOptionPane.ERROR_MESSAGE, null);
-                            Logger.getLogger("application").warn("Unable to export origami.", e1);
-                        }
-                    }
-                }).start();
-            }
+            this.origami = OrigamiViewer.this.displayedOrigami;
+            if (evt.getSource() instanceof Component)
+                ((Component) evt.getSource()).setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         }
 
+        @Override
+        protected void done(ActionEvent evt)
+        {
+            if (evt.getSource() instanceof Component)
+                ((Component) evt.getSource()).setCursor(Cursor.getDefaultCursor());
+        }
     }
 
     /**

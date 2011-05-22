@@ -4,7 +4,7 @@
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Vector;
 
@@ -39,7 +39,7 @@ public class JLocaleComboBox extends JComboBox
     /**
      * @param suggested Locales that will be displayed at the top positions in the locales list.
      */
-    public JLocaleComboBox(LinkedHashSet<Locale> suggested)
+    public JLocaleComboBox(Collection<Locale> suggested)
     {
         updateSuggested(suggested);
 
@@ -51,7 +51,7 @@ public class JLocaleComboBox extends JComboBox
      * 
      * @param suggested Locales that will be displayed at the top positions in the locales list.
      */
-    public void updateSuggested(LinkedHashSet<Locale> suggested)
+    public void updateSuggested(Collection<Locale> suggested)
     {
         Object selected = getSelectedItem();
 
@@ -110,7 +110,7 @@ public class JLocaleComboBox extends JComboBox
      * @param suggested The locales to be moved to the top.
      * @return The same instance that was given in <code>locales</code>.
      */
-    protected Vector<Locale> moveSuggestedLocalesToTop(Vector<Locale> locales, LinkedHashSet<Locale> suggested)
+    protected Vector<Locale> moveSuggestedLocalesToTop(Vector<Locale> locales, Collection<Locale> suggested)
     {
         locales.removeAll(suggested);
         locales.addAll(0, suggested);

@@ -137,6 +137,20 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     }
 
     /**
+     * Return the localized description of the step with the number of this step prepended.
+     * 
+     * @param l The locale of the description.
+     * @return The localized description or null if l is null or not found
+     */
+    public String getDescriptionWithId(Locale l)
+    {
+        String result = getDescription(l);
+        if (result == null)
+            return null;
+        return getId() + ") " + result;
+    }
+
+    /**
      * Add a description in the given locale.
      * 
      * @param l The locale of the description

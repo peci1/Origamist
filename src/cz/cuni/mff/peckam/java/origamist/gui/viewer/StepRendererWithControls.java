@@ -216,7 +216,7 @@ public class StepRendererWithControls extends JPanelWithOverlay
     protected void updateText()
     {
         if (getStep() != null) {
-            descLabel.setText(getStep().getDescription(
+            descLabel.setText(getStep().getDescriptionWithId(
                     ServiceLocator.get(ConfigurationManager.class).get().getDiagramLocale()));
         } else {
             descLabel.setText("");
