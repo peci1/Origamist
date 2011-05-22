@@ -164,6 +164,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
      * @throws IOException If the source could not be read.
      * @throws UnsupportedDataFormatException If the given source does not contain a valid model.
      */
+    @XmlTransient
     public Origami getOrigami() throws UnsupportedDataFormatException, IOException
     {
         return getOrigami(false);
@@ -321,6 +322,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     /**
      * @return True if the origami is being loaded right now.
      */
+    @XmlTransient
     public boolean isOrigamiLoading()
     {
         return origamiLoading;
@@ -340,6 +342,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     /**
      * @return False if this file points to a valid origami or the origami isn't loaded.
      */
+    @XmlTransient
     public boolean isInvalid()
     {
         return invalid;

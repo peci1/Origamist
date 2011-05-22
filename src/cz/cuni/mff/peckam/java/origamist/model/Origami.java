@@ -406,6 +406,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     /**
      * @return the file
      */
+    @XmlTransient
     public File getFile()
     {
         return file;
@@ -422,6 +423,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
     /**
      * @return the src
      */
+    @XmlTransient
     public URL getSrc()
     {
         return src;
@@ -461,7 +463,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
         if (!preserveExisting || getLicense() == null)
             this.setLicense((License) cof.createLicense());
         if (!preserveExisting || getThumbnail() == null)
-            this.setThumbnail(of.createOrigamiThumbnail());
+            this.setThumbnail(cof.createThumbnail());
         if (!preserveExisting || getThumbnail().getImage() == null)
             this.getThumbnail().setImage((BinaryImage) cof.createBinaryImage());
         if (!preserveExisting || getModel() == null)

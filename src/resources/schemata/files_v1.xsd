@@ -84,7 +84,7 @@
     		<element name="license" type="c:License" maxOccurs="1" minOccurs="0"/>
     		<element name="original" type="anyURI" maxOccurs="1"
     			minOccurs="0"/>
-    		<element name="thumbnail" type="c:Image" maxOccurs="1" minOccurs="0"/>
+    		<element name="thumbnail" type="c:Thumbnail" minOccurs="0" />
     	</sequence>
     	<attribute name="src" type="anyURI" use="required"/>
     </complexType>            

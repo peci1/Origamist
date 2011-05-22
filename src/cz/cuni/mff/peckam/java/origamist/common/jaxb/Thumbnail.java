@@ -6,14 +6,12 @@
 //
 
 
-package cz.cuni.mff.peckam.java.origamist.model.jaxb;
+package cz.cuni.mff.peckam.java.origamist.common.jaxb;
 
-import java.awt.Color;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -25,18 +23,16 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
- * <p>Provided property: background
- * <p>Java class for DiagramColors complex type.
+ * <p>Provided property: generated
+ * <p>Java class for Thumbnail complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="DiagramColors">
+ * &lt;complexType name="Thumbnail">
  *   &lt;complexContent>
- *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Colors">
- *       &lt;sequence>
- *         &lt;element name="background" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Color"/>
- *       &lt;/sequence>
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/common/v1}Image">
+ *       &lt;attribute name="generated" type="{http://www.w3.org/2001/XMLSchema}boolean" default="true" />
  *     &lt;/extension>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -44,60 +40,61 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  * 
  * 
  */
-@XmlType(name = "DiagramColors", propOrder = {
-    "background"
-})
+@XmlType(name = "Thumbnail")
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class DiagramColors
-    extends Colors
+public class Thumbnail
+    extends Image
     implements Equals, HashCode
 {
 
-    protected Color background;
+    protected Boolean generated;
     /**
-     * Property background
+     * Property generated
      * 
      */
-    public final static String BACKGROUND_PROPERTY = "background:cz.cuni.mff.peckam.java.origamist.model.jaxb.DiagramColors";
+    public final static String GENERATED_PROPERTY = "generated:cz.cuni.mff.peckam.java.origamist.common.jaxb.Thumbnail";
 
-    public DiagramColors() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.DiagramColors")) {
+    public Thumbnail() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.common.jaxb.Thumbnail")) {
             init();
         }
     }
 
     /**
-     * Gets the value of the background property.
+     * Gets the value of the generated property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Boolean }
      *     
      */
-    @XmlElement(required = true, type = String.class)
-    @XmlJavaTypeAdapter(Adapter1 .class)
-    public Color getBackground() {
-        return background;
+    public boolean isGenerated() {
+        if (generated == null) {
+            return true;
+        } else {
+            return generated;
+        }
     }
 
     /**
-     * Sets the value of the background property.
+     * Sets the value of the generated property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Boolean }
      *     
      */
-    public void setBackground(Color value) {
-        Color old = this.background;
-        this.background = value;
-        if (((old!= value)&&((old == null)||(value == null)))||((old!= null)&&(!old.equals(value)))) {
-            support.firePropertyChange(DiagramColors.BACKGROUND_PROPERTY, old, value);
+    @XmlAttribute
+    public void setGenerated(Boolean value) {
+        Boolean old = this.generated;
+        this.generated = value;
+        if (old!= value) {
+            support.firePropertyChange(Thumbnail.GENERATED_PROPERTY, old, value);
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof DiagramColors)) {
+        if (!(object instanceof Thumbnail)) {
             return false;
         }
         if (this == object) {
@@ -106,13 +103,13 @@ public class DiagramColors
         if (!super.equals(thisLocator, thatLocator, object, strategy)) {
             return false;
         }
-        final DiagramColors that = ((DiagramColors) object);
+        final Thumbnail that = ((Thumbnail) object);
         {
-            Color lhsBackground;
-            lhsBackground = this.getBackground();
-            Color rhsBackground;
-            rhsBackground = that.getBackground();
-            if (!strategy.equals(LocatorUtils.property(thisLocator, "background", lhsBackground), LocatorUtils.property(thatLocator, "background", rhsBackground), lhsBackground, rhsBackground)) {
+            boolean lhsGenerated;
+            lhsGenerated = this.isGenerated();
+            boolean rhsGenerated;
+            rhsGenerated = that.isGenerated();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "generated", lhsGenerated), LocatorUtils.property(thatLocator, "generated", rhsGenerated), lhsGenerated, rhsGenerated)) {
                 return false;
             }
         }
@@ -127,9 +124,9 @@ public class DiagramColors
     public int hashCode(ObjectLocator locator, HashCodeStrategy strategy) {
         int currentHashCode = super.hashCode(locator, strategy);
         {
-            Color theBackground;
-            theBackground = this.getBackground();
-            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "background", theBackground), currentHashCode, theBackground);
+            boolean theGenerated;
+            theGenerated = this.isGenerated();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "generated", theGenerated), currentHashCode, theGenerated);
         }
         return currentHashCode;
     }

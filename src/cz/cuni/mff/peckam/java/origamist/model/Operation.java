@@ -137,6 +137,7 @@ public abstract class Operation extends cz.cuni.mff.peckam.java.origamist.model.
     /**
      * @return The list of arguments of this operation. The returned list is unmodifiable.
      */
+    @XmlTransient
     public List<OperationArgument> getArguments()
     {
         if (arguments == null) {

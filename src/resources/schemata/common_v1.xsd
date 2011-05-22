@@ -106,5 +106,13 @@
     			<attribute name="type" type="string"/>
     		</extension>
     	</simpleContent>
-    </complexType>    
+    </complexType>
+    
+    <complexType name="Thumbnail">
+    	<complexContent>
+			<extension base="s:Image">
+				<attribute name="generated" default="true" type="boolean" />
+			</extension>
+		</complexContent>
+    </complexType>
 </schema>

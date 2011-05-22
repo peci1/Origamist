@@ -50,15 +50,7 @@
 			</element>
 			<element name="license" type="c:License" />
 			<element name="original" type="anyURI" maxOccurs="1" minOccurs="0" />
-			<element name="thumbnail">
-				<complexType>
-					<complexContent>
-						<extension base="c:Image">
-							<attribute name="generated" default="true" type="boolean" />
-						</extension>
-					</complexContent>
-				</complexType>
-			</element>
+			<element name="thumbnail" type="c:Thumbnail" minOccurs="0" />
 
 			<element name="paper" type="m:DiagramPaper" />
 			<element name="model" type="m:Model" />

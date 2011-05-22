@@ -258,6 +258,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     /**
      * @return the previous
      */
+    @XmlTransient
     public Step getPrevious()
     {
         return previous;
@@ -266,6 +267,7 @@ public class Step extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Step
     /**
      * @return the next
      */
+    @XmlTransient
     public Step getNext()
     {
         return next;
