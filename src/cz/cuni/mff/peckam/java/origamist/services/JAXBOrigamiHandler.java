@@ -14,13 +14,18 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
@@ -35,10 +40,23 @@ import javax.xml.bind.MarshalException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.UnmarshalException;
 
+import org.apache.batik.dom.GenericDOMImplementation;
+import org.apache.batik.svggen.SVGGeneratorContext;
+import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.fop.svg.PDFTranscoder;
 import org.apache.log4j.Logger;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.pdf.BadPdfFormatException;
+import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfReader;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
@@ -128,7 +146,7 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
     public Set<File> export(Origami origami, File file, ExportFormat format, ExportOptions options,
             Runnable progressCallback) throws IOException
     {
-        Set<File> result = new HashSet<File>();
+        Set<File> result = new LinkedHashSet<File>();
         if (format == ExportFormat.XML) {
             try {
                 save(origami, file);
@@ -143,11 +161,14 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
                 progressCallback.run();
 
         } else if (format == ExportFormat.PNG || format == ExportFormat.SVG || format == ExportFormat.PDF) {
+            // a lot of code is common for those 3 formats, so we won't divide them
+
             Double dpi = null;
             Locale locale = null;
             Insets pageInsets = null;
             boolean withBackground = true;
 
+            // configure from options
             if (options != null) {
                 if (options instanceof PNGExportOptions) {
                     PNGExportOptions options2 = (PNGExportOptions) options;
@@ -180,10 +201,11 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
 
             final File parentFile = (file.isDirectory() ? file : file.getParentFile());
 
-            final FileNameGenerator fileNames; // used only for PNG
+            final FileNameGenerator fileNames;
             if (!file.isDirectory()) {
-                fileNames = new FileNameGeneratorImpl(file.getName().replaceAll("\\.[^.]*$", ""), file.getName()
-                        .replaceAll("^.*(\\.[^.]*)$", "$1"), origami.getNumberOfPages());
+                String prefix = file.getName().replaceAll("\\.[^.]*$", "");
+                String suffix = file.getName().replaceAll("^.*(\\.[^.]*)$", "$1");
+                fileNames = new FileNameGeneratorImpl(prefix, suffix, origami.getNumberOfPages());
             } else {
                 fileNames = new FileNameGeneratorImpl("", ".png", origami.getNumberOfPages());
             }
@@ -193,32 +215,45 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
             final Dimension resultDim = new Dimension((int) (paperDim.getWidth() * dpi),
                     (int) (paperDim.getHeight() * dpi));
 
+            // create the graphics object - either from a buffered image, or an SVG graphics
             final Graphics2D g;
-            final BufferedImage buffer;
+            BufferedImage buffer = null;
+            Document svgDocument = null;
             if (format == ExportFormat.PNG) {
                 buffer = new BufferedImage(resultDim.width, resultDim.height, BufferedImage.TYPE_INT_ARGB);
                 g = buffer.createGraphics();
-            } else { // TODO change to SVG and PDF code
-                buffer = new BufferedImage(resultDim.width, resultDim.height, BufferedImage.TYPE_INT_ARGB);
-                g = buffer.createGraphics();
+            } else {
+                DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+
+                String svgNS = "http://www.w3.org/2000/svg";
+                svgDocument = domImpl.createDocument(svgNS, "svg", null);
+
+                SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(svgDocument);
+                // this is important, otherwise the SVG files use a different font and that breaks the result
+                ctx.setEmbeddedFontsOn(true);
+
+                g = new SVGGraphics2D(ctx, true);
             }
 
             Font font = new JMultilineLabel("").getFont();
             font = font.deriveFont((float) (font.getSize2D() * dpi / 72)); // normalize the font size
 
+            // iterate through pages, draw them into the created graphics, and write to files
             IOException e = null;
             for (int i = 1; i <= origami.getNumberOfPages(); i++) {
 
                 try {
+                    // DRAW THE PAGE
                     drawPage(g, new Rectangle(0, 0, resultDim.width, resultDim.height), pageInsets, origami, i, locale,
                             font, withBackground, progressCallback);
                 } catch (InterruptedException ex) {
+                    // allows us to cancel the computation
                     g.dispose();
                     return result;
                 }
 
-                if (format == ExportFormat.PNG) {
-                    try {
+                if (format == ExportFormat.PNG && buffer != null) {
+                    try { // write the image buffer to file
                         buffer.flush();
                         File pageFile = new File(parentFile, fileNames.getFileName(i));
                         ImageIO.write(buffer, "png", pageFile);
@@ -226,18 +261,125 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
                     } catch (IOException ex) {
                         e = ex;
                     }
-                } else {
-                    // TODO SVG and PDF
+                } else if (format == ExportFormat.SVG || format == ExportFormat.PDF) {
+                    // write the SVG graphics to file
+                    File outFile = new File(parentFile, fileNames.getFileName(i));
+                    FileWriter writer = null;
+                    try {
+                        writer = new FileWriter(outFile);
+                        // PDF will be written with incorrect extension, but it doesn't matter since it is only
+                        // temporary
+                        ((SVGGraphics2D) g).stream(writer, true);
+                        result.add(outFile);
+                    } catch (IOException ex) {
+                        e = ex;
+                    } finally {
+                        if (writer != null) {
+                            try {
+                                writer.flush();
+                                writer.close();
+                            } catch (IOException ex) {
+                                e = ex;
+                            }
+                        }
+                    }
                 }
             }
 
             g.dispose();
 
+            if (format == ExportFormat.PDF) {
+                // coversion to PDF is a little tricky
+                // although the manuals say that exporting PDF directly from SVG tree is possible, I didn't get correct
+                // results - always just a blank PDF page; so we've written the SVGs to disk, loading them from there
+                // works
+
+                // SVG doesn't handle pages, nor Batik does, so we must write one file per page and then merge them
+                // using iText
+                PDFTranscoder trans = new PDFTranscoder();
+                trans.addTranscodingHint(PDFTranscoder.KEY_WIDTH, (float) resultDim.width);
+                trans.addTranscodingHint(PDFTranscoder.KEY_HEIGHT, (float) resultDim.height);
+
+                List<File> newResult = new LinkedList<File>();
+                for (File f : result) { // transcode SVGs to PDFs - one file per page
+                    TranscoderInput input = new TranscoderInput(new FileReader(f));
+                    File outFile = new File(parentFile, f.getName() + ".pdf");
+                    newResult.add(outFile);
+                    OutputStream stream = new FileOutputStream(outFile);
+                    TranscoderOutput output = new TranscoderOutput(stream);
+                    try {
+                        trans.transcode(input, output);
+                        newResult.add(outFile);
+                    } catch (TranscoderException e1) {
+                        e = new IOException(e1);
+                    } finally {
+                        try {
+                            stream.flush();
+                            stream.close();
+                        } catch (IOException e1) {
+                            e = e1;
+                        }
+                        progressCallback.run();
+                    }
+                }
+
+                // delete the temporary SVG files
+                for (File f : result)
+                    f.delete();
+
+                result.clear();
+                result.addAll(newResult);
+
+                // initialize iText
+                com.itextpdf.text.Document doc = new com.itextpdf.text.Document(new com.itextpdf.text.Rectangle(
+                        resultDim.width, resultDim.height));
+                PdfCopy copy = null;
+                try {
+                    copy = new PdfCopy(doc, new FileOutputStream(file));
+                } catch (DocumentException e2) {
+                    e = new IOException(e2);
+                }
+
+                // merge the multiple pdf files into one
+                if (copy != null) {
+                    doc.open();
+                    PdfReader reader = null;
+                    int n;
+
+                    for (File f : result) {
+                        try {
+                            reader = new PdfReader(f.toString());
+                            // loop over the pages in documents
+                            n = reader.getNumberOfPages();
+                            for (int page = 0; page < n;) {
+                                try {
+                                    copy.addPage(copy.getImportedPage(reader, ++page));
+                                } catch (BadPdfFormatException e1) {
+                                    e = new IOException(e1);
+                                }
+                            }
+                        } catch (IOException ex) {
+                            e = ex;
+                        } finally {
+                            if (reader != null)
+                                copy.freeReader(reader);
+                            progressCallback.run();
+                        }
+                    }
+                    doc.close();
+
+                    for (File f : result)
+                        f.delete();
+
+                    result.clear();
+                    result.add(file);
+                }
+            }
+
             // this way we try to create the most files, so one error in the middle won't break the rest of files
             if (e != null)
                 throw e;
         } else {
-            // TODO other export formats
             Logger.getLogger("application").error("Unsupported export format: " + format);
             throw new IOException("Unsupported export format: " + format);
         }

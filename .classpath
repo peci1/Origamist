@@ -5,8 +5,8 @@
 	<classpathentry kind="lib" path="lib/j3dcore.jar" sourcepath="F:/Program Files/Java/libs-sources/j3d-1_5_2-src"/>
 	<classpathentry kind="lib" path="lib/j3dutils.jar" sourcepath="F:/Program Files/Java/libs-sources/j3d-1_5_2-src"/>
 	<classpathentry kind="lib" path="lib/vecmath.jar" sourcepath="F:/Program Files/Java/libs-sources/vecmath-1_5_2-src"/>
-    <classpathentry kind="lib" path="lib-compile-time/jaxb-xjc-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-xjc-2_1_13.src"/>
-    <classpathentry kind="lib" path="lib-compile-time/jaxb-impl-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-impl-2.1.12-sources"/>
+	<classpathentry kind="lib" path="lib-compile-time/jaxb-xjc-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-xjc-2_1_13.src"/>
+	<classpathentry kind="lib" path="lib-compile-time/jaxb-impl-2.1.12.jar" sourcepath="F:/Program Files/Java/libs-sources/jaxb-impl-2.1.12-sources"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar" sourcepath="F:/Program Files/Java/libs-sources/log4j-1.2.16">
 		<attributes>
 			<attribute name="javadoc_location" value="file:/F:/Program Files/Java/javadoc/log4j-1.2.16/"/>
@@ -16,5 +16,23 @@
 	<classpathentry kind="lib" path="lib-compile-time/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
 	<classpathentry kind="lib" path="lib/jaxb2-basics-runtime-0.6.0.jar"/>
 	<classpathentry kind="lib" path="lib/forms.jar" sourcepath="F:/Program Files/Java/libs-sources/formLayout-1.3.0"/>
+	<classpathentry kind="lib" path="lib/batik-dom.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-svggen.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-awt-util.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-util.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-ext.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-xml.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-codec.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/itextpdf-5.1.0.jar" sourcepath="F:/Program Files/Java/libs-sources/itextpdf-5.1.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/pdf-transcoder.jar"/>
+	<classpathentry kind="lib" path="lib/batik-transcoder.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-bridge.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-css.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-svg-dom.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/xml-apis-ext.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-parser.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-anim.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-script.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/batik-gvt.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

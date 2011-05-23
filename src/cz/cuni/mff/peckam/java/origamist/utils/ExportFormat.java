@@ -61,7 +61,7 @@ public enum ExportFormat
         @Override
         public int getNumOfProgressChunks(Origami o)
         {
-            return o.getModel().getSteps().getStep().size();
+            return o.getModel().getSteps().getStep().size() + 2 * o.getNumberOfPages();
         }
 
         @Override
