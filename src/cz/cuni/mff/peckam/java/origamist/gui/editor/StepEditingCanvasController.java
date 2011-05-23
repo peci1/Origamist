@@ -2094,7 +2094,14 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             step.setZoom(zoom);
             support.firePropertyChange("zoom", oldZoom, zoom);
 
-            transform.setScale(getCompositeZoom() / 100d);
+            Transform3D additional = new Transform3D(transform);
+            Transform3D baseInverted = new Transform3D(baseTransform);
+            baseInverted.invert();
+            additional.mul(baseInverted);
+
+            setupTransform();
+
+            transform.mul(additional, transform);
             if (tGroup != null)
                 tGroup.setTransform(transform);
         }

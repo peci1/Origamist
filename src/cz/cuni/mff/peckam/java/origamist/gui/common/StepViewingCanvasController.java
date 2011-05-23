@@ -1206,9 +1206,18 @@ public class StepViewingCanvasController
         this.zoom = zoom;
         support.firePropertyChange("zoom", oldZoom, zoom);
 
-        transform.setScale(getCompositeZoom() / 100d);
-        if (tGroup != null)
-            tGroup.setTransform(transform);
+        if (step != null && getModelState() != null && model != null) {
+            Transform3D additional = new Transform3D(transform);
+            Transform3D baseInverted = new Transform3D(baseTransform);
+            baseInverted.invert();
+            additional.mul(baseInverted);
+
+            setupTransform();
+
+            transform.mul(additional, transform);
+            if (tGroup != null)
+                tGroup.setTransform(transform);
+        }
     }
 
     /**
