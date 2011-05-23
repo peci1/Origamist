@@ -197,7 +197,7 @@
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram,xjc-plugins-cleanup" />
 
 	<target name="compile" depends="init,jaxb" description="Compiles the application">
-		<javac srcdir="src" destdir="bin" debug="${debug}" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java">
+		<javac srcdir="src" destdir="bin" debug="${debug}" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java">
 			<classpath>
 				<pathelement path="src" />
 				<fileset dir="lib">
@@ -211,6 +211,7 @@
 				<include name="**/*.xml" />
 				<include name="**/*.xsd" />
 				<include name="resources/**/*.*" />
+				<exclude name="cz/cuni/mff/peckam/java/origamist/unused/**/*.*" />
 				<exclude name="cz/cuni/mff/peckam/java/origamist/tests/**/*.*" />
 				<exclude name="net/sf/ovanttasks/ovanttasks/**/*.java" />
 			</fileset>
@@ -242,7 +243,7 @@
 		</pathconvert>
 
 		<jar destfile="OrigamistViewer.jar">
-			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java" />
+			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java" />
 			<fileset file="LICENSE" />
 
 			<manifest>
@@ -254,7 +255,7 @@
 		</jar>
 
 		<jar destfile="OrigamistEditor.jar">
-			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java" />
+			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java" />
 			<fileset file="LICENSE" />
 
 			<manifest>
