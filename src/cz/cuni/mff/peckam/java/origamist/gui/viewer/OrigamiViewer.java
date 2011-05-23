@@ -688,12 +688,12 @@ public class OrigamiViewer extends CommonGui
                 displayedOrigami = filesToDisplay == null ? null : filesToDisplay.recursiveFileIterator().next()
                         .getOrigami();
                 if (filesToDisplay == null)
-                    modelInfo.hide();
+                    modelInfo.hidePanel();
             } else {
                 if (filesToDisplay != null) {
                     setDisplayedOrigami(filesToDisplay.recursiveFileIterator().next().getOrigami());
                 } else {
-                    modelInfo.hide();
+                    modelInfo.hidePanel();
                 }
             }
         }

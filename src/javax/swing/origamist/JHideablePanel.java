@@ -128,9 +128,9 @@ public class JHideablePanel extends JPanel
             public void actionPerformed(ActionEvent e)
             {
                 if (JHideablePanel.this.content.isVisible()) {
-                    hide();
+                    hidePanel();
                 } else {
-                    show();
+                    showPanel();
                 }
             }
         });
@@ -188,7 +188,7 @@ public class JHideablePanel extends JPanel
     /**
      * Show the content.
      */
-    public void show()
+    public void showPanel()
     {
         content.setVisible(true);
         hideButton.setIcon(shownIcon);
@@ -197,7 +197,7 @@ public class JHideablePanel extends JPanel
     /**
      * Hide the content.
      */
-    public void hide()
+    public void hidePanel()
     {
         content.setVisible(false);
         hideButton.setIcon(hiddenIcon);

@@ -255,7 +255,7 @@ public class ModelInfoPanel extends JHideablePanel
         localeListener.propertyChange(new PropertyChangeEvent(this, "locale", null, ServiceLocator
                 .get(ConfigurationManager.class).get().getLocale()));
 
-        show();
+        showPanel();
 
         revalidate();
     }
