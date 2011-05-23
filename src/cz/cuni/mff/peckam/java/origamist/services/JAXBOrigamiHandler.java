@@ -240,12 +240,18 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
 
             // iterate through pages, draw them into the created graphics, and write to files
             IOException e = null;
-            for (int i = 1; i <= origami.getNumberOfPages(); i++) {
+            for (int i = 0; i <= origami.getNumberOfPages(); i++) {
 
                 try {
-                    // DRAW THE PAGE
-                    drawPage(g, new Rectangle(0, 0, resultDim.width, resultDim.height), pageInsets, origami, i, locale,
-                            font, withBackground, progressCallback);
+                    if (i > 0) {
+                        // DRAW THE PAGE
+                        drawPage(g, new Rectangle(0, 0, resultDim.width, resultDim.height), pageInsets, origami, i,
+                                locale, font, withBackground, progressCallback);
+                    } else {
+                        // DRAW TITLE PAGE
+                        drawTitlePage(g, new Rectangle(0, 0, resultDim.width, resultDim.height), pageInsets, origami,
+                                locale, font, withBackground, progressCallback);
+                    }
                 } catch (InterruptedException ex) {
                     // allows us to cancel the computation
                     g.dispose();
@@ -385,6 +391,89 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
         }
 
         return result;
+    }
+
+    /**
+     * Draw the given origami's title page to the given graphics into the given rectangle.
+     * 
+     * @param graphics The graphics to draw to.
+     * @param bounds The rectangle to draw into.
+     * @param insets insets of the page.
+     * @param origami The origami to draw.
+     * @param locale The locale used to generate step descriptions.
+     * @param font The font to draw text with. This is the base font size and will be enlarged for titles.
+     * @param withBackground If true, fill background with diagram background color from the origami, else leave the
+     *            background transparent.
+     * @param progressCallback The progress callback.
+     */
+    protected void drawTitlePage(Graphics2D graphics, Rectangle bounds, Insets insets, Origami origami, Locale locale,
+            Font font, boolean withBackground, Runnable progressCallback) throws InterruptedException
+    {
+        if (withBackground)
+            graphics.setBackground(origami.getPaper().getBackgroundColor());
+        else
+            graphics.setBackground(new Color(0, 0, 0, 0));
+        graphics.clearRect(0, 0, (int) bounds.getWidth(), (int) bounds.getHeight());
+
+        int width = bounds.width - insets.left - insets.right;
+        int height = bounds.height - insets.top - insets.bottom;
+
+        JMultilineLabel label = new JMultilineLabel("");
+        label.setOpaque(false);
+        label.setFont(font);
+        label.setVisible(true);
+
+        StringBuilder text = new StringBuilder();
+        text.append("<html><center>");
+        text.append("<h1>").append(origami.getName(locale)).append("</h1>");
+        text.append("<h2>").append(origami.getShortDesc(locale)).append("</h2>");
+        text.append("<p>").append(origami.getDescription(locale)).append("</p>");
+        text.append("</center></html>");
+
+        label.setText(text.toString());
+
+        int labelHeight;
+        {
+            JPanel panel = new JPanel();
+            panel.setSize(4000, 4000);
+
+            // this block computes the label's height when we know its fixed maximum width
+            panel.setLayout(new FormLayout(width + "px", "default"));
+            panel.add(label, new CellConstraints(1, 1));
+
+            Queue<Container> containers = new LinkedList<Container>();
+            containers.add(panel);
+            Container container;
+            while ((container = containers.poll()) != null) {
+                container.doLayout();
+                for (Component c : container.getComponents()) {
+                    if (c instanceof Container)
+                        containers.add((Container) c);
+                }
+            }
+
+            labelHeight = label.getSize().height;
+        }
+
+        label.setSize(width, labelHeight);
+
+        StepThumbnailGenerator generator = ServiceLocator.get(StepThumbnailGenerator.class);
+
+        Image image = generator.getThumbnail(origami,
+                origami.getModel().getSteps().getStep().get(origami.getModel().getSteps().getStep().size() - 1), width,
+                height / 2, withBackground);
+
+        graphics.drawImage(image, bounds.x + insets.left, bounds.y + height / 2, null);
+
+        label.paint(graphics.create(bounds.x + insets.left, bounds.y + (height / 2 - labelHeight) / 2, width,
+                labelHeight));
+
+        try {
+            if (progressCallback != null)
+                progressCallback.run();
+        } catch (RuntimeException e) {
+            throw new InterruptedException();
+        }
     }
 
     /**
