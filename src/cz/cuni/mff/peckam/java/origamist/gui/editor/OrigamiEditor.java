@@ -479,6 +479,9 @@ public class OrigamiEditor extends CommonGui
                 "pdf-32.png"));
         dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.PNG), "menu.save.asPNG",
                 "png-32.png"));
+        dropDown.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.animation"));
+        dropDown.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.MOV), "menu.save.asMOV",
+                "mov-32.png"));
 
         saveButton = dropDown;
 

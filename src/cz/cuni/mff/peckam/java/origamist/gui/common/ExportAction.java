@@ -105,16 +105,16 @@ public class ExportAction extends AbstractAction
 
             final File file = f;
 
+            final ExportOptions options = format.askForOptions(origami);
+
             final JDialog progressDialog = new JDialog();
-            final JProgressBar bar = new JProgressBar(0, format.getNumOfProgressChunks(origami));
+            final JProgressBar bar = new JProgressBar(0, format.getNumOfProgressChunks(origami, options));
             bar.setStringPainted(true);
             bar.setString(appMessages.getString("exporting.no.percentage"));
             progressDialog.getContentPane().setLayout(new FlowLayout());
             progressDialog.setUndecorated(true);
             progressDialog.setAlwaysOnTop(true);
             progressDialog.setLocationRelativeTo(null);
-
-            final ExportOptions options = format.askForOptions(origami);
 
             final SwingWorker<Set<File>, Void> worker = new SwingWorker<Set<File>, Void>() {
 

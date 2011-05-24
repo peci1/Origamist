@@ -750,6 +750,10 @@ public class OrigamiViewer extends CommonGui
         dropDownSave.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.PNG),
                 "menu.save.asPNG", "png.png"));
 
+        dropDownSave.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.animation"));
+        dropDownSave.addComponent(toolbar.createToolbarDropdownItem(new ExportAction(ExportFormat.MOV),
+                "menu.save.asMOV", "mov.png"));
+
         dropDownSave.addComponent(toolbar.createToolbarDropdownSeparator("menu.separator.listing"));
 
         dropDownSave.addComponent(toolbar.createToolbarDropdownItem(new ExportListingAction(), "menu.save.listing",

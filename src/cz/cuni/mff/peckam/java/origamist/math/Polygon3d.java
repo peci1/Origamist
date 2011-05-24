@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -40,8 +41,11 @@ import cz.cuni.mff.peckam.java.origamist.utils.Observer;
  */
 public class Polygon3d<T extends Triangle3d>
 {
-    /** The triangles the polygon consists of. */
-    protected HashSet<T>        triangles          = new HashSet<T>();
+    /**
+     * The triangles the polygon consists of. This is a linked set, because we need to maintain the triangles' order for
+     * morphing.
+     */
+    protected LinkedHashSet<T>  triangles          = new LinkedHashSet<T>();
 
     /** The read-only view of triangles. */
     protected Set<T>            trianglesRO        = Collections.unmodifiableSet(triangles);
@@ -77,7 +81,7 @@ public class Polygon3d<T extends Triangle3d>
      */
     public Polygon3d(List<T> triangles) throws IllegalStateException
     {
-        this(new HashSet<T>(triangles));
+        this(new LinkedHashSet<T>(triangles));
     }
 
     /**
@@ -121,7 +125,7 @@ public class Polygon3d<T extends Triangle3d>
      */
     public void addTriangles(List<T> triangles) throws IllegalStateException
     {
-        addTriangles(new HashSet<T>(triangles));
+        addTriangles(new LinkedHashSet<T>(triangles));
     }
 
     /**
@@ -162,7 +166,7 @@ public class Polygon3d<T extends Triangle3d>
         }
 
         // backup for the case that the resulting polygon is invalid
-        HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
+        LinkedHashSet<T> oldTriangles = new LinkedHashSet<T>(this.triangles);
 
         this.triangles.addAll(triangles);
 
@@ -255,7 +259,7 @@ public class Polygon3d<T extends Triangle3d>
         }
 
         // backup for the case that the resulting polygon is invalid
-        HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
+        LinkedHashSet<T> oldTriangles = new LinkedHashSet<T>(this.triangles);
 
         this.triangles.add(triangle);
 
@@ -334,7 +338,7 @@ public class Polygon3d<T extends Triangle3d>
         }
 
         // backup for the case that the resulting polygon is invalid
-        HashSet<T> oldTriangles = new HashSet<T>(this.triangles);
+        LinkedHashSet<T> oldTriangles = new LinkedHashSet<T>(this.triangles);
 
         this.triangles.removeAll(triangles);
 
@@ -484,7 +488,8 @@ public class Polygon3d<T extends Triangle3d>
     }
 
     /**
-     * @return An unmodifiable set of the triangles this polygon consists of.
+     * @return An unmodifiable set of the triangles this polygon consists of. The set's iterator iterates the triangles
+     *         in the order they were added/subdivided in this triangle (the source list is a {@link LinkedHashSet}).
      */
     public Set<T> getTriangles()
     {

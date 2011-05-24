@@ -506,6 +506,59 @@ public class ModelState implements Cloneable
     }
 
     /**
+     * Call this method right after a call to {@link #revertDelayedOperations()} to get the lines arrays with 3D values
+     * updated to correspond to the new triangles. The lines will be in the same order as they were before the
+     * {@link #revertDelayedOperations()} call.
+     * <p>
+     * Beware - the call to this method must be performed right after the {@link #revertDelayedOperations()}, if you eg.
+     * call {@link #getLineArrays()} in between, an {@link IllegalStateException} will be thrown (the implementaion
+     * requires the cached lines array to be invalid).
+     * <p>
+     * This method validates the line arrays cache, so only one call will work. After the first call, subsequent calls
+     * to {@link #getLineArrays()} will return the same result.
+     * <p>
+     * This method may be quite ineffective with large numbers of triangles (each of the line's ends is renewed using
+     * {@link #locatePointFromPaperTo3D(Point2d)}, which iterates over all layers).
+     * 
+     * @return The line arrays corresponding to the lines on the paper.
+     * 
+     * @throws IllegalStateException If the line arrays cache is valid.
+     */
+    public synchronized LineArray[] getLineArraysAfterDelayedRevertion() throws IllegalStateException
+    {
+        if (!foldLineArraysDirty || foldLineArrays == null || foldLineArrays.length == 0)
+            throw new IllegalStateException(
+                    "Cannot call getLineArraysAfterDelayedRevertion on a state with valid line arrays cache.");
+
+        UnitDimension paperSize = origami.getModel().getPaper().getSize();
+        double ratio = UnitHelper.convertTo(Unit.REL, Unit.M, 1, paperSize.getUnit(), paperSize.getMax());
+
+        LineArray[] newFoldLineArrays = new LineArray[foldLineArrays.length];
+        for (int i = 0; i < foldLineArrays.length; i++) {
+            ModelSegment oldSegment = (ModelSegment) foldLineArrays[i].getUserData();
+
+            newFoldLineArrays[i] = new LineArray(2, GeometryArray.COORDINATES);
+
+            Point3d startPoint = new Point3d(locatePointFromPaperTo3D(oldSegment.getOriginal().getP1()));
+            startPoint.scale(ratio);
+            newFoldLineArrays[i].setCoordinate(0, startPoint);
+
+            Point3d endPoint = new Point3d(locatePointFromPaperTo3D(oldSegment.getOriginal().getP2()));
+            endPoint.scale(ratio);
+            newFoldLineArrays[i].setCoordinate(1, endPoint);
+
+            ModelSegment line = new ModelSegment(new Segment3d(startPoint, endPoint), oldSegment.getOriginal(),
+                    oldSegment.getDirection(), oldSegment.getOriginatingStepId());
+
+            newFoldLineArrays[i].setUserData(line);
+        }
+
+        foldLineArraysDirty = false;
+
+        return foldLineArrays = newFoldLineArrays;
+    }
+
+    /**
      * Update the contents of the trianglesArrays so that it corresponds to the actual model state.
      */
     protected synchronized void updateTrianglesArrays()

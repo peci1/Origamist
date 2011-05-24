@@ -55,12 +55,12 @@
             <step id="1">
                 <description lang="en-US">Begin with plain A4 paper.</description>
                 <description lang="cs-CZ">Začneme s listem papíru A4.</description>
-                <zoom>100.0</zoom>
+                <zoom>190.0</zoom>
             </step>
             <step id="2">
                 <description lang="en-US">Fold and unfold around the centers of the shorter sides.</description>
                 <description lang="cs-CZ">Vytvořte přehyb mezi středy kratšich stran.</description>
-                <zoom>100.0</zoom>
+                <zoom>170.0</zoom>
                 <foldUnfoldOperation type="VALLEY_MOUNTAIN_FOLD_UNFOLD">
                     <line>
                         <start>
@@ -80,7 +80,7 @@
                 <description lang="cs-CZ">Horní chlopně přehněte ke středu.</description>
                 <colspan>2</colspan>
                 <rowspan>2</rowspan>
-                <zoom>100.0</zoom>
+                <zoom>200.0</zoom>
                 <foldOperation type="VALLEY_FOLD">
                     <angle>3.141592</angle>
                     <line>
@@ -99,7 +99,7 @@
                     </refPoint>
                     <layer>1</layer>
                 </foldOperation>
-                <repeatOperation type="REPEAT_ACTION" displayed="true">
+                <repeatOperation displayed="true" type="REPEAT_ACTION">
                     <foldOperation type="VALLEY_FOLD">
                         <angle>3.141592</angle>
                         <line>
@@ -123,7 +123,7 @@
             <step id="4">
                 <description lang="en-US">Rotate it 90° right.</description>
                 <description lang="cs-CZ">Otočte papír o 90° doprava.</description>
-                <zoom>100.0</zoom>
+                <zoom>240.0</zoom>
                 <rotateOperation type="ROTATE">
                     <angle>1.570796</angle>
                 </rotateOperation>
@@ -131,7 +131,7 @@
             <step id="5">
                 <description lang="en-US">Fold along the center line.</description>
                 <description lang="cs-CZ">Přehněte podél střední čáry.</description>
-                <zoom>100.0</zoom>
+                <zoom>270.0</zoom>
                 <foldOperation type="VALLEY_FOLD">
                     <angle>3.0</angle>
                     <line>
@@ -150,7 +150,7 @@
             <step id="6">
                 <description lang="en-US">Rotate the paper 180 degrees right and then turn over.</description>
                 <description lang="cs-CZ">Otočte papír o 180° doprava a pak vzhůru nohama.</description>
-                <zoom>100.0</zoom>
+                <zoom>270.0</zoom>
                 <rotateOperation type="ROTATE">
                     <angle>3.1415926</angle>
                 </rotateOperation>
@@ -159,7 +159,7 @@
             <step id="7">
                 <description lang="en-US">Fold the wings.</description>
                 <description lang="cs-CZ">Ohněte křídla</description>
-                <zoom>100.0</zoom>
+                <zoom>270.0</zoom>
                 <foldOperation type="VALLEY_FOLD">
                     <angle>1.5707963</angle>
                     <line>
@@ -203,7 +203,7 @@
                 <description lang="en-US">Do inside reverse fold on the back and outside reverse fold on the front of the plane.</description>
                 <description lang="cs-CZ">Prohněte zadní část šipky dovnitř a přední ven.</description>
                 <colspan>2</colspan>
-                <zoom>100.0</zoom>
+                <zoom>270.0</zoom>
                 <reverseFoldOperation type="INSIDE_REVERSE_FOLD">
                     <line>
                         <start>
@@ -255,7 +255,7 @@
             <step id="9">
                 <description lang="en-US">Now watch where will points A-D move.</description>
                 <description lang="cs-CZ">Sledujte, kam se hýbou body A-D.</description>
-                <zoom>100.0</zoom>
+                <zoom>270.0</zoom>
                 <markerOperation type="MARKER">
                     <text>A</text>
                     <refPoint>
@@ -292,7 +292,7 @@
             <step id="10">
                 <description lang="en-US">Fine-tune wings with thunderbolt folds.</description>
                 <description lang="cs-CZ">Vytuňte křídla pomocí cik-cak skladů.</description>
-                <zoom>200.0</zoom>
+                <zoom>270.0</zoom>
                 <thunderboltFoldOperation type="THUNDERBOLT_FOLD">
                     <angle>3.14</angle>
                     <line>
@@ -347,7 +347,7 @@
             <step id="11">
                 <description lang="cs-CZ">Vltačte čumák dovnitř.</description>
                 <description lang="en-US">Press the nose inside.</description>
-                <zoom>200.0</zoom>
+                <zoom>270.0</zoom>
                 <crimpFoldOperation type="INSIDE_CRIMP_FOLD">
                     <line>
                         <start>
@@ -388,7 +388,7 @@
             <step id="12">
                 <description lang="cs-CZ">A máme hotovo.</description>
                 <description lang="en-US">And that's it.</description>
-                <zoom>200.0</zoom>
+                <zoom>270.0</zoom>
             </step>
         </steps>
     </model>

@@ -34,5 +34,6 @@
 	<classpathentry kind="lib" path="lib/batik-anim.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
 	<classpathentry kind="lib" path="lib/batik-script.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
 	<classpathentry kind="lib" path="lib/batik-gvt.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
+	<classpathentry kind="lib" path="lib/JPEGMovieAnimation.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

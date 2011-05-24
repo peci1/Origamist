@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
+import javax.media.j3d.Canvas3D;
 import javax.swing.JPanel;
 import javax.swing.origamist.JMultilineLabel;
 import javax.xml.bind.JAXBContext;
@@ -53,14 +54,17 @@ import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import com.bric.qt.io.JPEGMovieAnimation;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.pdf.BadPdfFormatException;
 import com.itextpdf.text.pdf.PdfCopy;
 import com.itextpdf.text.pdf.PdfReader;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
+import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.UnsupportedDataFormatException;
+import cz.cuni.mff.peckam.java.origamist.gui.common.StepMorphingCanvasController;
 import cz.cuni.mff.peckam.java.origamist.jaxb.AdditionalTransforms.TransformLocation;
 import cz.cuni.mff.peckam.java.origamist.jaxb.BindingsController;
 import cz.cuni.mff.peckam.java.origamist.jaxb.BindingsManager;
@@ -77,6 +81,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 import cz.cuni.mff.peckam.java.origamist.services.interfaces.OrigamiHandler;
 import cz.cuni.mff.peckam.java.origamist.utils.ExportFormat;
 import cz.cuni.mff.peckam.java.origamist.utils.ExportOptions;
+import cz.cuni.mff.peckam.java.origamist.utils.MOVExportOptions;
 import cz.cuni.mff.peckam.java.origamist.utils.PDFExportOptions;
 import cz.cuni.mff.peckam.java.origamist.utils.PNGExportOptions;
 import cz.cuni.mff.peckam.java.origamist.utils.SVGExportOptions;
@@ -143,7 +148,7 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
     }
 
     @Override
-    public Set<File> export(Origami origami, File file, ExportFormat format, ExportOptions options,
+    public Set<File> export(final Origami origami, File file, ExportFormat format, ExportOptions options,
             Runnable progressCallback) throws IOException
     {
         Set<File> result = new LinkedHashSet<File>();
@@ -385,6 +390,30 @@ public class JAXBOrigamiHandler extends Service implements OrigamiHandler
             // this way we try to create the most files, so one error in the middle won't break the rest of files
             if (e != null)
                 throw e;
+        } else if (format == ExportFormat.MOV) {
+            MOVExportOptions opt = (MOVExportOptions) options;
+
+            Canvas3D canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration(), true);
+            canvas.setSize(opt.getSize());
+
+            final StepMorphingCanvasController morpher = new StepMorphingCanvasController(canvas, origami, origami
+                    .getModel().getSteps().getStep().get(0), (int) (opt.getFps() * opt.getStepDuration()));
+
+            JPEGMovieAnimation anim = new JPEGMovieAnimation(file);
+
+            int numFrames = (int) (origami.getModel().getSteps().getStep().size() * opt.getFps() * opt
+                    .getStepDuration());
+            int i = 0;
+            BufferedImage im;
+            while ((im = morpher.getNextFrame()) != null) {
+                anim.addFrame((float) (1f / opt.getFps()), im, 1f);
+                progressCallback.run();
+                if (i++ > numFrames) // we don't want an infinite loop when something goes bad
+                    break;
+            }
+            anim.close();
+
+            result.add(file);
         } else {
             Logger.getLogger("application").error("Unsupported export format: " + format);
             throw new IOException("Unsupported export format: " + format);
