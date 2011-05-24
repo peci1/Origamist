@@ -1,0 +1,269 @@
+%%% Hlavní soubor. Zde se definují základní parametry a odkazuje se na ostatní èásti. %%%
+
+%% Verze pro jednostranný tisk:
+% Okraje: levý 40mm, pravý 25mm, horní a dolní 25mm
+% (ale pozor, LaTeX si sám pøidává 1in)
+\documentclass[12pt,a4paper]{report}
+\setlength\textwidth{145mm}
+\setlength\textheight{247mm}
+\setlength\oddsidemargin{15mm}
+\setlength\evensidemargin{15mm}
+\setlength\topmargin{0mm}
+\setlength\headsep{0mm}
+\setlength\headheight{0mm}
+% \openright zaøídí, aby následující text zaèínal na pravé stranì knihy
+\let\openright=\clearpage
+
+%% Pokud tiskneme oboustrannì:
+% \documentclass[12pt,a4paper,twoside,openright]{report}
+% \setlength\textwidth{145mm}
+% \setlength\textheight{247mm}
+% \setlength\oddsidemargin{15mm}
+% \setlength\evensidemargin{0mm}
+% \setlength\topmargin{0mm}
+% \setlength\headsep{0mm}
+% \setlength\headheight{0mm}
+% \let\openright=\cleardoublepage
+
+%% Pokud používáte csLaTeX (doporuèeno):
+%\usepackage{czech}
+%% Pokud nikoliv:
+\usepackage[czech]{babel}
+\usepackage[T1]{fontenc}
+
+%% Použité kódování znakù: obvykle latin2, cp1250 nebo utf8:
+\usepackage[cp1250]{inputenc}
+
+%% Ostatní balíèky
+\usepackage{graphicx}
+\usepackage{amsthm}
+
+%% Balíèek hyperref, kterým jdou vyrábìt klikací odkazy v PDF,
+%% ale hlavnì ho používáme k uložení metadat do PDF (vèetnì obsahu).
+%% POZOR, nezapomeòte vyplnit jméno práce a autora.
+\usepackage[ps2pdf,unicode]{hyperref}   % Musí být za všemi ostatními balíèky
+\hypersetup{pdftitle=Origami diagram creator}
+\hypersetup{pdfauthor=Martin Pecka}
+
+%%% Drobné úpravy stylu
+
+% Tato makra pøesvìdèují mírnì ošklivým trikem LaTeX, aby hlavièky kapitol
+% sázel pøíèetnìji a nevynechával nad nimi spoustu místa. Smìle ignorujte.
+\makeatletter
+\def\@makechapterhead#1{
+  {\parindent \z@ \raggedright \normalfont
+   \Huge\bfseries \thechapter. #1
+   \par\nobreak
+   \vskip 20\p@
+}}
+\def\@makeschapterhead#1{
+  {\parindent \z@ \raggedright \normalfont
+   \Huge\bfseries #1
+   \par\nobreak
+   \vskip 20\p@
+}}
+\makeatother
+
+% Toto makro definuje kapitolu, která není oèíslovaná, ale je uvedena v obsahu.
+\def\chapwithtoc#1{
+\chapter*{#1}
+\addcontentsline{toc}{chapter}{#1}
+}
+
+\begin{document}
+
+% Trochu volnìjší nastavení dìlení slov, než je default.
+\lefthyphenmin=2
+\righthyphenmin=2
+
+%%% Titulní strana práce
+
+\pagestyle{empty}
+\begin{center}
+
+\large
+
+Charles University in Prague
+
+\medskip
+
+Faculty of Mathematics and Physics
+
+\vfill
+
+{\bf\Large BACHELOR THESIS}
+
+\vfill
+
+\centerline{\mbox{\includegraphics[width=60mm]{images/logo}}}
+
+\vfill
+\vspace{5mm}
+
+{\LARGE Martin Pecka}
+
+\vspace{15mm}
+
+% Název práce pøesnì podle zadání
+{\LARGE\bfseries Origami diagram creator}
+
+\vfill
+
+% Název katedry nebo ústavu, kde byla práce oficiálnì zadána
+% (dle Organizaèní struktury MFF UK)
+Kabinet software a výuky informatiky %TODO prelozit
+
+\vfill
+
+\begin{tabular}{rl}
+
+Supervisor of the bachelor thesis: & Mgr.~Martin~Petøíèek \\
+\noalign{\vspace{2mm}}
+Study programme: & Informatika \\
+\noalign{\vspace{2mm}}
+Specialization: & Obecná informatika \\
+\end{tabular}
+
+\vfill
+
+% Zde doplòte rok
+Prague 2011
+
+\end{center}
+
+\newpage
+
+%%% Následuje vevázaný list -- kopie podepsaného "Zadání bakaláøské práce".
+%%% Toto zadání NENÍ souèástí elektronické verze práce, nescanovat.
+
+%%% Na tomto místì mohou být napsána pøípadná podìkování (vedoucímu práce,
+%%% konzultantovi, tomu, kdo zapùjèil software, literaturu apod.)
+
+\openright
+
+\noindent
+Podìkování. %TODO
+
+\newpage
+
+%%% Strana s èestným prohlášením k bakaláøské práci
+
+\vglue 0pt plus 1fill
+
+\noindent
+I declare that I carried out this bachelor thesis independently, and only with the cited sources, literature and other professional sources. 
+
+\medskip\noindent
+I understand that my work relates to the rights and obligations under the Act No. 121/2000 Coll., the Copyright Act, as amended, in particular the fact that the Charles University in Prague has the right to conclude a license agreement on the use of this work as a school work pursuant to Section 60 paragraph 1 of the Copyright Act. 
+
+\vspace{10mm}
+
+\hbox{\hbox to 0.5\hsize{%
+In Prague date ............. %TODO
+\hss}\hbox to 0.5\hsize{%
+%TODO
+\hss}}
+
+\vspace{20mm}
+\newpage
+
+%%% Povinná informaèní strana bakaláøské práce
+
+\vbox to 0.5\vsize{
+\setlength\parindent{0mm}
+\setlength\parskip{5mm}
+
+%\language 2
+
+Název práce:
+Origami diagram creator
+% pøesnì dle zadání
+
+Autor:
+Martin Pecka
+
+Katedra:  % Pøípadnì Ústav:
+Kabinet software a výuky informatiky
+% dle Organizaèní struktury MFF UK
+
+Vedoucí bakaláøské práce:
+Mgr.~Martin~Petøíèek, Kabinet software a výuky informatiky
+% dle Organizaèní struktury MFF UK, pøípadnì plný název pracovištì mimo MFF UK
+
+Abstrakt:
+% abstrakt v rozsahu 80-200 slov; nejedná se však o opis zadání bakaláøské práce
+Program Origamist si klade za cíl pomoci s~tvorbou návodù na skládání origami modelù. V~souèasné dobì jsou nejbìžnìjšími metodami pro tvorbu tìchto návodù buï ruèní kreslení všech krokù v obrázkovém editoru, nebo nafocení jednotlivých krokù a jejich manuální poskládání (opìt v obrázkovém editoru). Origamist na toto pole pøináší novou alternativu. Autor tak dostává možnost pøenést posloupnost ohybù papíru, z~nichž se návod skládá, do programu Origamist, jenž z nich dokáže vygenerovat nìkolik druhù výstupu - v~origamistických kruzích nejrozšíøenìjší PDF návod, ale i~návod jako obrázek (PNG, SVG), nebo dokonce jako animaci procesu skládání. Pøidanou hodnotou pak je snadná možnost pøeložit popisky krokù do více jazykù.
+
+Klíèová slova:
+Origami, Java3D, skládání papíru, návod
+
+\vss}\nobreak\vbox to 0.49\vsize{
+\setlength\parindent{0mm}
+\setlength\parskip{5mm}
+
+%\language 3
+
+Title:
+% pøesný pøeklad názvu práce v angliètinì
+Origami diagram creator
+
+Author:
+Martin Pecka
+
+Department:
+Kabinet software a výuky informatiky %TODO v anglictine
+% dle Organizaèní struktury MFF UK v angliètinì
+
+Supervisor:
+Mgr.~Martin~Petøíèek, Kabinet software a výuky informatiky %TODO v anglictine
+% dle Organizaèní struktury MFF UK, pøípadnì plný název pracovištì
+% mimo MFF UK v angliètinì
+
+Abstract:
+% abstrakt v rozsahu 80-200 slov v angliètinì; nejedná se však o pøeklad
+% zadání bakaláøské práce
+The main target of the Origamist application is to aid with creating origami diagram manuals. Recently, the most common methods for creting those manuals are  drawing of the steps in an image editor, or taking photographs of the folded steps and composing them together (again in an image editor). What Origamist brings is a new alternative to these methods. The manual's author gets the possibility to transfer the sequence of paper folds the manual consists of to the Origamist application, which is able to export several types of output - the most favourite (among origami folders) PDF manuals, but also image manuals (as PNG or SVG), and even as an animation of the folding process. There is also the added value to translate the steps' descriptions to several languages.
+
+Keywords:
+% 3 až 5 klíèových slov v angliètinì
+Origami, Java3D, paper folding, diagram
+
+\vss}
+
+\newpage
+
+%%% Strana s automaticky generovaným obsahem bakaláøské práce. U matematických
+%%% prací je pøípustné, aby seznam tabulek a zkratek, existují-li, byl umístìn
+%%% na zaèátku práce, místo na jejím konci.
+
+\openright
+\pagestyle{plain}
+\setcounter{page}{1}
+\tableofcontents
+
+%%% Jednotlivé kapitoly práce jsou pro pøehlednost uloženy v samostatných souborech
+\include{intro}
+\include{chapter1}
+\include{chapter2}
+
+% Ukázka použití nìkterých konstrukcí LateXu (odkomentujte, chcete-li)
+% \include{ukazka}
+
+\include{conclusion}
+
+%%% Seznam použité literatury
+\include{bibliography}
+
+%%% Tabulky v bakaláøské práci, existují-li.
+\chapwithtoc{List of tables}
+
+%%% Použité zkratky v bakaláøské práci, existují-li, vèetnì jejich vysvìtlení.
+\chapwithtoc{List of abbreviations}
+
+%%% Pøílohy k bakaláøské práci, existují-li (rùzné dodatky jako výpisy programù,
+%%% diagramy apod.). Každá pøíloha musí být alespoò jednou odkazována z vlastního
+%%% textu práce. Pøílohy se èíslují.
+\chapwithtoc{Attachments}
+
+\openright
+\end{document}

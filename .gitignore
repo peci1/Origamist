@@ -9,6 +9,9 @@
 /doc/*.log
 /doc/*.out
 /doc/.~lock*
+/doc/*.undo
+/doc/thesis/*.dvi
+/doc/thesis/Bachelor thesis/images/*.pdf
 /OrigamistEditor.jar
 /OrigamistViewer.jar
 /signapplet.bat
