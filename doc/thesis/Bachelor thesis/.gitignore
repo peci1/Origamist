@@ -1,0 +1,8 @@
+*.undo
+*.dvi
+*.log
+*.out
+*.pdf
+*.aux
+*.toc
+ukazka.tex

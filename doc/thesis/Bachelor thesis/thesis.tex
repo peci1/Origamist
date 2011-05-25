@@ -28,11 +28,18 @@
 %% Pokud používáte csLaTeX (doporuèeno):
 %\usepackage{czech}
 %% Pokud nikoliv:
-\usepackage[czech]{babel}
+\usepackage[czech,english]{babel}
 \usepackage[T1]{fontenc}
 
 %% Použité kódování znakù: obvykle latin2, cp1250 nebo utf8:
 \usepackage[cp1250]{inputenc}
+
+\usepackage{url}
+
+\usepackage{footnote}
+\makesavenoteenv{tabular}
+
+\usepackage{longtable}
 
 %% Ostatní balíèky
 \usepackage{graphicx}
@@ -70,7 +77,13 @@
 \addcontentsline{toc}{chapter}{#1}
 }
 
+% These lines switch between czech and english style paragraph indent
+%\setlength{\parindent}{0cm}
+%\setlength{\parskip}{\baselineskip}
+
 \begin{document}
+
+\selectlanguage{english}
 
 % Trochu volnìjší nastavení dìlení slov, než je default.
 \lefthyphenmin=2
@@ -111,7 +124,7 @@ Faculty of Mathematics and Physics
 
 % Název katedry nebo ústavu, kde byla práce oficiálnì zadána
 % (dle Organizaèní struktury MFF UK)
-Kabinet software a výuky informatiky %TODO prelozit
+Department of Software and Computer Science Education
 
 \vfill
 
@@ -173,7 +186,7 @@ In Prague date ............. %TODO
 \setlength\parindent{0mm}
 \setlength\parskip{5mm}
 
-%\language 2
+\begin{otherlanguage}{czech}
 
 Název práce:
 Origami diagram creator
@@ -197,11 +210,11 @@ Program Origamist si klade za cíl pomoci s~tvorbou návodù na skládání origami mo
 Klíèová slova:
 Origami, Java3D, skládání papíru, návod
 
+\end{otherlanguage}
+
 \vss}\nobreak\vbox to 0.49\vsize{
 \setlength\parindent{0mm}
 \setlength\parskip{5mm}
-
-%\language 3
 
 Title:
 % pøesný pøeklad názvu práce v angliètinì
@@ -211,11 +224,11 @@ Author:
 Martin Pecka
 
 Department:
-Kabinet software a výuky informatiky %TODO v anglictine
+Department of Software and Computer Science Education
 % dle Organizaèní struktury MFF UK v angliètinì
 
 Supervisor:
-Mgr.~Martin~Petøíèek, Kabinet software a výuky informatiky %TODO v anglictine
+Mgr.~Martin~Petøíèek, Department of Software and Computer Science Education
 % dle Organizaèní struktury MFF UK, pøípadnì plný název pracovištì
 % mimo MFF UK v angliètinì
 
