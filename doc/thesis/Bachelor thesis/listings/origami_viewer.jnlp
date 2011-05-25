@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE jnlp PUBLIC "-//Sun Microsystems, Inc//DTD JNLP Discriptor 1.5//EN" "http://java.sun.com/dtd/JNLP-1.5.dtd">
+<jnlp spec="1.0+" codebase="http://www.ms.mff.cuni.cz/~peckam/origamist" href="origami_viewer.test.jnlp"><!-- codebase must point to the !absolute! location of the JNLP file, otherwise the newest Java versions won't run it! -->
+  <information>
+    <title>Origamist viewer</title>
+    <vendor>Martin Pecka</vendor>
+    <homepage href="http://github.com/peci1/Origamist"/>
+    <description>A viewer for digital origami models.</description>
+    <description kind="short">An origami viewer application.</description>
+    <offline-allowed/>
+  </information>
+  <security>
+    <all-permissions/>
+  </security>
+  <resources os="Windows">
+    <property name="sun.java2d.noddraw" value="true"/>
+  </resources>
+  <resources os="Mac OS X">
+    <property name="j3d.rend" value="jogl"/>
+  </resources>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se" initial-heap-size="128m" max-heap-size="1024m"/>
+    <jar href="OrigamistViewer.jar" main="true"/>
+    <jar href="lib/batik-anim.jar"/>
+    <jar href="lib/batik-awt-util.jar"/>
+    <jar href="lib/batik-bridge.jar"/>
+    <jar href="lib/batik-codec.jar"/>
+    <jar href="lib/batik-css.jar"/>
+    <jar href="lib/batik-dom.jar"/>
+    <jar href="lib/batik-ext.jar"/>
+    <jar href="lib/batik-gvt.jar"/>
+    <jar href="lib/batik-parser.jar"/>
+    <jar href="lib/batik-script.jar"/>
+    <jar href="lib/batik-svg-dom.jar"/>
+    <jar href="lib/batik-svggen.jar"/>
+    <jar href="lib/batik-transcoder.jar"/>
+    <jar href="lib/batik-util.jar"/>
+    <jar href="lib/batik-xml.jar"/>
+    <jar href="lib/forms.jar"/>
+    <jar href="lib/gluegen-rt.jar"/>
+    <jar href="lib/itextpdf-5.1.0.jar"/>
+    <jar href="lib/j3dcore.jar"/>
+    <jar href="lib/j3dutils.jar"/>
+    <jar href="lib/jaxb2-basics-runtime-0.6.0.jar"/>
+    <jar href="lib/log4j-1.2.16.jar"/>
+    <jar href="lib/pdf-transcoder.jar"/>
+    <jar href="lib/vecmath.jar"/>
+    <jar href="lib/xml-apis-ext.jar"/>
+  </resources>
+  <applet-desc name="Origami viewer" main-class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" width="800" height="600" documentbase=".">
+    <param name="files" value="diagrams/listing.xml"/><!-- These are the files to be displayed at startup. -->
+    <param name="displayMode" value="PAGE"/><!-- Startup mode of the page, either "page" or "diagram". -->
+  </applet-desc>
+</jnlp>

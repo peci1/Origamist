@@ -1,0 +1,25 @@
+\chapter{Origamist's algorithms \& data structures}
+This chapter covers the most important computational algorithms, data structures and programming approaches the program uses.
+
+\section{Representation of the origami model}
+\subsection{Triangles and layers}
+The model is stored simultaneously as a 3D model and 2D crease pattern. Both these models are represented by a set of triangles. Every 2D triangle corresponds to exactly one 3D triangle, and thus we will call the 2D triangle as the `origin' or `original' of the 3D triangle (because in the very first step, the corresponding 2D and 3D triangles are the same). The triangles are grouped to so called \emph{layers} of paper.
+\begin{define}
+A \emph{layer of paper} is a nonempty set of triangles meeting the following conditions:
+\begin{itemize}
+\item All triangles have their normals pointing in the same direction\footnote{This trivially holds for the original triangles}.
+\item The original triangles form a single, nondegenerated and connected polygon\footnote{But possibly non-convex.} on the crease pattern.
+\item The 3D triangles form a single, nondegenerated, connected and planar polygon.
+\item Every triangle belongs to exactly one layer.
+\end{itemize}
+\end{define}
+
+As a consequence of this definition, we see that the whole paper model can be parcelled into layers. A layer of paper can be imagined as the largest straight part of the paper bounded by creases or edges of the paper\footnote{But it is allowed for a layer to have its boundary at a crease of angle 0°. This means it doesn't always have to be the largest straight part, but it is guaranteed that a layer doesn't have its boundary somewhere `inside' (the boundary is always an edge of the paper or a crease).}.
+
+
+What is the term of layer good for? A layer is always the smallest unit of paper that can be moved, bent, or rotated. If a fold would go through the interior of a layer, a crease is created in the layer and it is subdivided into more smaller layers\footnote{Convex layers always split to 2 parts, but nonconvex layers can generate more sublayers}.
+\subsection{Fold lines}
+Although it is not necessary to hold all the fold lines in memory\footnote{All fold lines could be just signalised by layers' boundaries.}, it shows that it is helpful to have a quick access to them. So, every triangle remembers all the fold lines it lies along, and all fold lines have links to the triangles lying along them. Moreover, the folds remember the direction of the fold (mountain/valley), so it can be used later in generating crease patterns or for displaying the just done operations (as described in \ref{sec:operationMarks}). They also remember their `age' in the number of steps they were last `touched' (used in a fold). The age can be used for blending old and probably unimportant creases.
+
+\subsection{That's all we need}
+The triangles, layers and fold lines are all we need to know to be able to correctly render and alter the model. More precisely, only 3D triangles and fold lines are needed, but layers and 2D triangles are needed for interaction with the model.

@@ -41,6 +41,17 @@
 
 \usepackage{longtable}
 
+\usepackage{listings}
+
+\lstset{%
+  showstringspaces=false,
+  basicstyle=\ttfamily,
+  breaklines=true,
+  columns=fullflexible,
+  numbers=left, numberstyle=\tiny, stepnumber=2, numbersep=5pt,
+  keywordstyle=\bfseries
+}
+
 %% Ostatní balíèky
 \usepackage{graphicx}
 \usepackage{amsthm}
@@ -76,6 +87,8 @@
 \chapter*{#1}
 \addcontentsline{toc}{chapter}{#1}
 }
+
+\newtheorem*{define}{Definition}	% Definice neèíslujeme, proto "*"
 
 % These lines switch between czech and english style paragraph indent
 %\setlength{\parindent}{0cm}
@@ -259,6 +272,7 @@ Origami, Java3D, paper folding, diagram
 \include{chapter1}
 \include{chapter2}
 \include{chapter3}
+\include{chapter4}
 
 % Ukázka použití nìkterých konstrukcí LateXu (odkomentujte, chcete-li)
 % \include{ukazka}
@@ -272,6 +286,21 @@ Origami, Java3D, paper folding, diagram
 %%% diagramy apod.). Každá pøíloha musí být alespoò jednou odkazována z vlastního
 %%% textu práce. Pøílohy se èíslují.
 \chapwithtoc{Attachments}
+
+\section{A sample webpage displaying Origamist as a standard Java applet using the old Java Plugin}
+\label{att:oldPlugin} %TODO edit when the split to main and viewer archive is done
+\lstset{language=HTML}
+\lstinputlisting{listings/origami_viewer_old.html}
+
+\section{A sample webpage displaying Origamist as applet using new generation Java plugin, if the client has installed it}
+\label{att:newPlugin} %TODO edit when the split to main and viewer archive is done
+\lstset{language=HTML}
+\lstinputlisting{listings/origami_viewer_new.html}
+
+\section{A sample JNLP file to run Origamist viewer}
+\label{att:jnlp} %TODO edit when the split to main and viewer archive is done
+\lstset{language=XML}
+\lstinputlisting{listings/origami_viewer.jnlp}
 
 \openright
 \end{document}
