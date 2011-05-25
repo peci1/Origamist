@@ -1,6 +1,42 @@
-\chapter{Název druhé kapitoly}
+\chapter{Origami, computers and mathematics}
+This chapter presents some recent origami-related results in the field of mathematics or computer science, and also presents some existing origami software. Although origami is mainly art, most of these results are very interesting, and some of them have even practical use.
 
-\section{Název první podkapitoly v druhé kapitole}
+\section{Computational origami}
+"Most results in computational origami fit into at least one of three categories: universality results, efficient decision algorithms, and computational intractability results.
 
-\section{Název druhé podkapitoly v druhé kapitole}
+A \emph{universality result} shows that, subject to a certain model of folding, everything is possible. For example, any tree-shaped origami base, any polygonal silhouette, and any polyhedral surface can be folded out of a large-enough
+piece of paper. Universality results often come with efficient algorithms for finding the foldings; pure existence results are rare.
 
+When universality results are impossible (some objects cannot be folded), the next-best result is an \emph{efficient decision algorithm} to determine whether a given object is foldable. Here `efficient' normally means `polynomial time'. For example, there is a polynomial-time algorithm to decide whether a `map' (grid of creases marked mountain and valley) can be folded by a sequence of simple folds.
+
+Not all paper-folding problems have efficient algorithms, and this can be proved by a \emph{computational intractability result}. For example, it is NP-hard to tell whether a given crease pattern folds into any flat origami, even when folds are restricted to simple folds. These results mean that there are no polynomial-time algorithms for these problems, unless some of the hardest computational problems can also be solved in polynomial time, which is generally deemed unlikely." \cite{demaine}
+
+\subsection{Other computational tasks}
+As \cite{demaine} says, there is another division of computational problems. They are \emph{origami design} and \emph{origami foldability} problems. \emph{Origami design} examines the possibilities (finding the needed creases) of folding arbitrary shapes with specified properties. On the other side, \emph{origami foldability} tries to answer if the given crease pattern is foldable into any shape.
+
+\emph{One complete straight cut problem} solves the task whose input is a polygon drawn on paper, and whose output is a crease pattern which can be folded in the way that all the polygon's edges overlap on a single line. Why one straight cut? If you cut the paper along the overlap line, you will get the polygon cut out of the paper. \cite{demaine} presents results of two different approaches, both of them proving that such crease pattern can be found for any polygon.
+
+\emph{Silhouettes and polyhedra problem} takes a 2- or 3-dimensional silhouette of the desired model as its input and returns a folding of the paper resulting in the input shape. Again, according to \cite{demaine}, such result always exists.
+
+\emph{Flat foldability} tries to find out if a given crease pattern (without fold directions specified) is foldable to a flat model using a consistent fold direction assignment. \cite{bern} shows a linear-time algorithm that finds such direction assignment, or tells that the given pattern is not flat foldable.
+
+\subsection{Existing origami software}
+There is a number of computer applications related to origami. Here is a list of some of them.
+\begin{itemize}
+\item \emph{TreeMaker}\footnote{\url{http://www.langorigami.com/science/treemaker/treemaker5.php4}} by Robert Lang, is a tool for designing crease patterns for given sketched shapes. The shape is basically sketched as a tree (in the algorithmic meaning of the word), thus TreeMaker. The program uses the disc packing method, described in \cite{treemaker}.
+\item \emph{Origami simulation}\footnote{\url{http://www.langorigami.com/science/origamisim/origamisim.php4}} by Robert Lang is a simple GUI tool for designing pureland origami. Since 1992 the development has been stopped, and it only works on PowerPC Macs.
+\item \emph{ORIGAMI Playing Simulator in the Virtual Space} by Shin-ya Miyazaki, Takami Yasuda, Shigeki Yokoi and Jun-ichiro Toriwaki. Another interactive GUI tool for origami model folding, was presented in \cite{simulation}. Although this seems to be the most capable GUI tool for origami, I couldn't test it, because the given paper doesn't provide a link to the application.
+\item \emph{Doodle}\footnote{\url{http://doodle.sourceforge.net/about.html}} by Jérôme Gout, Xavier Fouchet, Vincent Osele, and volunteers. Doodle is a tool for generating origami diagrams from the given ASCII text instructions. This program produces nice diagrams, but needs a lot of additional information in the input files (eg. it is often needed to rotate some paper parts by an explicit command, because the fold commands just create the associated fold lines).
+\item \emph{ORIPA}\footnote{\url{http://mitani.cs.tsukuba.ac.jp/pukiwiki-oripa/index.php?ORIPA\%3B\%20Origami\%20Pattern\%20Editor}} by Jun Mitani. ORIPA is interactive GUI tool for designing crease patterns. It also provides an estimated preview of the folded model.
+\item \emph{Computational Origami System Eos} by Tetsuo Ida, Hidekazu Takahashi, Mircea Marin, Asem Kasem and Fadoua Ghourabi. This software introduced in \cite{eos} is a non-interactive tool for folding origami models and automatic proving some conclusions about the constructed models. EOS is written in Mathematica.
+\end{itemize}
+
+\section{Origami in other sciences}
+Mathematics and computer science aren't the only disciplines origami brings benefits to. Here is a list of other uses of origami theory:
+\begin{itemize}
+\item \emph{Stents} in medicine. Stents are small tubes used to reinforce or broaden clogged veins and arteries. Since they are transported to their destination through veins and arteries, they need to be in a folded state, then they can be transferred to the right place, and unfolded. A waterbomb base\footnote{One of the standard origami bases, which are just a series of steps shared by many models in the beginning.} is mainly used for stents. \cite{stent}
+\item \emph{Eyeglass space telescope} needed the help of origami theory master Robert Lang\footnote{\url{http://www.langorigami.com/science/eyeglass/eyeglass.php4}} to invent a method of folding a large telescope into a space satellite. \cite{eyeglass}
+\item \emph{Space project SFU} of Japanese space organization JAXA used Robert Lang's origami experiences to efficiently fold and unfold a solar panel array in the open space. The fold they used is called Miura map fold\footnote{\url{http://en.wikipedia.org/wiki/Miura_map_fold}}.\cite{sfu}
+\item Origami design techniques were used by a German company to simulate effective \emph{packing of airbags} into car steering wheels. \cite{airbag}
+\item Origami techniques helped with the development of \emph{3D solar panels}, which increase the productivity of solar panels and have the advantage of not having any movable parts that can get broken. \cite{threedpanels}.
+\end{itemize}
