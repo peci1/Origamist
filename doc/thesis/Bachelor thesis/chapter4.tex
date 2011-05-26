@@ -16,10 +16,85 @@ A \emph{layer of paper} is a nonempty set of triangles meeting the following con
 
 As a consequence of this definition, we see that the whole paper model can be parcelled into layers. A layer of paper can be imagined as the largest straight part of the paper bounded by creases or edges of the paper\footnote{But it is allowed for a layer to have its boundary at a crease of angle 0°. This means it doesn't always have to be the largest straight part, but it is guaranteed that a layer doesn't have its boundary somewhere `inside' (the boundary is always an edge of the paper or a crease).}.
 
-
 What is the term of layer good for? A layer is always the smallest unit of paper that can be moved, bent, or rotated. If a fold would go through the interior of a layer, a crease is created in the layer and it is subdivided into more smaller layers\footnote{Convex layers always split to 2 parts, but nonconvex layers can generate more sublayers}.
+
 \subsection{Fold lines}
 Although it is not necessary to hold all the fold lines in memory\footnote{All fold lines could be just signalised by layers' boundaries.}, it shows that it is helpful to have a quick access to them. So, every triangle remembers all the fold lines it lies along, and all fold lines have links to the triangles lying along them. Moreover, the folds remember the direction of the fold (mountain/valley), so it can be used later in generating crease patterns or for displaying the just done operations (as described in \ref{sec:operationMarks}). They also remember their `age' in the number of steps they were last `touched' (used in a fold). The age can be used for blending old and probably unimportant creases.
 
 \subsection{That's all we need}
 The triangles, layers and fold lines are all we need to know to be able to correctly render and alter the model. More precisely, only 3D triangles and fold lines are needed, but layers and 2D triangles are needed for interaction with the model.
+
+\section{How to represent the operations?}
+\label{sec:operationsRepresentation}
+Most operations consist of a set of lines, probably an angle or two, and\dots No, that isn't sufficient. Look at figure \ref{fig:chooseLayers}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=150mm]{images/fold_layers}
+	\label{fig:chooseLayers}
+	\caption{Different layers that can be bent}
+\end{figure}
+
+The last thing to be specified is which layers of paper should be bent. As you can see in the figure, no layers are bent (a), the first layer is bent (b), or both layers are bent (c).
+
+So we have it - lines, angles and layers. Lines and angles are easy to represent and address. Layers are worse. There is no unambiguous designation of the layers other than assigning them some artificial keys\footnote{We don't consider the option to label layers by themselves, because this is just useless - who would like to see the full list of triangles to be rotated in the diagram file? There must be a better option.}. But what keys? Should we index the layers according to the order they have emerged? That sounds really unnatural and like a bad design idea\footnote{What if the bending algorithm got changed and the order of layers' emerging with it?}.
+
+I have finally found a naturally-looking set of keys. The mapping is based on the active line\footnote{It is never needed to select layers without the need to select a line altogether, so this makes sense.} (the line the currently created fold will be folded along). The line always lies in a layer. So take this layer and make a stripe perpendicular to it and having its border lines at the endpoints of the active line (it's actually always a segment). Then record all intersections of this stripe with another layers not parallel with the stripe\footnote{Bending a layer parallel with the stripe would mean bending a layer perpendicular to another layer we will bend, which makes no sense. Although such folds are possible, it would be better to divide them into two separate folds.}. Sort the intersections by the distance from the viewer\footnote{Since fold directions are dependent on the viewpoint, this brings no new dependencies to the algorithm.} (more precisely sort by the distance of their centres, because the intersections can have arbitrary angles towards the stripe and it wouldn't be clear what point to measure the distance from). Now, assign indices from 0 upwards to the sorted layers.
+
+Although this key-mapping algorithm looks complex, it just does what people do naturally\footnote{How would I tell another person what layers to bend? I'd tell something like `Bend the first four layers,' or `Bend the topmost and bottommost layers.' Similar instructions can be found in many origami manuals. All these instructions refer to the same order of layers this algorithm defines.}.
+
+So, in the data files, it is sufficient to first define the line to fold along, and then these keys can be used to describe the layers that will be bent. Figure \ref{fig:indexedLayers} illustrates this.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=150mm]{images/layers_indexing}
+	\caption{The indices mapped to layers according to the active line (azure on the image).}
+	\label{fig:indexedLayers}
+\end{figure}
+
+\section{How to bend the paper?}
+\subsection{Which folds to implement?}
+We will show that the ability to perform valley and mountain folds (let's call them basic folds) is sufficient for making any operation of those listed in \ref{sec:basicFolds}. 
+
+It is possible that during the decomposed operation the paper will get into inconsistent state (eg. it can intersect and tear), but after completing the whole operation, it will be either consistent, or the operation was invalidly specified.
+
+Thunderbolt fold is just a composition of two basic folds. Do the first one, then the second one, and that's it.
+
+Inside/outside reverse folds can also be substituted with two basic folds (here the paper will be torn in between of the operations). It's worth noting that reverse folds don't need to specify angle of rotation, because there is only one nontrivial angle for which the operation will be valid (otherwise the paper would get curved). The angle is determined from the symmetry that reverse folds define. The symmetry is illustrated in figure \ref{fig:reverseSymmetry}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=150mm]{images/reverse_fold_symmetry}
+	\caption{The symmetry of inside reverse fold.}
+	\label{fig:reverseSymmetry}
+\end{figure}
+
+Inside/outside crimp folds are just double reverse folds and no additional paper tearing or intersecting can happen.
+
+The pull operation also just rotates one part of the paper around the unfolded crease, so basic folds are sufficient.
+
+The open operation is the most difficult, it could involve more layers to be rotated separately, but again, all of these steps will only be rotations of the paper around an axis (or multiple aces).
+
+\subsection{The basic fold operation}
+Let's get to the core of the folding. The operation is divided into two steps --- triangle subdivision plus fold line creation (let's call it `part 1'), and bending plus subdividing layers (calling it `part 2').
+
+\subsubsection{Making creases}
+Firstly, the layers involved in the triangle subdivision are determined by the algorithm from \ref{sec:operationsRepresentation}. All triangles having a fold line going through their interior are subdivided into two or three smaller triangles. These triangles copy the appropriate fold line data of the old triangle and add the new fold line to their fold line data. Internally, the direction of the fold is taken relatively to the triangle's normal\footnote{Here it is important to mention that the triangle subdivision process must retain the same normal direction, which is no problem.}. So, this has been the first part of the process.
+
+\subsubsection{Bending}
+Then the bending comes to the scene. We need to detect all layers that will be rotated (that are not only those found in part 1, but also all layers `more distant' from the fold line but firmly connected to any rotated layer).
+
+\subsubsection{Finding all layers to be rotated}
+I use an eager algorithm for finding these layers. I begin with the layers from part 1. I subdivide them into more smaller layers and pick those that are to be rotated\footnote{This will be discussed later.}. Then I go to all neighbouring layers and check if they can be added to the to-be-rotated set. What are the terms for adding a layer's neighbour? Firstly, a newly added fold line mustn't lie between these two layers. If it did, one layer would surely have been in the part we want to rotate, whilst the other one would have been in the part we want not to rotate. And secondly (which is nearly implicit from what has been said former), the layer must be a neighbour of an already rotated layer. These two conditions are sufficient to find the right set of triangles to rotate. And then comes the easiest part - taking all the layers and rotating them around a single axis.
+
+\subsection{Pitfalls}
+There are still some unanswered questions on the folding algorithm. Let's take a look on them.
+
+\subsubsection{What `half' to rotate?}
+At the beginning of part 2, how do we choose the parts of the subdivided layers we want to rotate? Well, that's a question. We define a halfspace and take all layers the halfspace contains (the halfspace's border plane is the same as the plane of the stripe constructed for layer selection). What part of paper should `stay' and what should rotate? Geometrically, the results are the same. But the real 3D coordinates of the points will differ. One possibility is to let the user to select a point in the `half' of the model he wants to be rotated (these points are called `refPoints' in the application). Otherwise, we have to guess. Here is a little heuristic. Firstly, we just select any of the `halves' and find the layers to be rotated. But then the heuristic looks at the quotient of rotated and non-rotated triangles, and rotates the smaller of these two sets\footnote{This is based on the thought that the user mainly wants to rotate the smaller parts of paper, whilst the large remainder of the model should stay on place.}.
+
+\subsubsection{Layers in composite operations}
+The layer indexing and selecting algorithm fails while doing the second (third, fourth, \dots) basic operation during a composite one (eg. a thunderbolt fold). We could define the layers using this algorithm after doing each substep, the disadvantage is that the paper doesn't have to be in consistent state between the substeps. So another method for layer selection is applied to composite folds. The first substep has its layers of operation defined normally by the indices. After doing the first substep, it passes the rotated layers to the input of the second substep, and so on. This practice is based on the fact that all the composite operations work ordinarily with the same number of rotated layers for all substeps\footnote{And from a human point of view, these are `still the same layers'.}, so it perfectly matches the real folding process.
+
+\subsubsection{Angle of rotation for reverse folds}
+How to determine the angle of rotation for a reverse fold? We have already shown the reverse fold symmetry in figure \ref{fig:reverseSymmetry}. The symmetry is drawn as a line in the figure, but in fact it is a plane symmetry (the plane goes through the two side lines). So, to determine the angle, we just take the image of the reverse fold vertex (marked in the figure) and compute the angle between the image and the original.
