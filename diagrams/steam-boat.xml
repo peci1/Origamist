@@ -5,14 +5,14 @@
     </author>
     <name lang="cs-CZ">Steam boat</name>
     <year>2011</year>
-    <shortdesc lang="cs-CZ">xcvxc</shortdesc>
-    <description lang="cs-CZ">xcvxc</description>
+    <shortdesc lang="en-US">A steam boat!</shortdesc>
+    <description lang="en-US">A steam boat!</description>
     <license>
-        <name>xcv</name>
-        <content>xcvxc</content>
+        <name>Public domain</name>
+        <content>You can do whatever you want to.</content>
     </license>
     <thumbnail>
-        <image></image>
+        <image type="jpg">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FABRRRTfiV/yTTxH/wBeEv8AKtbwz/yKmj/9eMP/AKAK5Txjr8GveCNX0yw07XGvbu0eKGJ9Gu0yxHALNGFH1JxVzSvFlvpej2Wn3OkeIPtFrbxwS+Xo9w67lUKcMqEMMjqCQaACiiiumnge3le7tVLMwHmRZ4cDuPRufx/Kku547jRrqSM5Uwv+B2ng1i/8J1Yf9AjxJ/4I7r/4is3UPFlu0M7WOj+IfMmRleNtEuVDkjGclMA+9ABRRRW54I/5EHw5/wBgu2/9FLW9WX4asZdL8K6Pp85UzWtlDA5XOCyoFOMgHGR3ArUoAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiv/2Q==</image>
     </thumbnail>
     <paper>
         <size>

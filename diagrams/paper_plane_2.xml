@@ -3,16 +3,16 @@
     <author>
         <name>Martin P@ci Pecka</name>
     </author>
-    <name lang="cs-CZ">sdfsdf</name>
+    <name lang="cs-CZ">Paper plane</name>
     <year>2011</year>
-    <shortdesc lang="cs-CZ">sdfsd</shortdesc>
-    <description lang="cs-CZ">sdfds</description>
+    <shortdesc lang="en-US">The second paper plane.</shortdesc>
+    <description lang="en-US">An alternative paper plane.</description>
     <license>
-        <name>sdfsd</name>
-        <content>sdfdsf</content>
+        <name>Public domain</name>
+        <content>You can do whatever you want to.</content>
     </license>
     <thumbnail>
-        <image/>
+        <image type="jpg">/9j/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAAUCACWAJYEASIAAhEBAxEBBCIA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADgQBAAIRAxEEAAA/AOwoooryz0j3+iiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAoooorO1bVxpf2VFs7q8nupfKigtlUuzYJ4BI7CtGsq8/5HLwf/ANhM/wDop6qmlKSTJm7Rugooopn9q6x/0JXiT/wGT/4uj+1dY/6ErxJ/4DJ/8XXs9Fdf1eBy+3kFFFFeMf2rrH/QleJP/AZP/i6P7V1j/oSvEn/gMn/xdez0UfV4B7eQUUUV4hc+KG01oTrGhavpcM0gjWe8hVU3dccMT0BPToDW+rK6hlIKkZBB4Iq98So1uNf8C2zqGR9aVmVhkEKh6/nWdrmhyeC7gzwbpPDkrdzk6ex7H1iPY/wdOnTOpQsrxNKda7tIKKKKkooBBAIOQaK5joCiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKyrz/kcvB//AGEz/wCinrVrI1AOfFnhMRMFlOonYzDcFPlPyRkZHtkVdL40RU+FhRRRXs1FZ3kaz/0ELL/wCb/47R5Gs/8AQQsv/AJv/jteicAUUUVo0VneRrP/AEELL/wCb/47R5Gs/wDQQsv/AACb/wCO0AFFFFcf47PmfED4fwd2vriTH+7Fn+td9LFHPE8UqK8bgqysMgg9iK8i+Ktnrc/iDwlBZXMZ1iSW5WyntybYxnYpcEsXByPYdOvNUIfCfxmJATxLHCPWe9En8oTSGFFFFberaPJ4Nugo3PoMrBYZDz9kYn7jf7Hoe3Tp0lrC1jRvifpWhXVxrvjrSvsG3bJE1msxlzwEAMQLMegA70/wtaajZ6FFFqcxkmzlFZQDGmBhTgnkc9zjpniuSvBJ3R1UZtqzCiiitqiiiuc3CiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAoooorKvP8AkcvB/wD2Ez/6KetWsq8/5HLwf/2Ez/6KetKXxozqfCwooor2SiiivQOEKKKKKKKKACiiivP/AIgAR+MfAM/Qrqjx5/3oyP6V2upalaaRp819fTLFbxLlmP8AIeprg/i1cR6f/wAIfqc7BILXxBbtNIeiJtcsT7AAms681G58W6imo3cUkGmQtusLOQYZvSaQf3j/AAr/AAjrz0ic1BXZcIOTsgooooubq68Sammq6ijRwxEmys26Qg/xsP75H5DirNFFefKTk7s7YxUVZBRRRRRRRSKCiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAoooorP1fQ9N162S31O1W4iR96qWK4bBGcgg9zWhRQnbYTVwooorlv8AhXHhL/oDp/3+k/8AiqP+FceEv+gOn/f6T/4qupoqueXcXJHsFFFFct/wrjwl/wBAdP8Av9J/8VR/wrjwl/0B0/7/AEn/AMVXU0Uc8u4ckewUUUVztn4E8M2F1Hc2+lRrLGcqWkdhntwSQfWuioopNt7jSS2CiiiiiiikMKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKKKKKKACiiiiiiigAooooooooAKKKK//Z</image>
     </thumbnail>
     <paper>
         <size>
