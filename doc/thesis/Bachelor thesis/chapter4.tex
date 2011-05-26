@@ -79,7 +79,7 @@ The open operation is the most difficult, it could involve more layers to be rot
 Let's get to the core of the folding. The operation is divided into two steps --- triangle subdivision plus fold line creation (let's call it `part 1'), and bending plus subdividing layers (calling it `part 2').
 
 \subsubsection{Making creases}
-Firstly, the layers involved in the triangle subdivision are determined by the algorithm from \ref{sec:operationsRepresentation}. All triangles having a fold line going through their interior are subdivided into two or three smaller triangles. These triangles copy the appropriate fold line data of the old triangle and add the new fold line to their fold line data. Internally, the direction of the fold is taken relatively to the triangle's normal\footnote{Here it is important to mention that the triangle subdivision process must retain the same normal direction, which is no problem.}. So, this has been the first part of the process.
+Firstly, the layers involved in the triangle subdivision are determined by the algorithm from \ref{sec:operationsRepresentation}. All triangles having a fold line going through their interior are subdivided into two or three smaller triangles. All triangles carry the list of their neighbors, so these lists are updated. These triangles copy the appropriate fold line data of the old triangle and add the new fold line to their fold line data. Internally, the direction of the fold is taken relatively to the triangle's normal\footnote{Here it is important to mention that the triangle subdivision process must retain the same normal direction, which is no problem.}. So, this has been the first part of the process.
 
 \subsubsection{Bending}
 Then the bending comes to the scene. We need to detect all layers that will be rotated (that are not only those found in part 1, but also all layers `more distant' from the fold line but firmly connected to any rotated layer).
@@ -98,3 +98,46 @@ The layer indexing and selecting algorithm fails while doing the second (third, 
 
 \subsubsection{Angle of rotation for reverse folds}
 How to determine the angle of rotation for a reverse fold? We have already shown the reverse fold symmetry in figure \ref{fig:reverseSymmetry}. The symmetry is drawn as a line in the figure, but in fact it is a plane symmetry (the plane goes through the two side lines). So, to determine the angle, we just take the image of the reverse fold vertex (marked in the figure) and compute the angle between the image and the original.
+
+\subsubsection{Multiple layers in the same plane}
+Origamist could handle better the case when multiple layers of paper are folded so that they lie in the same plane. In this case, the ordering of layers for a fold operation isn't precisely defined. It doesn't do problems in the case of interactive model creation as long as the algorithm for layer indexing indexes the layers in the same plane equally. It will be needed to implement something like \cite{simulation} has --- the layers folded into a single plane remember their relative ordering, so it is possible to unambiguously identify them. This would also have better effect on the paper intersection check.
+
+\section{Paper geometry checks}
+Origamist implements two checks of the paper geometry. The paper tearing check, and paper intersection check.
+
+\subsection{Paper tearing check}
+This check is made very easily. Since all triangles know both their 2D (original) position and their 3D position, all that is needed to do is to iterate over 2D neighbors\footnote{Since the triangles carry the lists of their neighbors, this is really simple.} and check if they also are neighbors in 3D.
+
+\subsection{Paper intersection test}This test is rather more demanding. To check if the paper doesn't intersect, we need to find all mutual intersections of layers and check if they are at most `touching'. Layers lying in the same plane are considered touching, layers with distinct parallel planes cannot intersect. The last possibility is that the layers' planes have a single common line. If the line isn't contained in any of the layers, the layers don't intersect. Finally, in the remaining case, we must check the touching. This is effectively done by constructing a halfspace with its border plane in one layer's plane, and checking if all of the other layer's points not lying in this border plane lie only on a single side of the defined halfspace (either all lie in the halfspace or none of them lies in it). Then the same is done with the halfspace's border plane being the second layer's plane.
+
+This check runs asymptotically in $O(n^2)$, but practically it just consists from a small number of computations, and the count of layers isn't a very large number in basic and moderate origamis.
+
+\subsection{When to run these checks?}
+These checks cannot be run directly after a basic fold operation is done, because some composite operations need to get the paper into an invalid state during their operation. If we could do the check after the basic folds, it would simplify the checks, because it would be sufficient to take only the rotated layers into account. But since multiple basic folds can be done before the checks, we rather run the checks for the whole model\footnote{It could be sufficient to accumulate the rotated layers for all the substeps and do the checks for them.}.
+
+\section{Delayed operations}
+In Origamist editor, all operations are completely done as soon as they are defined. However, this is not suitable for the viewer and for manual generation. The classical origami manuals divide most operations into two steps. In the first one, only the creases the operation creates are marked. All the bending is done in the second step\footnote{This is for better clarity. It is simpler to show a fold's direction when it lies in a straight plane, than if it goes along an already bent crease.}.
+
+The first idea I had was just not to perform the bending at all in the first step. But that would work only if just one simple operation is permitted per step (pureland origami). If multiple basic operations were done in a step and the bending weren't performed, the layer indexing algorithm could fail for the second and subsequent folds. Also, eg. the thunderbolt fold uses the list of layers rotated in the first substep to define the list of layers to be rotated in the second substep.
+
+So, another approach is needed. Before the very first operation is done in a step, all triangles are instructed to save their current 3D position (every triangle has a special data field for this purpose). Then all bending operations are done normally, and after the last operation has been performed, triangles just restore their original positions --- but the created creases remain, which is exactly the desired result.
+
+\section{Struggling with floating-point arithmetic}
+The whole Origamist application is based on computing with floating-point numbers. Because a high precision is needed in the application, the Java type \emph{Double} is used. But even this isn't sufficient for the operations to be precise. I try to have all the model's vertices' coordinates between $-1$ and $1$, because Double has the highest density in this interval, so it is supposed to have the least rounding errors.
+
+All comparisons are done by checking if the absolute value of the difference of the compared numbers is less than a specified $\epsilon$. What $\epsilon$ to take? I use $10^{-6}$ as it has a good mapping to the reality. As the longest side of the paper has the length of 1 unit (usually about 20 cm in physical world), the epsilon corresponds to $2*10^{-7}$ meters. Due to the thickness of a paper sheet (being something like $10^{-4}$ meters) this $\epsilon$ value seems to be appropriate.
+
+This $\epsilon$ is thus good for operations on the paper's vertices. But what about comparing angles or other paper-unrelated numbers? Well, for simplicity, Origamist uses the same $\epsilon$ everywhere, but the precision of computations would be better if the $\epsilon$ were scaled according to the unit it is used for. \cite{dawson} provides some hints on how could this be done better.
+
+\subsection{$\epsilon$-comparing maps?}I had the idea to develop a map (a tree) that could store 3D points or lines and search among them to return those that are $\epsilon$-equal to a given search key\footnote{In order to store the neigbors lists and such things outside the triangles.}. Classical approaches aren't successful. Hashmaps don't work because $\epsilon$-equal items don't have to have equal hash code, and there is no suitable mapping that could assign the hashcodes reasonably\footnote{Partitioning the space to $\epsilon$-equal blocks doesn't work, because if you put a number from the lower bound of one block into the map and then search for a number even smaller, the search will fail even if the distance if these items is less than $\epsilon$.}. Classical binary search trees also fail quickly with floating-point numbers.
+
+I had the idea to use multidimensional interval trees, which could work for this purpose. Or R-trees could also work. But instead of implementing these complex data structures\footnote{Java doesn't provide a default implementation.}, I have found out that they aren't needed. All the information that seemed to need these maps could be stored somehow else. Eg. the list of triangles' neighbors is stored inside the triangles and so on. This finally seems to be the most effective approach.
+
+\subsection{What about rational numbers?}The use of rational numbers for all computations would greatly increase the precision of the computations. But there are some facts that disallow this. The main problem are angles\footnote{Because Origamist doesn't need any other `irrationalizing' operations like $\log$ or square roots.}, which generally have irrational sines and cosines (and those are used in computing the rotations). So, if we restricted to angles with rational sines and cosines, it maybe would be possible to switch to rational numbers. But then we couldn't represent the often used angles like 45° (which has both sine and cosine equal to $\sqrt{2}/2$). So this question remains open.
+
+\section{Operation marks}
+How to place the marks for performed operations onto the model (in viewer and manuals)? There are no precise rules on how to do this, so I have chosen a heuristic which looks to produce good results.
+
+For every fold operation the furthest rotated point can be determined (furthest from the rotation axis). Then this point's position determines one enpoint of the mark, and the nearest point on the rotation axis to this furthest rotated point determines the centre of the mark. So we have two points and can properly rotate and scale the mark.
+
+For non-fold operations (like rotation), the marks are placed around the model's bounds.

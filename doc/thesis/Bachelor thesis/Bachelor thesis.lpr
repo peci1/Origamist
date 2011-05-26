@@ -28,7 +28,7 @@ WrapLine=yes
 
 [Files\1]
 ActiveFilters=
-Bookmark#0=151
+Bookmark#0=158
 Bookmark#1=70
 Bookmark#2=0
 Bookmark#3=0
@@ -234,15 +234,15 @@ Bookmark#6=0
 Bookmark#7=0
 Bookmark#8=0
 Bookmark#9=0
-CaretPos.X=274
-CaretPos.Y=99
+CaretPos.X=88
+CaretPos.Y=142
 CharSet=def
 FileName=chapter4.tex
 FoldedLines=
 IsMainFile=no
 Opened=yes
 ScrollPos.X=0
-ScrollPos.Y=204
+ScrollPos.Y=343
 SearchListCount=0
 ShowSyntax=yes
 SpellChecking=yes
