@@ -70,7 +70,7 @@
 					</appinfo>
 				</annotation>
     		</element>
-    		<element name="year" type="gYear" maxOccurs="1" minOccurs="0"/>
+    		<element name="creationDate" type="date" maxOccurs="1" minOccurs="0"/>
     		<element name="shortdesc" type="c:LangString"
     			maxOccurs="unbounded" minOccurs="0">
     			<annotation>

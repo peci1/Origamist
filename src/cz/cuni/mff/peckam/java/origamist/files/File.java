@@ -273,7 +273,7 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
         this.shortdesc.clear();
         this.shortdesc.addAll(origami.getShortdesc());
         setThumbnail(origami.getThumbnail());
-        setYear(origami.getYear());
+        setCreationDate(origami.getCreationDate());
     }
 
     /**
@@ -301,8 +301,8 @@ public class File extends cz.cuni.mff.peckam.java.origamist.files.jaxb.File impl
     public String toString()
     {
         return "File [names=" + names + ", shortDescs=" + shortDescs + ", author=" + author + ", name=" + name
-                + ", year=" + year + ", shortdesc=" + shortdesc + ", license=" + license + ", original=" + original
-                + ", thumbnail=" + thumbnail + ", src=" + src + "]";
+                + ", creationDate=" + creationDate + ", shortdesc=" + shortdesc + ", license=" + license
+                + ", original=" + original + ", thumbnail=" + thumbnail + ", src=" + src + "]";
     }
 
     @Override

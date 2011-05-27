@@ -16,7 +16,10 @@
 				<xjc:javaType name="java.net.URI" xmlType="anyURI" adapter="cz.cuni.mff.peckam.java.origamist.utils.URIAdapter"/>
 				<jxb:javaType name="Integer" xmlType="integer" 
 					parseMethod="javax.xml.bind.DatatypeConverter.parseInt"
-					printMethod="javax.xml.bind.DatatypeConverter.printInt"/>			
+					printMethod="javax.xml.bind.DatatypeConverter.printInt"/>
+				<jxb:javaType name="java.util.Date" xmlType="date"
+			        parseMethod="cz.cuni.mff.peckam.java.origamist.common.DateAdapter.parseDate"
+			        printMethod="cz.cuni.mff.peckam.java.origamist.common.DateAdapter.printDate" />			
 				<jxb:javaType name="java.util.Locale" xmlType="language" 
 					parseMethod="cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter.parse"
 					printMethod="cz.cuni.mff.peckam.java.origamist.utils.LocaleConverter.print"/>

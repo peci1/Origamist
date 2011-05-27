@@ -33,7 +33,7 @@
 					</appinfo>
 				</annotation>
 			</element>
-			<element name="year" type="gYear" />
+			<element name="creationDate" type="date" />
 			<element name="shortdesc" type="c:LangString" maxOccurs="unbounded" minOccurs="1">
 				<annotation>
 					<appinfo>

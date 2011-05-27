@@ -22,14 +22,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.Permission;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -48,15 +49,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.origamist.JFileInput;
@@ -67,7 +64,8 @@ import javax.swing.origamist.JMultilineLabel;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
-import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
+import com.toedter.calendar.JDateChooser;
+import com.toedter.calendar.JSpinnerDateEditor;
 
 import cz.cuni.mff.peckam.java.origamist.configuration.Configuration;
 import cz.cuni.mff.peckam.java.origamist.gui.common.DefaultLangStringListTextArea;
@@ -116,8 +114,8 @@ public class OrigamiPropertiesFrame extends JDialog
     /** Input for model names. */
     protected JLangStringListTextField<JTextField> name;
 
-    /** Input for model introduction year. */
-    protected JSpinner                             year;
+    /** Input for model creation date. */
+    protected JDateChooser                         creationDate;
 
     /** Input for short description. */
     protected JLangStringListTextField<JTextField> shortDesc;
@@ -168,9 +166,9 @@ public class OrigamiPropertiesFrame extends JDialog
     protected JButton                              okButton, cancelButton;
 
     /** Label. */
-    protected JLabel                               dialogTitle, nameLabel, yearLabel, shortDescLabel, authorNameLabel,
-            authorHomepageLabel, licenseNameLabel, licenseHomepageLabel, licenseContentLabel, originalLabel,
-            thumbnailFileInputLabel, thumbnailPreviewLabel;
+    protected JLabel                               dialogTitle, nameLabel, creationDateLabel, shortDescLabel,
+            authorNameLabel, authorHomepageLabel, licenseNameLabel, licenseHomepageLabel, licenseContentLabel,
+            originalLabel, thumbnailFileInputLabel, thumbnailPreviewLabel;
 
     protected String                               imageFileType    = null;
     protected Image                                generatedThumbnail = null, fromFileThumbnail = null;
@@ -236,7 +234,7 @@ public class OrigamiPropertiesFrame extends JDialog
         dialogTitle.setFont(dialogTitle.getFont().deriveFont(Font.BOLD, 20f));
 
         nameLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.nameLabel");
-        yearLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.yearLabel");
+        creationDateLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.creationDateLabel");
         shortDescLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.shortDescLabel");
         authorNameLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.authorNameLabel");
         authorHomepageLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.authorHomepageLabel");
@@ -250,14 +248,15 @@ public class OrigamiPropertiesFrame extends JDialog
         name = new JLangStringListTextField<JTextField>(tempOrigami.getName(), new JTextField(20));
 
         // in creating mode, the 0 will be replaced in fillDefaults()
-        year = new JSpinner(new SpinnerNumberModel(tempOrigami.getYear() != null ? tempOrigami.getYear().getYear() : 0,
-                Integer.MIN_VALUE, new GregorianCalendar().get(Calendar.YEAR), 1));
-        year.addChangeListener(new ChangeListener() {
+        creationDate = new JDateChooser(null, tempOrigami.getCreationDate() != null ? tempOrigami.getCreationDate()
+                : new Date(), null, new JSpinnerDateEditor());
+        creationDate.setMaxSelectableDate(new Date());
+        creationDate.setLocale(conf.getLocale());
+        creationDate.addPropertyChangeListener("date", new PropertyChangeListener() {
             @Override
-            public void stateChanged(ChangeEvent e)
+            public void propertyChange(PropertyChangeEvent evt)
             {
-                tempOrigami.setYear(new XMLGregorianCalendarImpl(new GregorianCalendar(Integer.parseInt(year.getValue()
-                        .toString()), 1, 1)));
+                tempOrigami.setCreationDate(creationDate.getDate());
             }
         });
 
@@ -723,8 +722,8 @@ public class OrigamiPropertiesFrame extends JDialog
 
         basicPanel.add(nameLabel, cc.xy(1, 1));
         basicPanel.add(name, cc.xy(3, 1));
-        basicPanel.add(yearLabel, cc.xy(1, 3));
-        basicPanel.add(year, cc.xy(3, 3));
+        basicPanel.add(creationDateLabel, cc.xy(1, 3));
+        basicPanel.add(creationDate, cc.xy(3, 3));
         basicPanel.add(authorNameLabel, cc.xy(1, 5));
         basicPanel.add(authorName, cc.xy(3, 5));
         basicPanel.add(authorHomepageLabel, cc.xy(1, 7));
@@ -891,7 +890,7 @@ public class OrigamiPropertiesFrame extends JDialog
     {
         Configuration conf = ServiceLocator.get(ConfigurationManager.class).get();
 
-        year.setValue(new GregorianCalendar().get(Calendar.YEAR));
+        creationDate.setDate(new Date());
 
         String authorName = conf.getDefaultAuthorName();
         this.authorName.setText(authorName);

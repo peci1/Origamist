@@ -35,5 +35,7 @@
 	<classpathentry kind="lib" path="lib/batik-script.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
 	<classpathentry kind="lib" path="lib/batik-gvt.jar" sourcepath="F:/Program Files/Java/libs-sources/batik-1.7"/>
 	<classpathentry kind="lib" path="lib/JPEGMovieAnimation.jar"/>
+	<classpathentry kind="lib" path="lib/jcalendar-1.3.3.jar"/>
+	<classpathentry kind="lib" path="lib/looks-2.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

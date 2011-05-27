@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -20,7 +21,6 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -500,7 +500,7 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
             for (LangString name : from.getName())
                 getName().add(name.clone());
         }
-        setYear((XMLGregorianCalendar) from.getYear().clone());
+        setCreationDate((Date) from.getCreationDate().clone());
         if (!getShortdesc().equals(from.getShortdesc())) {
             getShortdesc().clear();
             for (LangString shortDesc : from.getShortdesc())

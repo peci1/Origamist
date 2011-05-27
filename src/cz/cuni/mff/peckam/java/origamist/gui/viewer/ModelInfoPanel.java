@@ -11,10 +11,8 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Permission;
+import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -65,8 +63,9 @@ public class ModelInfoPanel extends JHideablePanel
     protected JLocalizedLabel        licenseDesc         = new JLocalizedLabelWithTooltip("viewer", "licenseLabel",
                                                                  "%1s:");
     protected JLabel                 license             = new JLabel();
-    protected JLocalizedLabel        yearDesc            = new JLocalizedLabelWithTooltip("viewer", "yearLabel", "%1s:");
-    protected JLabel                 year                = new JLabelWithTooltip();
+    protected JLocalizedLabel        creationDateDesc    = new JLocalizedLabelWithTooltip("viewer",
+                                                                 "creationDateLabel", "%1s:");
+    protected JLabel                 creationDate        = new JLabelWithTooltip();
     protected JLocalizedLabel        originalDesc        = new JLocalizedLabelWithTooltip("viewer", "originalLabel",
                                                                  "%1s:");
     protected JLabel                 original            = new JLabelWithTooltip();
@@ -145,12 +144,11 @@ public class ModelInfoPanel extends JHideablePanel
 
                 license.setToolTipText(createLicenseTooltip(ModelInfoPanel.this.origami.getLicense()));
 
-                if (ModelInfoPanel.this.origami.getYear() != null) {
-                    Calendar cal = new GregorianCalendar(locale);
-                    cal.set(ModelInfoPanel.this.origami.getYear().getYear(), 1, 1);
-                    year.setText(new SimpleDateFormat("yyyy", locale).format(cal.getTime()));
+                if (ModelInfoPanel.this.origami.getCreationDate() != null) {
+                    creationDate.setText(DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(
+                            ModelInfoPanel.this.origami.getCreationDate()));
                 } else {
-                    year.setText("");
+                    creationDate.setText("");
                 }
 
                 paperDimension.setText((ModelInfoPanel.this.origami.getModel().getPaper()).getSize().toString(true));
@@ -192,8 +190,8 @@ public class ModelInfoPanel extends JHideablePanel
         b.append(licenseDesc);
         b.append(license);
         b.nextLine();
-        b.append(yearDesc);
-        b.append(year);
+        b.append(creationDateDesc);
+        b.append(creationDate);
         b.nextLine();
         b.append(originalDesc);
         b.append(original);

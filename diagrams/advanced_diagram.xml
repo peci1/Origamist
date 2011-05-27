@@ -5,7 +5,7 @@
         <homepage>http://www.mff.cuni.cz/~peckam</homepage>
     </author>
     <name lang="en-US">Advanced model</name>
-    <year>2011</year>
+    <creationDate>2011-01-01</creationDate>
     <shortdesc lang="en-US">Advanced model to show the capabilites of Origami Editor.</shortdesc>
     <shortdesc lang="cs-CZ">Složitý model, který ukazuje možnosti Origami Editoru.</shortdesc>
     <description lang="en-US">Advanced model, contains many different operations to show their effect.</description>

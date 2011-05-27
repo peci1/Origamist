@@ -8,7 +8,7 @@
     	</author>
     	<name>Kawasaki rose</name>
     	<name lang="cs-CZ">Kawasakiho růže</name>
-    	<year>2000</year>
+    	<creationDate>2011-01-01</creationDate>
     	<shortdesc>A very nice, but hard rose model.</shortdesc>
   		<shortdesc lang="cs-CZ">Opravdu překrásná růže, ale složitá.</shortdesc>
   		<license>
@@ -34,7 +34,7 @@
 		        <name>Martin P@ci Pecka</name>
 		    </author>
 		    <name lang="cs-CZ">Steam boat</name>
-		    <year>2011</year>
+		    <creationDate>2011-01-01</creationDate>
 		    <shortdesc lang="en-US">A steam boat!</shortdesc>
 		    <license>
 		        <name>Public domain</name>
@@ -56,7 +56,7 @@
 				    	<homepage>http://www.mff.cuni.cz/~peckam</homepage>
 				  	</author>
 				  	<name>Advanced model</name>
-				  	<year>2011</year>
+				  	<creationDate>2011-01-01</creationDate>
 				  	<shortdesc>Advanced model to show the capabilites of Origami Editor.</shortdesc>
 				  	<shortdesc lang="cs-CZ">Složitý model, který ukazuje možnosti Origami Editoru.</shortdesc>
 				  	<license>
@@ -82,7 +82,7 @@
     					<homepage>http://www.mff.cuni.cz</homepage>
   					</author>
   					<name>Paper plane</name>
-  					<year>2011</year>
+  					<creationDate>2011-01-01</creationDate>
 					<shortdesc>A simple paper plane.</shortdesc>
 					<shortdesc lang="cs-CZ">Obyčejná šipka.</shortdesc>
 				  	<license>
