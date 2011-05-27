@@ -8,6 +8,7 @@ import static java.lang.Math.abs;
 import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Event;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -47,6 +48,7 @@ import javax.media.j3d.TriangleArray;
 import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
 import javax.media.j3d.WakeupOnBehaviorPost;
+import javax.media.j3d.WakeupOr;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.vecmath.Color3f;
@@ -95,14 +97,20 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 public class StepEditingCanvasController extends StepViewingCanvasController
 {
 
+    protected boolean                isInPreview                = false;
+
     /** The transform for transforming vworld coordinates to image plate coordinates. */
     protected Transform3D            vWorldToImagePlate         = new Transform3D();
 
     /** The group containing all layers. */
     protected Group                  layers                     = null;
 
+    protected List<Group>            layerGroups                = new LinkedList<Group>();
+
     /** The group containing all lines. */
     protected Group                  lines                      = null;
+
+    protected List<Group>            lineGroups                 = new LinkedList<Group>();
 
     /** The group that is always drawn after the model is drawn. */
     protected Group                  overModel                  = null;
@@ -181,6 +189,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
     /** The OSD panel for displaying messages to the user. */
     protected HelpPanel              helpPanel                  = null;
+
+    /** The pick behavior. */
+    protected PickMouseBehavior      behavior                   = null;
 
     /** Key for helpPanel. */
     protected static final String    INCOMPLMETE_ARGUMENT_KEY   = "incomplete.argument";
@@ -401,6 +412,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             layers = new TransformGroup();
             layers.setPickable(true);
 
+            layerGroups.clear();
+
             Group geometry = new BranchGroup();
             TriangleArray[] triangleArrays = state.getTrianglesArrays();
             Shape3D top, bottom;
@@ -423,6 +436,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 group.addChild(bottom);
 
                 layers.addChild(group);
+                layerGroups.add(group);
             }
 
             geometry.addChild(layers);
@@ -435,8 +449,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             lines.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
             lines.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 
+            lineGroups.clear();
             for (LineArray lineArray : lineArrays) {
-                lines.addChild(lineFactory.createLine(lineArray, (ModelSegment) lineArray.getUserData()));
+                Group line = lineFactory.createLine(lineArray, (ModelSegment) lineArray.getUserData());
+                lines.addChild(line);
+                lineGroups.add(line);
             }
             geometry.addChild(lines);
 
@@ -489,7 +506,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         super.createAndAddBranchGraphChildren();
 
         // setup the pick behavior
-        PickMouseBehavior behavior = new PickMouseBehavior(canvas, branchGraph, null) {
+        behavior = new PickMouseBehavior(canvas, branchGraph, null) {
             {
                 pickCanvas.setMode(PickInfo.PICK_GEOMETRY);
                 pickCanvas.setFlags(PickInfo.SCENEGRAPHPATH | PickInfo.ALL_GEOM_INFO | PickInfo.NODE
@@ -500,16 +517,31 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             }
 
             @Override
+            public void initialize()
+            {
+                conditions = new WakeupCriterion[3];
+                conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_MOVE);
+                conditions[1] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
+                conditions[2] = new WakeupOnBehaviorPost(null, 0);
+                wakeupCondition = new WakeupOr(conditions);
+
+                wakeupOn(wakeupCondition);
+            }
+
+            @Override
             public void processStimulus(@SuppressWarnings("rawtypes") Enumeration criteria)
             {
                 WakeupCriterion wakeup;
                 AWTEvent[] evt = null;
                 int xpos = 0, ypos = 0;
 
+                Integer postId = null;
                 while (criteria.hasMoreElements()) {
                     wakeup = (WakeupCriterion) criteria.nextElement();
                     if (wakeup instanceof WakeupOnAWTEvent)
                         evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                    if (wakeup instanceof WakeupOnBehaviorPost)
+                        postId = ((WakeupOnBehaviorPost) wakeup).getTriggeringPostId();
                 }
 
                 if (evt != null && evt[0] instanceof MouseEvent) {
@@ -517,6 +549,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
                     xpos = mevent.getPoint().x;
                     ypos = mevent.getPoint().y;
+                } else if (postId != null) {
+                    xpos = postId / canvas.getWidth();
+                    ypos = postId % canvas.getWidth();
                 }
 
                 updateScene(xpos, ypos);
@@ -831,7 +866,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                                 AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                     }
                 } else {
-                    if (highlighted != null) {
+                    if (highlighted != null && !isInPreview) {
                         clearHighlighted();
                         clearAvailableItems();
                     }
@@ -1121,6 +1156,84 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     return coord;
                 }
             };
+            PickMouseBehavior pick = new PickMouseBehavior(canvas, preview.getRoot(), new BoundingSphere(new Point3d(),
+                    100000)) {
+
+                {
+                    pickCanvas.setMode(PickInfo.PICK_GEOMETRY);
+                    pickCanvas.setFlags(PickInfo.SCENEGRAPHPATH | PickInfo.ALL_GEOM_INFO | PickInfo.NODE
+                            | PickInfo.CLOSEST_INTERSECTION_POINT | PickInfo.LOCAL_TO_VWORLD);
+                    pickCanvas.setTolerance(3f);
+
+                    setSchedulingBounds(new BoundingSphere(new Point3d(), 1000));
+                }
+
+                @Override
+                public void processStimulus(@SuppressWarnings("rawtypes") Enumeration criteria)
+                {
+                    WakeupCriterion wakeup;
+                    AWTEvent[] evt = null;
+                    int xpos = 0, ypos = 0;
+
+                    while (criteria.hasMoreElements()) {
+                        wakeup = (WakeupCriterion) criteria.nextElement();
+                        if (wakeup instanceof WakeupOnAWTEvent)
+                            evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                    }
+
+                    if (evt != null && evt[0] instanceof MouseEvent) {
+                        mevent = (MouseEvent) evt[0];
+
+                        xpos = mevent.getPoint().x;
+                        ypos = mevent.getPoint().y;
+                    }
+
+                    updateScene(xpos, ypos);
+
+                    removeUnnecessaryListeners();
+
+                    wakeupOn(wakeupCondition);
+                }
+
+                @Override
+                public void updateScene(int x, int y)
+                {
+                    Rectangle paperRealRect = getUsedBufferPart(preview.paintArea);
+                    DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
+
+                    int xpos = x - preview.bounds.x;
+                    int ypos = preview.bounds.height - (y - preview.bounds.y);
+
+                    double xrel = (double) xpos / paperRealRect.width * paperDim.getWidth();
+                    double yrel = (double) ypos / paperRealRect.height * paperDim.getHeight();
+
+                    if (xrel >= 0 && yrel >= 0 && xrel <= paperDim.getWidth() && yrel <= paperDim.getHeight()) {
+
+                        isInPreview = true;
+
+                        Point2d p = new Point2d(xrel, yrel);
+                        if (pickMode == PickMode.LAYER) {
+                            for (Group g : layerGroups) {
+                                if (((Layer) g.getUserData()).contains(p)) {
+                                    setHighlightedLayer(g);
+                                    break;
+                                }
+                            }
+                        } else if (pickMode == PickMode.LINE) {
+                            for (Group g : lineGroups) {
+                                if (((ModelSegment) g.getUserData()).getOriginal().contains(p)) {
+                                    setHighlightedLine(g);
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        isInPreview = false;
+                    }
+                }
+            };
+
+            preview.getRoot().addChild(pick);
             preview.attachToUniverse(universe);
         }
 

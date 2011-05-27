@@ -115,6 +115,8 @@ public class OSDPanel
         appearance.getRenderingAttributes().setDepthBufferWriteEnable(false);
 
         shape = new Shape3D(plate, appearance);
+        shape.setPickable(true);
+        shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 
         root = new BranchGroup();
         root.setCapability(BranchGroup.ALLOW_DETACH);
@@ -253,6 +255,14 @@ public class OSDPanel
             n <<= 1;
 
         return n;
+    }
+
+    /**
+     * @return The root node of this panel.
+     */
+    public BranchGroup getRoot()
+    {
+        return root;
     }
 
     /**
