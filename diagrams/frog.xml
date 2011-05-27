@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:origami xmlns:ns2="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
+    <author>
+        <name>Martin P@ci Pecka</name>
+    </author>
+    <name lang="en-US">dsfdsf</name>
+    <year>2011-02-01T00:00:00.000+01:00</year>
+    <shortdesc lang="en-US">sdfdsf</shortdesc>
+    <license>
+        <name>sdfs</name>
+        <content>sdfds</content>
+    </license>
+    <thumbnail>
+        <image type="jpg"></image>
+    </thumbnail>
+    <paper>
+        <size>
+            <width>210.0</width>
+            <height>297.0</height>
+            <unit>mm</unit>
+            <referenceLength>297.0</referenceLength>
+            <referenceUnit>mm</referenceUnit>
+        </size>
+        <color>
+            <background>#ffffff</background>
+        </color>
+        <cols>3</cols>
+        <rows>3</rows>
+    </paper>
+    <model>
+        <paper>
+            <size>
+                <width>210.0</width>
+                <height>210.0</height>
+                <unit>mm</unit>
+                <referenceLength>210.0</referenceLength>
+                <referenceUnit>mm</referenceUnit>
+            </size>
+            <colors>
+                <background>#ffffff</background>
+                <foreground>#ffffff</foreground>
+            </colors>
+            <weight>80.0</weight>
+        </paper>
+        <steps>
+            <step id="1">
+                <zoom>100.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.12413936106985</angle>
+                    <line>
+                        <start>
+                            <x>1.0</x>
+                            <y>0.5</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.35867661087766567</x>
+                        <y>1.0</y>
+                    </refPoint>
+                    <layer>1</layer>
+                </foldOperation>
+            </step>
+            <step id="2">
+                <zoom>100.0</zoom>
+                <reverseFoldOperation type="INSIDE_REVERSE_FOLD">
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>0.5</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>1.0</y>
+                        </end>
+                    </line>
+                    <refLine>
+                        <start>
+                            <x>0.0</x>
+                            <y>0.5</y>
+                        </start>
+                        <end>
+                            <x>1.0</x>
+                            <y>0.5</y>
+                        </end>
+                    </refLine>
+                    <layer>1</layer>
+                </reverseFoldOperation>
+                <repeatOperation displayed="false" type="REPEAT_ACTION">
+                    <reverseFoldOperation type="INSIDE_REVERSE_FOLD">
+                        <line>
+                            <start>
+<x>1.0</x>
+<y>1.0</y>
+                            </start>
+                            <end>
+<x>0.5</x>
+<y>0.5</y>
+                            </end>
+                        </line>
+                        <refLine>
+                            <start>
+<x>0.5</x>
+<y>0.5</y>
+                            </start>
+                            <end>
+<x>1.0</x>
+<y>0.5</y>
+                            </end>
+                        </refLine>
+                        <layer>1</layer>
+                    </reverseFoldOperation>
+                </repeatOperation>
+            </step>
+            <step id="3">
+                <zoom>100.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>2.9670597283903604</angle>
+                    <line>
+                        <start>
+                            <x>0.25</x>
+                            <y>0.75</y>
+                        </start>
+                        <end>
+                            <x>0.5</x>
+                            <y>1.0</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>2.9670597283903604</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.75</x>
+                            <y>0.75</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+            </step>
+            <step id="4">
+                <zoom>100.0</zoom>
+                <turnOverOperation type="TURN_OVER"/>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>2.9670597283903604</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>0.5</y>
+                        </start>
+                        <end>
+                            <x>0.1457347545196762</x>
+                            <y>0.0</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+                <repeatOperation displayed="false" type="REPEAT_ACTION">
+                    <foldOperation type="VALLEY_FOLD">
+                        <angle>2.9670597283903604</angle>
+                        <line>
+                            <start>
+<x>0.5</x>
+<y>0.5</y>
+                            </start>
+                            <end>
+<x>0.8480030427631192</x>
+<y>0.0</y>
+                            </end>
+                        </line>
+                        <layer>1</layer>
+                        <layer>4</layer>
+                    </foldOperation>
+                </repeatOperation>
+            </step>
+            <step id="5">
+                <zoom>100.0</zoom>
+            </step>
+        </steps>
+    </model>
+</ns2:origami>
