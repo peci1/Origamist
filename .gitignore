@@ -14,12 +14,17 @@
 /doc/thesis/Bachelor thesis/images/*.pdf
 /OrigamistEditor.jar
 /OrigamistViewer.jar
+/Origamist.jar
 /signapplet.bat
 /signapplet.sh
 /browser.bat
 /browser.sh
 /origami_editor.jnlp
 /origami_viewer.jnlp
+/origami_viewer.test.jnlp
+/origami_editor.test.jnlp
 /remote.origami_editor.jnlp
 /remote.origami_viewer.jnlp
 /xjc-bin
+/javadoc
+/.texlipse

@@ -242,8 +242,18 @@
 			<flattenmapper />
 		</pathconvert>
 
+		<jar destfile="Origamist.jar">
+			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*,cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.*,cz/cuni/mff/peckam/java/origamist/unused/**/*.*" />
+			<fileset file="LICENSE" />
+
+			<manifest>
+				<attribute name="Created-By" value="Martin Pecka" />
+			</manifest>
+
+		</jar>
+		
 		<jar destfile="OrigamistViewer.jar">
-			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java" />
+			<fileset dir="bin" includes="cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*" />
 			<fileset file="LICENSE" />
 
 			<manifest>
@@ -255,7 +265,7 @@
 		</jar>
 
 		<jar destfile="OrigamistEditor.jar">
-			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java" />
+			<fileset dir="bin" includes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*" />
 			<fileset file="LICENSE" />
 
 			<manifest>
@@ -270,6 +280,9 @@
 		<if>
 			<available property="" file="${signappletExecutable}" />
 			<then>
+				<exec executable="${signappletExecutable}" dir=".">
+					<arg value="Origamist.jar" />
+				</exec>
 				<exec executable="${signappletExecutable}" dir=".">
 					<arg value="OrigamistViewer.jar" />
 				</exec>
@@ -310,8 +323,9 @@
 				</resources>
 
 				<resources>
-					<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="256m" initial_heap_size="128m" />
+					<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="1024m" initial_heap_size="128m" />
 					<jar href="@{jar-file}" main="true" />
+					<jar href="Origamist.jar" />
 					<fileset dir="lib" includes="**/*.jar" />
 				</resources>
 			</jnlp>
@@ -417,9 +431,6 @@
 			<exec executable="javaws" dir=".">
 				<arg value="@{jnlp-file}" />
 			</exec>
-			<delete>
-				<fileset file="@{jnlp-file}" />
-			</delete>
         </sequential>
     </macrodef>
 	
@@ -457,13 +468,14 @@
 		<run-appletviewer file="preview-editor.html"/>
 	</target>
 
-	<!--target name="javadoc">
+	<target name="javadoc">
         <javadoc access="public" additionalparam=" -docencoding &quot;UTF-8&quot; -charset &quot;UTF-8&quot;" author="true" 
-        	classpath="lib/skinlf.jar;lib/forms-1.3.0.jar;lib/metadata-extractor-2.3.1.jar;lib/jvftp.jar" destdir="doc" 
-        	doctitle="Thumbnailer" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" overview="E:\Programování\Java\Thumbnailer\overview.html" 
-        	packagenames="javax.swing.origamist,cz.cuni.mff.peckam.java.thumbnailer.dialogs,cz.cuni.mff.peckam.java.thumbnailer,cz.cuni.mff.peckam.java.thumbnailer.graphics,cz.cuni.mff.peckam.java.thumbnailer.utils,cz.cuni.mff.peckam.java.thumbnailer.ftp,cz.cuni.mff.peckam.java.thumbnailer.configurations,cz.cuni.mff.peckam.java.thumbnailer.sql" 
+        	classpath="/lib/JPEGMovieAnimation.jar;/lib/batik-anim.jar;/lib/batik-awt-util.jar;/lib/batik-bridge.jar;/lib/batik-codec.jar;/lib/batik-css.jar;/lib/batik-dom.jar;/lib/batik-ext.jar;/lib/batik-gvt.jar;/lib/batik-parser.jar;/lib/batik-script.jar;/lib/batik-svg-dom.jar;/lib/batik-svggen.jar;/lib/batik-transcoder.jar;/lib/batik-util.jar;/lib/batik-xml.jar;/lib/forms.jar;/lib/gluegen-rt.jar;/lib/itextpdf-5.1.0.jar;/lib/j3dcore.jar;/lib/j3dutils.jar;/lib/jaxb2-basics-runtime-0.6.0.jar;/lib/log4j-1.2.16.jar;/lib/pdf-transcoder.jar;/lib/vecmath.jar;/lib/xml-apis-ext.jar;Origamist.jar;OrigamistViewer.jar;OrigamistEditor.jar"
+        	destdir="javadoc" 
+        	doctitle="Origamist" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" 
+        	packagenames="com.sun.tools.xjc.addon,com.sun.tools.xjc.addon.property_listener_injector,cz.cuni.mff.peckam.java.origamist,cz.cuni.mff.peckam.java.origamist.common,cz.cuni.mff.peckam.java.origamist.common.jaxb,cz.cuni.mff.peckam.java.origamist.configuration,cz.cuni.mff.peckam.java.origamist.exceptions,cz.cuni.mff.peckam.java.origamist.files,cz.cuni.mff.peckam.java.origamist.files.jaxb,cz.cuni.mff.peckam.java.origamist.gui,cz.cuni.mff.peckam.java.origamist.gui.common,cz.cuni.mff.peckam.java.origamist.gui.editor,cz.cuni.mff.peckam.java.origamist.gui.viewer,cz.cuni.mff.peckam.java.origamist.gui.viewer.listing,cz.cuni.mff.peckam.java.origamist.jaxb,cz.cuni.mff.peckam.java.origamist.logging,cz.cuni.mff.peckam.java.origamist.math,cz.cuni.mff.peckam.java.origamist.model,cz.cuni.mff.peckam.java.origamist.model.jaxb,cz.cuni.mff.peckam.java.origamist.modelstate,cz.cuni.mff.peckam.java.origamist.modelstate.arguments,cz.cuni.mff.peckam.java.origamist.services,cz.cuni.mff.peckam.java.origamist.services.interfaces,cz.cuni.mff.peckam.java.origamist.utils,javax.swing.origamist" 
         	source="1.6" sourcepath="src" splitindex="true" use="true" version="true"/>
-    </target-->
+    </target>
 
 	<target name="tests" depends="compile" description="Runs JUnit tests">
 		<mkdir dir="tests/bin" />
