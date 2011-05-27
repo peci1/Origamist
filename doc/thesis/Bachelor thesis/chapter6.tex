@@ -1,0 +1,212 @@
+\chapter{A programmer's manual}
+
+The last chapter covers all information a developer may want to know about Origamist.
+
+For information about the purpose and usage of Origamist applications, please refer to \ref{cha:userManual}.
+
+\section{Source code versioning}
+The Git versioning system is used as the main code repository. The public online repository is hosted at \url{https://github.com/peci1/Origamist}. Everyone has read-only access to the repository, and if you wanted to contribute, contact me at peci1@seznam.cz and we'll discuss it.
+
+\section{Licensing}
+Both Origamist Viewer and Origamist Editor are issued under the GNU Affero GPLv3 license. Although I'd like to use a less restrictive license, as long as this application uses the iText library, this license is a need.
+
+\section{Used technologies}
+\label{sec:technologies}
+The project is written in Java 6. Compilation of the applications is done using Apache Ant. The application uses some third party extensions and libraries. I have divided them into two categories: compile-time and runtime.
+
+\subsection{Used runtime libraries}
+These libraries are located in the \emph{/lib} directory and are essential for running Origamist applications:
+\begin{itemize}
+\item \emph{Java3D} \textit{(j3dcore.jar, j3dutils.jar, gluegen-rt.jar and vecmath.jar)} is used as the 3D rendering engine.
+\item \emph{JGoodies Forms} \textit{(forms.jar)} is a great Swing layout manager.
+\item \emph{JAXB2.0 runtime library} \textit{(jaxb2-basics-runtime.jar)} is used for the \\
+Java~$\leftrightarrow$~XML conversion.
+\item \emph{Log4j} \textit{(log4j-1.2.16.jar)} is used for logging.
+\item \emph{Batik SVG Toolkit} \textit{(files prefixed batik- and the following: pdf-transcoder.jar, xml-apis-ext.jar)} is used for SVG and PDF generation.
+\item \emph{iText PDF library} \textit{(itextpdf-5.1.0.jar)} is used for merging PDF files.
+\item \emph{JPEG movie animation library} \textit{(JPEGMovieAnimation.jar)} is used to generate Quicktime MOV animations.
+\end{itemize}
+
+You can notice there is a bin/ subfolder of the /lib folder. More about this can be found in \ref{ssec:java3DnativeFiles}.
+
+\subsection{Compile-time libraries}
+The following libraries are located in the \emph{/lib-compile-time} folder and are essential only for building Origamist applications:
+\begin{itemize}
+\item \emph{JAXB compile-time libraries} \textit{(activation.jar, files prefixed jaxb-, \\
+jsr173\_api.jar)} are needed for the generation of Java classes out of XSD schemata.
+\item \emph{JAXB2 Commons project libraries} \textit{(files prefixed jaxb2- and commons-)} are some JAXB plugins.
+\item \emph{Ant contrib package} \textit{(ant-contrib-1.0b3.jar)} provides the <if> task for Ant.
+\item \emph{Orangevolt Ant Tasks} \textit{(orangevolt-ant-tasks-1.3.8.jar)} provide the <jnlp> task for Ant.
+\item \emph{JUnit} \textit{(junit.jar, org.hamcrest.core\_1.1.0.v20090501071000.jar)} is used for unit testing.
+\end{itemize}
+
+\section{Compilation}
+The whole compilation process is `packaged' in the Ant's build.xml file in the root directory. The default target regenerates any JAXB-generated classes, compiles all sources, packs them into JAR archives, signs them and creates the appropriate JNLP launch files. 
+
+Origamist uses 3 JAR archives. \emph{Origamist.jar} for the common codebase, and the \emph{OrigamistViewer.jar} and \emph{OrigamistEditor.jar} archives for the individual application parts.
+
+Signing the archives is important - otherwise the application would launch neither as browser applet, nor as JNLP application. What is important - also all libraries the application uses have to be digitally signed! And if the libraries are signed with a different signature, Java displays a security warning, which is unnecessary, I mean. So, there is the \emph{libs-sign} target which digitally signs all libraries in the /lib folder.
+
+What digital signature is used for the signing process? There are the files \emph{signapplet.bat.example} and \emph{signapplet.sh.example} in the repository, which should be edited (and not included into the repository, since they need to contain the digital signature's password!) to one's needs and then their \emph{.example} extension should be removed. Afterwards, the Ant target detects these files and uses them for signing (.bat files on Windows, .sh files on Linux). If these files are not present, Ant just writes a warning to the console and skips the signing process. The unsigned archives can be used for local testing if they are run by the commands \emph{java -jar archive.jar} or \emph{appletviewer preview.html}.
+
+The default task requires user input for the JNLP task. The programmer should enter the absolute URL of the location where the JNLP files will be deployed. This sounds horribly, but it is a need, because the newest version of JNLP requires to have this absolute URL written in these files\footnote{It is weird, because some older versions of JNLP (6u20 and less, I think) didn't need an absolute path, a relative one was sufficient. But in a newer version the relative paths ceased working.}.
+
+\subsection{Other Ant targets}
+The build.xml file provides more targets the programmer can utilize:
+\begin{itemize}
+\item \emph{jaxb} target regenerates Java classes from the XSD schemata.
+\item \emph{run-*} targets perform the default target and then open the editor or viewer as an applet in browser/applet in appletviewer/JNLP application.
+\item \emph{just-run-*} targets do the same as the run-* targets, but do not run the default target. So, if you have all sources compiled, you can use the just-run-* targets to launch the applications without recompiling them.
+\item \emph{javadoc} target generates the JavaDoc documentation.
+\end{itemize}
+
+\section{Deploying}
+\subsection{Deploying as an applet}
+To deploy Origamist as an applet, upload /Origamist.jar, /OrigamistViewer.jar, /OrigamistEditor.jar, all /*.jnlp files and the whole /lib directory to your webserver. The HTML code needed to insert the applets into the page can be found in files /preview.html (for the viewer) and /preview-editor.html (for the editor).
+
+\subsection{Deploying as JNLP application}
+To deploy Origamist as a JNLP application, deploy it as an applet, but instead of using the HTML from /preview.html and /preview-editor.html use the direct link to the JNLP files. The user then just clicks the link on your webpage and the JNLP launch process has been started. Note that your server must send the JNLP file with the correct MIME type (application/x-java-jnlp-file). An example \emph{.htaccess} file for Apache web server is provided in the root directory to handle this issue.
+
+\subsection{Deploying as standard Java application}
+If you want to deploy Origamist as a standard java application, just redistribute the /*.jar files and /lib directory. The OrigamistViewer.jar and OrigamistEditor.jar files are executable Java archives, so typing the command \emph{java -jar OrigamistViewer.jar} is all the end user needs to run the application.
+
+\subsection{Parameters}
+Both viewer and editor applications accept some parameters (discussed later). To specify these parameters in applet, use the <param> tags inside the <applet> or <object> tag you are using to display the applet. If you use the applet code for New Generation Java Plugin, the JNLP files need to be edited, too. Here, put the <param> tags into the <application-desc> tag. If you want to specify parameters for Origamist deployed as JNLP application, just edit the JNLP files as has been written in this paragraph. Finally, to pass parameters to the standard application, just pass them as command-line arguments after the command to run the application.
+
+\section{Parameters of the applications}
+As has been said in the previous section, both applications accept some parameters. Here they are.
+\subsection{Viewer parameters}
+\begin{itemize}
+\item \emph{displayMode}: value \emph{PAGE} means to switch the Viewer to page display mode after initialization, value \emph{DIAGRAM} means to switch the Viewer to the diagram display mode (only one step is displayed).
+\item \emph{modelDownloadMode}: value \emph{ALL} means that all files referenced from the loaded listing (if any) will be downloaded after the listing is displayed. Value \emph{HEADERS} means that only the metadata of all referenced models should be downloaded after initialization (to be able to display the models' names and thumbnails in the listing tree). Value \emph{NONE} means that the model files will be downloaded after the user requests them (if he wants to display them). Finally, a non-negative integer value means that for the first $n$ (where $n$ is the given number) models, mode \emph{ALL} will be used, and for the rest of them mode \emph{NONE} will be used.
+\item \emph{recursive}: value \emph{RECURSIVE} means that any directories specified in the \emph{files} parameter will be loaded recursively with their contents. A non-negative integer value specifies the number of recursion levels allowed for searching in subdirectories (specify 1 to only include files directly placed in the referenced directories). Note that the recursive search can only work on local machines, since remotely listing a HTTP directory isn't possible.
+\item \emph{files}: contains a space-separated list of files to be loaded after initialization. Relative URLs are resolved with the applet's directory as the base URL. If the list contains a file named listing.xml, then all other items are ignored and the given listing is loaded. If an item references a local directory, then its contents and subdirectories may be also displayed, depending on the value of the \emph{recursive} parameter.
+\end{itemize}
+
+\subsection{Editor parameters}
+\begin{itemize}
+\item \emph{file}: this parameter can contain a URL of a single origami model's XML file that will be loaded after the Editor is initialized (see the Viewer's \emph{files} parameter to see how the URL is resolved).
+\end{itemize}
+
+\section{Localization}
+Both applications are ready-to-be-localised. The default version ships with English and Czech locales. The localization can be done the standard Java way. So, find all *.properties files in the JAR archives, create new files for your locale (take the base name of the file - all country and language codes stripped out, and add your country and language ending)\footnote{Eg. if you are German and you would like to localise the file application.properties, create file application\_de.properties}. The localisation strings are in the form `key = value' and must follow the Java properties files conventions\footnote{\url{http://en.wikipedia.org/wiki/.properties}} --- mainly --- they have to be encoded as Latin1\footnote{non-Latin1 characters must be entered as Java Unicode escapes, $\backslash$uxxxx .}. Localising plurals is simple - refer to the Java class MessageFormat\footnote{\url{http://download.oracle.com/javase/1.4.2/docs/api/java/text/MessageFormat.html}} to see how to localise not only plurals, but also numbers, dates and so on.
+
+\textit{You may notice that all localisation files contain the English files twice. It is needed to be able to force English locales on machines with non-English default locales. The filename with no additions is the basic fallback file for all unfound locales. If Java cannot find a non-fallback .properties file for the requested locale, it first tries to find a .properties file for the system locale. And that is the problem. If my system had had cs\_CZ as its default locale, and I would have liked to set English in the application (and the \_en.properties file wouldn't have existed), Java wouldn't have fallen back to the no additions file, but it would have found the file \_cs.properties for my system locales, and thus Czech will remain to be set. So, English (or generally the default language's) locales need to be included twice.}
+
+\section{Structure of the data files}
+\label{sec:dataFilesStructure}
+Origamist distinguishes two types of files - model files, and listing files. Both of them are XML files, and thus can be distinguished by the namespace of the root element.
+
+Model files use the namesapce \\ \url{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2},
+where v2 is the latest version of the model file schema (and thus the element's schema determines the version of the model file).
+
+Listing files must be named exactly `listing.xml' and must have their root element within the namespace \\ \url{http://www.mff.cuni.cz/~peckam/java/origamist/files/v1}.
+
+The structure of these files is defined by these three schemata: \\
+/resources/schemata/common\_v1.xsd, \\
+/resources/schemata/files\_v1.xsd and \\
+/resources/schemata/diagram\_v2.xsd. \\
+
+Names of the elements are designed to be self-explaining, but if you have doubts about the meaning, try to read JavaDoc for the associated Java class (in most cases this class is specified by an <implClass> tag inside the element's definition in XSD).
+
+\section{Model file versions}
+Origamist has built-in support for converting between older and newer versions of the model files. As the application will develop, the need to change the schemata is unavoidable. So Origamist keeps all the schemata and defines a mechanism to convert between different versions (only old to new direction is supported). The files can either be transformed by XSL transformations, or some Java code can be executed to convert between the versions. Look at $\sim$.gui.common.CommonGui\#registerServices()\footnote{I will use the $\sim$ as a shorthand to the package prefix `cz.cuni.mff.peckam.java.origamist'.} method, where the BindingsManager is constructed. This is the class (and the whole $\sim$.jaxb package) responsible for converting different file versions. An example of XSL transform usage is given here.
+
+In result, the conversion should be fully transparent for the rest of the application.
+
+\section{Deeper in the code}
+
+\subsection{How to load Java3D native files?}
+\label{ssec:java3DnativeFiles}
+Java3D, as a 3D graphics library, needs to use some native libraries on different operating systems and platforms. The problem is that Java doesn't allow to load native libraries by default. They have to be preinstalled on the system, which was something I didn't want to accept. It would greatly decrease the user comfort.
+
+Two ways exist how to solve this problem. The first one is JNLP's mechanism for loading libraries. JNLP documentation says that it should be sufficient to write a tag in the JNLP file and the library should have been automatically downloaded and installed. However, I have tried it several times, and it had never worked for me. Also, this solution would disable old applets.
+
+The second solution is to use a custom classloader. Classloaders provide a mechanism to find not-yet-loaded class files, and --- native libraries. So Origamist has all the native libraries in the /lib/bin folder to be able to use them. To use a custom classloader in applets, a bootstrapping technique is needed to be used. So, the bootstrapping applet starts with the default classloader, then creates an instance of the custom classloader, and loads the base applet using the custom classloader\footnote{It showed that all application-specific classes, libraries and so then need to be loaded by this same custom classloader, too.}. The bootstrapping applet must also delegate all of its other methods to the base applet. See $\sim$.gui.common.Java3DBootstrappingApplet.java for implementation details.
+
+\subsection{JAXB and the generated classes}
+\label{ssec:jaxbClasses}
+Files in packages $\sim$.common.jaxb, $\sim$.files.jaxb and $\sim$.model.jaxb are automatically generated from schemata /resources/schemata/common\_versionNr.xsd, \\ /resources/schemata/files\_versionNr.xsd and \\
+/resources/schemata/diagram\_versionNr.xsd, \\
+where versionNr is the newest version of the XSD. So, firstly, these files aren't intended to be manually edited. Files in packages without the .jaxb extension extend these generated files and they are intended to be the place for modifications. However, some code would be greatly duplicated if we hadn't touched the generated files. So, 5 JAXB (or, XJC) plugins were developed, which do the needed modifications to the generated files during the generation process. This way, for example, can all fields be turned into bound properties. The XJC plugins are in package com.sun.tools.xjc.addon .
+
+In the previous section I have written that Origamist handles different versions of the model files. But how is it done, if the file version is included inside the XML we need to parse, when, to be able to parse XML, we need to know, against what schema to parse? This is done using a little trick. JAXB is firs commanded to parse the XML file without a schema, and a callback is called after JAXB reads the first line, which contains the file version. Then the correct schema can be chosen and JAXB can be instructed to use the proper schema.
+
+The previous trick has one more advantage - it allows us to `cleanly' implement the \emph{HEADERS} option of \emph{modelDownloadMode} applet parameter. We can wait until all metadata are read, and then we force the internet connection to be closed, and simulate the end tag for JAXB to be happy it encountered a valid document. This way, JAXB can convert even these incomplete files to Java objects and we can easily read them (the only disadvantage is that we must define that the content part of a model can be empty in the XSD).
+
+\subsection{ServiceLocator}
+As I have tried to minimise the count of static classes used, a $\sim$.services.ServiceLocator has been introduced. This class provides utilities that can be used in various parts of the application and have no direct connection to these parts. 
+
+The services are registered by the name of the interface they provide, and can be registered either as objects, or as callbacks that create the service at the time when it is first needed.
+
+Currently, Origamist uses these services:
+\begin{itemize}
+\item \emph{StepThumbnailGenerator} is a service that is able to generate thumbnails of the given origami and its step.
+\item \emph{OrigamiHandler} is a service capable of serialising and deserialising XML models.
+\item \emph{ListingHandler} is a service capable of serialising and deserialising XML listing files.
+\item \emph{ConfigurationManager} provides access to the current application configuration (such as selected language).
+\item \emph{TooltipFactory} is a GUI service that generates nice-looking tooltips used all over the application\footnote{Swing only accepts strings as tooltips, not components, so this factory basically only wraps the tooltip text into HTML.}.
+\item \emph{BindingsManager} is a service capable of converting between different versions of the XML files.
+\item \emph{MessageBar} service is used only in Editor, and serves as a service that is able to display text messages to the user.
+\end{itemize}
+
+\subsection{Receiving change events from the loaded model file}
+It is profitable to have the option of being notified of any changes made to the model's object form. But, since the model consists of many nested (not in the Java language meaning) classes, it would be very hard, or even impossible, to correctly install a listener to, say, a fourth-level class. You must have added listeners to all its containers that would have manage attaching and detaching of the listener if their containers change, and so on. 
+
+So, rather, a cumulative listener model is implemented. This means that every object notifies its container of changes in its properties, and in properties of its children. This way all events `bubble up' to the parent container (the Origami class), so the programmer can just attach a listener to the origami object and listen to changes in eg. fourth-level properties. As some data fields can have equal names, while being in different classes, it is needed to distinct such names. This is done so that every object sending an event to its container prefixes the event with the name of the property it is attached to in the container. This way we get unique identifiers. It has also the advantage of the ability to attach prefixed listeners, which are listeners that listen to all changes in a property or its sub-properties.
+
+It is also important to be notified of changes in list properties. Java has no support for such listeners, so I wrote a custom $\sim$.utils.ObservableList interface and its implementation, which is a list that notifies its listeners of addition, removal or changes of its items. 
+
+The observable lists are also chained in the bubbling event hierarchy, so it is even possible to listen to changes in properties of any item of the specified list.
+
+As a result, we have a very complex and powerful system of property change listening and are able to detect every change in any arbitrarily complex hierarchy.
+
+All of this functionality is hidden into the $\sim$.common.GeneratedClassBase class, which is the ancestor of all JAXB-generated classes, and into several JAXB plugins.
+
+
+\subsection{Package structure}
+Here comes the structure of the application's packages and their purpose:
+\begin{itemize}
+\item \emph{com.sun.tools.xjc.addon} package contains JAXB plugins
+\item \emph{javax.swing.origamist} package contains some Swing components that could be used in other projects.
+\item \emph{org}
+	\begin{itemize}
+	\item \emph{w3.\_2001.xmlschema} package contains some JAXB-generated adapters.
+	\item \emph{w3c.tools.timers} package contains a time-based event queue.
+	\end{itemize}
+\item \emph{resources}
+	\begin{itemize}
+	\item \emph{images} package contains all used images.
+	\item \emph{schemata} package contains all used XSD and XSLT files.
+	\end{itemize}
+\item \emph{cz.cuni.mff.peckam.java.origamist}
+	\begin{itemize}
+	\item \emph{common} package contains JAXB-generated classes (in the .jaxb subpackage) and extensions to them, that are common for both model and listing files.
+	\item \emph{configuration} package contains a configuration manager and its helper classes
+	\item \emph{exceptions} package contains custom exceptions
+	\item \emph{files} package contains JAXB-generated classes (in the .jaxb subpackage) and extensions to them, that are used to handle listing.xml files.
+	\item \emph{gui}
+	\begin{itemize}
+		\item \emph{common} package contains GUI classes common for both Viewer and Editor.
+		\item \emph{editor} package contains Editor-specific GUI classes.
+		\item \emph{viewer} package contains Viewer-specific GUI classes.
+	\end{itemize}
+	\item \emph{jaxb} package contains classes utilised by the JAXB mechanism to convert different file versions.
+	\item \emph{logging} package contains only one class, GUIAppender, which is a logger outputter that handles fatal errors specially - displays a warning message and then stops the applet.
+	\item \emph{math} package contains all mathematical and geometry-oriented classes (some geometrical classes are defined in the Java3D vecmath library).
+	\item \emph{model} package contains JAXB-generated classes (in the .jaxb subpackage) and extensions to them, that are used to handle model XML files.
+	\item \emph{modelstate} package contains the most important classes - the classes the perform paper bending, and classes representing some paper attributes and properties.
+	\item \emph{services} package contains most service classes.
+	\item \emph{tests} package contains some JUnit tests (not much).
+	\item \emph{unused} package contains classes developed for the needs of Origamist, but abandoned for some reason.
+	\item \emph{utils} package contains the rest --- mainly utility classes.
+	\end{itemize}
+\end{itemize}
+
+If you would like to know precisely, what is a class or function for, consult its JavaDoc. I have tried to make it as useful as it can be.
+
+\subsection{The paper bending core}
+If you are looking for the classes responsible for folding the paper, look into the $\sim$.modelstate package, especially the ModelState class. This is the heart of Origamist.
+
+\subsection{Miscellaneous Java-related programming problems}
+If you are interested in some weird, hacky, or just surprising solutions to things one would think should be easy in Java, see the \\ /doc/odd\_things\_and\_how\_to\_fix\_them.txt file.

@@ -21,6 +21,7 @@
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se" initial-heap-size="128m" max-heap-size="1024m"/>
     <jar href="OrigamistViewer.jar" main="true"/>
+    <jar href="Origamist.jar" main="true"/>
     <jar href="lib/batik-anim.jar"/>
     <jar href="lib/batik-awt-util.jar"/>
     <jar href="lib/batik-bridge.jar"/>

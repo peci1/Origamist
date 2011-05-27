@@ -168,7 +168,13 @@ Prague 2011
 \openright
 
 \noindent
-Podìkování. %TODO
+I would like to thank my supervisor, Mgr.~Martin~Petøíèek, for valuable and helpful advices, and for smooth supervision.
+
+\begin{otherlanguage}{czech}
+Také bych chtìl podìkovat celé své rodinì za podporu a pøíjemné prostøedí pro tvorbu.
+\end{otherlanguage}
+
+And I feel the obligation to thank all MFF teachers who taught me very much and broadened my mind in a great way.
 
 \newpage
 
@@ -185,9 +191,9 @@ I understand that my work relates to the rights and obligations under the Act No
 \vspace{10mm}
 
 \hbox{\hbox to 0.5\hsize{%
-In Prague date ............. %TODO
+In Prague date ............. %TODO datum
 \hss}\hbox to 0.5\hsize{%
-%TODO
+%TODO podpis
 \hss}}
 
 \vspace{20mm}
@@ -209,16 +215,16 @@ Autor:
 Martin Pecka
 
 Katedra:  % Pøípadnì Ústav:
-Kabinet software a výuky informatiky
+Kabinet software a~výuky informatiky
 % dle Organizaèní struktury MFF UK
 
 Vedoucí bakaláøské práce:
-Mgr.~Martin~Petøíèek, Kabinet software a výuky informatiky
+Mgr.~Martin~Petøíèek, Kabinet software a~výuky informatiky
 % dle Organizaèní struktury MFF UK, pøípadnì plný název pracovištì mimo MFF UK
 
 Abstrakt:
 % abstrakt v rozsahu 80-200 slov; nejedná se však o opis zadání bakaláøské práce
-Program Origamist si klade za cíl pomoci s~tvorbou návodù na skládání origami modelù. V~souèasné dobì jsou nejbìžnìjšími metodami pro tvorbu tìchto návodù buï ruèní kreslení všech krokù v obrázkovém editoru, nebo nafocení jednotlivých krokù a jejich manuální poskládání (opìt v obrázkovém editoru). Origamist na toto pole pøináší novou alternativu. Autor tak dostává možnost pøenést posloupnost ohybù papíru, z~nichž se návod skládá, do programu Origamist, jenž z nich dokáže vygenerovat nìkolik druhù výstupu - v~origamistických kruzích nejrozšíøenìjší PDF návod, ale i~návod jako obrázek (PNG, SVG), nebo dokonce jako animaci procesu skládání. Pøidanou hodnotou pak je snadná možnost pøeložit popisky krokù do více jazykù.
+Program Origamist si klade za cíl pomoci s~tvorbou návodù na skládání origami modelù. V~souèasné dobì jsou nejbìžnìjšími metodami pro tvorbu tìchto návodù buï ruèní kreslení všech krokù v obrázkovém editoru, nebo nafocení jednotlivých krokù a manuální sestavení návodu z nich (opìt v obrázkovém editoru). Origamist na toto pole pøináší novou alternativu. Autor tak dostává možnost pøenést posloupnost ohybù papíru, z~nichž se návod skládá, do programu Origamist, jenž z~nich dokáže vygenerovat nìkolik druhù výstupu --- v~origamistických kruzích nejrozšíøenìjší PDF návod, ale i~návod jako obrázek (PNG, SVG), nebo dokonce jako animaci procesu skládání. Pøidanou hodnotou pak je snadná možnost pøeložit popisky krokù do více jazykù.
 
 Klíèová slova:
 Origami, Java3D, skládání papíru, návod
@@ -252,7 +258,7 @@ Mgr.~Martin~Petøíèek, Department of Software and Computer Science Education
 Abstract:
 % abstrakt v rozsahu 80-200 slov v angliètinì; nejedná se však o pøeklad
 % zadání bakaláøské práce
-The main target of the Origamist application is to aid with creating origami diagram manuals. Recently, the most common methods for creting those manuals are  drawing of the steps in an image editor, or taking photographs of the folded steps and composing them together (again in an image editor). What Origamist brings is a new alternative to these methods. The manual's author gets the possibility to transfer the sequence of paper folds the manual consists of to the Origamist application, which is able to export several types of output - the most favourite (among origami folders) PDF manuals, but also image manuals (as PNG or SVG), and even as an animation of the folding process. There is also the added value to translate the steps' descriptions to several languages.
+The main target of the Origamist application is to aid with creating origami diagram manuals. Recently, the most common methods for creating those manuals are drawing the steps in an image editor, or taking photographs of the folded steps and composing them together (again in an image editor). What Origamist brings is a new alternative to these methods. The manual's author gets the possibility to transfer the sequence of paper folds the manual consists of to the Origamist application, which is able to export several types of output - the most favourite (among origami folders) PDF manuals, but also image manuals (as PNG or SVG), and even as an animation of the folding process. There is also the added value to translate the descriptions of the steps to several languages.
 
 Keywords:
 % 3 až 5 klíèových slov v angliètinì
@@ -278,6 +284,7 @@ Origami, Java3D, paper folding, diagram
 \include{chapter3}
 \include{chapter4}
 \include{chapter5}
+\include{chapter6}
 
 % Ukázka použití nìkterých konstrukcí LateXu (odkomentujte, chcete-li)
 % \include{ukazka}
@@ -292,20 +299,54 @@ Origami, Java3D, paper folding, diagram
 %%% textu práce. Pøílohy se èíslují.
 \chapwithtoc{Attachments}
 
-\section{A sample webpage displaying Origamist as a standard Java applet using the old Java Plugin}
-\label{att:oldPlugin} %TODO edit when the split to main and viewer archive is done
+\section*{A sample webpage displaying Origamist as a standard Java applet using the old Java Plugin}
 \lstset{language=HTML}
-\lstinputlisting{listings/origami_viewer_old.html}
+\lstinputlisting[caption={Classic Java Plugin HTML page code},label=lst:oldPlugin]{listings/origami_viewer_old.html}
 
-\section{A sample webpage displaying Origamist as applet using new generation Java plugin, if the client has installed it}
-\label{att:newPlugin} %TODO edit when the split to main and viewer archive is done
+\section*{A sample webpage displaying Origamist as applet using new generation Java plugin, if the client has installed it}
 \lstset{language=HTML}
-\lstinputlisting{listings/origami_viewer_new.html}
+\lstinputlisting[caption={New Generation Plugin HTML page code},label=lst:newPlugin]{listings/origami_viewer_new.html}
 
-\section{A sample JNLP file to run Origamist viewer}
-\label{att:jnlp} %TODO edit when the split to main and viewer archive is done
+\section*{A sample JNLP file to run Origamist viewer}
 \lstset{language=XML}
-\lstinputlisting{listings/origami_viewer.jnlp}
+\lstinputlisting[caption={JNLP file to launch Origamist viewer},label=lst:jnlp]{listings/origami_viewer.jnlp}
 
+\chapwithtoc{Contents of the attached CD}
+Here is the structure of the files located on the attached CD:
+\begin{itemize}
+\item \emph{.git} The complete Git repository of this project (may be a hidden file)
+\item \emph{bin} The compiled .class files.
+\item \emph{diagrams} Sample diagrams and export outputs of Origamist.
+\item \emph{doc} Documentation.
+	\begin{itemize}
+	\item \emph{thesis} Sources of this bachelor thesis.
+	\item \emph{odd\_things\_and\_how\_to\_fix\_them.txt} Some interesting solutions to various Java-related problems.
+	\item \emph{podrobna\_specifikace.pdf} The detailed specification of this project, in Czech.
+	\item \emph{roadmap.odt} The roadmap of the project, in Czech.
+	\item \emph{specifikace.pdf} The rough specification of this project, in Czech.
+	\end{itemize}
+\item \emph{javadoc} JavaDoc per-class documentation.
+\item \emph{lib} Runtime libraries.
+\item \emph{lib-compile-time} Compile-time libraries.
+\item \emph{src} The source codes of Origamist.
+\item \emph{tests} Resource files for JUnit tests.
+\item \emph{.htaccess} A sample Apache server configuration file that enables serving JNLP files with the correct MIME type.
+\item \emph{browser.bat.example, browser.sh.example} Templates of shell scripts that run a web browser.
+\item \emph{build.xml} The build file (is run by Apache Ant).
+\item \emph{java.policy.applet} A needed security policy file.
+\item \emph{origami\_editor.jnlp} JNLP file designed for distribution.
+\item \emph{origami\_editor.test.jnlp} JNLP files designed for local testing.
+\item \emph{origami\_viewer.jnlp} JNLP file designed for distribution.
+\item \emph{origami\_viewer.test.jnlp} JNLP files designed for local testing.
+\item \emph{Origamist.jar} The main Origamist archive.
+\item \emph{OrigamistEditor.jar} The Origamist Editor additional archive.
+\item \emph{OrigamistViewer.jar} The Origamist Viewer additional archive.
+\item \emph{preview.html} An HTML page running Origamist Viewer as a webpage applet.
+\item \emph{preview-editor.html} An HTML page running Origamist Editor as a webpage applet.
+\item \emph{README} Instructions on how to run Origamist applications from this CD.
+\item \emph{signapplet.bat.example, signapplet.sh.example} Templates of shell scripts that digitally sign JAR files.
+\end{itemize}
+
+\openright
 \openright
 \end{document}

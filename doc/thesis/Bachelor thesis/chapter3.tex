@@ -7,12 +7,12 @@ Here I will present the basic structure of Origamist and the technologies used.
 \subsection{Two parts of the application}
 Origamist isn't just a single application. It consists of two standalone parts. 
 
-\emph{Origamist editor} provides the tools needed to create new origami diagrams and manuals. So various folds can be added to existing models, or a brand new model can be created. Also the metadata of the model can be edited.
+\emph{Origamist Editor} provides the tools needed to create new origami diagrams and manuals. So various folds can be added to existing models, or a brand new model can be created. Also the metadata of the model can be edited.
 
-\emph{Origamist viewer} is a viewer application, that can only display formerly created diagrams. Its main target is to be used as webpage applet, so that the visitors of an origami site can comfortably browse the models the site offers. Although the viewer isn't primarily meant to create the manuals, it has the same export possibilities as the editor, so every user of any part of Origamist is able to create the manuals in various export formats.
+\emph{Origamist Viewer} is a viewer application that can only display formerly created diagrams. Its main target is to be used as a webpage applet, so that the visitors of an origami site can comfortably browse the models the site offers. Although the viewer isn't primarily meant to create the manuals, it has the same export possibilities as the editor, so every user of any part of Origamist is able to create the manuals in various export formats.
 
 \subsection{Programming language and deployment technologies}
-Origamist has been written mainly in Java\footnote{Several other languages have been used, such as XSLT and XML, but these are only scripting and tagging languages not providing the core functionality.}. There were several reasons for this decision. Firstly, Java is a multiplatform language (\cite{javasupport}), which is a basic requirement due to the intended viewer usage. Secondly, Java applications can be integrated directly into a webpage (using the Java Web Start or Java Plugin), which rapidly simplifies the access to the application.  The third most important reason was that no platform-specific code has to be written (at least not in Origamist\footnote{Otherwise, Java allows to use platform-specific code, but doing so isn't a common practice in Java.}), which greatly simplifies the programming work and allows to concentrate on the core business.
+Origamist has been written mainly in Java\footnote{Several other languages have been used, such as XSLT and XML, but these are only scripting and tagging languages not providing the core functionality.}. There were several reasons for this decision. Firstly, Java is a multiplatform language (\cite{javasupport}), which is a basic requirement due to the intended viewer usage. Secondly, Java applications can be integrated directly into a webpage (using the Java Web Start or Java Plugin), which rapidly simplifies access to the application.  The third most important reason was that no platform-specific code has to be written (at least not in Origamist\footnote{Otherwise, Java allows to use platform-specific code, but doing so isn't a common practice in Java.}), which greatly simplifies the programming work and allows to concentrate on the core business.
 
 Java provides multiple solutions to application deployment, and Origamist
 uses these three (or four) of them:
@@ -22,65 +22,64 @@ uses these three (or four) of them:
 java  -jar  OrigamiEditor.jar
 \end{verbatim}
 \item Another possibility is to include the application into a webpage as Java
-applet using the standard applet code. See \ref{att:oldPlugin} for a sample webpage.
+applet using the standard applet code. See listing \ref{lst:oldPlugin} for a sample webpage.
 \item A similar one is to include the application into a webpage as Java applet
 using the \emph{Next-Generation Java Plugin Technology} introduced into Java
-in version 6u10 (\cite{newjava}). See \ref{att:newPlugin} for a sample webpage.
+in version 6u10 (\cite{newjava}). See listing \ref{lst:newPlugin} for a sample webpage.
 \item The last possibility is to launch and install the application through the
-\emph{JNLP protocol}\footnote{\url{http://www.oracle.com/technetwork/java/javase/index-142562.html}}.  This protocol allows Java applications to be downloaded and installed on the target machine as standalone applications, so the end user can eg. make shortcuts to these programs and utilise them offline. JNLP also provides a way of automatic updates of the downloaded software. See \ref{att:jnlp} for a sample JNLP file that launches Origamist viewer.
+\emph{JNLP protocol}\footnote{\url{http://www.oracle.com/technetwork/java/javase/index-142562.html}}.  This protocol allows Java applications to be downloaded and installed on the target machine as standalone applications, so the end user can eg. make shortcuts to these programs and utilise them offline. JNLP also provides a way of automatic updates of the downloaded software. See listing \ref{lst:jnlp} for a sample JNLP file that launches Origamist Viewer.
 \end{itemize}
 
 \subsection{Data files}
-Origamist saves all its data\footnote{Except user preferences which are stored in the system registry.} in XML text files. There are two types of files
-Origamist recognises.
+Origamist saves all its data in XML text files (except user preferences which are stored in the system registry). There are two types of files Origamist recognises.
 
 \subsubsection{Diagram files}
-Diagrams are XML files with the \emph{.xml} file extension having their root element in a model-specific namespace. For technical details on this, consult the programmer's manual. %TODO link
+Diagrams are XML files with the \emph{.xml} file extension having their root element in a model-specific namespace. For technical details on this, consult the programmer's manual, \ref{sec:dataFilesStructure}.
 
 The XML file contains all information needed to render the model and export
-the manuals, and also some metadata\footnote{Like the model's name, author's name, description of the model, paper formats, licensing information and so on.}.
+the manuals, and also some metadata, like the model's name, author's name, description of the model, paper formats, licensing information and so on.
 
-These files follow the convention of not storing any 3-dimensional data, so all
-folds are defined only by their position on the crease pattern\footnote{More on this topic in the programmer's manual, section ??}. %TODO link
+These files follow the convention of not storing any 3-dimensional data\footnote{More on this topic in \ref{sec:modelFilesStorage}}, so all
+folds are defined only by their position on the crease pattern.
 
 \subsubsection{Listing files}
 Origamist recognises one special type of XML files - those having their name
-\emph{listing.xml} and having their root element in the listing-specific namespace. For technical details on this, consult the programmer's manual. %TODO link
+\emph{listing.xml} and having their root element in the listing-specific namespace. For technical details on this, consult the programmer's manual, \ref{sec:dataFilesStructure}.
 
 Listing files are used by the viewer to define and organise whole sets of models. The listing files have a tree structure, where every model can be attached to a named category. Some excerpts of the models' metadata are also saved in the listing files, so that it isn't required to download the whole model to see its name or thumbnail.
 
 Origamist provides no complete support for creating these files. Here are two
 main reasons. These files are supposed to be automatically generated on a server
-providing the models (this is the expected use case).  Moreover, a partial support for manual creation of these files exists. If the user loads a whole directory structure into the viewer, it automatically creates categories for matching subdirectories using their names. The listing can then be saved from Origamist viewer, however it doesn't support extended features like fully localised category names\footnote{These can be added manually to the exported listing file.}.
+providing the models (this is the expected use case).  Moreover, a partial support for manual creation of these files exists. If the user loads a whole directory structure into the viewer, it automatically creates categories for matching subdirectories using their names. The listing can then be saved from Origamist Viewer, however it doesn't support extended features like fully localised category names(these can be added manually to the exported listing file).
 
 \section{Interesting technologies used in the project}
-The most interesting technologies Origamist uses are listed here, for a full list of technologies and libraries, refer to the programmer's manual. %TODO link
+The most interesting technologies Origamist uses are listed here, for a full list of technologies and libraries, refer to the programmer's manual, \ref{sec:technologies}.
 \subsection{Git}
 \emph{Git} is a distributed versioning system which I have used for recording the work progress. It is easy to use and does its work well. Sometimes, the ability to amend last commit\footnote{Additionally change the files or comment of the last commit.} is useful and helps keeping the repository clean. Even though nobody else used the repository and I have been the only commiter, the repository gave me bigger freedom in what I do with the code. The whole Git repository is on the attached CD.
 \subsection{JAXB}
 \emph{Java And XML Bindings}\footnote{\url{http://www.oracle.com/technetwork/articles/javase/index-140168.html}} is a library for mapping XML files to Java objects and vice versa. It not only provides the mapping, but, since the XML files' schemata and the Java classes carry redundant information, offers to generate either the schemata or the Java classes.
 
 I have chosen to write schemata for the data files (they are in XSD\footnote{XML Schema Definition, which is a promising successor of the old DTDs} format),
-and JAXB\footnote{Using its tool XJC} generates the Java classes automatically. The generated classes are plain Java objects annotated by some special annotations, and they follow the Bean pattern\footnote{\url{http://download.oracle.com/javase/tutorial/javabeans/whatis/index.html}}.  Advantages of this approach are significant if there is the need to add some fields to the data files\footnote{Which is often during the initial development, but no so frequent in further `life' of the application}, just edit the XML schemata and the Java classes will be updated to be consistent with the schemata without any additional effort.
+and JAXB (using its tool XJC) generates the Java classes automatically. The generated classes are plain Java objects annotated by some special annotations, and they follow the Bean pattern\footnote{\url{http://download.oracle.com/javase/tutorial/javabeans/whatis/index.html}}.  Advantages of this approach are significant if there is the need to add some fields to the data files\footnote{Which is often during the initial development, but not so frequent in further `life' of the application}, just edit the XML schemata and the Java classes will be updated to be consistent with the schemata without any additional effort.
 
-Among other advantages I would like to stress the simplicity of the Java $\leftrightarrow$ XML conversion\footnote{JAXB has the terms marshalling for Java $\rightarrow$ XML, and unmarshalling for XML $\rightarrow$ Java}. It basically consists of just a few lines of code\footnote{Refer to \~.services.JAXBListingHandler and \~.services.JAXBOrigamiHandler}, but allows a great deal of customisation if it is needed.
+Among other advantages I would like to stress the simplicity of the Java $\leftrightarrow$ XML conversion (JAXB has the terms `marshalling' for Java $\rightarrow$ XML, and `unmarshalling' for XML $\rightarrow$ Java). It basically consists of just a few lines of code\footnote{Refer to $\sim$.services.JAXBListingHandler and $\sim$.services.JAXBOrigamiHandler}, but allows a great deal of customisation if it is needed.
 
 Nevertheless, JAXB has one disadvantage. Since the classes are auto-generated,
-there is no chance of adding further functionality directly to those files, so they always remain plain `data envelopes'.  Although this may seem to be a big disadvantage, there is a near elegant solution to this problem.  See ??  for detailed information. %TODO link
+there is no chance of adding further functionality directly to those files, so they always remain plain `data envelopes'.  Although this may seem to be a big disadvantage, there is a near elegant solution to this problem.  See \ref{ssec:jaxbClasses} for detailed information.
 
 \subsection{Java3D}
-\emph{Java3D}\footnote{\url{http://java3d.java.net/}} is a powerful Java library for displaying and creating 3D graphics. It provides two basic modes of work --- a `direct' mode\footnote{Called `immediate mode' in Java3D.} which makes working
-with Java3D much like working in OpenGL; the other mode is more object-oriented\footnote{Called `retained mode' in Java3D.} and provides an easy-to-use interface for composing the 3D scene, which means that most of the computations are hidden from the programmer. Java3D integrates nicely with the Swing\footnote{\url{http://download.oracle.com/javase/tutorial/uiswing/start/about.html}} GUI \footnote{ Graphical User Interface} library.
+\emph{Java3D}\footnote{\url{http://java3d.java.net/}} is a powerful Java library for displaying and creating 3D graphics. It provides two basic modes of work --- a `direct' mode (called `immediate mode' in Java3D) which makes working
+with Java3D much like working with OpenGL; the other mode is more object-oriented (it is called `retained mode' in Java3D) and provides an easy-to-use interface for composing the 3D scene, which means that most of the computations are hidden from the programmer. Java3D integrates nicely with the Swing\footnote{\url{http://download.oracle.com/javase/tutorial/uiswing/start/about.html}} GUI \footnote{ Graphical User Interface} library.
 
 Since 3D graphics is basically a very low-level work, Java3D needs some native
-libraries to run. This effectively narrows the list of platforms Origamist will run on to the list of Java3D supported platforms. Fortunately, a Java3D implementation is available for most of the Java supported platforms \cite{java3dplatforms}.  As native libraries cannot be distributed in the standard way as JAR libraries are, they require special handling. Refer to the programmer's manual for more on this. %TODO link
+libraries to run. This effectively narrows the list of platforms Origamist will run on to the list of Java3D supported platforms. Fortunately, a Java3D implementation is available for most of the Java supported platforms \cite{java3dplatforms}. As native libraries cannot be distributed in the standard way as JAR libraries are, they require special handling. Refer to the programmer's manual, \ref{ssec:java3DnativeFiles}, for more on this topic.
 
 \subsection{Forms}
 \emph{JGoodies Forms}\footnote{http://www.jgoodies.com/freeware/forms/} is a Swing layout manager. Swing provides some layout managers in the standard JRE\footnote{Java Runtime Environment, the minimal installation of Java needed to run most Java applications.} distribution, but they either aren't much flexible, or are overly complex. JGoodies Forms allows the programmer to define a grid\footnote{The use of grids is very common in UI design, but JRE doesn't provide any layout manager capable of working with more complex grids.} on
 the current window or component, and put other components into this grid.
 
 \subsection{Batik}
-\emph{Batik}\footnote{\url{http://xmlgraphics.apache.org/batik/}} provides a simple way of generating SVG\footnote{Scalable Vector Graphics} and PDF files in Java. It has other SVG-related capabilities, too, but they are unimportant for this project.
+\emph{Batik}\footnote{\url{http://xmlgraphics.apache.org/batik/}} provides a simple way of generating SVG (Scalable Vector Graphics) and PDF files in Java. It has other SVG-related capabilities, too, but they are unimportant for this project.
 
 \subsection{Ant}
 \emph{Apache Ant}\footnote{http://ant.apache.org/} is a Java build tool. Its design is very robust, it allows to trigger innumerable different tasks during the build, so that everything needed to build and deploy a complex Java application is to run command
@@ -88,4 +87,4 @@ the current window or component, and put other components into this grid.
 ant
 \end{verbatim}
 in the command line from the application's base directory. Ant even supports
-plugins\footnote{And this project uses some of them.}.
+plugins (and this project uses some of them).
