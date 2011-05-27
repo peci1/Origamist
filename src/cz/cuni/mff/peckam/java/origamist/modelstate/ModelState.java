@@ -1723,7 +1723,6 @@ public class ModelState implements Cloneable
         // check for paper tear
         // just walk through all triangles, take their 2D neighbors and check if their common edges are almost equal in
         // 3D
-
         for (ModelTriangle t : triangles) {
             for (ModelTriangle n : t.getNeighbors()) {
                 ModelTriangleEdge[] common2dEdge = t.getCommonEdge2d(n, false);
@@ -1740,7 +1739,7 @@ public class ModelState implements Cloneable
 
                         // now distances should contain distances between the common edges' border points, sorted, so,
                         // if the edges are almost equal, two of the distances must be very small
-                        if (distances[1] > 1000 * EPSILON)
+                        if (distances[1] > 100000 * EPSILON)
                             throw new PaperTearException(t, n);
                     } else { // this branch shouldn't be taken because we try to not have triangles with vertices in the
                              // interior of another triangle's edge
@@ -1821,7 +1820,7 @@ public class ModelState implements Cloneable
                             for (Point3d p : t.getVertices()) {
                                 double dist = hs.getPlane().signedDistance(p);
                                 // don't test points lying in the border plane
-                                if (Math.abs(dist) <= 1000 * EPSILON)
+                                if (Math.abs(dist) <= 100000 * EPSILON)
                                     continue;
 
                                 // if the point isn't in the projection of the other layer onto this one, continue
@@ -1829,8 +1828,8 @@ public class ModelState implements Cloneable
                                     continue;
 
                                 if (inHalfspace == null) {
-                                    inHalfspace = dist > 1000 * EPSILON;
-                                } else if (inHalfspace != dist > 1000 * EPSILON) {
+                                    inHalfspace = dist > 100000 * EPSILON;
+                                } else if (inHalfspace != dist > 100000 * EPSILON) {
                                     throw new PaperIntersectionException(l, l2);
                                 }
                             }
