@@ -22,11 +22,13 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -192,7 +194,17 @@ public class OrigamiEditor extends CommonGui
     protected JEditableSlider                       zoomSlider;
 
     /** Toolbar button. */
-    protected JButton                               addStep, nextStep, prevStep, removeStep, cancelLastOperation;
+    protected JButton                               addStep, nextStep, prevStep, removeStep, undoRemoveStep,
+            cancelLastOperation, undoCancelOperation;
+
+    /** List of steps that can be undone. */
+    protected List<Step>                            stepsToUndo              = new LinkedList<Step>();
+
+    /** List of operations that can be undone. */
+    protected List<Operation>                       operationsToUndo         = new LinkedList<Operation>();
+
+    /** The steps the removed operations belong to. */
+    protected Map<Operation, Step>                  undoneOperationsSteps    = new HashMap<Operation, Step>();
 
     /** The string displaying the current position in the list of steps. */
     protected ParametrizedLocalizedString           stepXofY;
@@ -688,7 +700,8 @@ public class OrigamiEditor extends CommonGui
         builder.append(steps);
 
         OrigamistToolBar toolbar = new OrigamistToolBar("editor");
-        toolbar.setLayout(new FormLayout("$ugap,pref,$ugap,pref,pref,$ugap,pref,$ugap", "$ugap,pref,$lgap,pref,$ugap"));
+        toolbar.setLayout(new FormLayout("$ugap,pref,$rgap,pref,pref,$rgap,pref,$rgap,pref,$ugap",
+                "$ugap,pref,$lgap,pref,$ugap"));
         toolbar.setFloatable(false);
 
         CellConstraints cc = new CellConstraints();
@@ -704,10 +717,18 @@ public class OrigamiEditor extends CommonGui
         toolbar.add(
                 removeStep = toolbar.createToolbarButton(new RemoveStepAction(), "leftPanel.removeStep",
                         "step-remove-24.png"), cc.xy(7, 2));
+        toolbar.add(
+                undoRemoveStep = toolbar.createToolbarButton(new RemoveStepUndoAction(), "leftPanel.undoRemoveStep",
+                        "step-remove-undo-24.png"), cc.xy(9, 2));
+        undoRemoveStep.setEnabled(false);
 
         toolbar.add(
                 cancelLastOperation = toolbar.createToolbarButton(new CancelOperationAction(),
                         "leftPanel.cancelLastOperation", "lastOperation-cancel-24.png"), cc.xy(2, 4));
+        toolbar.add(
+                undoCancelOperation = toolbar.createToolbarButton(new CancelOperationUndoAction(),
+                        "leftPanel.cancelLastOperationUndo", "lastOperation-cancel-undo-24.png"), cc.xy(9, 4));
+        undoCancelOperation.setEnabled(false);
 
         builder.append(toolbar);
 
@@ -1023,6 +1044,7 @@ public class OrigamiEditor extends CommonGui
         }
 
         stepEditor.clearChosenItems();
+
     }
 
     /**
@@ -1129,6 +1151,14 @@ public class OrigamiEditor extends CommonGui
                     if (!step.isModelStateValid(true)) {
                         try {
                             step.getModelState(true);
+
+                            undoRemoveStep.setEnabled(false);
+                            stepsToUndo.clear();
+
+                            undoCancelOperation.setEnabled(false);
+                            operationsToUndo.clear();
+                            undoneOperationsSteps.clear();
+
                         } catch (RuntimeException e) {
                             step.getOperations().remove(operation);
 
@@ -1713,12 +1743,57 @@ public class OrigamiEditor extends CommonGui
             } else if (steps.size() == 1) {
                 newStep = (Step) new ObjectFactory().createStep();
                 newStep.setId(1);
+                stepsToUndo.add(steps.get(0));
                 steps.set(0, newStep);
                 setStep(newStep);
+                undoRemoveStep.setEnabled(true);
             } else {
+                stepsToUndo.add(steps.get(steps.size() - 1));
                 steps.remove(steps.size() - 1);
                 setStep(steps.get(steps.size() - 1));
+                undoRemoveStep.setEnabled(true);
             }
+
+            operationsToUndo.clear();
+            undoneOperationsSteps.clear();
+            undoCancelOperation.setEnabled(false);
+        }
+    }
+
+    /**
+     * Action for undoing removal of the last step in the current model.
+     * 
+     * @author Martin Pecka
+     */
+    protected class RemoveStepUndoAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = -7332023681928821236L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (origami == null || step == null)
+                return;
+
+            List<Step> steps = origami.getModel().getSteps().getStep();
+
+            if (stepsToUndo.size() > 0) {
+                Step step = stepsToUndo.get(stepsToUndo.size() - 1);
+                stepsToUndo.remove(stepsToUndo.size() - 1);
+                if (step.getId() == steps.get(steps.size() - 1).getId()) {
+                    // this can happen either when the user removed the very first step, or if he removed the last step,
+                    // and added a new one, which, however, must have no operations at this time, becuse performing an
+                    // operation clears the undoable steps.
+                    steps.remove(steps.size() - 1);
+                }
+                steps.add(step);
+                setStep(step);
+            }
+
+            if (stepsToUndo.size() == 0)
+                undoRemoveStep.setEnabled(false);
         }
     }
 
@@ -1751,17 +1826,57 @@ public class OrigamiEditor extends CommonGui
                             JOptionPane.YES_NO_CANCEL_OPTION);
                     if (dialogResult == JOptionPane.YES_OPTION) {
                         operations.remove(operations.size() - 1);
+                        operationsToUndo.add(last);
+                        undoneOperationsSteps.put(last, step);
                     } else if (dialogResult == JOptionPane.NO_OPTION) {
                         operations.remove(operations.size() - 1);
                         operations.addAll(((OperationContainer) last).getOperations());
+                        // TODO handle removal of container? maybe it isn't needed
                     }
                 } else {
                     operations.remove(operations.size() - 1);
+                    operationsToUndo.add(last);
+                    undoneOperationsSteps.put(last, step);
+                    undoCancelOperation.setEnabled(true);
                 }
             }
 
-            if (!step.isModelStateValid(true))
+            if (!step.isModelStateValid(true)) {
                 setStep(step);
+                undoCancelOperation.setEnabled(true);
+            }
+        }
+    }
+
+    /**
+     * Action for undoing removal of the last operation in the current step.
+     * 
+     * @author Martin Pecka
+     */
+    protected class CancelOperationUndoAction extends AbstractAction
+    {
+
+        /** */
+        private static final long serialVersionUID = 3874891966442246574L;
+
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            if (step == null)
+                return;
+
+            if (operationsToUndo.size() > 0) {
+                Operation operation = operationsToUndo.get(operationsToUndo.size() - 1);
+                operationsToUndo.remove(operationsToUndo.size() - 1);
+                Step step = undoneOperationsSteps.get(operation);
+                if (step != null) {
+                    undoneOperationsSteps.remove(operation);
+                    step.getOperations().add(operation);
+                    setStep(step);
+                }
+                if (operationsToUndo.size() == 0)
+                    undoCancelOperation.setEnabled(false);
+            }
         }
     }
 
