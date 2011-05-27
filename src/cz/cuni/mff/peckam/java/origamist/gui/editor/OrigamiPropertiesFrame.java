@@ -49,6 +49,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
@@ -639,31 +640,11 @@ public class OrigamiPropertiesFrame extends JDialog
         }
 
         diagramPaper = new JDiagramPaperInput(tempOrigami.getPaper());
-        final TitledBorder diagramPaperBorder = BorderFactory.createTitledBorder(diagramPaper.getBorder(), "");
-        diagramPaper.setBorder(diagramPaperBorder);
-        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
-                "OrigamiPropertiesFrame.diagramPaperLabel") {
-            @Override
-            protected void updateText(String text)
-            {
-                diagramPaperBorder.setTitle(text);
-            }
-        });
 
         modelPaper = new JModelPaperInput(tempOrigami.getModel().getPaper());
         if (!isCreating)
             // TODO maybe allow changes not affecting aspect ratio
             modelPaper.lockSize();
-        final TitledBorder modelPaperBorder = BorderFactory.createTitledBorder(modelPaper.getBorder(), "");
-        modelPaper.setBorder(modelPaperBorder);
-        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
-                "OrigamiPropertiesFrame.modelPaperLabel") {
-            @Override
-            protected void updateText(String text)
-            {
-                modelPaperBorder.setTitle(text);
-            }
-        });
 
         String okKey = "OrigamiPropertiesFrame.okButton." + (isCreating ? "create" : "edit");
         okButton = new JLocalizedButton("application", okKey);
@@ -707,51 +688,55 @@ public class OrigamiPropertiesFrame extends JDialog
 
         CellConstraints cc = new CellConstraints();
 
-        JPanel basicPanel = new JPanel(new FormLayout("right:pref,$lcgap,pref:grow",
-                "pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref"));
-        final TitledBorder basicPanelBorder = BorderFactory.createTitledBorder("");
-        basicPanel.setBorder(basicPanelBorder);
+        final JTabbedPane tabPane = new JTabbedPane();
+        int tabIndex = 0;
+
+        JPanel basicPanel = new JPanel(new FormLayout("$dmargin,right:pref,$lcgap,pref:grow,$dmargin",
+                "$dmargin,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$dmargin"));
+        final int basicPanelTabIndex = tabIndex++;
+        tabPane.addTab("", basicPanel);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
                 "OrigamiPropertiesFrame.basicPanelTitle") {
             @Override
             protected void updateText(String text)
             {
-                basicPanelBorder.setTitle(text);
+                tabPane.setTitleAt(basicPanelTabIndex, text);
             }
         });
 
-        basicPanel.add(nameLabel, cc.xy(1, 1));
-        basicPanel.add(name, cc.xy(3, 1));
-        basicPanel.add(creationDateLabel, cc.xy(1, 3));
-        basicPanel.add(creationDate, cc.xy(3, 3));
-        basicPanel.add(authorNameLabel, cc.xy(1, 5));
-        basicPanel.add(authorName, cc.xy(3, 5));
-        basicPanel.add(authorHomepageLabel, cc.xy(1, 7));
-        basicPanel.add(authorHomepage, cc.xy(3, 7));
-        basicPanel.add(shortDescLabel, cc.xy(1, 9));
-        basicPanel.add(shortDesc, cc.xy(3, 9));
-        basicPanel.add(originalLabel, cc.xy(1, 11));
-        basicPanel.add(original, cc.xy(3, 11));
+        basicPanel.add(nameLabel, cc.xy(2, 2));
+        basicPanel.add(name, cc.xy(4, 2));
+        basicPanel.add(creationDateLabel, cc.xy(2, 4));
+        basicPanel.add(creationDate, cc.xy(4, 4));
+        basicPanel.add(authorNameLabel, cc.xy(2, 6));
+        basicPanel.add(authorName, cc.xy(4, 6));
+        basicPanel.add(authorHomepageLabel, cc.xy(2, 8));
+        basicPanel.add(authorHomepage, cc.xy(4, 8));
+        basicPanel.add(shortDescLabel, cc.xy(2, 10));
+        basicPanel.add(shortDesc, cc.xy(4, 10));
+        basicPanel.add(originalLabel, cc.xy(2, 12));
+        basicPanel.add(original, cc.xy(4, 12));
+        basicPanel.add(description, cc.xywh(2, 14, 3, 1));
 
-        JPanel thumbnailPanel = new JPanel(new FormLayout("center:min(pref;50dlu),$ugap,pref,$ugap,pref",
-                "pref,$lgap,pref"));
-        final TitledBorder thumbnailPanelBorder = BorderFactory.createTitledBorder("");
-        thumbnailPanel.setBorder(thumbnailPanelBorder);
+        JPanel thumbnailPanel = new JPanel(new FormLayout(
+                "$dmargin,center:min(pref;50dlu),$ugap,pref,$ugap,pref,$dmargin", "$dmargin,pref,$lgap,pref,$dmargin"));
+        final int thumbnailPanelTabIndex = tabIndex++;
+        tabPane.addTab("", thumbnailPanel);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
                 "OrigamiPropertiesFrame.thumbnailPanelTitle") {
             @Override
             protected void updateText(String text)
             {
-                thumbnailPanelBorder.setTitle(text);
+                tabPane.setTitleAt(thumbnailPanelTabIndex, text);
             }
         });
 
-        thumbnailPanel.add(thumbnailPreviewLabel, cc.xy(1, 1));
-        thumbnailPanel.add(thumbnailPreview, cc.xy(1, 3));
-        thumbnailPanel.add(thumbnailLoadFromModel, cc.xy(3, 1));
-        thumbnailPanel.add(thumbnailLoadFromFile, cc.xy(5, 1));
-        thumbnailPanel.add(thumbnailFileInputLabel, cc.xy(3, 3));
-        thumbnailPanel.add(thumbnailFileInput, cc.xy(5, 3));
+        thumbnailPanel.add(thumbnailPreviewLabel, cc.xy(2, 2));
+        thumbnailPanel.add(thumbnailPreview, cc.xy(2, 4));
+        thumbnailPanel.add(thumbnailLoadFromModel, cc.xy(4, 2));
+        thumbnailPanel.add(thumbnailLoadFromFile, cc.xy(6, 2));
+        thumbnailPanel.add(thumbnailFileInputLabel, cc.xy(4, 4));
+        thumbnailPanel.add(thumbnailFileInput, cc.xy(6, 4));
 
         final JScrollPane licenseContentScrollPane = new JScrollPane(licenseContent,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -800,47 +785,59 @@ public class OrigamiPropertiesFrame extends JDialog
         licensePermissionPanel.add(licensePermissionExport);
         licensePermissionPanel.add(licensePermissionDistribute);
 
-        JPanel licensePanel = new JPanel(new FormLayout("pref:grow",
-                "pref,$lgap,pref,$lgap,pref,$rgap,pref,$lgap,pref,$lgap,pref"));
-        final TitledBorder licensePanelBorder = BorderFactory.createTitledBorder("");
-        licensePanel.setBorder(licensePanelBorder);
+        JPanel licensePanel = new JPanel(new FormLayout("$dmargin,pref:grow,$dmargin",
+                "$dmargin,pref,$lgap,pref,$lgap,pref,$rgap,pref,$lgap,pref,$lgap,pref,$dmargin"));
+        final int licensePanelTabIndex = tabIndex++;
+        tabPane.addTab("", licensePanel);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
                 "OrigamiPropertiesFrame.licensePanelTitle") {
             @Override
             protected void updateText(String text)
             {
-                licensePanelBorder.setTitle(text);
+                tabPane.setTitleAt(licensePanelTabIndex, text);
             }
         });
 
-        licensePanel.add(licenseNamePanel, cc.xy(1, 1));
-        licensePanel.add(licenseContentPanel, cc.xy(1, 3));
-        licensePanel.add(licenseContentLabel, cc.xy(1, 5));
-        licensePanel.add(licenseContentScrollPane, cc.xy(1, 7));
-        licensePanel.add(licenseHomepagePanel, cc.xy(1, 9));
-        licensePanel.add(licensePermissionPanel, cc.xy(1, 11));
+        licensePanel.add(licenseNamePanel, cc.xy(2, 2));
+        licensePanel.add(licenseContentPanel, cc.xy(2, 4));
+        licensePanel.add(licenseContentLabel, cc.xy(2, 6));
+        licensePanel.add(licenseContentScrollPane, cc.xy(2, 8));
+        licensePanel.add(licenseHomepagePanel, cc.xy(2, 10));
+        licensePanel.add(licensePermissionPanel, cc.xy(2, 12));
 
-        JPanel leftPanel = new JPanel(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref"));
-        leftPanel.add(basicPanel, cc.xy(1, 1));
-        leftPanel.add(thumbnailPanel, cc.xy(1, 3));
-        leftPanel.add(licensePanel, cc.xy(1, 5));
+        final int diagramPaperTabIndex = tabIndex++;
+        JPanel diagramPaperPanel = new JPanel(new FormLayout("$dmargin,default,$dmargin", "$dmargin,default,$dmargin"));
+        diagramPaperPanel.add(diagramPaper, cc.xy(2, 2));
+        tabPane.addTab("", diagramPaperPanel);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.diagramPaperLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                tabPane.setTitleAt(diagramPaperTabIndex, text);
+            }
+        });
 
-        JPanel rightPanel = new JPanel(new FormLayout("pref", "pref,$lgap,pref,$lgap,pref"));
-        rightPanel.add(description, cc.xy(1, 1));
-        rightPanel.add(diagramPaper, cc.xy(1, 3));
-        rightPanel.add(modelPaper, cc.xy(1, 5));
+        final int modelPaperTabIndex = tabIndex++;
+        JPanel modelPaperPanel = new JPanel(new FormLayout("$dmargin,default,$dmargin", "$dmargin,default,$dmargin"));
+        modelPaperPanel.add(modelPaper, cc.xy(2, 2));
+        tabPane.addTab("", modelPaperPanel);
+        conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
+                "OrigamiPropertiesFrame.modelPaperLabel") {
+            @Override
+            protected void updateText(String text)
+            {
+                tabPane.setTitleAt(modelPaperTabIndex, text);
+            }
+        });
 
         JPanel dialogButtonsPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
         dialogButtonsPanel.add(cancelButton);
         dialogButtonsPanel.add(okButton);
 
-        setLayout(new FormLayout("$dmargin,pref,$ugap,pref,$dmargin",
-                "$dmargin,pref,$lgap,top:pref,$lgap,bottom:pref:grow,$dmargin"));
-
-        add(dialogTitle, cc.xyw(2, 2, 3));
-        add(leftPanel, cc.xy(2, 4));
-        add(rightPanel, cc.xy(4, 4));
-        add(dialogButtonsPanel, cc.xyw(2, 6, 3));
+        setLayout(new FormLayout("default", "default,$lgap,default"));
+        add(tabPane, cc.xy(1, 1));
+        add(dialogButtonsPanel, cc.xy(1, 3));
 
         pack();
     }
