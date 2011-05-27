@@ -31,10 +31,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.Permission;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -63,6 +65,7 @@ import javax.swing.origamist.JLocalizedButton;
 import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.JMultilineLabel;
 
+import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import com.toedter.calendar.JDateChooser;
@@ -92,7 +95,7 @@ import cz.cuni.mff.peckam.java.origamist.utils.UniversalDocumentListener;
 public class OrigamiPropertiesFrame extends JDialog
 {
     /** */
-    private static final long                      serialVersionUID = -8222843108896744313L;
+    private static final long                      serialVersionUID        = -8222843108896744313L;
 
     /**
      * If <code>null</code>, indicates that the dialog should display texts for creating a model metadata, otherwise it
@@ -134,6 +137,10 @@ public class OrigamiPropertiesFrame extends JDialog
     protected JTextField                           licenseName;
     /** Input for license homepage. */
     protected JTextField                           licenseHomepage;
+    /** List of predefined licenses. */
+    protected List<JRadioButton>                   predefinedLicenses      = new LinkedList<JRadioButton>();
+    /** The button group of predefined licenses. */
+    protected ButtonGroup                          predefinedLicensesGroup = new ButtonGroup();
     /** Input for license content. */
     protected JTextArea                            licenseContent;
     /** RadioButton that signalizes that license homepage will be filled and content not. */
@@ -171,8 +178,8 @@ public class OrigamiPropertiesFrame extends JDialog
             authorNameLabel, authorHomepageLabel, licenseNameLabel, licenseHomepageLabel, licenseContentLabel,
             originalLabel, thumbnailFileInputLabel, thumbnailPreviewLabel;
 
-    protected String                               imageFileType    = null;
-    protected Image                                generatedThumbnail = null, fromFileThumbnail = null;
+    protected String                               imageFileType           = null;
+    protected Image                                generatedThumbnail      = null, fromFileThumbnail = null;
 
     /**
      * @param tempOrigami If <code>null</code>, indicates that the dialog should display texts for creating a model
@@ -353,6 +360,7 @@ public class OrigamiPropertiesFrame extends JDialog
                     licenseHomepage.setVisible(true);
                     licenseContent.setVisible(false);
                     tempOrigami.getLicense().setContent(null);
+                    predefinedLicensesGroup.clearSelection();
                 }
             }
         });
@@ -375,6 +383,7 @@ public class OrigamiPropertiesFrame extends JDialog
                     licenseHomepage.setVisible(false);
                     licenseContent.setVisible(true);
                     tempOrigami.getLicense().setHomepage(null);
+                    predefinedLicensesGroup.clearSelection();
                 }
             }
         });
@@ -384,6 +393,38 @@ public class OrigamiPropertiesFrame extends JDialog
             licenseChooseHomepage.setSelected(true);
         else
             licenseChooseContent.setSelected(true);
+
+        ResourceBundle bundle = ResourceBundle.getBundle("application", conf.getLocale());
+        Enumeration<String> keys = bundle.getKeys();
+        while (keys.hasMoreElements()) {
+            String key = keys.nextElement();
+            String prefix = "license.";
+            if (key.startsWith(prefix)) {
+                final String name = key.substring(prefix.length());
+                final URL homepage;
+                try {
+                    homepage = new URL(bundle.getString(key));
+                } catch (MalformedURLException e) {
+                    continue;
+                }
+                JRadioButton btn = new JRadioButton();
+                predefinedLicenses.add(btn);
+                predefinedLicensesGroup.add(btn);
+                btn.setAction(new AbstractAction() {
+                    /** */
+                    private static final long serialVersionUID = 1120375629573349833L;
+
+                    @Override
+                    public void actionPerformed(ActionEvent e)
+                    {
+                        licenseChooseHomepage.doClick();
+                        licenseName.setText(name);
+                        licenseHomepage.setText(homepage.toString());
+                    }
+                });
+                btn.setText(name);
+            }
+        }
 
         List<String> selectedPermissions = new LinkedList<String>();
         for (Permission p : tempOrigami.getLicense().getPermission())
@@ -785,8 +826,8 @@ public class OrigamiPropertiesFrame extends JDialog
         licensePermissionPanel.add(licensePermissionExport);
         licensePermissionPanel.add(licensePermissionDistribute);
 
-        JPanel licensePanel = new JPanel(new FormLayout("$dmargin,pref:grow,$dmargin",
-                "$dmargin,pref,$lgap,pref,$lgap,pref,$rgap,pref,$lgap,pref,$lgap,pref,$dmargin"));
+        JPanel licensePanel = new JPanel(new FormLayout("$dmargin,min(pref;500px):grow,$dmargin",
+                "$dmargin,pref,$lgap,pref,$lgap,pref,$rgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$lgap,pref,$dmargin"));
         final int licensePanelTabIndex = tabIndex++;
         tabPane.addTab("", licensePanel);
         conf.addAndRunResourceBundleListener(new Configuration.LocaleListener("application",
@@ -798,12 +839,27 @@ public class OrigamiPropertiesFrame extends JDialog
             }
         });
 
+        JPanel predefinedLicensesPanel = new JPanel(new FormLayout("pref"));
+        PanelBuilder builder = new PanelBuilder((FormLayout) predefinedLicensesPanel.getLayout(),
+                predefinedLicensesPanel);
+        for (JRadioButton b : predefinedLicenses) {
+            builder.appendRow("$lgap");
+            builder.appendRow("pref");
+            builder.nextLine();
+            builder.add(b);
+            builder.nextLine();
+        }
+
+        JLabel licenseChooseLabel = new JLocalizedLabel("application", "OrigamiPropertiesFrame.licenseChooseLabel");
+
         licensePanel.add(licenseNamePanel, cc.xy(2, 2));
-        licensePanel.add(licenseContentPanel, cc.xy(2, 4));
-        licensePanel.add(licenseContentLabel, cc.xy(2, 6));
-        licensePanel.add(licenseContentScrollPane, cc.xy(2, 8));
-        licensePanel.add(licenseHomepagePanel, cc.xy(2, 10));
-        licensePanel.add(licensePermissionPanel, cc.xy(2, 12));
+        licensePanel.add(predefinedLicensesPanel, cc.xy(2, 4));
+        licensePanel.add(licenseChooseLabel, cc.xy(2, 6));
+        licensePanel.add(licenseContentPanel, cc.xy(2, 8));
+        licensePanel.add(licenseContentLabel, cc.xy(2, 10));
+        licensePanel.add(licenseContentScrollPane, cc.xy(2, 12));
+        licensePanel.add(licenseHomepagePanel, cc.xy(2, 14));
+        licensePanel.add(licensePermissionPanel, cc.xy(2, 16));
 
         final int diagramPaperTabIndex = tabIndex++;
         JPanel diagramPaperPanel = new JPanel(new FormLayout("$dmargin,default,$dmargin", "$dmargin,default,$dmargin"));
