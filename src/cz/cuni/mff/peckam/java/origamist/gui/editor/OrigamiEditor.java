@@ -65,7 +65,6 @@ import javax.swing.origamist.BackgroundImageSupport;
 import javax.swing.origamist.BackgroundImageSupport.BackgroundRepeat;
 import javax.swing.origamist.BoundButtonGroup;
 import javax.swing.origamist.JDropDownButton;
-import javax.swing.origamist.JDropDownButtonReflectingSelectionGroup;
 import javax.swing.origamist.JLocalizedLabel;
 import javax.swing.origamist.JStatusBar;
 import javax.swing.origamist.JToggleMenuItem;
@@ -172,7 +171,7 @@ public class OrigamiEditor extends CommonGui
             operationMountainFoldUnfold, operationValleyFoldUnfold, operationThunderboltFoldMountainFirst,
             operationThunderboltFoldValleyFirst, operationTurnOver, operationRotate, operationPull,
             operationCrimpFoldInside, operationCrimpFoldOutside, operationOpen, operationReverseFoldInside,
-            operationReverseFoldOutside, operationRepeatAction, operationMark;
+            operationReverseFoldOutside, operationRepeatAction, operationMark, operationImage;
 
     /** Toolbar buttons for model operations. */
     protected JToggleMenuItem                       operationRabbitFold, operationSquashFold;
@@ -564,9 +563,10 @@ public class OrigamiEditor extends CommonGui
 
         alternativeActions.put(operationCrimpFoldInside, operationCrimpFoldOutside);
 
-        toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open",
-                "folds/open-32.png"));
-        operationOpen.addActionListener(new OperationActionListener(Operations.OPEN, "editor", "menu.operation.open"));
+        // toolbar.add(operationOpen = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.open",
+        // "folds/open-32.png"));
+        // operationOpen.addActionListener(new OperationActionListener(Operations.OPEN, "editor",
+        // "menu.operation.open"));
 
         toolbar.add(operationReverseFoldInside = toolbar.createToolbarItem(new JToggleButton(), null,
                 "menu.operation.reverseInside", "folds/reverse-inside-32.png"));
@@ -585,20 +585,25 @@ public class OrigamiEditor extends CommonGui
         operationRepeatAction.addActionListener(new OperationActionListener(Operations.REPEAT_ACTION, "editor",
                 "menu.operation.repeat"));
 
-        operationRabbitFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.rabbit",
-                "folds/rabbit-32.png");
-        operationRabbitFold.addActionListener(new OperationActionListener(Operations.RABBIT_FOLD, "editor",
-                "menu.operation.rabbit"));
-
-        operationSquashFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.squash",
-                "folds/squash-32.png");
-        operationSquashFold.addActionListener(new OperationActionListener(Operations.SQUASH_FOLD, "editor",
-                "menu.operation.squash"));
+        // operationRabbitFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.rabbit",
+        // "folds/rabbit-32.png");
+        // operationRabbitFold.addActionListener(new OperationActionListener(Operations.RABBIT_FOLD, "editor",
+        // "menu.operation.rabbit"));
+        //
+        // operationSquashFold = toolbar.createToolbarDropdownItem(new JToggleMenuItem(), null, "menu.operation.squash",
+        // "folds/squash-32.png");
+        // operationSquashFold.addActionListener(new OperationActionListener(Operations.SQUASH_FOLD, "editor",
+        // "menu.operation.squash"));
 
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
                 "folds/mark-32.png"));
         operationMark
                 .addActionListener(new OperationActionListener(Operations.MARKER, "editor", "menu.operation.mark"));
+
+        toolbar.add(operationImage = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.image",
+                "folds/image_op-32.png"));
+        operationImage
+                .addActionListener(new OperationActionListener(Operations.IMAGE, "editor", "menu.operation.image"));
 
         operationGroup.add(operationMountainFold);
         operationGroup.add(operationValleyFold);
@@ -611,20 +616,21 @@ public class OrigamiEditor extends CommonGui
         operationGroup.add(operationPull);
         operationGroup.add(operationCrimpFoldInside);
         operationGroup.add(operationCrimpFoldOutside);
-        operationGroup.add(operationOpen);
+        // operationGroup.add(operationOpen);
         operationGroup.add(operationReverseFoldInside);
         operationGroup.add(operationReverseFoldOutside);
         operationGroup.add(operationRepeatAction);
-        operationGroup.add(operationRabbitFold);
-        operationGroup.add(operationSquashFold);
+        // operationGroup.add(operationRabbitFold);
+        // operationGroup.add(operationSquashFold);
         operationGroup.add(operationMark);
+        operationGroup.add(operationImage);
 
-        JDropDownButton advancedButton = toolbar.createToolbarDropdownButton(
-                new JDropDownButtonReflectingSelectionGroup(new JButton(), operationGroup), null,
-                "menu.operation.advanced", "empty-32.png");
-        toolbar.add(advancedButton);
-        advancedButton.addComponent(operationRabbitFold);
-        advancedButton.addComponent(operationSquashFold);
+        // JDropDownButton advancedButton = toolbar.createToolbarDropdownButton(
+        // new JDropDownButtonReflectingSelectionGroup(new JButton(), operationGroup), null,
+        // "menu.operation.advanced", "empty-32.png");
+        // toolbar.add(advancedButton);
+        // advancedButton.addComponent(operationRabbitFold);
+        // advancedButton.addComponent(operationSquashFold);
 
         showAlternativeActions(false);
 

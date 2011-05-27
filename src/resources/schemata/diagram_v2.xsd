@@ -560,6 +560,29 @@
 			</extension>
 		</complexContent>
 	</complexType>
+	
+	<complexType name="ImageOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:ImageOperations" fixed="IMAGE" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="ImageOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.ImageOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:ImageOperationBase">
+				<sequence>
+					<element type="c:Image" name="image"/>
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
 
 	<group name="layerList">
 		<sequence>
@@ -647,6 +670,7 @@
 			<enumeration value="REPEAT_ACTION" />
 			<enumeration value="RABBIT_FOLD" />
 			<enumeration value="SQUASH_FOLD" />
+			<enumeration value="IMAGE" />
 		</restriction>
 	</simpleType>
 
@@ -711,6 +735,12 @@
 	<simpleType name="PullOperations">
 		<restriction base="m:Operations">
 			<enumeration value="PULL" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="ImageOperations">
+		<restriction base="m:Operations">
+			<enumeration value="IMAGE" />
 		</restriction>
 	</simpleType>
 

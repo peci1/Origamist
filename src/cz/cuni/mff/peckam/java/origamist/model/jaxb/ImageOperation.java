@@ -10,10 +10,9 @@ package cz.cuni.mff.peckam.java.origamist.model.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import cz.cuni.mff.peckam.java.origamist.common.GeneratedClassBase;
+import cz.cuni.mff.peckam.java.origamist.common.jaxb.Image;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -25,103 +24,93 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
- * <p>Provided property: type
- * <p>Java class for Operation complex type.
+ * <p>Provided property: image
+ * <p>Java class for ImageOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="Operation">
+ * &lt;complexType name="ImageOperation">
  *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations" default="UNDEFINED" />
- *     &lt;/restriction>
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ImageOperationBase">
+ *       &lt;sequence>
+ *         &lt;element name="image" type="{http://www.mff.cuni.cz/~peckam/java/origamist/common/v1}Image"/>
+ *       &lt;/sequence>
+ *     &lt;/extension>
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
  * 
  * 
  */
-@XmlType(name = "Operation")
-@XmlSeeAlso({
-    MarkerOperationBase.class,
-    ReverseFoldOperationBase.class,
-    FoldOperationBase.class,
-    TurnOverOperationBase.class,
-    RotateOperationBase.class,
-    CrimpFoldOperationBase.class,
-    RepeatOperationBase.class,
-    ThunderboltFoldOperationBase.class,
-    FoldUnfoldOperationBase.class,
-    ImageOperationBase.class,
-    PullOperationBase.class
+@XmlType(name = "ImageOperation", propOrder = {
+    "image"
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public abstract class Operation
-    extends GeneratedClassBase
+public class ImageOperation
+    extends ImageOperationBase
     implements Equals, HashCode
 {
 
-    protected Operations type;
+    protected Image image;
     /**
-     * Property type
+     * Property image
      * 
      */
-    public final static String TYPE_PROPERTY = "type:cz.cuni.mff.peckam.java.origamist.model.jaxb.Operation";
+    public final static String IMAGE_PROPERTY = "image:cz.cuni.mff.peckam.java.origamist.model.jaxb.ImageOperation";
 
-    public Operation() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.Operation")) {
+    public ImageOperation() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.ImageOperation")) {
             init();
         }
     }
 
     /**
-     * Gets the value of the type property.
+     * Gets the value of the image property.
      * 
      * @return
      *     possible object is
-     *     {@link Operations }
+     *     {@link Image }
      *     
      */
-    @XmlAttribute
-    public Operations getType() {
-        if (type == null) {
-            return Operations.UNDEFINED;
-        } else {
-            return type;
-        }
+    @XmlElement(required = true)
+    public Image getImage() {
+        return image;
     }
 
     /**
-     * Sets the value of the type property.
+     * Sets the value of the image property.
      * 
      * @param value
      *     allowed object is
-     *     {@link Operations }
+     *     {@link Image }
      *     
      */
-    public void setType(Operations value) {
-        Operations old = this.type;
-        this.type = value;
+    public void setImage(Image value) {
+        Image old = this.image;
+        this.image = value;
         if (((old!= value)&&((old == null)||(value == null)))||((old!= null)&&(!old.equals(value)))) {
-            support.firePropertyChange(Operation.TYPE_PROPERTY, old, value);
+            support.firePropertyChange(ImageOperation.IMAGE_PROPERTY, old, value);
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof Operation)) {
+        if (!(object instanceof ImageOperation)) {
             return false;
         }
         if (this == object) {
             return true;
         }
-        final Operation that = ((Operation) object);
+        if (!super.equals(thisLocator, thatLocator, object, strategy)) {
+            return false;
+        }
+        final ImageOperation that = ((ImageOperation) object);
         {
-            Operations lhsType;
-            lhsType = this.getType();
-            Operations rhsType;
-            rhsType = that.getType();
-            if (!strategy.equals(LocatorUtils.property(thisLocator, "type", lhsType), LocatorUtils.property(thatLocator, "type", rhsType), lhsType, rhsType)) {
+            Image lhsImage;
+            lhsImage = this.getImage();
+            Image rhsImage;
+            rhsImage = that.getImage();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "image", lhsImage), LocatorUtils.property(thatLocator, "image", rhsImage), lhsImage, rhsImage)) {
                 return false;
             }
         }
@@ -134,11 +123,11 @@ public abstract class Operation
     }
 
     public int hashCode(ObjectLocator locator, HashCodeStrategy strategy) {
-        int currentHashCode = 1;
+        int currentHashCode = super.hashCode(locator, strategy);
         {
-            Operations theType;
-            theType = this.getType();
-            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "type", theType), currentHashCode, theType);
+            Image theImage;
+            theImage = this.getImage();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "image", theImage), currentHashCode, theImage);
         }
         return currentHashCode;
     }

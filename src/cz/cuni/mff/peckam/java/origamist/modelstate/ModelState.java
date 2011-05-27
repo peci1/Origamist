@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.modelstate;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 import static java.lang.Math.abs;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -165,6 +166,9 @@ public class ModelState implements Cloneable
 
     /** The furthest point from furthestRotationSegment found by bendPaper() calls. */
     protected ModelPoint                           furthestRotatedPointAroundSegment = null;
+
+    /** If not null, this operation is covered by this image. */
+    protected BufferedImage                        overlayImage                      = null;
 
     public ModelState()
     {
@@ -2394,6 +2398,8 @@ public class ModelState implements Cloneable
 
         for (ModelTriangle t : triangles)
             t.resetBeforeRotation();
+
+        overlayImage = null;
     }
 
     @Override
@@ -2419,6 +2425,11 @@ public class ModelState implements Cloneable
         result.triangles = new ObservableList<ModelTriangle>(triangles.size());
         result.trianglesToLayers = new Hashtable<ModelTriangle, Layer>(trianglesToLayers.size());
         result.paperToSpacePoint = new Hashtable<Point2d, Point3d>(paperToSpacePoint.size());
+        if (overlayImage != null) {
+            result.overlayImage = new BufferedImage(overlayImage.getWidth(), overlayImage.getHeight(),
+                    overlayImage.getType());
+            result.overlayImage.createGraphics().drawImage(overlayImage, null, 0, 0);
+        }
 
         result.addObservers();
 
@@ -2685,6 +2696,22 @@ public class ModelState implements Cloneable
     {
         furthestRotationSegment = null;
         furthestRotatedPointAroundSegment = null;
+    }
+
+    /**
+     * @return If not null, this operation is covered by this image.
+     */
+    public BufferedImage getOverlayImage()
+    {
+        return overlayImage;
+    }
+
+    /**
+     * @param overlayImage If not null, this operation is covered by this image.
+     */
+    public void setOverlayImage(BufferedImage overlayImage)
+    {
+        this.overlayImage = overlayImage;
     }
 
     /**

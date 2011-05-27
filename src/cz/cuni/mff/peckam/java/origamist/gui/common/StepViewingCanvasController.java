@@ -75,6 +75,7 @@ import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.exceptions.PaperStructureException;
+import cz.cuni.mff.peckam.java.origamist.gui.editor.OSDPanel;
 import cz.cuni.mff.peckam.java.origamist.math.Line3d;
 import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
@@ -175,6 +176,9 @@ public class StepViewingCanvasController
     protected Transform3D             initialViewTransform     = null;
 
     protected PropertyChangeSupport   support                  = new PropertyChangeSupport(this);
+
+    /** The OSD panel displaying image operations. */
+    protected OSDPanel                imageOverlayPanel        = null;
 
     /**
      * @param canvas
@@ -1048,6 +1052,32 @@ public class StepViewingCanvasController
             branchGraph.setCapability(BranchGroup.ALLOW_DETACH);
 
             createAndAddBranchGraphChildren();
+
+            if (imageOverlayPanel != null) {
+                imageOverlayPanel.detachFromUniverse(universe);
+                imageOverlayPanel = null;
+            }
+
+            if (getModelState().getOverlayImage() != null) {
+                imageOverlayPanel = new OSDPanel(canvas, 0, 0, canvas.getWidth(), canvas.getHeight(), false, false) {
+                    @Override
+                    protected void paint(Graphics2D graphics)
+                    {
+                        BufferedImage image = getModelState().getOverlayImage();
+                        double h, v;
+                        h = canvas.getWidth() / image.getWidth();
+                        v = canvas.getHeight() / image.getHeight();
+                        double ratio = Math.min(h, v);
+
+                        int width = (int) (image.getWidth() * ratio);
+                        int height = (int) (image.getHeight() * ratio);
+                        graphics.drawImage(image, (canvas.getWidth() - width) / 2, (canvas.getHeight() - height) / 2,
+                                width, height, null);
+                    }
+                };
+                imageOverlayPanel.attachToUniverse(universe);
+                branchGraph.removeChild(tGroup);
+            }
 
             branchGraph.compile(); // may cause unexpected problems - any consequent change of contents
             // (or even reading of them) will produce an error if you don't set the proper capability

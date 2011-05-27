@@ -12,8 +12,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
+import cz.cuni.mff.peckam.java.origamist.model.ImageOperation;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
-import cz.cuni.mff.peckam.java.origamist.model.ThunderboltFoldOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for ThunderboltFoldOperationBase complex type.
+ * <p>Java class for ImageOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ThunderboltFoldOperationBase">
+ * &lt;complexType name="ImageOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" use="required" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ThunderboltOperations" fixed="THUNDERBOLT_FOLD" />
+ *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}ImageOperations" fixed="IMAGE" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -40,25 +40,25 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  * 
  */
-@XmlType(name = "ThunderboltFoldOperationBase")
+@XmlType(name = "ImageOperationBase")
 @XmlSeeAlso({
-    ThunderboltFoldOperation.class
+    ImageOperation.class
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public abstract class ThunderboltFoldOperationBase
+public abstract class ImageOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
-    public ThunderboltFoldOperationBase() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.ThunderboltFoldOperationBase")) {
+    public ImageOperationBase() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.ImageOperationBase")) {
             init();
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof ThunderboltFoldOperationBase)) {
+        if (!(object instanceof ImageOperationBase)) {
             return false;
         }
         if (this == object) {

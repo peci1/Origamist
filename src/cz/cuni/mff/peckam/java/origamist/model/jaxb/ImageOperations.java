@@ -13,30 +13,30 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for RepeatOperations.
+ * <p>Java class for ImageOperations.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="RepeatOperations">
+ * &lt;simpleType name="ImageOperations">
  *   &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operations">
- *     &lt;enumeration value="REPEAT_ACTION"/>
+ *     &lt;enumeration value="IMAGE"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "RepeatOperations")
+@XmlType(name = "ImageOperations")
 @XmlEnum(Operations.class)
-public enum RepeatOperations {
+public enum ImageOperations {
 
-    REPEAT_ACTION;
+    IMAGE;
 
     public String value() {
         return name();
     }
 
-    public static RepeatOperations fromValue(String v) {
+    public static ImageOperations fromValue(String v) {
         return valueOf(v);
     }
 

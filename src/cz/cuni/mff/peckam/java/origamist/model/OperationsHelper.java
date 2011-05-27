@@ -161,6 +161,9 @@ public class OperationsHelper
             case SQUASH_FOLD:
                 result = null; // TODO
                 break;
+            case IMAGE:
+                result = new ImageOperation();
+                break;
         }
 
         if (result == null)
