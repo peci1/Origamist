@@ -1,4 +1,15 @@
-#Thu Dec 02 16:40:57 CET 2010
+#Sat May 28 01:49:57 CEST 2011
 eclipse.preferences.version=1
-encoding//src/application_cs.properties=ISO-8859-1
+encoding//src/application_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/exceptions/InvalidOperationException_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/exceptions/PaperStructureException_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/gui/editor/PickMode_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/math/AngleUnit_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/model/ModelPaper_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/model/Operations_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/modelstate/arguments/OperationArgument_cs.properties=UTF-8
+encoding//src/cz/cuni/mff/peckam/java/origamist/utils/ExportFormat_cs.properties=UTF-8
+encoding//src/editor_cs.properties=UTF-8
+encoding//src/javax/swing/origamist/AngleSelectionDialog_cs.properties=UTF-8
+encoding//src/viewer_cs.properties=UTF-8
 encoding/<project>=UTF-8

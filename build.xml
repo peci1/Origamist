@@ -196,7 +196,17 @@
 
 	<target name="jaxb" description="Generates JAXB source files" depends="jaxb-common,jaxb-files,jaxb-diagram,xjc-plugins-cleanup" />
 
-	<target name="compile" depends="init,jaxb" description="Compiles the application">
+	<target name="transcode-properties-files">
+		<delete>
+			<fileset dir="bin">
+			    <include name="**/*.properties"/>
+			</fileset>
+		</delete>
+
+		<native2ascii dest="bin" src="src" encoding="UTF-8" includes="**/*.properties"/>
+	</target>
+	
+	<target name="compile" depends="init,jaxb,transcode-properties-files" description="Compiles the application">
 		<javac srcdir="src" destdir="bin" debug="${debug}" includes="**/*.java" excludes="com/sun/tools/xjc/addon/**/*.java,cz/cuni/mff/peckam/java/origamist/tests/**/*.java,cz/cuni/mff/peckam/java/origamist/unused/**/*.java">
 			<classpath>
 				<pathelement path="src" />
@@ -207,7 +217,6 @@
 		</javac>
 		<copy todir="bin">
 			<fileset dir="src">
-				<include name="**/*.properties" />
 				<include name="**/*.xml" />
 				<include name="**/*.xsd" />
 				<include name="resources/**/*.*" />
@@ -216,6 +225,7 @@
 				<exclude name="net/sf/ovanttasks/ovanttasks/**/*.java" />
 			</fileset>
 		</copy>
+		
 	</target>
 
 	<!-- TODO Linux support should be added. -->
