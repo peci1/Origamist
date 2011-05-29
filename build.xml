@@ -331,7 +331,7 @@
 				<resources os="Mac OS X">
 					<property name="j3d.rend" value="jogl" />
 				</resources>
-
+				
 				<resources>
 					<j2se href="http://java.sun.com/products/autodl/j2se" version="1.6+" max_heap_size="1024m" initial_heap_size="128m" />
 					<jar href="@{jar-file}" main="true" />
@@ -351,6 +351,10 @@
 				<description>A viewer for digital origami models.</description>
 				<description kind="short">An origami viewer application.</description>
 				<offline_allowed />
+				<shortcut>
+					<desktop/>
+					<menu submenu="Origamist"/>
+				</shortcut>
 			</information>
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600" />
 		</create-jnlp>
@@ -365,6 +369,10 @@
 				<description>A viewer for digital origami models.</description>
 				<description kind="short">An origami viewer application.</description>
 				<offline_allowed />
+				<shortcut>
+					<desktop/>
+					<menu submenu="Origamist"/>
+				</shortcut>
 			</information>
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600">
 				<param name="files" value="diagrams/listing.xml" />
@@ -382,6 +390,10 @@
 				<description>An editor for digital origami models.</description>
 				<description kind="short">An origami editor application.</description>
 				<offline_allowed />
+				<shortcut>
+					<desktop/>
+					<menu submenu="Origamist"/>
+				</shortcut>
 			</information>
 			
 			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768" />
@@ -397,10 +409,14 @@
 				<description>An editor for digital origami models.</description>
 				<description kind="short">An origami editor application.</description>
 				<offline_allowed />
+				<shortcut>
+					<desktop/>
+					<menu submenu="Origamist"/>
+				</shortcut>
 			</information>
 			
 			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768">
-				<param name="file" value="diagrams\paper_plane.xml" />
+				<param name="file" value="diagrams/paper_plane.xml" />
 			</applet_desc>
 		</create-jnlp>
 	</target>

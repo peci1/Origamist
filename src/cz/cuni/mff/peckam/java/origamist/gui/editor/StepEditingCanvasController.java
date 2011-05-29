@@ -8,7 +8,6 @@ import static java.lang.Math.abs;
 import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Event;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -48,12 +47,12 @@ import javax.media.j3d.TriangleArray;
 import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
 import javax.media.j3d.WakeupOnBehaviorPost;
-import javax.media.j3d.WakeupOr;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector2d;
 import javax.vecmath.Vector3d;
 
 import org.apache.log4j.Logger;
@@ -66,6 +65,8 @@ import com.sun.j3d.utils.universe.ViewInfo;
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.gui.common.OSDPanel;
 import cz.cuni.mff.peckam.java.origamist.gui.common.StepViewingCanvasController;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
+import cz.cuni.mff.peckam.java.origamist.math.MathHelper;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.math.Triangle2d;
@@ -98,110 +99,115 @@ import cz.cuni.mff.peckam.java.origamist.utils.ParametrizedCallable;
 public class StepEditingCanvasController extends StepViewingCanvasController
 {
 
-    protected boolean                isInPreview                = false;
+    protected boolean                isInPreview                  = false;
 
     /** The transform for transforming vworld coordinates to image plate coordinates. */
-    protected Transform3D            vWorldToImagePlate         = new Transform3D();
+    protected Transform3D            vWorldToImagePlate           = new Transform3D();
 
     /** The group containing all layers. */
-    protected Group                  layers                     = null;
+    protected Group                  layers                       = null;
 
-    protected List<Group>            layerGroups                = new LinkedList<Group>();
+    protected List<Group>            layerGroups                  = new LinkedList<Group>();
 
     /** The group containing all lines. */
-    protected Group                  lines                      = null;
+    protected Group                  lines                        = null;
 
-    protected List<Group>            lineGroups                 = new LinkedList<Group>();
+    protected List<Group>            lineGroups                   = new LinkedList<Group>();
 
     /** The group that is always drawn after the model is drawn. */
-    protected Group                  overModel                  = null;
+    protected Group                  overModel                    = null;
 
     /** The group that holds all displayed points. */
-    protected Group                  pointGroup                 = null;
+    protected Group                  pointGroup                   = null;
+
+    protected List<Group>            points                       = new LinkedList<Group>();
+
+    protected ModelSegment           lastHighlightedPointsSegment = null;
+    protected ModelSegment           firstPointsSegment           = null;
 
     /** The group that holds the highlighted point to draw it over all other points. */
-    protected Group                  highlightedPointGroup      = null;
+    protected Group                  highlightedPointGroup        = null;
 
     /** The factory that creates groups for given model points. */
-    protected PointFactory           pointFactory               = new PointFactory();
+    protected PointFactory           pointFactory                 = new PointFactory();
 
     /** The factory that creates groups for given model lines. */
-    protected LineFactory            lineFactory                = new LineFactory();
+    protected LineFactory            lineFactory                  = new LineFactory();
 
     /** The list of (points/lines/layers - depends on pickMode) available by the last performed pick operation. */
-    protected List<Group>            availableItems             = new LinkedList<Group>();
+    protected List<Group>            availableItems               = new LinkedList<Group>();
 
     /** The currently highlighted (picked) (point/line/layer - depends on pickMode). */
-    protected Group                  highlighted                = null;
+    protected Group                  highlighted                  = null;
 
     /** The currently selected points, lines and layers. */
-    protected HashSet<Group>         selected                   = new HashSet<Group>();
+    protected HashSet<Group>         selected                     = new HashSet<Group>();
 
     /** The set of currently selected layers. */
-    protected Set<Layer>             selectedLayers             = new HashSet<Layer>();
+    protected Set<Layer>             selectedLayers               = new HashSet<Layer>();
 
     /** The set of currently selected lines. */
-    protected Set<ModelSegment>      selectedLines              = new HashSet<ModelSegment>();
+    protected Set<ModelSegment>      selectedLines                = new HashSet<ModelSegment>();
 
     /** The set of currently selected points. */
-    protected Set<ModelPoint>        selectedPoints             = new HashSet<ModelPoint>();
+    protected Set<ModelPoint>        selectedPoints               = new HashSet<ModelPoint>();
 
     /** All elements chosen since the last call of {@link #clearChosenItems()}. */
-    protected List<Group>            chosen                     = new LinkedList<Group>();
+    protected List<Group>            chosen                       = new LinkedList<Group>();
 
     /** The elements chosen since the last call of {@link #setCurrentOperationArgument(OperationArgument)}. */
-    protected Set<Group>             currentChosen              = new HashSet<Group>();
+    protected Set<Group>             currentChosen                = new HashSet<Group>();
 
     /** The set of lines added when choosing a line by selecting two points. */
-    protected Set<NewLine>           newLines                   = new HashSet<NewLine>();
+    protected Set<NewLine>           newLines                     = new HashSet<NewLine>();
 
     /** The currently active new line. */
-    protected NewLine                currentNewLine             = null;
+    protected NewLine                currentNewLine               = null;
 
     /** The type of primitves the user can pick. */
-    protected PickMode               pickMode                   = PickMode.POINT;
+    protected PickMode               pickMode                     = PickMode.POINT;
 
     /** The manager for changing layer appearances. */
-    protected LayerAppearanceManager layerAppearanceManager     = new LayerAppearanceManager();
+    protected LayerAppearanceManager layerAppearanceManager       = new LayerAppearanceManager();
 
     /** The manager for changing point appearances. */
-    protected PointAppearanceManager pointAppearanceManager     = new PointAppearanceManager();
+    protected PointAppearanceManager pointAppearanceManager       = new PointAppearanceManager();
 
     /** The operation argument the editor fetches data for. */
-    protected OperationArgument      currentOperationArgument   = null;
+    protected OperationArgument      currentOperationArgument     = null;
 
     /** If current argument is a layer argument, this list contains the list of layers to choose from. */
-    protected List<Layer>            layersToChooseFrom         = null;
+    protected List<Layer>            layersToChooseFrom           = null;
 
     /** If current argument is a layer argument, this list contains the list of layers to choose from. */
-    protected List<Group>            layersToChooseFromAsGroups = null;
+    protected List<Group>            layersToChooseFromAsGroups   = null;
 
     /** The transform added by behaviors. */
-    protected Transform3D            additionalTransform        = null;
+    protected Transform3D            additionalTransform          = null;
 
     /** The set of layers the currently highlighted point lies in. */
-    protected Set<Group>             layersForHighlightedPoint  = null;
+    protected Set<Group>             layersForHighlightedPoint    = null;
 
     /** If true, show the 2D preview window. */
-    protected boolean                showPreview                = true;
+    protected boolean                showPreview                  = true;
 
     /** The OSD panel with model 2D preview. */
-    protected OSDPanel               preview                    = null;
+    protected OSDPanel               preview                      = null;
 
     /** The OSD panel for displaying messages to the user. */
-    protected HelpPanel              helpPanel                  = null;
+    protected HelpPanel              helpPanel                    = null;
 
     /** The pick behavior. */
-    protected PickMouseBehavior      behavior                   = null;
+    protected PickMouseBehavior      behavior                     = null;
 
     /** Key for helpPanel. */
-    protected static final String    INCOMPLMETE_ARGUMENT_KEY   = "incomplete.argument";
+    protected static final String    INCOMPLMETE_ARGUMENT_KEY     = "incomplete.argument";
 
     /** Key for helpPanel. */
-    protected static final String    AVAILABLE_ITEMS_KEY        = "available.items";
+    protected static final String    AVAILABLE_ITEMS_KEY          = "available.items";
 
     /** Key for helpPanel. */
-    protected static final String    OPERATION_ARGUMENT_KEY     = "operation.argument";
+    protected static final String    OPERATION_ARGUMENT_KEY       = "operation.argument";
 
     {
         updateTransforms();
@@ -518,31 +524,16 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             }
 
             @Override
-            public void initialize()
-            {
-                conditions = new WakeupCriterion[3];
-                conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_MOVE);
-                conditions[1] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
-                conditions[2] = new WakeupOnBehaviorPost(null, 0);
-                wakeupCondition = new WakeupOr(conditions);
-
-                wakeupOn(wakeupCondition);
-            }
-
-            @Override
             public void processStimulus(@SuppressWarnings("rawtypes") Enumeration criteria)
             {
                 WakeupCriterion wakeup;
                 AWTEvent[] evt = null;
                 int xpos = 0, ypos = 0;
 
-                Integer postId = null;
                 while (criteria.hasMoreElements()) {
                     wakeup = (WakeupCriterion) criteria.nextElement();
                     if (wakeup instanceof WakeupOnAWTEvent)
                         evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                    if (wakeup instanceof WakeupOnBehaviorPost)
-                        postId = ((WakeupOnBehaviorPost) wakeup).getTriggeringPostId();
                 }
 
                 if (evt != null && evt[0] instanceof MouseEvent) {
@@ -550,9 +541,6 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
                     xpos = mevent.getPoint().x;
                     ypos = mevent.getPoint().y;
-                } else if (postId != null) {
-                    xpos = postId / canvas.getWidth();
-                    ypos = postId % canvas.getWidth();
                 }
 
                 updateScene(xpos, ypos);
@@ -566,6 +554,9 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             public void updateScene(final int x, final int y)
             {
                 if (branchGraph == null || !branchGraph.isLive())
+                    return;
+
+                if (isInPreview)
                     return;
 
                 pickCanvas.setShapeLocation(x, y);
@@ -712,7 +703,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         Set<Group> permanent = new HashSet<Group>(chosen);
                         permanent.addAll(selected);
 
-                        // if there are some selected or chosen points, add the close ones to the new available layers
+                        // if there are some selected or chosen points, add the close ones to the new available points
                         for (Group g : permanent) {
                             if (g.getUserData() instanceof ModelPoint) {
                                 if (evtPos.distance(getPointCanvasPosition(g)) < tolerance
@@ -762,7 +753,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             Point3d point = userSegment.getPointForParameter(param);
                             Point2d point2 = userSegment.getOriginal().getPointForParameter(param);
 
-                            ModelPoint modelPoint = new ModelPoint(point, point2);
+                            ModelPoint modelPoint = new ModelPoint(point, point2, userSegment);
 
                             if (points.contains(modelPoint))
                                 continue;
@@ -775,15 +766,55 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                             boolean isSnapPoint = false;
                             // create the snap points (edges and center of the line) and try to use them
                             Point3d center = vworldSegment.getPointForParameter(0.5d);
-                            Point3d[] snaps = new Point3d[] { new Point3d(vworldSegment.getP1()),
-                                    new Point3d(vworldSegment.getP2()), center };
+                            List<Point3d> snaps = new LinkedList<Point3d>();
+                            snaps.add(new Point3d(vworldSegment.getP1()));
+                            snaps.add(new Point3d(vworldSegment.getP2()));
+                            snaps.add(center);
+
+                            if (isChoosingSecondPoint()) {
+                                ModelPoint first = (ModelPoint) currentChosen.iterator().next().getUserData();
+                                List<Line2d> snapLines = new LinkedList<Line2d>();
+                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(0, 1)));
+                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(1, 0)));
+                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(1, 1)));
+                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(-1, 1)));
+
+                                if (first.getContainingSegment() != null) {
+                                    Vector2d firstVector = first.getContainingSegment().getOriginal().getVector();
+                                    if (Math.abs(firstVector.x) > MathHelper.EPSILON
+                                            && Math.abs(firstVector.y) > MathHelper.EPSILON) {
+                                        snapLines.add(new Line2d(first.getOriginal(), firstVector));
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(firstVector.y,
+                                                -firstVector.x)));
+
+                                        double angle = Math.atan2(firstVector.y, firstVector.x);
+                                        angle += Math.PI / 4;
+                                        double tan = Math.tan(angle);
+                                        Vector2d vec = new Vector2d(1, tan);
+
+                                        snapLines.add(new Line2d(first.getOriginal(), vec));
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(vec.y, -vec.x)));
+                                    }
+                                }
+
+                                for (Line2d snapLine : snapLines) {
+                                    Segment2d intersection = userSegment.getOriginal().getIntersection(snapLine);
+                                    if (intersection != null && intersection.isSinglePoint()) {
+                                        Point3d snapPoint = new Point3d(userSegment.getPointForParameter(userSegment
+                                                .getOriginal().getParameterForPoint(intersection.getP1())));
+                                        snapPoint.scale(origami.getModel().getPaper().getOneRelInMeters());
+                                        snaps.add(snapPoint);
+                                    }
+                                }
+                            }
+
                             for (Point3d p : snaps) {
                                 if (evtPos.distance(getLocalPointCanvasPosition(p, r.getLocalToVWorld())) < tolerance) {
                                     vworldIntersection = p;
                                     param = vworldSegment.getParameterForPoint(p);
                                     point = userSegment.getPointForParameter(param);
                                     point2 = userSegment.getOriginal().getPointForParameter(param);
-                                    modelPoint = new ModelPoint(point, point2);
+                                    modelPoint = new ModelPoint(point, point2, userSegment);
                                     isSnapPoint = true;
                                     break;
                                 }
@@ -819,6 +850,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         // we don't rather attach the new points while we iterate over pick results, it could cause mess
                         for (Group g : pointsToAttach) {
                             pointGroup.addChild(g);
+                            StepEditingCanvasController.this.points.add(g);
                         }
 
                         // change priorities of points
@@ -837,6 +869,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                         for (Group g : availableItems) {
                             if (!isPermanent(g)) {
                                 ((BranchGroup) g).detach();
+                                StepEditingCanvasController.this.points.remove(g);
                             }
                         }
 
@@ -867,7 +900,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                                 AVAILABLE_ITEMS_KEY, new Object[] { availableItems.size() });
                     }
                 } else {
-                    if (highlighted != null && !isInPreview) {
+                    if (highlighted != null) {
                         clearHighlighted();
                         clearAvailableItems();
                     }
@@ -1160,6 +1193,8 @@ public class StepEditingCanvasController extends StepViewingCanvasController
             PickMouseBehavior pick = new PickMouseBehavior(canvas, preview.getRoot(), new BoundingSphere(new Point3d(),
                     100000)) {
 
+                double pxTolerance = 3;
+
                 {
                     pickCanvas.setMode(PickInfo.PICK_GEOMETRY);
                     pickCanvas.setFlags(PickInfo.SCENEGRAPHPATH | PickInfo.ALL_GEOM_INFO | PickInfo.NODE
@@ -1208,28 +1243,128 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                     double xrel = (double) xpos / paperRealRect.width * paperDim.getWidth();
                     double yrel = (double) ypos / paperRealRect.height * paperDim.getHeight();
 
-                    if (xrel >= 0 && yrel >= 0 && xrel <= paperDim.getWidth() && yrel <= paperDim.getHeight()) {
+                    double onePxInRel = 1d / paperRealRect.width * paperDim.getWidth();
 
-                        isInPreview = true;
+                    boolean wasInPreview = isInPreview;
+                    isInPreview = xrel >= 0 && yrel >= 0 && xrel <= paperDim.getWidth() && yrel <= paperDim.getHeight();
 
+                    if (wasInPreview != isInPreview)
+                        clearHighlighted();
+
+                    if (isInPreview) {
                         Point2d p = new Point2d(xrel, yrel);
+                        boolean foundSomething = false;
                         if (pickMode == PickMode.LAYER) {
                             for (Group g : layerGroups) {
                                 if (((Layer) g.getUserData()).contains(p)) {
                                     setHighlightedLayer(g);
+                                    foundSomething = true;
                                     break;
                                 }
                             }
-                        } else if (pickMode == PickMode.LINE) {
+                        } else if (pickMode == PickMode.LINE || pickMode == PickMode.POINT) {
+                            if (pickMode == PickMode.POINT) {
+                                for (Group g : StepEditingCanvasController.this.points) {
+                                    if (((ModelPoint) g.getUserData()).getOriginal().distance(p) < pxTolerance
+                                            * onePxInRel) {
+                                        setHighlightedPoint(g);
+                                        preview.repaint();
+                                        return;
+                                    }
+                                }
+                            }
+
+                            double nearestDistance = pxTolerance * onePxInRel;
+                            Group nearest = null;
                             for (Group g : lineGroups) {
-                                if (((ModelSegment) g.getUserData()).getOriginal().contains(p)) {
-                                    setHighlightedLine(g);
-                                    break;
+                                Point2d pointOnLine = ((ModelSegment) g.getUserData()).getOriginal().getNearestPoint(p);
+                                double distance = pointOnLine.distance(p);
+                                if (distance < nearestDistance) {
+                                    nearestDistance = distance;
+                                    nearest = g;
+                                    foundSomething = true;
+                                    if (distance < MathHelper.EPSILON)
+                                        break;
+                                }
+                            }
+
+                            if (nearest != null) {
+                                if (pickMode == PickMode.LINE) {
+                                    setHighlightedLine(nearest);
+                                } else {
+                                    ModelSegment segment = (ModelSegment) nearest.getUserData();
+                                    Point2d p2 = segment.getOriginal().getNearestPoint(p);
+
+                                    Set<Point2d> snapPoints = new HashSet<Point2d>();
+                                    snapPoints.add(segment.getOriginal().getP1());
+                                    snapPoints.add(segment.getOriginal().getP2());
+                                    snapPoints.add(segment.getOriginal().getPointForParameter(0.5));
+
+                                    if (isChoosingSecondPoint()) {
+                                        ModelPoint first = (ModelPoint) currentChosen.iterator().next().getUserData();
+                                        List<Line2d> snapLines = new LinkedList<Line2d>();
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(0, 1)));
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(1, 0)));
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(1, 1)));
+                                        snapLines.add(new Line2d(first.getOriginal(), new Vector2d(-1, 1)));
+
+                                        if (first.getContainingSegment() != null) {
+                                            Vector2d firstVector = first.getContainingSegment().getOriginal()
+                                                    .getVector();
+                                            if (Math.abs(firstVector.x) > MathHelper.EPSILON
+                                                    && Math.abs(firstVector.y) > MathHelper.EPSILON) {
+                                                snapLines.add(new Line2d(first.getOriginal(), firstVector));
+                                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(
+                                                        firstVector.y, -firstVector.x)));
+
+                                                double angle = Math.atan2(firstVector.y, firstVector.x);
+                                                angle += Math.PI / 4;
+                                                double tan = Math.tan(angle);
+                                                Vector2d vec = new Vector2d(1, tan);
+
+                                                snapLines.add(new Line2d(first.getOriginal(), vec));
+                                                snapLines.add(new Line2d(first.getOriginal(), new Vector2d(vec.y,
+                                                        -vec.x)));
+                                            }
+                                        }
+
+                                        for (Line2d snapLine : snapLines) {
+                                            Segment2d intersection = segment.getOriginal().getIntersection(snapLine);
+                                            if (intersection != null && intersection.isSinglePoint()) {
+                                                snapPoints.add(intersection.getP1());
+                                            }
+                                        }
+                                    }
+
+                                    boolean isSnapPoint = false;
+                                    for (Point2d snap : snapPoints) {
+                                        if (snap.distance(p2) < pxTolerance * onePxInRel) {
+                                            p2 = snap;
+                                            isSnapPoint = true;
+                                            break;
+                                        }
+                                    }
+
+                                    Point3d p3 = getModelState().locatePointFromPaperTo3D(p2);
+
+                                    Point3d vWorldPoint = new Point3d(p3);
+                                    vWorldPoint.scale(origami.getModel().getPaper().getOneRelInMeters());
+
+                                    Group g = pointFactory.createPoint(new ModelPoint(p3, p2, segment), vWorldPoint);
+                                    // make snap points look like squares
+                                    if (isSnapPoint)
+                                        ((Shape3D) g.getChild(0)).getAppearance().getPointAttributes()
+                                                .setPointAntialiasingEnable(false);
+
+                                    setHighlightedPoint(g);
                                 }
                             }
                         }
-                    } else {
-                        isInPreview = false;
+
+                        if (!foundSomething)
+                            clearHighlighted();
+
+                        preview.repaint();
                     }
                 }
             };
@@ -1427,6 +1562,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
         for (Group g : availableItems) {
             if (g.getUserData() instanceof ModelPoint && g != highlighted && !isPermanent(g)) {
                 ((BranchGroup) g).detach();
+                points.remove(g);
             }
         }
 
@@ -1503,8 +1639,10 @@ public class StepEditingCanvasController extends StepViewingCanvasController
 
         if (highlighted != null) {
             ((BranchGroup) highlighted).detach();
+            points.remove(highlighted);
             if (isPermanent(highlighted) || availableItems.contains(highlighted)) {
                 pointGroup.addChild(highlighted);
+                points.add(highlighted);
             }
             Group old = highlighted;
             highlighted = null;
@@ -1794,6 +1932,7 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 if (point != highlighted) {
                     if (!availableItems.contains(point)) {
                         ((BranchGroup) point).detach();
+                        points.remove(point);
                     }
                 }
             }

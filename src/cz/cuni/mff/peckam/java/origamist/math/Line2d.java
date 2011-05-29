@@ -216,9 +216,9 @@ public class Line2d implements Cloneable, Vector<Double>
         Vector2d perp = new Vector2d(getVector().y, -getVector().x);
         Line2d perpLine = new Line2d(p, perp);
 
-        Line2d intPoint = perpLine.getIntersection(this);
-        // intPoint can be neither null nor can have non-zero dir. vector (the lines aren't parallel)
-        return intPoint.getPoint();
+        Line2d intPoint = this.getIntersection(perpLine);
+
+        return intPoint != null ? intPoint.getPoint() : null;
     }
 
     /**

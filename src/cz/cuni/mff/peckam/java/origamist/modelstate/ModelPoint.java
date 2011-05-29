@@ -16,15 +16,24 @@ import javax.vecmath.Point3d;
 public class ModelPoint extends Point3d implements Cloneable
 {
     /** */
-    private static final long serialVersionUID = -2994355263756836249L;
+    private static final long serialVersionUID  = -2994355263756836249L;
 
     /** The point on the paper referenced by this point. */
     protected Point2d         original;
 
+    /** The segment that contains this point. */
+    protected ModelSegment    containingSegment = null;
+
     public ModelPoint(Point3d point, Point2d original)
+    {
+        this(point, original, null);
+    }
+
+    public ModelPoint(Point3d point, Point2d original, ModelSegment containingSegment)
     {
         super(point);
         this.original = original;
+        this.containingSegment = containingSegment;
     }
 
     /**
@@ -41,6 +50,14 @@ public class ModelPoint extends Point3d implements Cloneable
     public void setOriginal(Point2d original)
     {
         this.original = original;
+    }
+
+    /**
+     * @return The segment that contains this point. This is an optional property.
+     */
+    public ModelSegment getContainingSegment()
+    {
+        return containingSegment;
     }
 
     /**
@@ -90,6 +107,6 @@ public class ModelPoint extends Point3d implements Cloneable
     @Override
     public ModelPoint clone()
     {
-        return new ModelPoint((Point3d) super.clone(), (Point2d) original.clone());
+        return new ModelPoint((Point3d) super.clone(), (Point2d) original.clone(), containingSegment.clone());
     }
 }

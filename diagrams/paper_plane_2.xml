@@ -4,7 +4,7 @@
         <name>Martin P@ci Pecka</name>
     </author>
     <name lang="cs-CZ">Paper plane</name>
-    <creationDate>2011-01-01</creationDate>
+    <creationDate>2011-01-01+01:00</creationDate>
     <shortdesc lang="en-US">The second paper plane.</shortdesc>
     <description lang="en-US">An alternative paper plane.</description>
     <license>
@@ -62,48 +62,51 @@
             </step>
             <step id="2">
                 <zoom>100.0</zoom>
-                <foldOperation type="VALLEY_FOLD">
+                <foldOperation type="MOUNTAIN_FOLD">
                     <angle>3.141592653589793</angle>
                     <line>
                         <start>
-                            <x>0.0</x>
-                            <y>0.662121593952179</y>
-                        </start>
-                        <end>
                             <x>0.35353535353535354</x>
                             <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>0.6464646464646464</y>
                         </end>
                     </line>
-                    <refPoint>
-                        <x>0.0</x>
-                        <y>1.0</y>
-                    </refPoint>
                     <layer>1</layer>
                 </foldOperation>
-                <foldOperation type="VALLEY_FOLD">
+                <foldOperation type="MOUNTAIN_FOLD">
                     <angle>3.141592653589793</angle>
                     <line>
                         <start>
-                            <x>0.35353535353535354</x>
-                            <y>1.0</y>
+                            <x>0.7070707070707071</x>
+                            <y>0.6464646464646464</y>
                         </start>
                         <end>
-                            <x>0.7070707070707071</x>
-                            <y>0.6661745607852936</y>
+                            <x>0.35353535353535354</x>
+                            <y>1.0</y>
                         </end>
                     </line>
-                    <refPoint>
-                        <x>0.7070707070707071</x>
-                        <y>1.0</y>
-                    </refPoint>
                     <layer>1</layer>
                 </foldOperation>
             </step>
             <step id="3">
                 <zoom>100.0</zoom>
-                <rotateOperation type="ROTATE">
-                    <angle>1.5707963267948966</angle>
-                </rotateOperation>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>2.9670597283903604</angle>
+                    <line>
+                        <start>
+                            <x>0.35353535353535354</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.35353535353535354</x>
+                            <y>0.0</y>
+                        </end>
+                    </line>
+                    <layer>2</layer>
+                </foldOperation>
             </step>
             <step id="4">
                 <zoom>100.0</zoom>

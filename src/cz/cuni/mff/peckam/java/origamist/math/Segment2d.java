@@ -173,13 +173,13 @@ public class Segment2d extends Line2d
     {
         Point2d point = super.getNearestPoint(p);
 
-        if (contains(point)) {
+        if (point != null && contains(point)) {
             return point;
         } else {
-            double p1dist = p.distance(point);
-            double p2dist = p2.distance(point);
+            double p1dist = this.p.distance(p);
+            double p2dist = this.p2.distance(p);
             if (p1dist < p2dist)
-                return p;
+                return this.p;
             else
                 return p2;
         }

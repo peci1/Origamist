@@ -702,13 +702,15 @@ public class StepViewingCanvasController
         scale.setScale(getCompositeZoom() / 100d);
         transform.mul(scale);
 
-        Point3d modelCenter = new Point3d();
-        ((BoundingSphere) model.getBounds()).getCenter(modelCenter);
-        modelCenter.negate();
+        if (model != null && model.getBounds() != null) {
+            Point3d modelCenter = new Point3d();
+            ((BoundingSphere) model.getBounds()).getCenter(modelCenter);
+            modelCenter.negate();
 
-        Transform3D translation = new Transform3D();
-        translation.setTranslation(new Vector3d(modelCenter));
-        transform.mul(translation);
+            Transform3D translation = new Transform3D();
+            translation.setTranslation(new Vector3d(modelCenter));
+            transform.mul(translation);
+        }
 
         baseTransform = new Transform3D(transform);
 
