@@ -43,7 +43,7 @@ public class BinaryImage extends cz.cuni.mff.peckam.java.origamist.common.jaxb.B
     @XmlTransient
     public ImageIcon getImageIcon()
     {
-        if (icon == null)
+        if (icon == null && value != null)
             icon = new ImageIcon(value);
         return icon;
     }

@@ -530,11 +530,15 @@ public class Origami extends cz.cuni.mff.peckam.java.origamist.model.jaxb.Origam
             getLicense().getPermission().addAll(from.getLicense().getPermission());
         }
 
-        byte[] newImage = Arrays.copyOf(from.getThumbnail().getImage().getValue(), from.getThumbnail().getImage()
-                .getValue().length);
         getThumbnail().getImage().setType(from.getThumbnail().getImage().getType());
         getThumbnail().setGenerated(from.getThumbnail().isGenerated());
-        getThumbnail().getImage().setValue(newImage);
+        if (from.getThumbnail().getImage().getValue() != null && from.getThumbnail().getImage().getValue().length > 0) {
+            byte[] newImage = Arrays.copyOf(from.getThumbnail().getImage().getValue(), from.getThumbnail().getImage()
+                    .getValue().length);
+            getThumbnail().getImage().setValue(newImage);
+        } else {
+            getThumbnail().getImage().setValue(null);
+        }
 
         getModel().getPaper().setWeight(from.getModel().getPaper().getWeight());
         getModel().getPaper().getColors().setBackground(from.getModel().getPaper().getColors().getBackground());
