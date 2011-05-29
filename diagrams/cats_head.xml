@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:origami xmlns:ns2="http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2">
+    <author>
+        <name>Nick Robinson</name>
+        <homepage>http://www.nickrobinson.info/index.htm</homepage>
+    </author>
+    <name lang="cs-CZ">Kočičí hlava</name>
+    <name lang="en-US">Cat's head</name>
+    <creationDate>2011-05-29+02:00</creationDate>
+    <shortdesc lang="cs-CZ">Jednoduchá kočičí hlava.</shortdesc>
+    <shortdesc lang="en-US">A pureland cat's head model.</shortdesc>
+    <license>
+        <name>Custom license</name>
+        <homepage>http://www.nickrobinson.info/origami/diagrams.htm</homepage>
+        <permission>doNothing</permission>
+    </license>
+    <original>http://www.nickrobinson.info/origami/diagrams/purecathead.htm</original>
+    <thumbnail>
+        <image type="jpg">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</image>
+    </thumbnail>
+    <paper>
+        <size>
+            <width>210.0</width>
+            <height>297.0</height>
+            <unit>mm</unit>
+            <referenceLength>297.0</referenceLength>
+            <referenceUnit>mm</referenceUnit>
+        </size>
+        <color>
+            <background>#ffffff</background>
+        </color>
+        <cols>3</cols>
+        <rows>3</rows>
+    </paper>
+    <model>
+        <paper>
+            <size>
+                <width>210.0</width>
+                <height>210.0</height>
+                <unit>mm</unit>
+                <referenceLength>210.0</referenceLength>
+                <referenceUnit>mm</referenceUnit>
+            </size>
+            <colors>
+                <background>#ffffff</background>
+                <foreground>#ffffff</foreground>
+            </colors>
+            <weight>80.0</weight>
+        </paper>
+        <steps>
+            <step id="1">
+                <description lang="cs-CZ">Začneme se čtvercem papíru.</description>
+                <description lang="en-US">Begin with a square of paper.</description>
+                <zoom>100.0</zoom>
+                <rotateOperation type="ROTATE">
+                    <angle>0.7853981633974483</angle>
+                </rotateOperation>
+            </step>
+            <step id="2">
+                <description lang="cs-CZ">Přehněte jej podél diagonály.</description>
+                <description lang="en-US">Fold it along the diagonal.</description>
+                <zoom>100.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>1.0</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>0.0</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>1.0</x>
+                        <y>0.5933557915278177</y>
+                    </refPoint>
+                    <layer>1</layer>
+                </foldOperation>
+            </step>
+            <step id="3">
+                <description lang="cs-CZ">Ohněte cípy trojúhelníka.</description>
+                <description lang="en-US">Fold the vertices of the triangle.</description>
+                <zoom>100.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.5</x>
+                            <y>0.0</y>
+                        </start>
+                        <end>
+                            <x>0.5</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.16831821253914026</x>
+                        <y>0.16831821253914026</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>1.0</x>
+                            <y>0.5</y>
+                        </start>
+                        <end>
+                            <x>0.5</x>
+                            <y>0.5</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.7921493215809521</x>
+                        <y>0.7921493215809521</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+            </step>
+            <step id="4">
+                <description lang="cs-CZ">Ohněte uši.</description>
+                <description lang="en-US">Fold the ears.</description>
+                <zoom>180.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.25</x>
+                            <y>0.25</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>0.39437528199320426</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.9999999999999999</x>
+                            <y>0.5607990686164638</y>
+                        </start>
+                        <end>
+                            <x>0.75</x>
+                            <y>0.75</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.3152073958363302</x>
+                        <y>1.0</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>3</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.35709157654394985</x>
+                            <y>0.5000000000000001</y>
+                        </start>
+                        <end>
+                            <x>0.5</x>
+                            <y>0.6429084435286037</y>
+                        </end>
+                    </line>
+                    <refPoint>
+                        <x>0.48222474658948283</x>
+                        <y>0.5</y>
+                    </refPoint>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                    <layer>4</layer>
+                    <layer>6</layer>
+                    <layer>8</layer>
+                </foldOperation>
+                <turnOverOperation type="TURN_OVER"/>
+            </step>
+            <step id="5">
+                <description lang="cs-CZ">Ohněte čumák na přední straně modelu.</description>
+                <description lang="en-US">Fold the nose on the top side of model.</description>
+                <zoom>180.0</zoom>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>1.0</x>
+                            <y>0.09971955032580129</y>
+                        </start>
+                        <end>
+                            <x>0.5985572318629441</x>
+                            <y>0.0</y>
+                        </end>
+                    </line>
+                    <layer>3</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.9999999999999999</x>
+                            <y>0.42440114405190504</y>
+                        </start>
+                        <end>
+                            <x>0.9279308400528018</x>
+                            <y>0.08181736153898217</y>
+                        </end>
+                    </line>
+                    <layer>2</layer>
+                    <layer>3</layer>
+                </foldOperation>
+            </step>
+            <step id="6">
+                <description lang="cs-CZ">Ohněte nos na spodní vrstvě papíru.</description>
+                <description lang="en-US">Fold the nose on the bottom layer.</description>
+                <zoom>320.0</zoom>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.05014600262417923</x>
+                            <y>1.0</y>
+                        </start>
+                        <end>
+                            <x>0.0</x>
+                            <y>0.6168769115826058</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                </foldOperation>
+                <foldOperation type="VALLEY_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.046514867599036384</x>
+                            <y>0.9722575760281529</y>
+                        </start>
+                        <end>
+                            <x>0.39980915659467137</x>
+                            <y>1.0</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>2</layer>
+                </foldOperation>
+            </step>
+            <step id="7">
+                <description lang="cs-CZ">Schovejte malý cípek vzniklý na dolní straně čumáku,</description>
+                <description lang="en-US">Hide the small triangle created on the bottom side of nose.</description>
+                <zoom>320.0</zoom>
+                <foldOperation type="MOUNTAIN_FOLD">
+                    <angle>3.141592653589793</angle>
+                    <line>
+                        <start>
+                            <x>0.04651486759903636</x>
+                            <y>0.972257576028153</y>
+                        </start>
+                        <end>
+                            <x>0.07000598234972777</x>
+                            <y>1.0000000000000002</y>
+                        </end>
+                    </line>
+                    <layer>1</layer>
+                    <layer>3</layer>
+                </foldOperation>
+            </step>
+            <step id="8">
+                <description lang="cs-CZ">A kočičí hlava je hotova!</description>
+                <description lang="en-US">The cat's head is complete!</description>
+                <zoom>320.0</zoom>
+            </step>
+        </steps>
+    </model>
+</ns2:origami>

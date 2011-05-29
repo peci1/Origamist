@@ -150,6 +150,7 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
                     return;
 
                 LangString string = getLangString((Locale) locales.getSelectedItem());
+
                 if (string == null) {
                     string = (LangString) new ObjectFactory().createLangString();
                     string.setLang((Locale) locales.getSelectedItem());
@@ -158,8 +159,12 @@ public class JLangStringListTextField<T extends JTextComponent> extends JPanel
                     updateLocales();
                 }
 
+                int index = JLangStringListTextField.this.strings.indexOf(string);
+
                 if (value.getText() != null && value.getText().length() > 0) {
                     string.setValue(value.getText());
+                    JLangStringListTextField.this.strings.set(index, string); // fire a change notification for
+                    // observable lists
                 } else {
                     JLangStringListTextField.this.strings.remove(string);
                     updateLocales();
