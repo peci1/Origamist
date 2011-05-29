@@ -355,6 +355,8 @@
 					<desktop/>
 					<menu submenu="Origamist"/>
 				</shortcut>
+				<icon href="icon_64.gif"/>
+			    <icon kind="splash" href="splash.gif"/>
 			</information>
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600" />
 		</create-jnlp>
@@ -373,6 +375,8 @@
 					<desktop/>
 					<menu submenu="Origamist"/>
 				</shortcut>
+				<icon href="icon_64.gif"/>
+			    <icon kind="splash" href="splash.gif"/>
 			</information>
 			<applet_desc name="Origami viewer" main_class="cz.cuni.mff.peckam.java.origamist.gui.viewer.OrigamiViewerBootstrapper" documentBase="." width="800" height="600">
 				<param name="files" value="diagrams/listing.xml" />
@@ -394,6 +398,8 @@
 					<desktop/>
 					<menu submenu="Origamist"/>
 				</shortcut>
+				<icon href="icon_64.gif"/>
+			    <icon kind="splash" href="splash.gif"/> 
 			</information>
 			
 			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768" />
@@ -413,6 +419,8 @@
 					<desktop/>
 					<menu submenu="Origamist"/>
 				</shortcut>
+				<icon href="icon_64.gif"/>
+			    <icon kind="splash" href="splash.gif"/>
 			</information>
 			
 			<applet_desc name="Origami editor" main_class="cz.cuni.mff.peckam.java.origamist.gui.editor.OrigamiEditorBootstrapper" documentBase="." width="1024" height="768">

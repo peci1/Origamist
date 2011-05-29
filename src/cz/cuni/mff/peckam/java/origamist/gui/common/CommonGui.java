@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.prefs.BackingStoreException;
 
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -84,6 +85,7 @@ public abstract class CommonGui extends JApplet
                 // see http://forums.oracle.com/forums/thread.jspa?threadID=2152885&stqc=true
                 frame.setLayout(new GridLayout());
             }
+            frame.setIconImage(new ImageIcon(getClass().getResource("/resources/images/icon_64.png")).getImage());
         }
 
         super.init();

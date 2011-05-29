@@ -49,6 +49,9 @@ public abstract class Java3DBootstrappingApplet extends JApplet
     /** The map of parameters derived from application arguments, if launched as application. */
     private Map<String, String> parameters            = null;
 
+    /** The window this applet is displayed in, if launched as application. */
+    protected JFrame            window                = null;
+
     {
         System.setSecurityManager(null);
     }
@@ -190,10 +193,8 @@ public abstract class Java3DBootstrappingApplet extends JApplet
         applet.launchedAsApplication = true;
         applet.args = args;
 
-        applet.init();
-        applet.start();
-
         JFrame window = new JFrame(frameTitle);
+        applet.window = window;
         window.setContentPane(applet);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.addWindowListener(new WindowAdapter() {
@@ -206,6 +207,9 @@ public abstract class Java3DBootstrappingApplet extends JApplet
         });
 
         window.pack();
+
+        applet.init();
+        applet.start();
 
         if (applet.getParameter("width") != null && applet.getParameter("height") != null) {
             try {
@@ -326,6 +330,14 @@ public abstract class Java3DBootstrappingApplet extends JApplet
                 ex.printStackTrace();
             }
         }
+    }
+
+    /**
+     * @return The window the application runs in, if launched as application.
+     */
+    public JFrame getWindow()
+    {
+        return window;
     }
 
     /**

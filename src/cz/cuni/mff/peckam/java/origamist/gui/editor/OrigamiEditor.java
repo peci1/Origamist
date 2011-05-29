@@ -93,6 +93,7 @@ import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JEditableSlider;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JLangStringListTextField;
 import cz.cuni.mff.peckam.java.origamist.gui.common.JZoomSlider;
+import cz.cuni.mff.peckam.java.origamist.gui.common.Java3DBootstrappingApplet;
 import cz.cuni.mff.peckam.java.origamist.model.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.OperationContainer;
@@ -1230,6 +1231,10 @@ public class OrigamiEditor extends CommonGui
     @Override
     protected Component getTopmostComponent()
     {
+        if (bootstrap != null && bootstrap instanceof Java3DBootstrappingApplet
+                && ((Java3DBootstrappingApplet) bootstrap).getWindow() != null)
+            return ((Java3DBootstrappingApplet) bootstrap).getWindow();
+
         Component parent = (bootstrap != null ? bootstrap : this);
         while (parent.getParent() != null)
             parent = parent.getParent();

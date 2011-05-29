@@ -71,6 +71,7 @@ import cz.cuni.mff.peckam.java.origamist.files.Listing;
 import cz.cuni.mff.peckam.java.origamist.files.ObjectFactory;
 import cz.cuni.mff.peckam.java.origamist.gui.common.CommonGui;
 import cz.cuni.mff.peckam.java.origamist.gui.common.DiagramRenderer;
+import cz.cuni.mff.peckam.java.origamist.gui.common.Java3DBootstrappingApplet;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTree;
 import cz.cuni.mff.peckam.java.origamist.gui.viewer.listing.ListingTreeSelectionListener;
 import cz.cuni.mff.peckam.java.origamist.model.Origami;
@@ -980,6 +981,10 @@ public class OrigamiViewer extends CommonGui
     @Override
     protected Component getTopmostComponent()
     {
+        if (bootstrap != null && bootstrap instanceof Java3DBootstrappingApplet
+                && ((Java3DBootstrappingApplet) bootstrap).getWindow() != null)
+            return ((Java3DBootstrappingApplet) bootstrap).getWindow();
+
         Component parent = (bootstrap != null ? bootstrap : this);
         while (parent.getParent() != null)
             parent = parent.getParent();
