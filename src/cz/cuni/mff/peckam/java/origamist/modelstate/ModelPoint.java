@@ -107,6 +107,7 @@ public class ModelPoint extends Point3d implements Cloneable
     @Override
     public ModelPoint clone()
     {
-        return new ModelPoint((Point3d) super.clone(), (Point2d) original.clone(), containingSegment.clone());
+        return new ModelPoint((Point3d) super.clone(), (Point2d) original.clone(), containingSegment == null ? null
+                : containingSegment.clone());
     }
 }
