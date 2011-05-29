@@ -4,8 +4,10 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
@@ -22,7 +24,8 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
  * 
  * @author Martin Pecka
  */
-public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation
+public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation implements
+        HasSymmetricOperation
 {
     /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
     protected Segment3d markerPosition = null;
@@ -116,5 +119,23 @@ public class ReverseFoldOperation extends cz.cuni.mff.peckam.java.origamist.mode
     {
         return "ReverseFoldOperation [type=" + type + ", layer=" + layer + ", line=" + line + ", refLine=" + refLine
                 + "]";
+    }
+
+    @Override
+    public Operation getSymmetricOperation(Line2d symmetryAxis)
+    {
+        ReverseFoldOperation result = new ReverseFoldOperation();
+        result.type = this.type;
+
+        result.line = new Line2D(symmetryAxis.mirror(this.line.toLine2d()));
+        result.layer = new LinkedList<Integer>(this.layer);
+        // TODO the mirrored refline doesn't work; need to take a shortened refline from the main vertex of this fold
+        result.refLine = new Line2D(symmetryAxis.mirror(this.refLine.toLine2d()));
+        if (oppositeLine != null)
+            result.oppositeLine = new Line2D(symmetryAxis.mirror(this.oppositeLine.toLine2d()));
+        if (oppositeLayer != null)
+            result.oppositeLayer = new LinkedList<Integer>(this.oppositeLayer);
+
+        return result;
     }
 }

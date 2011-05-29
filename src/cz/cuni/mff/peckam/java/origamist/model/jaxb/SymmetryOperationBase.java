@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
-import cz.cuni.mff.peckam.java.origamist.model.RepeatOperation;
+import cz.cuni.mff.peckam.java.origamist.model.SymmetryOperation;
 import org.jvnet.jaxb2_commons.lang.Equals;
 import org.jvnet.jaxb2_commons.lang.EqualsStrategy;
 import org.jvnet.jaxb2_commons.lang.HashCode;
@@ -24,15 +24,15 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
 
 
 /**
- * <p>Java class for RepeatOperationBase complex type.
+ * <p>Java class for SymmetryOperationBase complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="RepeatOperationBase">
+ * &lt;complexType name="SymmetryOperationBase">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}Operation">
- *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}RepeatOperations" fixed="REPEAT_ACTION" />
+ *       &lt;attribute name="type" type="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}SymmetryOperations" fixed="SYMMETRY" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -40,25 +40,25 @@ import org.jvnet.jaxb2_commons.locator.ObjectLocator;
  * 
  * 
  */
-@XmlType(name = "RepeatOperationBase")
+@XmlType(name = "SymmetryOperationBase")
 @XmlSeeAlso({
-    RepeatOperation.class
+    SymmetryOperation.class
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public abstract class RepeatOperationBase
+public abstract class SymmetryOperationBase
     extends Operation
     implements Equals, HashCode
 {
 
 
-    public RepeatOperationBase() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperationBase")) {
+    public SymmetryOperationBase() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.jaxb.SymmetryOperationBase")) {
             init();
         }
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof RepeatOperationBase)) {
+        if (!(object instanceof SymmetryOperationBase)) {
             return false;
         }
         if (this == object) {

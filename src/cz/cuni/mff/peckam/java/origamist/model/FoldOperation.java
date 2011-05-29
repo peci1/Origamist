@@ -5,11 +5,13 @@ package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.vecmath.Point2d;
 
 import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
@@ -29,7 +31,8 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * 
  * @author Martin Pecka
  */
-public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldOperation
+public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldOperation implements
+        HasSymmetricOperation
 {
 
     /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
@@ -129,5 +132,20 @@ public class FoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     public String toString()
     {
         return "FoldOperation [" + type + ", angle=" + angle + ", layer=" + layer + ", line=" + line + "]";
+    }
+
+    @Override
+    public Operation getSymmetricOperation(Line2d symmetryAxis)
+    {
+        FoldOperation result = new FoldOperation();
+        result.type = this.type;
+
+        result.line = new Line2D(symmetryAxis.mirror(this.line.toSegment2d()));
+        result.angle = this.angle;
+        result.layer = new LinkedList<Integer>(this.layer);
+        if (this.refPoint != null)
+            result.refPoint = new Point2D(symmetryAxis.mirror(this.refPoint.toPoint2d()));
+
+        return result;
     }
 }

@@ -174,7 +174,7 @@ public class OrigamiEditor extends CommonGui
             operationMountainFoldUnfold, operationValleyFoldUnfold, operationThunderboltFoldMountainFirst,
             operationThunderboltFoldValleyFirst, operationTurnOver, operationRotate, operationPull,
             operationCrimpFoldInside, operationCrimpFoldOutside, operationOpen, operationReverseFoldInside,
-            operationReverseFoldOutside, operationRepeatAction, operationMark, operationImage;
+            operationReverseFoldOutside, operationRepeatAction, operationSymmetry, operationMark, operationImage;
 
     /** Toolbar buttons for model operations. */
     protected JToggleMenuItem                       operationRabbitFold, operationSquashFold;
@@ -608,6 +608,11 @@ public class OrigamiEditor extends CommonGui
         // operationSquashFold.addActionListener(new OperationActionListener(Operations.SQUASH_FOLD, "editor",
         // "menu.operation.squash"));
 
+        toolbar.add(operationSymmetry = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.symmetry",
+                "folds/symmetry-32.png"));
+        operationSymmetry.addActionListener(new OperationActionListener(Operations.SYMMETRY, "editor",
+                "menu.operation.symmetry"));
+
         toolbar.add(operationMark = toolbar.createToolbarItem(new JToggleButton(), null, "menu.operation.mark",
                 "folds/mark-32.png"));
         operationMark
@@ -633,6 +638,7 @@ public class OrigamiEditor extends CommonGui
         operationGroup.add(operationReverseFoldInside);
         operationGroup.add(operationReverseFoldOutside);
         operationGroup.add(operationRepeatAction);
+        operationGroup.add(operationSymmetry);
         // operationGroup.add(operationRabbitFold);
         // operationGroup.add(operationSquashFold);
         operationGroup.add(operationMark);

@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -16,7 +15,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import cz.cuni.mff.peckam.java.origamist.gui.editor.OperationsTree;
-import cz.cuni.mff.peckam.java.origamist.gui.editor.PickMode;
 import cz.cuni.mff.peckam.java.origamist.model.Operation;
 import cz.cuni.mff.peckam.java.origamist.model.OperationContainer;
 import cz.cuni.mff.peckam.java.origamist.services.ServiceLocator;
@@ -24,15 +22,12 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
 import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**
- * Argument that fetches the selected operations.
+ * Argument that fetches the selected operations (only some last from the operation list's end).
  * 
  * @author Martin Pecka
  */
-public class LastOperationsArgument extends OperationArgument implements OperationsTreeDataReceiver
+public class LastOperationsArgument extends OperationsArgument
 {
-
-    /** The list of operations. */
-    protected List<Operation> operations = null;
 
     /**
      * @param required If true, this argument is required.
@@ -41,29 +36,6 @@ public class LastOperationsArgument extends OperationArgument implements Operati
     public LastOperationsArgument(boolean required, String resourceBundleKey)
     {
         super(required, resourceBundleKey);
-    }
-
-    @Override
-    public boolean isComplete()
-    {
-        return operations != null && operations.size() > 0;
-    }
-
-    @Override
-    public PickMode preferredPickMode()
-    {
-        return null;
-    }
-
-    /**
-     * @return The selected operations.
-     */
-    public List<Operation> getOperations()
-    {
-        if (!isComplete())
-            throw new IllegalStateException("Cannot query properties of a non-completed argument.");
-
-        return operations;
     }
 
     @Override
@@ -136,5 +108,4 @@ public class LastOperationsArgument extends OperationArgument implements Operati
         return new LocalizedString(OperationArgument.class.getName(), "last.operations.user.tip").toString() + "<br/>"
                 + super.getL7dUserTip();
     }
-
 }

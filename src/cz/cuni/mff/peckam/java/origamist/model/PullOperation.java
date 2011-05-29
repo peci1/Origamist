@@ -4,9 +4,11 @@
 package cz.cuni.mff.peckam.java.origamist.model;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Layer;
@@ -24,7 +26,8 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.PointArgument;
  * 
  * @author Martin Pecka
  */
-public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.PullOperation
+public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.PullOperation implements
+        HasSymmetricOperation
 {
     /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
     protected Segment3d markerPosition = null;
@@ -109,4 +112,24 @@ public class PullOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.
     {
         return "PullOperation [line=" + line + ", layer=" + layer + ", refPoint=" + refPoint + "]";
     }
+
+    @Override
+    public Operation getSymmetricOperation(Line2d symmetryAxis)
+    {
+        PullOperation result = new PullOperation();
+        result.type = this.type;
+
+        result.line = new LinkedList<Line2D>();
+        for (Line2D line : this.line) {
+            result.line.add(new Line2D(symmetryAxis.mirror(line.toLine2d())));
+        }
+
+        result.layer = new LinkedList<Integer>(this.layer);
+
+        if (this.refPoint != null)
+            result.refPoint = new Point2D(symmetryAxis.mirror(this.refPoint.toPoint2d()));
+
+        return result;
+    }
+
 }

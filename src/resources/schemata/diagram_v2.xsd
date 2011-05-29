@@ -584,6 +584,31 @@
 		</complexContent>
 	</complexType>
 
+	<complexType name="SymmetryOperationBase" abstract="true">
+		<complexContent>
+			<restriction base="m:Operation">
+				<attribute name="type" type="m:SymmetryOperations" fixed="SYMMETRY" />
+			</restriction>
+		</complexContent>
+	</complexType>
+
+	<complexType name="SymmetryOperation" final="#all">
+		<annotation>
+			<appinfo>
+				<jxb:class implClass="cz.cuni.mff.peckam.java.origamist.model.SymmetryOperation" />
+			</appinfo>
+		</annotation>
+		<complexContent>
+			<extension base="m:SymmetryOperationBase">
+				<sequence>
+					<group ref="m:operations" />
+					<group ref="m:line" />
+				</sequence>
+				<attribute name="displayed" type="boolean" use="required" />
+			</extension>
+		</complexContent>
+	</complexType>
+
 	<group name="layerList">
 		<sequence>
 			<element name="layer" type="int" maxOccurs="unbounded">
@@ -671,6 +696,7 @@
 			<enumeration value="RABBIT_FOLD" />
 			<enumeration value="SQUASH_FOLD" />
 			<enumeration value="IMAGE" />
+			<enumeration value="SYMMETRY" />
 		</restriction>
 	</simpleType>
 
@@ -741,6 +767,12 @@
 	<simpleType name="ImageOperations">
 		<restriction base="m:Operations">
 			<enumeration value="IMAGE" />
+		</restriction>
+	</simpleType>
+	
+	<simpleType name="SymmetryOperations">
+		<restriction base="m:Operations">
+			<enumeration value="SYMMETRY" />
 		</restriction>
 	</simpleType>
 

@@ -7,6 +7,7 @@ import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,6 +18,7 @@ import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
 import cz.cuni.mff.peckam.java.origamist.math.AngleUnit;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.modelstate.Direction;
@@ -39,6 +41,7 @@ import cz.cuni.mff.peckam.java.origamist.services.interfaces.ConfigurationManage
  * @author Martin Pecka
  */
 public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.ThunderboltFoldOperation
+        implements HasSymmetricOperation
 {
 
     /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
@@ -214,5 +217,21 @@ public class ThunderboltFoldOperation extends cz.cuni.mff.peckam.java.origamist.
     {
         return "ThunderboltFoldOperation [angle=" + angle + ", line=" + line + ", layer=" + layer + ", secondAngle="
                 + secondAngle + ", secondLine=" + secondLine + "]";
+    }
+
+    @Override
+    public Operation getSymmetricOperation(Line2d symmetryAxis)
+    {
+        ThunderboltFoldOperation result = new ThunderboltFoldOperation();
+        result.type = this.type;
+
+        result.line = new Line2D(symmetryAxis.mirror(this.line.toLine2d()));
+        result.layer = new LinkedList<Integer>(this.layer);
+        result.angle = this.angle;
+        result.secondLine = new Line2D(symmetryAxis.mirror(this.secondLine.toLine2d()));
+        result.secondAngle = this.secondAngle;
+        result.invert = this.invert;
+
+        return result;
     }
 }

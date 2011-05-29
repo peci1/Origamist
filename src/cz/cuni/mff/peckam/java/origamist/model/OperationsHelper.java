@@ -73,6 +73,9 @@ public class OperationsHelper
             case REPEAT_ACTION:
                 path += "repeat_one.png";
                 break;
+            case SYMMETRY:
+                path += "repeat_one.png";
+                break;
             case PULL:
                 path += "pull.png";
                 break;
@@ -163,6 +166,9 @@ public class OperationsHelper
                 break;
             case IMAGE:
                 result = new ImageOperation();
+                break;
+            case SYMMETRY:
+                result = new SymmetryOperation();
                 break;
         }
 

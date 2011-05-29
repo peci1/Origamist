@@ -28,16 +28,20 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
 
 
 /**
+ * <p>Provided property: line
  * <p>Provided property: displayed
- * <p>Java class for RepeatOperation complex type.
+ * <p>Java class for SymmetryOperation complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="RepeatOperation">
+ * &lt;complexType name="SymmetryOperation">
  *   &lt;complexContent>
- *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}RepeatOperationBase">
- *       &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}operations"/>
+ *     &lt;extension base="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}SymmetryOperationBase">
+ *       &lt;sequence>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}operations"/>
+ *         &lt;group ref="{http://www.mff.cuni.cz/~peckam/java/origamist/diagram/v2}line"/>
+ *       &lt;/sequence>
  *       &lt;attribute name="displayed" use="required" type="{http://www.w3.org/2001/XMLSchema}boolean" />
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -46,30 +50,37 @@ import org.jvnet.jaxb2_commons.locator.util.LocatorUtils;
  * 
  * 
  */
-@XmlType(name = "RepeatOperation", propOrder = {
-    "operations"
+@XmlType(name = "SymmetryOperation", propOrder = {
+    "operations",
+    "line"
 })
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class RepeatOperation
-    extends RepeatOperationBase
+public class SymmetryOperation
+    extends SymmetryOperationBase
     implements Equals, HashCode
 {
 
     protected List<Operation> operations = new ObservableList<Operation>();
+    protected cz.cuni.mff.peckam.java.origamist.model.Line2D line;
+    /**
+     * Property line
+     * 
+     */
+    public final static String LINE_PROPERTY = "line:cz.cuni.mff.peckam.java.origamist.model.jaxb.SymmetryOperation";
     protected boolean displayed;
     /**
      * Property displayed
      * 
      */
-    public final static String DISPLAYED_PROPERTY = "displayed:cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperation";
+    public final static String DISPLAYED_PROPERTY = "displayed:cz.cuni.mff.peckam.java.origamist.model.jaxb.SymmetryOperation";
     /**
      * Property operations
      * 
      */
-    public final static String OPERATIONS_PROPERTY = "operations:cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperation";
+    public final static String OPERATIONS_PROPERTY = "operations:cz.cuni.mff.peckam.java.origamist.model.jaxb.SymmetryOperation";
 
-    public RepeatOperation() {
-        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.RepeatOperation")) {
+    public SymmetryOperation() {
+        if (getClass().getName().equals("cz.cuni.mff.peckam.java.origamist.model.SymmetryOperation")) {
             init();
         }
     }
@@ -92,34 +103,63 @@ public class RepeatOperation
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.MarkerOperation }
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation }
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.TurnOverOperation }
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.ThunderboltFoldOperation }
      * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldOperation }
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.RotateOperation }
-     * {@link RepeatOperation }
-     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldUnfoldOperation }
      * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.CrimpFoldOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.TurnOverOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.RotateOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.ThunderboltFoldOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.ReverseFoldOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.MarkerOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.RepeatOperation }
+     * {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.FoldUnfoldOperation }
      * 
      * 
      */
     @XmlElements({
-        @XmlElement(name = "markerOperation", type = cz.cuni.mff.peckam.java.origamist.model.MarkerOperation.class),
-        @XmlElement(name = "reverseFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.ReverseFoldOperation.class),
-        @XmlElement(name = "turnOverOperation", type = cz.cuni.mff.peckam.java.origamist.model.TurnOverOperation.class),
-        @XmlElement(name = "thunderboltFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.ThunderboltFoldOperation.class),
         @XmlElement(name = "foldOperation", type = cz.cuni.mff.peckam.java.origamist.model.FoldOperation.class),
+        @XmlElement(name = "crimpFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.CrimpFoldOperation.class),
+        @XmlElement(name = "turnOverOperation", type = cz.cuni.mff.peckam.java.origamist.model.TurnOverOperation.class),
         @XmlElement(name = "rotateOperation", type = cz.cuni.mff.peckam.java.origamist.model.RotateOperation.class),
+        @XmlElement(name = "thunderboltFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.ThunderboltFoldOperation.class),
+        @XmlElement(name = "reverseFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.ReverseFoldOperation.class),
+        @XmlElement(name = "markerOperation", type = cz.cuni.mff.peckam.java.origamist.model.MarkerOperation.class),
         @XmlElement(name = "repeatOperation", type = cz.cuni.mff.peckam.java.origamist.model.RepeatOperation.class),
-        @XmlElement(name = "foldUnfoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation.class),
-        @XmlElement(name = "crimpFoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.CrimpFoldOperation.class)
+        @XmlElement(name = "foldUnfoldOperation", type = cz.cuni.mff.peckam.java.origamist.model.FoldUnfoldOperation.class)
     })
     public List<Operation> getOperations() {
         if (operations == null) {
             operations = new ObservableList<Operation>();
         }
         return this.operations;
+    }
+
+    /**
+     * Gets the value of the line property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    @XmlElement(required = true, type = cz.cuni.mff.peckam.java.origamist.model.Line2D.class)
+    public cz.cuni.mff.peckam.java.origamist.model.Line2D getLine() {
+        return line;
+    }
+
+    /**
+     * Sets the value of the line property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link cz.cuni.mff.peckam.java.origamist.model.jaxb.Line2D }
+     *     
+     */
+    public void setLine(cz.cuni.mff.peckam.java.origamist.model.Line2D value) {
+        cz.cuni.mff.peckam.java.origamist.model.Line2D old = this.line;
+        this.line = ((cz.cuni.mff.peckam.java.origamist.model.Line2D) value);
+        if (((old!= value)&&((old == null)||(value == null)))||((old!= null)&&(!old.equals(value)))) {
+            support.firePropertyChange(SymmetryOperation.LINE_PROPERTY, old, value);
+        }
     }
 
     /**
@@ -147,7 +187,7 @@ public class RepeatOperation
         boolean old = this.displayed;
         this.displayed = value;
         if (old!= value) {
-            support.firePropertyChange(RepeatOperation.DISPLAYED_PROPERTY, old, value);
+            support.firePropertyChange(SymmetryOperation.DISPLAYED_PROPERTY, old, value);
         }
     }
 
@@ -170,7 +210,7 @@ public class RepeatOperation
     }
 
     public boolean equals(ObjectLocator thisLocator, ObjectLocator thatLocator, Object object, EqualsStrategy strategy) {
-        if (!(object instanceof RepeatOperation)) {
+        if (!(object instanceof SymmetryOperation)) {
             return false;
         }
         if (this == object) {
@@ -179,13 +219,22 @@ public class RepeatOperation
         if (!super.equals(thisLocator, thatLocator, object, strategy)) {
             return false;
         }
-        final RepeatOperation that = ((RepeatOperation) object);
+        final SymmetryOperation that = ((SymmetryOperation) object);
         {
             List<Operation> lhsOperations;
             lhsOperations = this.getOperations();
             List<Operation> rhsOperations;
             rhsOperations = that.getOperations();
             if (!strategy.equals(LocatorUtils.property(thisLocator, "operations", lhsOperations), LocatorUtils.property(thatLocator, "operations", rhsOperations), lhsOperations, rhsOperations)) {
+                return false;
+            }
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D lhsLine;
+            lhsLine = this.getLine();
+            cz.cuni.mff.peckam.java.origamist.model.Line2D rhsLine;
+            rhsLine = that.getLine();
+            if (!strategy.equals(LocatorUtils.property(thisLocator, "line", lhsLine), LocatorUtils.property(thatLocator, "line", rhsLine), lhsLine, rhsLine)) {
                 return false;
             }
         }
@@ -212,6 +261,11 @@ public class RepeatOperation
             List<Operation> theOperations;
             theOperations = this.getOperations();
             currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "operations", theOperations), currentHashCode, theOperations);
+        }
+        {
+            cz.cuni.mff.peckam.java.origamist.model.Line2D theLine;
+            theLine = this.getLine();
+            currentHashCode = strategy.hashCode(LocatorUtils.property(locator, "line", theLine), currentHashCode, theLine);
         }
         {
             boolean theDisplayed;

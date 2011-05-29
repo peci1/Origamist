@@ -6,6 +6,7 @@ package cz.cuni.mff.peckam.java.origamist.model;
 import static cz.cuni.mff.peckam.java.origamist.math.MathHelper.EPSILON;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +15,7 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.math.Line2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
 import cz.cuni.mff.peckam.java.origamist.model.jaxb.Operations;
@@ -34,7 +36,8 @@ import cz.cuni.mff.peckam.java.origamist.modelstate.arguments.OperationArgument;
  * 
  * @author Martin Pecka
  */
-public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.CrimpFoldOperation
+public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.jaxb.CrimpFoldOperation implements
+        HasSymmetricOperation
 {
 
     /** P1 is the center of rotation segment, P2 is the furthest rotated point in the last getModelState() call. */
@@ -160,5 +163,28 @@ public class CrimpFoldOperation extends cz.cuni.mff.peckam.java.origamist.model.
         return "CrimpFoldOperation [type=" + type + ", line=" + line + ", refLine=" + refLine + ", layer=" + layer
                 + ", oppositeLine=" + oppositeLine + ", oppositeLayer=" + oppositeLayer + ", secondLine=" + secondLine
                 + ", secondOppositeLine=" + secondOppositeLine + "]";
+    }
+
+    @Override
+    public Operation getSymmetricOperation(Line2d symmetryAxis)
+    {
+        CrimpFoldOperation result = new CrimpFoldOperation();
+
+        result.type = this.type;
+        result.line = new Line2D(symmetryAxis.mirror(this.line.toLine2d()));
+        result.layer = new LinkedList<Integer>(this.layer);
+        // TODO the mirrored refline doesn't work; need to take a shortened refline from the main vertex of this fold
+        result.refLine = new Line2D(symmetryAxis.mirror(this.refLine.toLine2d()));
+        if (oppositeLine != null)
+            result.oppositeLine = new Line2D(symmetryAxis.mirror(this.oppositeLine.toLine2d()));
+        if (oppositeLayer != null)
+            result.oppositeLayer = new LinkedList<Integer>(this.oppositeLayer);
+        result.secondLine = new Line2D(symmetryAxis.mirror(this.secondLine.toLine2d()));
+        if (secondOppositeLine != null)
+            result.secondOppositeLine = new Line2D(symmetryAxis.mirror(this.secondOppositeLine.toLine2d()));
+        if (secondOppositeLayer != null)
+            result.secondOppositeLayer = new LinkedList<Integer>(this.secondOppositeLayer);
+
+        return result;
     }
 }
