@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.w3c.tools.timers.EventHandler;
 import org.w3c.tools.timers.EventManager;
 
+import cz.cuni.mff.peckam.java.origamist.gui.common.OSDPanel;
 import cz.cuni.mff.peckam.java.origamist.utils.LocalizedString;
 
 /**

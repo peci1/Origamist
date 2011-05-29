@@ -336,7 +336,7 @@ public class OrigamiEditor extends CommonGui
         if (getParameter("file") != null) {
             try {
                 Origami o = ServiceLocator.get(OrigamiHandler.class).loadModel(
-                        new URL(getCodeBase(), getParameter("file")).toURI(), false);
+                        new URL(getDocumentBase(), getParameter("file")).toURI(), false);
                 setOrigami(o);
             } catch (UnsupportedDataFormatException e1) {
                 JOptionPane.showMessageDialog(rootPane,

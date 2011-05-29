@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cz.cuni.mff.peckam.java.origamist.gui.editor;
+package cz.cuni.mff.peckam.java.origamist.gui.common;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -263,6 +263,22 @@ public class OSDPanel
     public BranchGroup getRoot()
     {
         return root;
+    }
+
+    /**
+     * @return The bounds.
+     */
+    public Rectangle getBounds()
+    {
+        return bounds;
+    }
+
+    /**
+     * @return The paintArea.
+     */
+    public BufferedImage getPaintArea()
+    {
+        return paintArea;
     }
 
     /**

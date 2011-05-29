@@ -64,6 +64,7 @@ import com.sun.j3d.utils.pickfast.behaviors.PickMouseBehavior;
 import com.sun.j3d.utils.universe.ViewInfo;
 
 import cz.cuni.mff.peckam.java.origamist.exceptions.InvalidOperationException;
+import cz.cuni.mff.peckam.java.origamist.gui.common.OSDPanel;
 import cz.cuni.mff.peckam.java.origamist.gui.common.StepViewingCanvasController;
 import cz.cuni.mff.peckam.java.origamist.math.Segment2d;
 import cz.cuni.mff.peckam.java.origamist.math.Segment3d;
@@ -1198,11 +1199,11 @@ public class StepEditingCanvasController extends StepViewingCanvasController
                 @Override
                 public void updateScene(int x, int y)
                 {
-                    Rectangle paperRealRect = getUsedBufferPart(preview.paintArea);
+                    Rectangle paperRealRect = getUsedBufferPart(preview.getPaintArea());
                     DoubleDimension paperDim = origami.getModel().getPaper().getRelativeDimensions();
 
-                    int xpos = x - preview.bounds.x;
-                    int ypos = preview.bounds.height - (y - preview.bounds.y);
+                    int xpos = x - preview.getBounds().x;
+                    int ypos = preview.getBounds().height - (y - preview.getBounds().y);
 
                     double xrel = (double) xpos / paperRealRect.width * paperDim.getWidth();
                     double yrel = (double) ypos / paperRealRect.height * paperDim.getHeight();

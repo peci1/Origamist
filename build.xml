@@ -37,9 +37,10 @@
 	</taskdef>
 
 	<taskdef classpath="lib-compile-time/orangevolt-ant-tasks-1.3.8.jar" resource="net/sf/ovanttasks/ovanttasks/taskdefs.properties" />
-
+	
 	<path id="project.classpath">
 		<fileset dir="lib" includes="*.jar" />
+		<fileset dir="." includes="Origamist.jar" />
 	</path>
 
 	<var name="signappletExecutable" value="signapplet.sh" />
@@ -246,11 +247,10 @@
 	
 	<target name="jar" depends="compile" description="Makes JAR and signs it">
 		<killjava />
-
-		<pathconvert property="mf.classpath" pathsep=" ">
-			<path refid="project.classpath" />
-			<flattenmapper />
-		</pathconvert>
+		
+		<manifestclasspath jarfile="OrigamistViewer.jar" property="mf.classpath">
+			<classpath refid="project.classpath" />
+		</manifestclasspath>
 
 		<jar destfile="Origamist.jar">
 			<fileset dir="bin" includes="**/*.*" excludes="cz/cuni/mff/peckam/java/origamist/gui/editor/**/*.*,cz/cuni/mff/peckam/java/origamist/gui/viewer/**/*.*,cz/cuni/mff/peckam/java/origamist/tests/**/*.*,cz/cuni/mff/peckam/java/origamist/unused/**/*.*" />

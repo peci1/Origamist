@@ -28,4 +28,13 @@ public class OrigamiViewerBootstrapper extends Java3DBootstrappingApplet
         return new String[] { "cz.cuni.mff.peckam.java.origamist", "org.w3c._2001.xmlschema", "javax.swing.origamist" };
     }
 
+    /**
+     * Run this applet if the application has been started from the command-line.
+     * 
+     * @param args The command-line arguments.
+     */
+    public static void main(String[] args)
+    {
+        main(new OrigamiViewerBootstrapper(), "Origamist Viewer", args);
+    }
 }

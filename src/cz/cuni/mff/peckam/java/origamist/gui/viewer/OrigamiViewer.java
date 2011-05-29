@@ -379,8 +379,12 @@ public class OrigamiViewer extends CommonGui
     {
         handleStartupModeParam();
         handleModelDownloadModeParam();
-        handleFilesParam();
-        // the "recursive" param is handled by the previous handler
+        try {
+            handleFilesParam();
+            // the "recursive" param is handled by the previous handler
+        } catch (IllegalArgumentException e) {
+            Logger.getLogger("viewer").warn(e);
+        }
     }
 
     /**

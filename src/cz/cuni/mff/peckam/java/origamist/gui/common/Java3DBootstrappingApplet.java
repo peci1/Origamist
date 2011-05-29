@@ -3,15 +3,23 @@
  */
 package cz.cuni.mff.peckam.java.origamist.gui.common;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JApplet;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
@@ -28,9 +36,18 @@ public abstract class Java3DBootstrappingApplet extends JApplet
 {
 
     /** */
-    private static final long serialVersionUID = 8579150219023896739L;
+    private static final long   serialVersionUID      = 8579150219023896739L;
     /** The bootstrapped applet. */
-    private JApplet           appletApplication;
+    private JApplet             appletApplication;
+
+    /** Set this to true if the applet is being loaded as a standard java application from the command line. */
+    protected boolean           launchedAsApplication = false;
+
+    /** If this applet is loaded as a standard Java application from the command line, this array holds its arguments. */
+    protected String[]          args                  = null;
+
+    /** The map of parameters derived from application arguments, if launched as application. */
+    private Map<String, String> parameters            = null;
 
     {
         System.setSecurityManager(null);
@@ -44,6 +61,21 @@ public abstract class Java3DBootstrappingApplet extends JApplet
                     + "<br>On other systems, Java3D must be installed from https://java3d.dev.java.net/binary-builds.html. "
                     + "<br>It requires Java version 5 or superior.</p>");
         } else {
+            if (launchedAsApplication) {
+                parameters = new HashMap<String, String>();
+                if (args != null) {
+                    for (String arg : args) {
+                        if (arg.contains("=")) {
+                            String[] tokens = arg.split("=", 2);
+                            parameters.put(tokens[0], tokens[1]);
+                        }
+                    }
+                } else {
+                    System.err
+                            .println("The bootstrapper has been launched as a standard application, but the arguments"
+                                    + "array (this.args) isn't set. Assuming no parameters were passed.");
+                }
+            }
             createAppletApplication();
             this.appletApplication.init();
         }
@@ -96,6 +128,97 @@ public abstract class Java3DBootstrappingApplet extends JApplet
             } catch (NumberFormatException ex) {}
         }
         return false;
+    }
+
+    @Override
+    public URL getDocumentBase()
+    {
+        if (!launchedAsApplication) {
+            return super.getDocumentBase();
+        } else {
+            try {
+                return new File("").getAbsoluteFile().toURI().toURL();
+            } catch (MalformedURLException e) {
+                try {
+                    return new URL(System.getProperty("user.dir"));
+                } catch (MalformedURLException e1) {
+                    return null;
+                }
+            }
+        }
+    }
+
+    @Override
+    public URL getCodeBase()
+    {
+        if (!launchedAsApplication) {
+            return super.getCodeBase();
+        } else {
+            URL location = getClass().getProtectionDomain().getCodeSource().getLocation();
+
+            // if the URL ends with a filename, remove it, so that code base is a directory
+            try {
+                location = new URL(location, ".");
+            } catch (MalformedURLException e) {}
+
+            return location;
+        }
+    }
+
+    @Override
+    public String getParameter(String name)
+    {
+        if (!launchedAsApplication) {
+            return super.getParameter(name);
+        } else {
+            if (parameters == null)
+                return null;
+            return parameters.get(name);
+        }
+    }
+
+    /**
+     * A utility method that launches the given applet if the program has been started as Java application.
+     * 
+     * @param applet The applet to launch.
+     * @param frameTitle Title of the window containing the applet.
+     * @param args Command-line arguments used when starting the application. If arguments width=xxx and height=yyy are
+     *            set, they are used as the default size of the frame.
+     */
+    public static void main(final Java3DBootstrappingApplet applet, String frameTitle, String[] args)
+    {
+        applet.launchedAsApplication = true;
+        applet.args = args;
+
+        applet.init();
+        applet.start();
+
+        JFrame window = new JFrame(frameTitle);
+        window.setContentPane(applet);
+        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                applet.stop();
+                applet.destroy();
+            }
+        });
+
+        window.pack();
+
+        if (applet.getParameter("width") != null && applet.getParameter("height") != null) {
+            try {
+                int width = Integer.parseInt(applet.getParameter("width"));
+                int height = Integer.parseInt(applet.getParameter("height"));
+
+                window.setSize(width, height);
+            } catch (NumberFormatException e) {
+
+            }
+        }
+
+        window.setVisible(true);
     }
 
     /**
