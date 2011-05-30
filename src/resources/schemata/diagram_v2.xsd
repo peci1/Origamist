@@ -265,6 +265,8 @@
 					<element name="crimpFoldOperation" type="m:CrimpFoldOperation" />
 					<element name="markerOperation" type="m:MarkerOperation" />
 					<element name="repeatOperation" type="m:RepeatOperation" />
+					<element name="imageOperation" type="m:ImageOperation" />
+					<element name="symmetryOperation" type="m:SymmetryOperation" />
 				</choice>
 			</sequence>
 		</sequence>

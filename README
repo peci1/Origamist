@@ -1,1 +1,19 @@
-To test Origamist, just run any of the included .jnlp files, or open preview.html or preview-editor.html in your web browser.
+How to run Origamist?
+
+* Open command line in this directory and type:
+    java -jar OrigamistViewer.jar
+    or
+    java -jar OrigamistEditor.jar
+
+* Edit one of the .jnlp files - the "codebase" attribute must carry the absolute path to the .jnlp file; then, double-click the file and Origamist will start.
+
+* You can run Origamist as applet by opening preview.html or preview-editor.html, but the aforementioned edit of .jnlp files is needed.
+
+* There are Ant targets to run Origamist:
+    * ant run-appletviewer-viewer
+    * ant run-browser-viewer
+    * ant run-jnlp-viewer
+    * ant run-appletviewer-editor
+    * ant run-browser-editor
+    * ant run-jnlp-editor
+(prepend just- befor the target's name to only run Origamist without recompiling)
