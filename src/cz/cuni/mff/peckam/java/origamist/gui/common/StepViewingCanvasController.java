@@ -1066,8 +1066,8 @@ public class StepViewingCanvasController
                     {
                         BufferedImage image = getModelState().getOverlayImage();
                         double h, v;
-                        h = canvas.getWidth() / image.getWidth();
-                        v = canvas.getHeight() / image.getHeight();
+                        h = (double) canvas.getWidth() / image.getWidth();
+                        v = (double) canvas.getHeight() / image.getHeight();
                         double ratio = Math.min(h, v);
 
                         int width = (int) (image.getWidth() * ratio);
